@@ -168,10 +168,14 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + " type fields.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
                            "Positive");
-        // not yet implemented
-//        Diagnostic d18 = d(11, 17, 24,
-//                "The @PositiveOrZero annotation can only be used on boolean and Boolean type fields.",
-//                DiagnosticSeverity.Error, "jakarta-bean-validation", "FixTypeOfElement", "PositiveOrZero");
+        Diagnostic d18 = d(57, 25, 34,
+                           "The @PositiveOrZero annotation can only be used on \n"
+                                       + "- BigDecimal \n"
+                                       + "- BigInteger\n"
+                                       + "- byte, short, int, long, float, double (and their respective wrappers) \n"
+                                       + " type fields.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                           "PositiveOrZero");
         Diagnostic d19 = d(60, 27, 36,
                            "Constraint annotations are not allowed on static fields.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
@@ -182,7 +186,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                            "Past");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8,
-                              d9, d10, d11, d12, d13, d14, d15, d16, d17, d19, d20);
+                              d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20);
 
         // Test quickfix codeActions - type (1-17), static, static+type (should only
         // display static)
@@ -207,6 +211,12 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca4 = ca(uri, "Remove the 'static' modifier", d20, te4);
 
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3, ca4);
+
+        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d18);
+        TextEdit te5 = te(56, 4, 57, 4, "");
+        CodeAction ca5 = ca(uri, "Remove constraint annotation PositiveOrZero from element", d18, te5);
+
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca5);
     }
 
     @Test
