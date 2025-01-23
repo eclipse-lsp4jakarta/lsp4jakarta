@@ -39,7 +39,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSTIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SHORT;
@@ -207,7 +207,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(NEGATIVE) || matchedAnnotation.equals(NEGATIVE_OR_ZERO)
-                           || matchedAnnotation.equals(POSITIVE) || matchedAnnotation.equals(POSTIVE_OR_ZERO)) {
+                           || matchedAnnotation.equals(POSITIVE) || matchedAnnotation.equals(POSITIVE_OR_ZERO)) {
                     if (!type.equals(getSignatureFormatOfType(BIG_DECIMAL))
                         && !type.equals(getSignatureFormatOfType(BIG_INTEGER))
                         && !type.equals(getSignatureFormatOfType(BYTE))

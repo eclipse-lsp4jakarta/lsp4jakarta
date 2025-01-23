@@ -37,7 +37,7 @@ public class Constants {
     public static final String MIN = "jakarta.validation.constraints.Min";
     public static final String MAX = "jakarta.validation.constraints.Max";
     public static final String NEGATIVE_OR_ZERO = "jakarta.validation.constraints.NegativeOrZero";
-    public static final String POSTIVE_OR_ZERO = "jakarta.validation.constraints.PostiveOrZero";
+    public static final String POSITIVE_OR_ZERO = "jakarta.validation.constraints.PositiveOrZero";
     public static final String NEGATIVE = "jakarta.validation.constraints.Negative";
     public static final String POSITIVE = "jakarta.validation.constraints.Positive";
     public static final String NOT_BLANK = "jakarta.validation.constraints.NotBlank";
@@ -79,7 +79,7 @@ public class Constants {
     public final static Set<String> SET_OF_ANNOTATIONS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(ASSERT_TRUE, ASSERT_FALSE, DIGITS, DECIMAL_MAX,
                                                                                                                        DECIMAL_MIN, EMAIL, PAST_OR_PRESENT, FUTURE_OR_PRESENT, PAST,
                                                                                                                        FUTURE, MIN, MAX, NEGATIVE_OR_ZERO,
-                                                                                                                       POSTIVE_OR_ZERO, NEGATIVE, POSITIVE, NOT_BLANK, PATTERN,
+                                                                                                                       POSITIVE_OR_ZERO, NEGATIVE, POSITIVE, NOT_BLANK, PATTERN,
                                                                                                                        SIZE, NOT_EMPTY)));
     public final static Set<String> SET_OF_DATE_TYPES = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(THAI_BUDDHIST_DATE, MINGUO_DATE, JAPANESE_DATE,
                                                                                                                       HIJRAH_DATE, ZONED_DATE_TIME, YEAR_MONTH, YEAR, OFFSET_TIME,
