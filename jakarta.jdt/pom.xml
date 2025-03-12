@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.lsp4jakarta</groupId>
     <artifactId>jdt-parent</artifactId>
-    <version>0.2.3-SNAPSHOT</version>
+    <version>0.2.3</version>
     <packaging>pom</packaging>
     <name>Eclipse LSP4Jakarta JDT Plugin Parent</name>
     <description>Eclipse LSP4Jakarta JDT Plugin Parent</description>
@@ -18,7 +18,7 @@
         <connection>scm:git:git@github.com:eclipse/lsp4jakarta.git</connection>
         <developerConnection>scm:git:git@github.com:eclipse/lsp4jakarta.git</developerConnection>
         <url>git@github.com:eclipse/lsp4jakarta.git</url>
-        <tag>0.2.3-SNAPSHOT</tag>
+        <tag>0.2.3</tag>
     </scm>
     <licenses>
         <license>
