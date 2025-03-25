@@ -17,7 +17,7 @@
         <connection>scm:git:git@github.com:eclipse/lsp4jakarta.git</connection>
         <developerConnection>scm:git:git@github.com:eclipse/lsp4jakarta.git</developerConnection>
         <url>git@github.com:eclipse/lsp4jakarta.git</url>
-        <tag>0.2.5-SNAPSHOT</tag>
+        <tag>0.2.3</tag>
     </scm>
     <licenses>
         <license>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.eclipse.lsp4jakarta</groupId>
             <artifactId>org.eclipse.lsp4jakarta.jdt.core</artifactId>
-            <version>0.2.5-SNAPSHOT</version>
+            <version>0.2.3</version>
         </dependency>
     </dependencies>
     <pluginRepositories>
