@@ -110,7 +110,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         });
     }
 
-	private void collectMemberDiagnostics(IMember[] elements, IType type, ICompilationUnit unit,
+	private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
 			List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
 
 		List<IAnnotation> mapKeyJoinCols = new ArrayList<IAnnotation>();
@@ -120,7 +120,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
 		// Go through each method/field to ensure they do not have both MapKey and MapKeyColumn
         // Annotations
-		for (IMember member : elements) {
+		for (IMember member : members) {
 
 			if (member instanceof IMethod) {
 				allAnnotations = ((IMethod) member).getAnnotations();
