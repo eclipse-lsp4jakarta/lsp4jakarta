@@ -118,6 +118,8 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 		boolean hasMapKeyClassAnnotation = false;
 		IAnnotation[] allAnnotations = null;
 
+		// Go through each method/field to ensure they do not have both MapKey and MapKeyColumn
+        // Annotations
 		for (IMember member : elements) {
 
 			if (member instanceof IMethod) {
@@ -154,6 +156,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 						Constants.DIAGNOSTIC_SOURCE, null,
 						ErrorCode.InvalidMapKeyAnnotationsOnSameField, DiagnosticSeverity.Error));
 			}
+			
+			// If we have multiple MapKeyJoinColumn annotations on a single method/field we must
+            // ensure each has a name and referencedColumnName
 			if (mapKeyJoinCols.size() > 1) {
 				validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
 						diagnostics);
