@@ -176,26 +176,58 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
         });
     }
+
+	private void collectMemberDiagnostics(IMember[] elements, IType type, ICompilationUnit unit,
+			List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
+
+		List<IAnnotation> mapKeyJoinCols = new ArrayList<IAnnotation>();
+		boolean hasMapKeyAnnotation = false;
+		boolean hasMapKeyClassAnnotation = false;
+		IAnnotation[] allAnnotations = null;
+
+		for (IMember member : elements) {
+
+			if (member instanceof IMethod) {
+				allAnnotations = ((IMethod) member).getAnnotations();
+			} else if (member instanceof IField) {
+				allAnnotations = ((IField) member).getAnnotations();
+			}
+
+			for (IAnnotation annotation : allAnnotations) {
+				String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+						annotation.getElementName(),
+						Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
+				if (matchedAnnotation != null) {
+					if (Constants.MAPKEY.equals(matchedAnnotation))
+						hasMapKeyAnnotation = true;
+					else if (Constants.MAPKEYCLASS.equals(matchedAnnotation))
+						hasMapKeyClassAnnotation = true;
+					else if (Constants.MAPKEYJOINCOLUMN.equals(matchedAnnotation)) {
+						mapKeyJoinCols.add(annotation);
+					}
+				}
+			}
+
+			if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
+				// A single field cannot have the same
+				Range range = null;
+				if (member instanceof IMethod) {
+					range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+				} else if (member instanceof IField) {
+					range = PositionUtils.toNameRange((IField) member, context.getUtils());
+				}
+				diagnostics.add(context.createDiagnostic(context.getUri(),
+						Messages.getMessage("MapKeyAnnotationsNotOnSameField"), range,
+						Constants.DIAGNOSTIC_SOURCE, null,
+						ErrorCode.InvalidMapKeyAnnotationsOnSameField, DiagnosticSeverity.Error));
+			}
+			if (mapKeyJoinCols.size() > 1) {
+				validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
+						diagnostics);
+			}
+
+		}
+
+	}
     
-    private void collectMemberDiagnostics(IAnnotation[] allAnnotations, IType type) throws CoreException {
-    	
-    	List<IAnnotation> mapKeyJoinCols = new ArrayList<IAnnotation>();
-        boolean hasMapKeyAnnotation = false;
-        boolean hasMapKeyClassAnnotation = false;
-        
-        for (IAnnotation annotation : allAnnotations) {
-            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
-                                                                                 annotation.getElementName(),
-                                                                                 Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
-            if (matchedAnnotation != null) {
-                if (Constants.MAPKEY.equals(matchedAnnotation))
-                    hasMapKeyAnnotation = true;
-                else if (Constants.MAPKEYCLASS.equals(matchedAnnotation))
-                    hasMapKeyClassAnnotation = true;
-                else if (Constants.MAPKEYJOINCOLUMN.equals(matchedAnnotation)) {
-                    mapKeyJoinCols.add(annotation);
-                }
-            }
-        }
-    }
 }
