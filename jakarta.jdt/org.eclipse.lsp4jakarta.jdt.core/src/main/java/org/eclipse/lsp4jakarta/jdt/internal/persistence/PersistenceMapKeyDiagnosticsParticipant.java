@@ -48,30 +48,29 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
      * {@inheritDoc}
      */
     @Override
-	public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor)
-			throws CoreException {
-		String uri = context.getUri();
-		IJDTUtils utils = JDTUtilsLSImpl.getInstance();
-		ICompilationUnit unit = utils.resolveCompilationUnit(uri);
-		List<Diagnostic> diagnostics = new ArrayList<>();
+    public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
+        String uri = context.getUri();
+        IJDTUtils utils = JDTUtilsLSImpl.getInstance();
+        ICompilationUnit unit = utils.resolveCompilationUnit(uri);
+        List<Diagnostic> diagnostics = new ArrayList<>();
 
-		if (unit == null) {
-			return diagnostics;
-		}
+        if (unit == null) {
+            return diagnostics;
+        }
 
-		IType[] alltypes = unit.getAllTypes();
-		IMethod[] methods;
-		IField[] fields;
+        IType[] alltypes = unit.getAllTypes();
+        IMethod[] methods;
+        IField[] fields;
 
-		for (IType type : alltypes) {
-			methods = type.getMethods();
-			collectMemberDiagnostics(methods, type, unit, diagnostics, context);
-			fields = type.getFields();
-			collectMemberDiagnostics(fields, type, unit, diagnostics, context);
-		}
+        for (IType type : alltypes) {
+            methods = type.getMethods();
+            collectMemberDiagnostics(methods, type, unit, diagnostics, context);
+            fields = type.getFields();
+            collectMemberDiagnostics(fields, type, unit, diagnostics, context);
+        }
 
-		return diagnostics;
-	}
+        return diagnostics;
+    }
 
     private void validateMapKeyJoinColumnAnnotations(JavaDiagnosticsContext context, String uri,
                                                      List<IAnnotation> annotations,
@@ -110,62 +109,62 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         });
     }
 
-	private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
-			List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
+    private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
+                                          List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
 
-		List<IAnnotation> mapKeyJoinCols = new ArrayList<IAnnotation>();
-		boolean hasMapKeyAnnotation = false;
-		boolean hasMapKeyClassAnnotation = false;
-		IAnnotation[] allAnnotations = null;
+        List<IAnnotation> mapKeyJoinCols = new ArrayList<IAnnotation>();
+        boolean hasMapKeyAnnotation = false;
+        boolean hasMapKeyClassAnnotation = false;
+        IAnnotation[] allAnnotations = null;
 
-		// Go through each method/field to ensure they do not have both MapKey and MapKeyColumn
+        // Go through each method/field to ensure they do not have both MapKey and MapKeyColumn
         // Annotations
-		for (IMember member : members) {
+        for (IMember member : members) {
 
-			if (member instanceof IMethod) {
-				allAnnotations = ((IMethod) member).getAnnotations();
-			} else if (member instanceof IField) {
-				allAnnotations = ((IField) member).getAnnotations();
-			}
+            if (member instanceof IMethod) {
+                allAnnotations = ((IMethod) member).getAnnotations();
+            } else if (member instanceof IField) {
+                allAnnotations = ((IField) member).getAnnotations();
+            }
 
-			for (IAnnotation annotation : allAnnotations) {
-				String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
-						annotation.getElementName(),
-						Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
-				if (matchedAnnotation != null) {
-					if (Constants.MAPKEY.equals(matchedAnnotation))
-						hasMapKeyAnnotation = true;
-					else if (Constants.MAPKEYCLASS.equals(matchedAnnotation))
-						hasMapKeyClassAnnotation = true;
-					else if (Constants.MAPKEYJOINCOLUMN.equals(matchedAnnotation)) {
-						mapKeyJoinCols.add(annotation);
-					}
-				}
-			}
+            for (IAnnotation annotation : allAnnotations) {
+                String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                     annotation.getElementName(),
+                                                                                     Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
+                if (matchedAnnotation != null) {
+                    if (Constants.MAPKEY.equals(matchedAnnotation))
+                        hasMapKeyAnnotation = true;
+                    else if (Constants.MAPKEYCLASS.equals(matchedAnnotation))
+                        hasMapKeyClassAnnotation = true;
+                    else if (Constants.MAPKEYJOINCOLUMN.equals(matchedAnnotation)) {
+                        mapKeyJoinCols.add(annotation);
+                    }
+                }
+            }
 
-			if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
-				// A single field cannot have the same
-				Range range = null;
-				if (member instanceof IMethod) {
-					range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
-				} else if (member instanceof IField) {
-					range = PositionUtils.toNameRange((IField) member, context.getUtils());
-				}
-				diagnostics.add(context.createDiagnostic(context.getUri(),
-						Messages.getMessage("MapKeyAnnotationsNotOnSameField"), range,
-						Constants.DIAGNOSTIC_SOURCE, null,
-						ErrorCode.InvalidMapKeyAnnotationsOnSameField, DiagnosticSeverity.Error));
-			}
-			
-			// If we have multiple MapKeyJoinColumn annotations on a single method/field we must
+            if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
+                // A single field cannot have the same
+                Range range = null;
+                if (member instanceof IMethod) {
+                    range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+                } else if (member instanceof IField) {
+                    range = PositionUtils.toNameRange((IField) member, context.getUtils());
+                }
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("MapKeyAnnotationsNotOnSameField"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidMapKeyAnnotationsOnSameField, DiagnosticSeverity.Error));
+            }
+
+            // If we have multiple MapKeyJoinColumn annotations on a single method/field we must
             // ensure each has a name and referencedColumnName
-			if (mapKeyJoinCols.size() > 1) {
-				validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
-						diagnostics);
-			}
+            if (mapKeyJoinCols.size() > 1) {
+                validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
+                                                    diagnostics);
+            }
 
-		}
+        }
 
-	}
-    
+    }
+
 }
