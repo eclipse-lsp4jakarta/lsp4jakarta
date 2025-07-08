@@ -145,7 +145,10 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
-                // A single field cannot have the same
+                //A single method/field cannot be annotated with both @MapKey and @MapKeyClass
+                //Specification References:
+                //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
+                //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
                 Range range = null;
                 String messageKey = null;
                 ErrorCode errorCode = null;
