@@ -30,7 +30,7 @@ public class Constants {
 
     /* Annotations which make a resource method parameter a non entity parameter. */
     public static final ArrayList<String> NON_ENTITY_PARAM_ANNOTATIONS = new ArrayList<String>(List.of("FormParam", "MatrixParam", "QueryParam", "PathParam", "CookieParam",
-                                                                                                       "HeaderParam", "Context"));
+                                                                                                       "HeaderParam", "Context", "BeanParam"));
 
     public static final String PATH_ANNOTATION = "jakarta.ws.rs.Path";
     public static final String PROVIDER_ANNOTATION = "jakarta.ws.rs.ext.Provider";
@@ -50,7 +50,8 @@ public class Constants {
                                                                          "jakarta.ws.rs.PathParam",
                                                                          "jakarta.ws.rs.CookieParam",
                                                                          "jakarta.ws.rs.HeaderParam",
-                                                                         "jakarta.ws.rs.core.Context" };
+                                                                         "jakarta.ws.rs.core.Context",
+                                                                         "jakarta.ws.rs.BeanParam"};
     public final static String[] SET_OF_JAXRS_ANNOTATIONS1 = {
                                                                PATH_ANNOTATION,
                                                                PROVIDER_ANNOTATION };
