@@ -13,6 +13,9 @@
 
 package io.openliberty.sample.jakarta.jaxrs;
 
+import io.openliberty.sample.jakarta.pojos.ArticleBean;
+import io.openliberty.sample.jakarta.pojos.RequestBean;
+import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.FormParam;
 
@@ -20,6 +23,12 @@ public class MultipleEntityParamsResourceMethod {
 
 	@DELETE
 	public void resourceMethodWithTwoEntityParams(String entityParam1, @FormParam(value = "") String nonEntityParam, int entityParam2) {
+        
+    }
+	
+	
+	@DELETE
+	public void resourceMethodWithTwoBeanParams(@BeanParam RequestBean requestBean, @BeanParam ArticleBean articleBean) {
         
     }
 }
