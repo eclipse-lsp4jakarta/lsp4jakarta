@@ -31,4 +31,10 @@ public class MultipleEntityParamsResourceMethod {
 	public void resourceMethodWithTwoBeanParams(@BeanParam RequestBean requestBean, @BeanParam ArticleBean articleBean) {
         
     }
+	
+	
+	@DELETE
+	public void resourceMethodWithBeanParamsAndEnityParams(String entityString, int entityInt, @BeanParam RequestBean requestBean, @BeanParam ArticleBean articleBean) {
+        
+    }
 }
