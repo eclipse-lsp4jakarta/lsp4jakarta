@@ -25,7 +25,10 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyAnnotationsOnSameMethod,
     InvalidMapKeyAnnotationsOnSameField,
     InvalidMethodWithMultipleMPJCAnnotations,
-    InvalidFieldWithMultipleMPJCAnnotations;
+    InvalidFieldWithMultipleMPJCAnnotations,
+	InvalidTypeOfField,
+	InvalidReturnTypeOfMethod;
+	
 
     /**
      * {@inheritDoc}
