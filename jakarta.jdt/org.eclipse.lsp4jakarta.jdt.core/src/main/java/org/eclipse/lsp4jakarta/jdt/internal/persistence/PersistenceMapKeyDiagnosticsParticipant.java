@@ -146,28 +146,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
 
-            Range range = null;
-            String messageKey = null;
-            ErrorCode errorCode = null;
-            String attribute = null;
-
             if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
                 //A single method/field cannot be annotated with both @MapKey and @MapKeyClass
                 //Specification References:
                 //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
                 //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
-
-                if (member instanceof IMethod) {
-                    range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
-                    messageKey = "MapKeyAnnotationsNotOnSameMethod";
-                    errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameMethod;
-                } else if (member instanceof IField) {
-                    range = PositionUtils.toNameRange((IField) member, context.getUtils());
-                    messageKey = "MapKeyAnnotationsNotOnSameField";
-                    errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameField;
-                }
-                diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+            	collectMapKeyAnnotationsDiagnostics(member,context,diagnostics);
 			} else if (hasMapKeyAnnotation) {
 				collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
 			} else if (hasMapKeyClassAnnotation) {
@@ -218,6 +202,33 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 			diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute), range,
 							Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
 		}
+	}
+	
+	private void collectMapKeyAnnotationsDiagnostics(IMember member,JavaDiagnosticsContext context,
+			List<Diagnostic> diagnostics) throws CoreException {
+		
+		Range range = null;
+		String messageKey = null;
+		ErrorCode errorCode = null;
+		
+		 if (member instanceof IMethod) {
+			 
+             range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+             messageKey = "MapKeyAnnotationsNotOnSameMethod";
+             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameMethod;
+             
+         } else if (member instanceof IField) {
+        	 
+             range = PositionUtils.toNameRange((IField) member, context.getUtils());
+             messageKey = "MapKeyAnnotationsNotOnSameField";
+             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameField;
+             
+         }
+		 
+		 if (messageKey != null) {
+			 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
+                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+		 }
 	}
 
 }
