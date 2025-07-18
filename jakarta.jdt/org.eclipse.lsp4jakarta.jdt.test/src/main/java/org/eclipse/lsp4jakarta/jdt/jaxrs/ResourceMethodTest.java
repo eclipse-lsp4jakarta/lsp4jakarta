@@ -70,21 +70,32 @@ public class ResourceMethodTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = d(21, 13, 46, "Resource methods cannot have more than one entity parameter.",
-                         DiagnosticSeverity.Error, "jakarta-jaxrs", "ResourceMethodMultipleEntityParams");
+        Diagnostic d1 = d(22, 13, 46, "Resource methods cannot have more than one entity parameter.",
+                          DiagnosticSeverity.Error, "jakarta-jaxrs", "ResourceMethodMultipleEntityParams");
+        Diagnostic d2 = d(34, 13, 55, "Resource methods cannot have more than one entity parameter.",
+                          DiagnosticSeverity.Error, "jakarta-jaxrs", "ResourceMethodMultipleEntityParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
 
         // Test for quick-fix code action
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
-        TextEdit te1 = te(21, 112, 21, 130, "");
-        CodeAction ca1 = ca(uri, "Remove all entity parameters except entityParam1", d, te1);
+        TextEdit te1 = te(22, 112, 22, 130, "");
+        CodeAction ca1 = ca(uri, "Remove all entity parameters except entityParam1", d1, te1);
 
-        TextEdit te2 = te(21, 47, 21, 68, "");
-        CodeAction ca2 = ca(uri, "Remove all entity parameters except entityParam2", d, te2);
+        TextEdit te2 = te(22, 47, 22, 68, "");
+        CodeAction ca2 = ca(uri, "Remove all entity parameters except entityParam2", d1, te2);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
 
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+
+        TextEdit te3 = te(34, 56, 34, 77, "");
+        CodeAction ca3 = ca(uri, "Remove all entity parameters except entityInt", d1, te3);
+
+        TextEdit te4 = te(34, 77, 34, 92, "");
+        CodeAction ca4 = ca(uri, "Remove all entity parameters except entityString", d1, te4);
+
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
     }
 
 }
