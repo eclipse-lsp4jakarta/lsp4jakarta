@@ -165,6 +165,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
                                                     diagnostics);
             }
+            
+            //Check method has right access specifier and follows JavaBean accessor conventions
+            collectAccessorDiagnostics(member, context, diagnostics);
         }
     }
 
@@ -238,6 +241,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         ErrorCode errorCode = null;
         
         if (member instanceof IMethod) {
+        	
         	String methodName = member.getElementName();
         	int flag = member.getFlags();
         	
@@ -245,10 +249,19 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         	boolean isStartsWithGet = methodName.startsWith("get");
         	
         	if(!isPublic) {
-        		
+        		range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsInvalidMethodAccessSpecifier";
+                errorCode = ErrorCode.InvalidMethodAccessSpecifier;
         	}else if(!isStartsWithGet) {
-        		
+        		range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsOnInvalidMethod";
+                errorCode = ErrorCode.InvalidMethodName;
         	}
+        	
+        	if (messageKey != null) {
+                diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
+            }
         }
 	}
 }
