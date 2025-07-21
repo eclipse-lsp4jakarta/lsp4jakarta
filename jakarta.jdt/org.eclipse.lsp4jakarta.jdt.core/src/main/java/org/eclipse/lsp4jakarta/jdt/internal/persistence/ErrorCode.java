@@ -27,6 +27,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMethodWithMultipleMPJCAnnotations,
     InvalidFieldWithMultipleMPJCAnnotations,
     InvalidTypeOfField,
+    InvalidMethodName,
+    InvalidMethodAccessSpecifier,
     InvalidReturnTypeOfMethod;
 
     /**

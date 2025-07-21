@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -151,12 +152,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 //Specification References:
                 //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
                 //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
-            	collectMapKeyAnnotationsDiagnostics(member,context,diagnostics);
-			} else if (hasMapKeyAnnotation) {
-				collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
-			} else if (hasMapKeyClassAnnotation) {
-				collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
-			}
+                collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
+            } else if (hasMapKeyAnnotation) {
+                collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
+            } else if (hasMapKeyClassAnnotation) {
+                collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
+            }
 
             // If we have multiple MapKeyJoinColumn annotations on a single method/field
             // we must ensure each has a name and referencedColumnName
@@ -166,69 +167,88 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
         }
     }
-    
-	private void collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
-			List<Diagnostic> diagnostics) throws CoreException {
-		
+
+    private void collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
+                                        List<Diagnostic> diagnostics) throws CoreException {
+
+        Range range = null;
+        String messageKey = null, typeSignature = null, readableType = null;
+        ErrorCode errorCode = null;
+
+        if (member instanceof IMethod) {
+
+            typeSignature = ((IMethod) member).getReturnType();
+            readableType = Signature.toString(typeSignature);
+
+            if (!readableType.toUpperCase().contains("MAP")) {
+                range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsReturnTypeOfMethod";
+                errorCode = ErrorCode.InvalidReturnTypeOfMethod;
+            }
+
+        } else if (member instanceof IField) {
+
+            typeSignature = ((IField) member).getTypeSignature();
+            readableType = Signature.toString(Signature.getElementType(typeSignature));
+
+            if (!readableType.toUpperCase().contains("MAP")) {
+                range = PositionUtils.toNameRange((IField) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsTypeOfField";
+                errorCode = ErrorCode.InvalidTypeOfField;
+            }
+
+        }
+        if (messageKey != null) {
+            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    private void collectMapKeyAnnotationsDiagnostics(IMember member, JavaDiagnosticsContext context,
+                                                     List<Diagnostic> diagnostics) throws CoreException {
+
+        Range range = null;
+        String messageKey = null;
+        ErrorCode errorCode = null;
+
+        if (member instanceof IMethod) {
+
+            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+            messageKey = "MapKeyAnnotationsNotOnSameMethod";
+            errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameMethod;
+
+        } else if (member instanceof IField) {
+
+            range = PositionUtils.toNameRange((IField) member, context.getUtils());
+            messageKey = "MapKeyAnnotationsNotOnSameField";
+            errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameField;
+
+        }
+
+        if (messageKey != null) {
+            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+	private void collectAccessorDiagnostics(IMember member, JavaDiagnosticsContext context,
+											List<Diagnostic> diagnostics) throws CoreException {
 		Range range = null;
-		String messageKey = null, typeSignature = null, readableType = null;
-		ErrorCode errorCode = null;
-		
-
-		if (member instanceof IMethod) {
-
-			typeSignature = ((IMethod) member).getReturnType();
-			readableType = Signature.toString(typeSignature);
-
-			if (!readableType.toUpperCase().contains("MAP")) {
-				range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
-				messageKey = "MapKeyAnnotationsReturnTypeOfMethod";
-				errorCode = ErrorCode.InvalidReturnTypeOfMethod;
-			}
-
-		} else if (member instanceof IField) {
-			
-			typeSignature = ((IField) member).getTypeSignature();
-			readableType = Signature.toString(Signature.getElementType(typeSignature));
-
-			if (!readableType.toUpperCase().contains("MAP")) {
-				range = PositionUtils.toNameRange((IField) member, context.getUtils());
-				messageKey = "MapKeyAnnotationsTypeOfField";
-				errorCode = ErrorCode.InvalidTypeOfField;
-			}
-
-		}
-		if (messageKey != null) {
-			diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute), range,
-							Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
-		}
+        String messageKey = null;
+        ErrorCode errorCode = null;
+        
+        if (member instanceof IMethod) {
+        	String methodName = member.getElementName();
+        	int flag = member.getFlags();
+        	
+        	boolean isPublic  = Flags.isPublic(flag);
+        	boolean isStartsWithGet = methodName.startsWith("get");
+        	
+        	if(!isPublic) {
+        		
+        	}else if(!isStartsWithGet) {
+        		
+        	}
+        }
 	}
-	
-	private void collectMapKeyAnnotationsDiagnostics(IMember member,JavaDiagnosticsContext context,
-			List<Diagnostic> diagnostics) throws CoreException {
-		
-		Range range = null;
-		String messageKey = null;
-		ErrorCode errorCode = null;
-		
-		 if (member instanceof IMethod) {
-			 
-             range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
-             messageKey = "MapKeyAnnotationsNotOnSameMethod";
-             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameMethod;
-             
-         } else if (member instanceof IField) {
-        	 
-             range = PositionUtils.toNameRange((IField) member, context.getUtils());
-             messageKey = "MapKeyAnnotationsNotOnSameField";
-             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameField;
-             
-         }
-		 
-		 if (messageKey != null) {
-			 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
-		 }
-	}
-
 }
