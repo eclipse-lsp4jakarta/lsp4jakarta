@@ -151,6 +151,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                     }
                 }
             }
+            
+            String attribute = hasMapKeyAnnotation? "@MapKey" : hasMapKeyClassAnnotation? "@MapKeyClass" : null ;
+            
+            if (hasMapKeyAnnotation || hasMapKeyClassAnnotation) {
+                collectTypeDiagnostics(member, attribute, context, diagnostics);
+                collectAccessorDiagnostics(member, context, diagnostics);
+            }
 
             if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
                 //A single method/field cannot be annotated with both @MapKey and @MapKeyClass
@@ -166,17 +173,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
                                                     diagnostics);
             }
-                
-            if (hasMapKeyAnnotation) {
-                collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
-                collectAccessorDiagnostics(member, context, diagnostics);
-            }
-            
-            if (hasMapKeyClassAnnotation) {
-                collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);      
-                collectAccessorDiagnostics(member, context, diagnostics);
-            }
-            
         }
     }
 
