@@ -152,10 +152,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
             
-            String attribute = hasMapKeyAnnotation? "@MapKey" : hasMapKeyClassAnnotation? "@MapKeyClass" : null ;
+            if (hasMapKeyAnnotation) {
+                collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
+                collectAccessorDiagnostics(member, context, diagnostics);
+            }
             
-            if (hasMapKeyAnnotation || hasMapKeyClassAnnotation) {
-                collectTypeDiagnostics(member, attribute, context, diagnostics);
+            if(hasMapKeyClassAnnotation) {
+            	collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
                 collectAccessorDiagnostics(member, context, diagnostics);
             }
 
