@@ -185,6 +185,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         Range range = null;
         String messageKey = null, typeSignature = null, readableType = null;
+        String packageValue = null, typeValue = null, fqName = null;
         ErrorCode errorCode = null;
 
         boolean isMap=false;
@@ -202,33 +203,34 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         	readableType = Signature.toString(Signature.getElementType(typeSignature));
         	
         }
-        
-        
 
         String stripType = readableType.split("<")[0]; // strip Generics 
         String[][] resolveTypes = declaringType.resolveType(stripType);
         
-        String packageValue = resolveTypes[0][0];  // e.g: "java.util"
-        String typeValue = resolveTypes[0][1];     // e.g: "Map"
-        String fqName = packageValue.concat(".").concat(typeValue);
-        
-        if("java.util.Map".equals(fqName)) {
-        	
-        	isMap=true;
-        	
-        }else {
-        	
-        	IType returnType = javaProject.findType(fqName);
-           	ITypeHierarchy hierarchy = returnType.newTypeHierarchy(null);
-           	IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
-           	 
-           	for (IType superInterface : interfaces) {
-            	if ("java.util.Map".equals(superInterface.getFullyQualifiedName())) {
-                    isMap=true;
-                }
-            }
+        if(resolveTypes!=null && resolveTypes.length>0) {
+        	 packageValue = resolveTypes[0][0];  // e.g: "java.util"
+             typeValue = resolveTypes[0][1];     // e.g: "Map"
+             fqName = packageValue.concat(".").concat(typeValue);
         }
-        
+       
+		if (fqName != null) {
+			if ("java.util.Map".equals(fqName)) {
+				isMap = true;
+
+			} else {
+
+				IType returnType = javaProject.findType(fqName);
+				ITypeHierarchy hierarchy = returnType.newTypeHierarchy(null);
+				IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
+
+				for (IType superInterface : interfaces) {
+					if ("java.util.Map".equals(superInterface.getFullyQualifiedName())) {
+						isMap = true;
+					}
+				}
+			}
+		}
+      
 		if (!isMap) {
 			if (member instanceof IMethod) {
 
