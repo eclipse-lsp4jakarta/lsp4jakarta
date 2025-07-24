@@ -163,10 +163,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
-                // A single method/field cannot be annotated with both @MapKey and @MapKeyClass
-                // Specification References:
-                // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
-                // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
@@ -249,6 +245,10 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         String messageKey = null;
         ErrorCode errorCode = null;
 
+        // A single method/field cannot be annotated with both @MapKey and @MapKeyClass
+        // Specification References:
+        // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
+        // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
         if (member instanceof IMethod) {
             range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
             messageKey = "MapKeyAnnotationsNotOnSameMethod";
