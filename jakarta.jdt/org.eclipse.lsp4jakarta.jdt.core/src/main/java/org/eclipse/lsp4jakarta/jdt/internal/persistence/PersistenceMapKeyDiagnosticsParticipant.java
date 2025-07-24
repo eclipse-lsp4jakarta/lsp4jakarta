@@ -118,7 +118,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
-                                          List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
+            List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
 
         List<IAnnotation> mapKeyJoinCols = null;
         boolean hasMapKeyAnnotation = false;
@@ -140,7 +140,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             for (IAnnotation annotation : allAnnotations) {
                 String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                                                     Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
+                        Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
                 if (matchedAnnotation != null) {
                     if (Constants.MAPKEY.equals(matchedAnnotation))
                         hasMapKeyAnnotation = true;
@@ -151,22 +151,22 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                     }
                 }
             }
-            
+
             if (hasMapKeyAnnotation) {
                 collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
                 collectAccessorDiagnostics(member, context, diagnostics);
             }
-            
-            if(hasMapKeyClassAnnotation) {
-            	collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
+
+            if (hasMapKeyClassAnnotation) {
+                collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
                 collectAccessorDiagnostics(member, context, diagnostics);
             }
 
             if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
-                //A single method/field cannot be annotated with both @MapKey and @MapKeyClass
-                //Specification References:
-                //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
-                //https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
+                // A single method/field cannot be annotated with both @MapKey and @MapKeyClass
+                // Specification References:
+                // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkey
+                // https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/mapkeyclass
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
@@ -174,113 +174,99 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             // we must ensure each has a name and referencedColumnName
             if (mapKeyJoinCols.size() > 1) {
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
-                                                    diagnostics);
+                        diagnostics);
             }
         }
     }
 
     private void collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
-                                        List<Diagnostic> diagnostics) throws CoreException {
+            List<Diagnostic> diagnostics) throws CoreException {
 
         Range range = null;
         String messageKey = null, typeSignature = null, readableType = null;
         String packageValue = null, typeValue = null, fqName = null;
         ErrorCode errorCode = null;
 
-        boolean isMap=false;
-    	IType declaringType = member.getDeclaringType();
+        boolean isMap = false;
+        IType declaringType = member.getDeclaringType();
         IJavaProject javaProject = declaringType.getJavaProject();
-        
+
         if (member instanceof IMethod) {
-        	
-        	typeSignature = ((IMethod) member).getReturnType();
-        	readableType = Signature.toString(typeSignature);
-        	 
-        }else if (member instanceof IField) {
-        	
-        	typeSignature = ((IField) member).getTypeSignature();
-        	readableType = Signature.toString(Signature.getElementType(typeSignature));
-        	
+            typeSignature = ((IMethod) member).getReturnType();
+            readableType = Signature.toString(typeSignature);
+        } else if (member instanceof IField) {
+            typeSignature = ((IField) member).getTypeSignature();
+            readableType = Signature.toString(Signature.getElementType(typeSignature));
         }
 
-        String stripType = readableType.split("<")[0]; // strip Generics 
+        String stripType = readableType.split("<")[0]; // strip Generics
         String[][] resolveTypes = declaringType.resolveType(stripType);
-        
-        if(resolveTypes!=null && resolveTypes.length>0) {
-        	 packageValue = resolveTypes[0][0];  // e.g: "java.util"
-             typeValue = resolveTypes[0][1];     // e.g: "Map"
-             fqName = packageValue.concat(".").concat(typeValue);
+
+        if (resolveTypes != null && resolveTypes.length > 0) {
+            packageValue = resolveTypes[0][0]; // e.g: "java.util"
+            typeValue = resolveTypes[0][1]; // e.g: "Map"
+            fqName = packageValue.concat(".").concat(typeValue);
         }
-       
-		if (fqName != null) {
-			if (MAP_INTERFACE_FQDN.equals(fqName)) {
-				isMap = true;
 
-			} else {
+        if (fqName != null) {
+            if (MAP_INTERFACE_FQDN.equals(fqName)) {
+                isMap = true;
+            } else {
+                IType returnType = javaProject.findType(fqName);
+                ITypeHierarchy hierarchy = returnType.newTypeHierarchy(null);
+                IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
 
-				IType returnType = javaProject.findType(fqName);
-				ITypeHierarchy hierarchy = returnType.newTypeHierarchy(null);
-				IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
+                for (IType superInterface : interfaces) {
+                    if (MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
+                        isMap = true;
+                    }
+                }
+            }
+        }
 
-				for (IType superInterface : interfaces) {
-					if (MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
-						isMap = true;
-					}
-				}
-			}
-		}
-      
-		if (!isMap) {
-			if (member instanceof IMethod) {
+        if (!isMap) {
+            if (member instanceof IMethod) {
+                range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsReturnTypeOfMethod";
+                errorCode = ErrorCode.InvalidReturnTypeOfMethod;
+            } else if (member instanceof IField) {
+                range = PositionUtils.toNameRange((IField) member, context.getUtils());
+                messageKey = "MapKeyAnnotationsTypeOfField";
+                errorCode = ErrorCode.InvalidTypeOfField;
+            }
+        }
 
-				range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
-				messageKey = "MapKeyAnnotationsReturnTypeOfMethod";
-				errorCode = ErrorCode.InvalidReturnTypeOfMethod;
-
-			} else if (member instanceof IField) {
-
-				range = PositionUtils.toNameRange((IField) member, context.getUtils());
-				messageKey = "MapKeyAnnotationsTypeOfField";
-				errorCode = ErrorCode.InvalidTypeOfField;
-
-			}
-		}
-        
         if (messageKey != null) {
-            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute), range,
-                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute),
+                    range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
     }
 
     private void collectMapKeyAnnotationsDiagnostics(IMember member, JavaDiagnosticsContext context,
-                                                     List<Diagnostic> diagnostics) throws CoreException {
+            List<Diagnostic> diagnostics) throws CoreException {
 
         Range range = null;
         String messageKey = null;
         ErrorCode errorCode = null;
 
         if (member instanceof IMethod) {
-
             range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
             messageKey = "MapKeyAnnotationsNotOnSameMethod";
             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameMethod;
-
         } else if (member instanceof IField) {
-
             range = PositionUtils.toNameRange((IField) member, context.getUtils());
             messageKey = "MapKeyAnnotationsNotOnSameField";
             errorCode = ErrorCode.InvalidMapKeyAnnotationsOnSameField;
-
         }
 
         if (messageKey != null) {
             diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+                    Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
     }
 
     private void collectAccessorDiagnostics(IMember member, JavaDiagnosticsContext context,
-                                            List<Diagnostic> diagnostics) throws CoreException {
+            List<Diagnostic> diagnostics) throws CoreException {
         Range range = null;
         String messageKey = null;
         ErrorCode errorCode = null;
@@ -305,7 +291,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             if (messageKey != null) {
                 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
+                        Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
             }
         }
     }
