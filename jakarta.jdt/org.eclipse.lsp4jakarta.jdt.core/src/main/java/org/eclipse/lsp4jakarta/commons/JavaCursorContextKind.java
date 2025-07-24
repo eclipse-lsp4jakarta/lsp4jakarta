@@ -226,8 +226,12 @@ public enum JavaCursorContextKind {
 
     public static JavaCursorContextKind forValue(int value) {
         JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
-        if (value < 1 || value > allValues.length)
-            throw new IllegalArgumentException("Illegal enum value: " + value);
-        return allValues[value - 1];
+        if (value == NONE.getValue()) {
+            return allValues[allValues.length - 1];
+        } else {
+	        if (value < 1 || value > allValues.length)
+	            throw new IllegalArgumentException("Illegal enum value: " + value);
+	        return allValues[value - 1];
+        }
     }
 }
