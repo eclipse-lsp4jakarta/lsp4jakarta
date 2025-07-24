@@ -29,7 +29,6 @@ import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
@@ -51,6 +50,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 	
 	private static final Logger LOGGER = Logger.getLogger(PersistenceMapKeyDiagnosticsParticipant.class.getName());
+	final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     /**
      * {@inheritDoc}
@@ -213,7 +213,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
        
 		if (fqName != null) {
-			if ("java.util.Map".equals(fqName)) {
+			if (MAP_INTERFACE_FQDN.equals(fqName)) {
 				isMap = true;
 
 			} else {
@@ -223,7 +223,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 				IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
 
 				for (IType superInterface : interfaces) {
-					if ("java.util.Map".equals(superInterface.getFullyQualifiedName())) {
+					if (MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
 						isMap = true;
 					}
 				}
