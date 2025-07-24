@@ -227,7 +227,7 @@ public enum JavaCursorContextKind {
     public static JavaCursorContextKind forValue(int value) {
         JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
         
-        //Root cause for https://github.com/eclipse-lsp4jakarta/lsp4jakarta/issues/520.
+        //Root cause and fix for https://github.com/eclipse-lsp4jakarta/lsp4jakarta/issues/520.
         //See issue for more details.
         if (value == NONE.getValue()) {
             return NONE;
