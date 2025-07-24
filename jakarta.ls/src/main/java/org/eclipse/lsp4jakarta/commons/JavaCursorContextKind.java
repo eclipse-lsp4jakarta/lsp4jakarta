@@ -226,12 +226,13 @@ public enum JavaCursorContextKind {
 
     public static JavaCursorContextKind forValue(int value) {
         JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
-        //Root cause for https://github.com/eclipse-lsp4jakarta/lsp4jakarta/issues/520. See issue for more details.
-        //Fix for Issue 520 lsp4jakarta author: archana-1924
+        
+        //Root cause for https://github.com/eclipse-lsp4jakarta/lsp4jakarta/issues/520.
+        //See issue for more details.
         if (value == NONE.getValue()) {
-            return allValues[allValues.length - 1];
+            return NONE;
         } else {
-            if (value < 1 || value > allValues.length)
+        	if (value < 1 || value > allValues.length)
                 throw new IllegalArgumentException("Illegal enum value: " + value);
             return allValues[value - 1];
         }
