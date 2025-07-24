@@ -31,7 +31,7 @@ import org.junit.Test;
 /**
  * Tests injection point object diagnostics.
  */
-public class InjectionPointBeanValidationTests extends BaseJakartaTest {
+public class InjectionPointValidationTests extends BaseJakartaTest {
 
     /**
      * JDT Utility class.

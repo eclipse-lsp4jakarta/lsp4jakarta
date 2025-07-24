@@ -10,7 +10,7 @@
 * Contributors:
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.beanvalidation;
+package org.eclipse.lsp4jakarta.jdt.validation;
 
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.assertJavaDiagnostics;
@@ -35,7 +35,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.junit.Test;
 
-public class BeanValidationTest extends BaseJakartaTest {
+public class ValidationTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     @Test
@@ -43,7 +43,7 @@ public class BeanValidationTest extends BaseJakartaTest {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/ValidConstraints.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/validation/ValidConstraints.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -58,7 +58,7 @@ public class BeanValidationTest extends BaseJakartaTest {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/FieldConstraintValidation.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/validation/FieldConstraintValidation.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -67,11 +67,11 @@ public class BeanValidationTest extends BaseJakartaTest {
         // Test diagnostics
         Diagnostic d1 = d(10, 16, 23,
                           "The @AssertTrue annotation can only be used on boolean and Boolean type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
                           "AssertTrue");
         Diagnostic d2 = d(13, 19, 24,
                           "The @AssertFalse annotation can only be used on boolean and Boolean type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
                           "AssertFalse");
         Diagnostic d3 = d(17, 19, 29,
                           "The @DecimalMax annotation can only be used on: \n"
@@ -80,7 +80,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                       + "- CharSequence\n"
                                       + "- byte, short, int, long (and their respective wrappers) \n"
                                       + " type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation",
+                          DiagnosticSeverity.Error, "jakarta-validation",
                           "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField", "DecimalMax");
         Diagnostic d4 = d(17, 19, 29,
                           "The @DecimalMin annotation can only be used on: \n"
@@ -89,7 +89,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                       + "- CharSequence\n"
                                       + "- byte, short, int, long (and their respective wrappers) \n"
                                       + " type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation",
+                          DiagnosticSeverity.Error, "jakarta-validation",
                           "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField", "DecimalMin");
         Diagnostic d5 = d(20, 20, 26,
                           "The @Digits annotation can only be used on: \n"
@@ -98,19 +98,19 @@ public class BeanValidationTest extends BaseJakartaTest {
                                       + "- CharSequence\n"
                                       + "- byte, short, int, long (and their respective wrappers) \n"
                                       + " type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation",
+                          DiagnosticSeverity.Error, "jakarta-validation",
                           "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField", "Digits");
         Diagnostic d6 = d(23, 20, 32,
                           "The @Email annotation can only be used on String and CharSequence type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonStringMethodOrField",
                           "Email");
         Diagnostic d7 = d(26, 20, 34,
                           "The @FutureOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
                           "FutureOrPresent");
         Diagnostic d8 = d(29, 19, 30,
                           "The @Future annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
                           "Future");
         Diagnostic d9 = d(33, 20, 23,
                           "The @Min annotation can only be used on \n"
@@ -118,7 +118,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                       + "- BigInteger\n"
                                       + "- byte, short, int, long (and their respective wrappers) \n"
                                       + " type fields.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation",
+                          DiagnosticSeverity.Error, "jakarta-validation",
                           "InvalidAnnotationOnNonMinMaxMethodOrField", "Min");
         Diagnostic d10 = d(33, 20, 23,
                            "The @Max annotation can only be used on \n"
@@ -126,7 +126,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + "- BigInteger\n"
                                        + "- byte, short, int, long (and their respective wrappers) \n"
                                        + " type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation",
+                           DiagnosticSeverity.Error, "jakarta-validation",
                            "InvalidAnnotationOnNonMinMaxMethodOrField", "Max");
         Diagnostic d11 = d(36, 20, 27,
                            "The @Negative annotation can only be used on \n"
@@ -134,7 +134,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + "- BigInteger\n"
                                        + "- byte, short, int, long, float, double (and their respective wrappers) \n"
                                        + " type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation",
+                           DiagnosticSeverity.Error, "jakarta-validation",
                            "InvalidAnnotationOnNonPositiveMethodOrField", "Negative");
         Diagnostic d12 = d(39, 19, 25,
                            "The @NegativeOrZero annotation can only be used on \n"
@@ -142,23 +142,23 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + "- BigInteger\n"
                                        + "- byte, short, int, long, float, double (and their respective wrappers) \n"
                                        + " type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation",
+                           DiagnosticSeverity.Error, "jakarta-validation",
                            "InvalidAnnotationOnNonPositiveMethodOrField", "NegativeOrZero");
         Diagnostic d13 = d(42, 20, 32,
                            "The @NotBlank annotation can only be used on String and CharSequence type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonStringMethodOrField",
                            "NotBlank");
         Diagnostic d14 = d(45, 21, 31,
                            "The @Pattern annotation can only be used on String and CharSequence type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonStringMethodOrField",
                            "Pattern");
         Diagnostic d15 = d(48, 19, 33,
                            "The @Past annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
                            "Past");
         Diagnostic d16 = d(51, 19, 33,
                            "The @PastOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
                            "PastOrPresent");
         Diagnostic d17 = d(54, 21, 25,
                            "The @Positive annotation can only be used on \n"
@@ -166,7 +166,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + "- BigInteger\n"
                                        + "- byte, short, int, long, float, double (and their respective wrappers) \n"
                                        + " type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
                            "Positive");
         Diagnostic d18 = d(57, 25, 34,
                            "The @PositiveOrZero annotation can only be used on \n"
@@ -174,15 +174,15 @@ public class BeanValidationTest extends BaseJakartaTest {
                                        + "- BigInteger\n"
                                        + "- byte, short, int, long, float, double (and their respective wrappers) \n"
                                        + " type fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
                            "PositiveOrZero");
         Diagnostic d19 = d(60, 27, 36,
                            "Constraint annotations are not allowed on static fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                            "AssertTrue");
         Diagnostic d20 = d(63, 27, 36,
                            "Constraint annotations are not allowed on static fields.",
-                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
+                           DiagnosticSeverity.Error, "jakarta-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                            "Past");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8,
@@ -224,7 +224,7 @@ public class BeanValidationTest extends BaseJakartaTest {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/MethodConstraintValidation.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/validation/MethodConstraintValidation.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -233,15 +233,15 @@ public class BeanValidationTest extends BaseJakartaTest {
         // Test diagnostics
         Diagnostic d1 = d(20, 26, 38,
                           "Constraint annotations are not allowed on static methods.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                           "AssertTrue");
         Diagnostic d2 = d(25, 18, 28,
                           "The @AssertTrue annotation can only be used on boolean and Boolean type methods.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
                           "AssertTrue");
         Diagnostic d3 = d(30, 23, 33,
                           "Constraint annotations are not allowed on static methods.",
-                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
+                          DiagnosticSeverity.Error, "jakarta-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                           "AssertFalse");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);

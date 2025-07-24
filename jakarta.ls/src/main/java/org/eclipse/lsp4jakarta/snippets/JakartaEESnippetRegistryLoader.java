@@ -39,7 +39,7 @@ public class JakartaEESnippetRegistryLoader implements ISnippetRegistryLoader {
                                   JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("persistence.json"),
                                   SnippetContextForJava.TYPE_ADAPTER);
         registry.registerSnippets(
-                                  JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("bean-validation.json"),
+                                  JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("validation.json"),
                                   SnippetContextForJava.TYPE_ADAPTER);
         registry.registerSnippets(
                                   JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("transactions.json"),
