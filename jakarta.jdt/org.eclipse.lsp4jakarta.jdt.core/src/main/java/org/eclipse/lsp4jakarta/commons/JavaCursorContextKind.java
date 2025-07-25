@@ -231,7 +231,7 @@ public enum JavaCursorContextKind {
 		if (value == NONE.getValue()) {
 			return NONE;
 		}
-		if (value < 1 || value > allValues.length-1)
+		if (value < 1 || value > allValues.length - 1)
 			throw new IllegalArgumentException("Illegal enum value: " + value);
 		return allValues[value - 1];
 	}
