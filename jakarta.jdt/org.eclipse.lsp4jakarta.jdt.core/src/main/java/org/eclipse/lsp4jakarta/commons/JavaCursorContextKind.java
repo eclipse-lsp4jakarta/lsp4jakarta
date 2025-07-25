@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 Red Hat Inc. and others.
+* Copyright (c) 2023, 2025 Red Hat Inc. and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -224,17 +224,15 @@ public enum JavaCursorContextKind {
         return value;
     }
 
-    public static JavaCursorContextKind forValue(int value) {
-        JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
-		
-        // Root cause and fix for https://github.com/eclipse-lsp4jakarta/lsp4jakarta/issues/520.
-		// See issue for more details.		
+	public static JavaCursorContextKind forValue(int value) {
+		JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
+
+		// Root cause and fix for JavaCursorContextKind IllegalArgumentException issue #520 when value passed is 2000
 		if (value == NONE.getValue()) {
 			return NONE;
-		} else {
-			if (value < 1 || value > allValues.length)
-				throw new IllegalArgumentException("Illegal enum value: " + value);
-			return allValues[value - 1];
 		}
-    }
+		if (value < 1 || value > allValues.length-1)
+			throw new IllegalArgumentException("Illegal enum value: " + value);
+		return allValues[value - 1];
+	}
 }
