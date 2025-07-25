@@ -122,7 +122,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         List<IAnnotation> mapKeyJoinCols = null;
         boolean hasMapKeyAnnotation = false;
-        boolean hasMapKeyClassAnnotation = false;
+        boolean hasMapKeyClassAnnotation = false, hasTypeDiagnostics = false;
         IAnnotation[] allAnnotations = null;
 
         // Go through each method/field to ensure they do not have both MapKey and MapKeyColumn Annotations
@@ -153,16 +153,16 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (hasMapKeyAnnotation) {
-                collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
+                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
                 collectAccessorDiagnostics(member, context, diagnostics);
             }
 
             if (hasMapKeyClassAnnotation) {
-                collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
+                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
                 collectAccessorDiagnostics(member, context, diagnostics);
             }
 
-            if (hasMapKeyAnnotation && hasMapKeyClassAnnotation) {
+            if (!hasTypeDiagnostics && (hasMapKeyAnnotation && hasMapKeyClassAnnotation)) {
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
@@ -175,9 +175,10 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
 
-    private void collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
+    private boolean collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
             List<Diagnostic> diagnostics) throws CoreException {
 
+        boolean hasTypeDiagnostics = false;
         Range range = null;
         String messageKey = null, typeSignature = null, readableType = null;
         String packageValue = null, typeValue = null, fqName = null;
@@ -233,9 +234,11 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (messageKey != null) {
+            hasTypeDiagnostics = true;
             diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute),
                     range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
+        return hasTypeDiagnostics;
     }
 
     private void collectMapKeyAnnotationsDiagnostics(IMember member, JavaDiagnosticsContext context,
