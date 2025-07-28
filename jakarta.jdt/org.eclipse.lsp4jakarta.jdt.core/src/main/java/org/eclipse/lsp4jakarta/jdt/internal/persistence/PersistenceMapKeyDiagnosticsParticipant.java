@@ -12,6 +12,10 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +74,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         IMethod[] methods;
         IField[] fields;
 
+        
         for (IType type : alltypes) {
             methods = type.getMethods();
             collectMemberDiagnostics(methods, type, unit, diagnostics, context);
@@ -278,24 +283,45 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             String methodName = member.getElementName();
             int flag = member.getFlags();
-
             boolean isPublic = Flags.isPublic(flag);
             boolean isStartsWithGet = methodName.startsWith("get");
+            boolean isProperty = false;
+
+            if (isStartsWithGet) {
+                isProperty = hasField((IMethod) member);
+            }
 
             if (!isPublic) {
-                range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
                 messageKey = "MapKeyAnnotationsInvalidMethodAccessSpecifier";
                 errorCode = ErrorCode.InvalidMethodAccessSpecifier;
             } else if (!isStartsWithGet) {
-                range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
                 messageKey = "MapKeyAnnotationsOnInvalidMethod";
                 errorCode = ErrorCode.InvalidMethodName;
+            } else if (!isProperty) {
+                messageKey = "MapKeyAnnotationsFieldNotFound";
+                errorCode = ErrorCode.InvalidMapKeyAnnotationsFieldNotFound;
             }
 
             if (messageKey != null) {
+                range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
                 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
                         Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
             }
         }
+    }
+    
+    public boolean hasField(IMethod method) throws JavaModelException {
+
+        boolean result = false;
+        String methodName = method.getElementName();
+        String fieldName = methodName.substring(3);
+        IType declaringType = method.getDeclaringType();
+
+        for (IField field : declaringType.getFields()) {
+            if (field.getElementName().equalsIgnoreCase(fieldName)) {
+                result = true;
+            }
+        }
+        return result;
     }
 }
