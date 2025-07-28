@@ -12,10 +12,7 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.lang.reflect.Field;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
