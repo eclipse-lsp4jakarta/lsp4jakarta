@@ -307,7 +307,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
     
-    public boolean hasField(IMethod method) throws JavaModelException {
+    private boolean hasField(IMethod method) throws JavaModelException {
 
         boolean result = false;
         String methodName = method.getElementName();
