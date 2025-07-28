@@ -89,4 +89,75 @@ public class JakartaServletTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
     }
 
+    @Test
+    public void implementFilter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DontImplementFilter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 13, 32,
+                         "Annotated classes with @WebFilter must implement the Filter interface.",
+                         DiagnosticSeverity.Error, "jakarta-servlet", "ClassWebFilterAnnotatedNoFilterInterfaceImpl");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        TextEdit te = te(2, 0, 5, 32, "import jakarta.servlet.Filter;\nimport jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(urlPatterns = "
+                                      + "{ \"/filter\" })\npublic class DontImplementFilter implements Filter");
+        CodeAction ca = ca(uri, "Let 'DontImplementFilter' implement 'Filter'", d, te);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+    }
+
+    @Test
+    public void implementListener() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DontImplementListener.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 13, 34,
+                         "Annotated classes with @WebListener must implement one or more of the following interfaces: ServletContextListener, "
+                                    + "ServletContextAttributeListener, ServletRequestListener, ServletRequestAttributeListener, HttpSessionListener, "
+                                    + "HttpSessionAttributeListener, or HttpSessionIdListener.",
+                         DiagnosticSeverity.Error, "jakarta-servlet", "WebFilterAnnotatedClassReqIfaceNoImpl");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+
+        TextEdit te1 = te(2, 46, 5, 34, "\nimport jakarta.servlet.http.HttpSessionAttributeListener;\n\n"
+                                        + "@WebListener\npublic class DontImplementListener implements HttpSessionAttributeListener");
+        CodeAction ca1 = ca(uri, "Let 'DontImplementListener' implement 'HttpSessionAttributeListener'", d, te1);
+
+        TextEdit te2 = te(2, 46, 5, 34, "\nimport jakarta.servlet.http.HttpSessionIdListener;\n\n"
+                                        + "@WebListener\npublic class DontImplementListener implements HttpSessionIdListener");
+        CodeAction ca2 = ca(uri, "Let 'DontImplementListener' implement 'HttpSessionIdListener'", d, te2);
+
+        TextEdit te3 = te(2, 46, 5, 34, "\nimport jakarta.servlet.http.HttpSessionListener;\n\n"
+                                        + "@WebListener\npublic class DontImplementListener implements HttpSessionListener");
+        CodeAction ca3 = ca(uri, "Let 'DontImplementListener' implement 'HttpSessionListener'", d, te3);
+
+        TextEdit te4 = te(2, 0, 5, 34, "import jakarta.servlet.ServletContextAttributeListener;\nimport jakarta.servlet.annotation.WebListener;\n\n"
+                                       + "@WebListener\npublic class DontImplementListener implements ServletContextAttributeListener");
+        CodeAction ca4 = ca(uri, "Let 'DontImplementListener' implement 'ServletContextAttributeListener'", d, te4);
+
+        TextEdit te5 = te(2, 0, 5, 34, "import jakarta.servlet.ServletContextListener;\nimport jakarta.servlet.annotation.WebListener;\n\n"
+                                       + "@WebListener\npublic class DontImplementListener implements ServletContextListener");
+        CodeAction ca5 = ca(uri, "Let 'DontImplementListener' implement 'ServletContextListener'", d, te5);
+
+        TextEdit te6 = te(2, 0, 5, 34, "import jakarta.servlet.ServletRequestAttributeListener;\nimport jakarta.servlet.annotation.WebListener;\n\n"
+                                       + "@WebListener\npublic class DontImplementListener implements ServletRequestAttributeListener");
+        CodeAction ca6 = ca(uri, "Let 'DontImplementListener' implement 'ServletRequestAttributeListener'", d, te6);
+
+        TextEdit te7 = te(2, 0, 5, 34, "import jakarta.servlet.ServletRequestListener;\nimport jakarta.servlet.annotation.WebListener;\n\n"
+                                       + "@WebListener\npublic class DontImplementListener implements ServletRequestListener");
+        CodeAction ca7 = ca(uri, "Let 'DontImplementListener' implement 'ServletRequestListener'", d, te7);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3, ca4, ca5, ca6, ca7);
+    }
 }
