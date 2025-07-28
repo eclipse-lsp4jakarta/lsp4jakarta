@@ -31,7 +31,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -39,6 +38,7 @@ import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -182,8 +182,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         boolean hasTypeDiagnostics = false;
         Range range = null;
-        String messageKey = null, typeSignature = null, readableType = null;
-        String packageValue = null, typeValue = null, fqName = null;
+        String messageKey = null, fqName = null;
         ErrorCode errorCode = null;
 
         boolean isMap = false;
@@ -191,20 +190,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         IJavaProject javaProject = declaringType.getJavaProject();
 
         if (member instanceof IMethod) {
-            typeSignature = ((IMethod) member).getReturnType();
-            readableType = Signature.toString(typeSignature);
+            fqName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
         } else if (member instanceof IField) {
-            typeSignature = ((IField) member).getTypeSignature();
-            readableType = Signature.toString(Signature.getElementType(typeSignature));
-        }
-
-        String stripType = readableType.split("<")[0]; // strip Generics
-        String[][] resolveTypes = declaringType.resolveType(stripType);
-
-        if (resolveTypes != null && resolveTypes.length > 0) {
-            packageValue = resolveTypes[0][0]; // e.g: "java.util"
-            typeValue = resolveTypes[0][1]; // e.g: "Map"
-            fqName = packageValue.concat(".").concat(typeValue);
+            fqName = JDTTypeUtils.getResolvedTypeName((IField) member);
         }
 
         if (fqName != null) {
@@ -282,10 +270,10 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             int flag = member.getFlags();
             boolean isPublic = Flags.isPublic(flag);
             boolean isStartsWithGet = methodName.startsWith("get");
-            boolean isProperty = false;
+            boolean isPropertyExist = false;
 
             if (isStartsWithGet) {
-                isProperty = hasField((IMethod) member);
+                isPropertyExist = hasField((IMethod) member);
             }
 
             if (!isPublic) {
@@ -294,7 +282,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             } else if (!isStartsWithGet) {
                 messageKey = "MapKeyAnnotationsOnInvalidMethod";
                 errorCode = ErrorCode.InvalidMethodName;
-            } else if (!isProperty) {
+            } else if (!isPropertyExist) {
                 messageKey = "MapKeyAnnotationsFieldNotFound";
                 errorCode = ErrorCode.InvalidMapKeyAnnotationsFieldNotFound;
             }
@@ -309,16 +297,16 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
     
     private boolean hasField(IMethod method) throws JavaModelException {
 
-        boolean result = false;
+        boolean isPropertyExist = false;
         String methodName = method.getElementName();
-        String fieldName = methodName.substring(3);
+        String fieldName = methodName.substring(3); //Exclude get from method name
         IType declaringType = method.getDeclaringType();
 
         for (IField field : declaringType.getFields()) {
             if (field.getElementName().equalsIgnoreCase(fieldName)) {
-                result = true;
+                isPropertyExist = true;
             }
         }
-        return result;
+        return isPropertyExist;
     }
 }
