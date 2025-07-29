@@ -59,8 +59,6 @@ public class Constants {
     //Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
     public static final Set<String> INVALID_DISPOSER_PARAMS = new HashSet<String>(Arrays.asList(DISPOSES));
     public static final Set<String> INVALID_DISPOSER_CONFLICTED_PARAMS = new HashSet<String>(Arrays.asList(OBSERVES, OBSERVES_ASYNC));
-    //Changes end - Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
-    
     // List can be found in the cdi doc here:
     // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#bean_defining_annotations
     public static final Set<String> SCOPES = new HashSet<String>(Arrays.asList("Dependent", "ApplicationScoped", "ConversationScoped", "RequestScoped", "SessionScoped",

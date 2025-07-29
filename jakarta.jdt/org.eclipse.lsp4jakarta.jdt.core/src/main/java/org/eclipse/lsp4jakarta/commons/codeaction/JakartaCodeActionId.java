@@ -69,7 +69,6 @@ public enum JakartaCodeActionId implements ICodeActionId {
     //Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
     CDIRemoveInvalidDisposerAnnotations,
     CDIRemoveInvalidDisposerConflictedAnnotations,
-    //End of - Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
