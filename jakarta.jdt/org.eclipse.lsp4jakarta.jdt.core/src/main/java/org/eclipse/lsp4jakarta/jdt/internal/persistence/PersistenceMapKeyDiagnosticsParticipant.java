@@ -156,12 +156,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             if (hasMapKeyAnnotation) {
                 hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
-                collectAccessorDiagnostics(member, context, diagnostics);
+                collectAccessorDiagnostics(member,type, context, diagnostics);
             }
 
             if (hasMapKeyClassAnnotation) {
                 hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
-                collectAccessorDiagnostics(member, context, diagnostics);
+                collectAccessorDiagnostics(member,type, context, diagnostics);
             }
 
             if (!hasTypeDiagnostics && (hasMapKeyAnnotation && hasMapKeyClassAnnotation)) {
@@ -258,7 +258,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
 
-    private void collectAccessorDiagnostics(IMember member, JavaDiagnosticsContext context,
+    private void collectAccessorDiagnostics(IMember member,IType type, JavaDiagnosticsContext context,
             List<Diagnostic> diagnostics) throws CoreException {
         Range range = null;
         String messageKey = null;
@@ -273,7 +273,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             boolean isPropertyExist = false;
 
             if (isStartsWithGet) {
-                isPropertyExist = hasField((IMethod) member);
+                isPropertyExist = hasField((IMethod) member,type);
             }
 
             if (!isPublic) {
@@ -295,18 +295,25 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
     
-    private boolean hasField(IMethod method) throws JavaModelException {
+    private boolean hasField(IMethod method, IType type) throws JavaModelException {
 
         boolean isPropertyExist = false;
         String methodName = method.getElementName();
-        String fieldName = methodName.substring(3); //Exclude get from method name
-        IType declaringType = method.getDeclaringType();
+        String expectedFieldName = null;
 
-        for (IField field : declaringType.getFields()) {
-            if (field.getElementName().equalsIgnoreCase(fieldName)) {
-                isPropertyExist = true;
+        // Exclude 'get' from method name and decapitalize the first letter
+        if (methodName.startsWith("get") && methodName.length() > 3) {
+            String suffix = methodName.substring(3);
+            if (suffix.length() == 1) {
+                expectedFieldName = suffix.toLowerCase();
+            } else {
+                expectedFieldName = Character.toLowerCase(suffix.charAt(0)) + suffix.substring(1);
             }
         }
+
+        IField expectedfield = type.getField(expectedFieldName);
+        isPropertyExist = (expectedfield != null && expectedfield.exists()) ? true : false;
+
         return isPropertyExist;
     }
 }
