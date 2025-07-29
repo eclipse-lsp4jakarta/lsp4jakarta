@@ -1,9 +1,9 @@
-package io.openliberty.sample.jakarta.beanvalidation;
+package io.openliberty.sample.jakarta.validation;
 
 import java.util.Calendar;
 import java.util.List;
 
-import jakarta.fake.constraints.*;
+import jakarta.validation.constraints.*;
 
 public class FieldConstraintValidation {
 

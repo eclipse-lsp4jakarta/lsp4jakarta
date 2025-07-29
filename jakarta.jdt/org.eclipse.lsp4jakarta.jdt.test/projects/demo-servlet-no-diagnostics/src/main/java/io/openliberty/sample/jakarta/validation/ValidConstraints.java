@@ -1,4 +1,4 @@
-package io.openliberty.sample.jakarta.beanvalidation;
+package io.openliberty.sample.jakarta.validation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

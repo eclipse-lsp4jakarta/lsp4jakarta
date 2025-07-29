@@ -11,39 +11,39 @@
 *     IBM Corporation, Reza Akhavan - initial API and implementation
 *******************************************************************************/
 
-package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
+package org.eclipse.lsp4jakarta.jdt.internal.validation;
 
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_FALSE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_TRUE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BIG_DECIMAL;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BIG_INTEGER;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BOOLEAN;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BYTE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.CHAR_SEQUENCE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MAX;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MIN;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DIGITS;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DOUBLE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.EMAIL;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FLOAT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FUTURE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FUTURE_OR_PRESENT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.INTEGER;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.LONG;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.MAX;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.MIN;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE_OR_ZERO;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_BLANK;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SHORT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.ASSERT_FALSE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.ASSERT_TRUE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.BIG_DECIMAL;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.BIG_INTEGER;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.BOOLEAN;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.BYTE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.CHAR_SEQUENCE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.DECIMAL_MAX;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.DECIMAL_MIN;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.DIGITS;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.DOUBLE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.EMAIL;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.FLOAT;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.FUTURE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.FUTURE_OR_PRESENT;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.INTEGER;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.LONG;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.MAX;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.MIN;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.NEGATIVE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.NEGATIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.NOT_BLANK;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.PAST;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.PAST_OR_PRESENT;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.PATTERN;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.POSITIVE;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.POSITIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.SET_OF_ANNOTATIONS;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.SET_OF_DATE_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.SHORT;
+import static org.eclipse.lsp4jakarta.jdt.internal.validation.Constants.STRING;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +74,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * Bean validation diagnostics participant that manages the use of validation
  * element constraints.
  */
-public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+public class ValidationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /**
      * {@inheritDoc}

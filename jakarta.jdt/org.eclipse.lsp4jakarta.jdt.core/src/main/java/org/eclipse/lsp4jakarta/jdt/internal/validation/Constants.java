@@ -11,7 +11,7 @@
 *     IBM Corporation, Reza Akhavan - initial API and implementation
 *******************************************************************************/
 
-package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
+package org.eclipse.lsp4jakarta.jdt.internal.validation;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,7 +74,7 @@ public class Constants {
     public static final String BIG_INTEGER = "BigInteger";
     public static final String BIG_DECIMAL = "BigDecimal";
 
-    public static final String DIAGNOSTIC_SOURCE = "jakarta-bean-validation";
+    public static final String DIAGNOSTIC_SOURCE = "jakarta-validation";
 
     public final static Set<String> SET_OF_ANNOTATIONS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(ASSERT_TRUE, ASSERT_FALSE, DIGITS, DECIMAL_MAX,
                                                                                                                        DECIMAL_MIN, EMAIL, PAST_OR_PRESENT, FUTURE_OR_PRESENT, PAST,

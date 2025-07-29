@@ -42,14 +42,14 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta Bean Validation snippets - @Email
+     * Jakarta Validation snippets - @Email
      */
     @Test
-    public void beanValidationSnippetsTest() {
-        Optional<Snippet> beanValidationSnippet = findByPrefix("@Email", registry);
-        assertTrue("@Email Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
+    public void validationSnippetsTest() {
+        Optional<Snippet> validationSnippet = findByPrefix("@Email", registry);
+        assertTrue("@Email Java snippet is not present in SnippetRegistry", validationSnippet.isPresent());
 
-        snippetsContextTest(beanValidationSnippet, "jakarta.validation.constraints.Email",
+        snippetsContextTest(validationSnippet, "jakarta.validation.constraints.Email",
                             JavaCursorContextKind.BEFORE_METHOD);
 
     }

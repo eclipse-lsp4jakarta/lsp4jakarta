@@ -10,7 +10,7 @@
 * Contributors:
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
+package org.eclipse.lsp4jakarta.jdt.internal.validation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
