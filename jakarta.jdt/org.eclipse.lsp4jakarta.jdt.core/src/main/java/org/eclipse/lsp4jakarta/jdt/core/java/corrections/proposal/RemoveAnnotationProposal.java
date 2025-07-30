@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  *
@@ -119,7 +120,7 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                     Annotation annotation = (Annotation) child;
                     // IAnnotationBinding annotationBinding = annotation.resolveAnnotationBinding();
 
-                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::equals);
+                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(DiagnosticUtils.getSimpleName(annotation.getTypeName().toString())::equals);
                     if (containsAnnotation) {
                         rewrite.remove(child, null);
                     }
