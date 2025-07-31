@@ -172,7 +172,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             diagnosticErrorMessage = Messages.getMessage("ErrorMessageJsonbTransientOnAccessor");
         }
         // convert to simple name for current tests
-        List<String> diagnosticData = jsonbAnnotations.stream().map(annotation -> DiagnosticUtils.getSimpleName(annotation)).collect(Collectors.toList());
+        List<String> diagnosticData = jsonbAnnotations.stream().collect(Collectors.toList());
         diagnostics.add(context.createDiagnostic(uri, diagnosticErrorMessage, range, Constants.DIAGNOSTIC_SOURCE,
                                                  (JsonArray) (new Gson().toJsonTree(diagnosticData)),
                                                  errorCode, DiagnosticSeverity.Error));
