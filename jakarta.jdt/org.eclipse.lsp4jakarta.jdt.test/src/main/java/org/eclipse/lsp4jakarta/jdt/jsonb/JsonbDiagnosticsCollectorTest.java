@@ -87,49 +87,50 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         Diagnostic d1 = d(21, 16, 18,
                           "When a class field is annotated with @JsonbTransient, this field, getter or setter must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnField");
-        d1.setData(new Gson().toJsonTree(Arrays.asList("JsonbTransient")));
+        d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient")));
 
         // Diagnostic for the field "name"
         Diagnostic d2 = d(25, 19, 23,
                           "When a class field is annotated with @JsonbTransient, this field, getter or setter must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnField");
-        d2.setData(new Gson().toJsonTree(Arrays.asList("JsonbProperty", "JsonbTransient")));
+        d2.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty", "jakarta.json.bind.annotation.JsonbTransient")));
 
         // Diagnostic for the field "favoriteLanguage"
         Diagnostic d3 = d(30, 19, 35,
                           "When a class field is annotated with @JsonbTransient, this field, getter or setter must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnField");
-        d3.setData(new Gson().toJsonTree(Arrays.asList("JsonbProperty", "JsonbAnnotation", "JsonbTransient")));
+        d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty", "jakarta.json.bind.annotation.JsonbAnnotation",
+                                                       "jakarta.json.bind.annotation.JsonbTransient")));
 
         // Diagnostic for the field "favoriteEditor"
         Diagnostic d4 = d(39, 19, 33,
                           "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
-        d4.setData(new Gson().toJsonTree(Arrays.asList("JsonbProperty")));
+        d4.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
         // Diagnostic for the getter "getId"
         Diagnostic d5 = d(42, 16, 21,
                           "When a class field is annotated with @JsonbTransient, this field, getter or setter must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnField");
-        d5.setData(new Gson().toJsonTree(Arrays.asList("JsonbProperty")));
+        d5.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
         // Diagnostic for the setter "setId"
         Diagnostic d6 = d(49, 17, 22,
                           "When a class field is annotated with @JsonbTransient, this field, getter or setter must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnField");
-        d6.setData(new Gson().toJsonTree(Arrays.asList("JsonbAnnotation")));
+        d6.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbAnnotation")));
 
         // Diagnostic for the getter "getFavoriteEditor"
         Diagnostic d7 = d(67, 19, 36,
                           "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
-        d7.setData(new Gson().toJsonTree(Arrays.asList("JsonbTransient")));
+        d7.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient")));
 
         // Diagnostic for the setter "setFavoriteEditor"
         Diagnostic d8 = d(74, 17, 34,
                           "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
-        d8.setData(new Gson().toJsonTree(Arrays.asList("JsonbAnnotation", "JsonbTransient")));
+        d8.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbAnnotation", "jakarta.json.bind.annotation.JsonbTransient")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8);
 
