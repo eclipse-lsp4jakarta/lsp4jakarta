@@ -66,7 +66,7 @@ public class RemoveScopeDeclarationAnnotationsQuickFix extends RemoveAnnotationC
             JsonArray diagnosticData = (JsonArray) diagnostic.getData();
             List<String> annotations = IntStream.range(0, diagnosticData.size()).mapToObj(idx -> diagnosticData.get(idx).getAsString()).collect(Collectors.toList());
 
-            annotations.remove(Constants.PRODUCES);
+            annotations.remove(Constants.PRODUCES_FQ_NAME);
             for (String annotation : annotations) {
                 List<String> resultingAnnotations = new ArrayList<>(annotations);
                 resultingAnnotations.remove(annotation);
