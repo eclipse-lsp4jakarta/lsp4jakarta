@@ -19,7 +19,9 @@ import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.createCodeAc
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.d;
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.te;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 import java.util.Arrays;
 
@@ -51,24 +53,23 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
-                new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAndMapKeyClassTogether.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAndMapKeyClassTogether.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
-       
+
         try (MockedStatic<JDTTypeUtils> mocked = mockStatic(JDTTypeUtils.class)) {
-            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)))
-                    .thenReturn(MAP_INTERFACE_FQDN);
+            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class))).thenReturn(MAP_INTERFACE_FQDN);
             mocked.when(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class))).thenReturn(MAP_INTERFACE_FQDN);
 
             JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
             diagnosticsParams.setUris(Arrays.asList(uri));
 
             Diagnostic d1 = d(16, 32, 42,
-                    "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
-                    DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
+                              "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
+                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
 
             Diagnostic d2 = d(11, 25, 32,
-                    "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
-                    DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
+                              "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
+                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
 
             assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
 
@@ -89,6 +90,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
             CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);
 
             assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca4, ca3);
+
+            mocked.verify(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)), times(2));
+            mocked.verify(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class)), times(2));
         }
 
     }
