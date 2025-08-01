@@ -171,7 +171,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         } else if (errorCode.equals(ErrorCode.InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor)) {
             diagnosticErrorMessage = Messages.getMessage("ErrorMessageJsonbTransientOnAccessor");
         }
-        // convert to simple name for current tests
         List<String> diagnosticData = jsonbAnnotations.stream().collect(Collectors.toList());
         diagnostics.add(context.createDiagnostic(uri, diagnosticErrorMessage, range, Constants.DIAGNOSTIC_SOURCE,
                                                  (JsonArray) (new Gson().toJsonTree(diagnosticData)),

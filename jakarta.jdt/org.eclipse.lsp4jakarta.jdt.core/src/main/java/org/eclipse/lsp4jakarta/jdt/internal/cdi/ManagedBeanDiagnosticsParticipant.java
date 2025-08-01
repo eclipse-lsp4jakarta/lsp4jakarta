@@ -68,8 +68,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
 
             if (managedBeanAnnotations.size() > 1) {
-                // convert to simple name
-                List<String> diagnosticData = managedBeanAnnotations.stream().map(annotation -> DiagnosticUtils.getSimpleName(annotation)).collect(Collectors.toList());
+                List<String> diagnosticData = managedBeanAnnotations.stream().collect(Collectors.toList());
 
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
@@ -118,11 +117,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                         isInjectField = true;
                 }
                 if (isProducerField && fieldScopes.size() > 1) {
-                    List<String> diagnosticData = fieldScopes.stream().map(annotation -> DiagnosticUtils.getSimpleName(annotation)).collect(Collectors.toList()); // convert
-                                                                                                                                                                  // to
-                                                                                                                                                                  // simple
-                                                                                                                                                                  // name
-                    diagnosticData.add(Constants.PRODUCES);
+                    List<String> diagnosticData = fieldScopes.stream().collect(Collectors.toList());
+                    diagnosticData.add(Constants.PRODUCES_FQ_NAME);
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsProducerField"), range,
@@ -185,11 +181,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
 
                 if (isProducerMethod && methodScopes.size() > 1) {
-                    List<String> diagnosticData = methodScopes.stream().map(annotation -> DiagnosticUtils.getSimpleName(annotation)).collect(Collectors.toList()); // convert
-                                                                                                                                                                   // to
-                                                                                                                                                                   // simple
-                                                                                                                                                                   // name
-                    diagnosticData.add(Constants.PRODUCES);
+                    List<String> diagnosticData = methodScopes.stream().collect(Collectors.toList());
+                    diagnosticData.add(Constants.PRODUCES_FQ_NAME);
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsProducerMethod"), range,
