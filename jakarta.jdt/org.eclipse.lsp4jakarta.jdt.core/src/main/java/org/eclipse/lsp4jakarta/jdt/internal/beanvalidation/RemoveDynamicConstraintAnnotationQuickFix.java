@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -115,7 +115,8 @@ public class RemoveDynamicConstraintAnnotationQuickFix implements IJavaCodeActio
      *
      * @return The code action label.
      */
-    private static String getLabel(String annotationName) {
+    private static String getLabel(String annotation) {
+        String annotationName = annotation.contains(".") ? annotation.substring(annotation.lastIndexOf('.') + 1) : annotation;
         return Messages.getMessage("RemoveConstraintAnnotation", annotationName);
     }
 
