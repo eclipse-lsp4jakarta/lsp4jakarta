@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -33,7 +34,6 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.lsp4j.CodeActionKind;
-import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  *
@@ -90,13 +90,6 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
 
         String[] annotations = getAnnotations();
 
-        // get short name of annotations
-        String[] annotationShortNames = new String[annotations.length];
-        for (int i = 0; i < annotations.length; i++) {
-            String shortName = annotations[i].substring(annotations[i].lastIndexOf(".") + 1, annotations[i].length());
-            annotationShortNames[i] = shortName;
-        }
-
         if (isField || isMethod || isType) {
             AST ast = declNode.getAST();
             ASTRewrite rewrite = ASTRewrite.create(ast);
@@ -113,14 +106,14 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
             } else {
                 children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
             }
-
             // find and save existing annotation, then remove it from ast
             for (ASTNode child : children) {
                 if (child instanceof Annotation) {
                     Annotation annotation = (Annotation) child;
-                    // IAnnotationBinding annotationBinding = annotation.resolveAnnotationBinding();
+                    // Resolving fully qualified name from Annotation to fix issue #567
+                    ITypeBinding binding = annotation.resolveTypeBinding();
+                    boolean containsAnnotation = Arrays.stream(annotations).anyMatch(binding.getQualifiedName()::equals);
 
-                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(DiagnosticUtils.getSimpleName(annotation.getTypeName().toString())::equals);
                     if (containsAnnotation) {
                         rewrite.remove(child, null);
                     }
