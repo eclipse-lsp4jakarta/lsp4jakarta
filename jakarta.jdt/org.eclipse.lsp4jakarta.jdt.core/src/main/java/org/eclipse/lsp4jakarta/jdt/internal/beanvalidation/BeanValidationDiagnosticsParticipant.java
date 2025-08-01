@@ -171,13 +171,13 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(EMAIL)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(NOT_BLANK)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(PATTERN)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(FUTURE) || matchedAnnotation.equals(FUTURE_OR_PRESENT)
                            || matchedAnnotation.equals(PAST) || matchedAnnotation.equals(PAST_OR_PRESENT)) {
@@ -259,8 +259,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
     }
 
-    private void checkStringOnly(JavaDiagnosticsContext context, String uri, IMember element, Range range,
-                                 IType declaringType,
+    private void checkStringOnly(JavaDiagnosticsContext context, String uri, Range range,
                                  List<Diagnostic> diagnostics,
                                  String annotationName, boolean isMethod, String type, String matchedAnnotation) throws JavaModelException {
         if (!type.equals(getSignatureFormatOfType(STRING))
