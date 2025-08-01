@@ -18,7 +18,7 @@ import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
 
 public class JsonbTransientDiagnostic {
-    @JsonbTransient
+    @jakarta.json.bind.annotation.JsonbTransient
     private int id;
 
     @JsonbProperty("name")
