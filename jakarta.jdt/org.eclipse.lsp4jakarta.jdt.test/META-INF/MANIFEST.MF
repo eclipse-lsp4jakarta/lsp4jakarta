@@ -18,6 +18,7 @@ Require-Bundle:
  org.eclipse.lsp4jakarta.jdt.core,
  org.eclipse.m2e.core,
  org.eclipse.m2e.maven.runtime,
+ org.mockito.mockito-core,
  org.eclipse.jdt.ls.core;resolution:=optional
 Bundle-ClassPath: . 
-Import-Package: com.google.gson
+Import-Package: com.google.gson,org.mockito
