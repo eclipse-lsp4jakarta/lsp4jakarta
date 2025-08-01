@@ -47,17 +47,17 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
     @Test
     public void deleteMapKeyOrMapKeyClass() throws Exception {
+        final String MAP_INTERFACE_FQDN = "java.util.Map";
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
                 new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAndMapKeyClassTogether.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        // JDTTypeUtils
-
+       
         try (MockedStatic<JDTTypeUtils> mocked = mockStatic(JDTTypeUtils.class)) {
-            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class))).thenReturn("java.util.Map");
-            mocked.when(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class))).thenReturn("java.util.Map");
+            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)))
+                    .thenReturn(MAP_INTERFACE_FQDN);
+            mocked.when(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class))).thenReturn(MAP_INTERFACE_FQDN);
 
             JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
             diagnosticsParams.setUris(Arrays.asList(uri));
