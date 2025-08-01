@@ -116,8 +116,7 @@ public class RemoveDynamicConstraintAnnotationQuickFix implements IJavaCodeActio
      * @return The code action label.
      */
     private static String getLabel(String annotation) {
-        String[] parts = annotation.split("\\.");
-        String annotationName = (parts.length > 1) ? parts[parts.length - 1] : annotation;
+        String annotationName = annotation.contains(".") ? annotation.substring(annotation.lastIndexOf('.') + 1) : annotation;
         return Messages.getMessage("RemoveConstraintAnnotation", annotationName);
     }
 
