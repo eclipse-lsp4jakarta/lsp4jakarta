@@ -25,9 +25,9 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4j.CodeAction;
@@ -40,6 +40,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.IJavaCodeActionParticipa
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifiersProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
@@ -90,9 +91,12 @@ public abstract class RemoveMethodParamAnnotationQuickFix implements IJavaCodeAc
             ArrayList<String> annotationsToRemove = new ArrayList<>();
 
             for (ASTNode modifier : modifiers) {
-                Name markAnnotationTypeName = ((MarkerAnnotation) modifier).getTypeName();
-                if (Arrays.asList(this.annotations).stream().anyMatch(m -> m.equals(markAnnotationTypeName.toString()))) {
-                    annotationsToRemove.add(markAnnotationTypeName.toString());
+                if (modifier instanceof MarkerAnnotation) {
+                    MarkerAnnotation annotation = (MarkerAnnotation) modifier;
+                    ITypeBinding typeBinding = annotation.resolveTypeBinding();
+                    if (Arrays.asList(this.annotations).stream().anyMatch(m -> m.equals(typeBinding.getQualifiedName()))) {
+                        annotationsToRemove.add(annotation.getTypeName().toString());
+                    }
                 }
             }
 
@@ -200,9 +204,9 @@ public abstract class RemoveMethodParamAnnotationQuickFix implements IJavaCodeAc
      */
     protected String getLabel(String parameterName, String... annotationsToRemove) {
         StringBuilder sb = new StringBuilder();
-        sb.append("'@").append(annotationsToRemove[0]).append("'");
+        sb.append("'@").append(DiagnosticUtils.getSimpleName(annotationsToRemove[0])).append("'");
         for (int i = 1; i < annotationsToRemove.length; i++) {
-            sb.append(", '@").append(annotationsToRemove[i]).append("'");
+            sb.append(", '@").append(DiagnosticUtils.getSimpleName(annotationsToRemove[i])).append("'");
         }
 
         return Messages.getMessage("RemoveTheModifierFromParameter", sb.toString(),
