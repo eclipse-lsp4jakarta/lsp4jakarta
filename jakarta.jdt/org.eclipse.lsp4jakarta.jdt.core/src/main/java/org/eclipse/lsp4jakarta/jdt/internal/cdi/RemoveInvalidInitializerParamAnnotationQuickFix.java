@@ -25,7 +25,7 @@ public class RemoveInvalidInitializerParamAnnotationQuickFix extends RemoveMetho
      * Constructor.
      */
     public RemoveInvalidInitializerParamAnnotationQuickFix() {
-        super(Constants.INVALID_INITIALIZER_PARAMS.toArray((String[]::new)));
+        super(Constants.INVALID_INITIALIZER_PARAMS_FQ);
     }
 
     /**

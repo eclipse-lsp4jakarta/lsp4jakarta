@@ -25,7 +25,7 @@ public class RemoveInvalidProducerParamAnnotationQuickFix extends RemoveMethodPa
      * Constructor.
      */
     public RemoveInvalidProducerParamAnnotationQuickFix() {
-        super(Constants.INVALID_PRODUCER_PARAMS.toArray((String[]::new)));
+        super(Constants.INVALID_PRODUCER_PARAMS_FQ);
     }
 
     /**
