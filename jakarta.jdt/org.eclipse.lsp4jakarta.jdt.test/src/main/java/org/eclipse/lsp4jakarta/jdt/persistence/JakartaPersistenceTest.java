@@ -250,4 +250,27 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
     }
+    
+    @Test
+    public void testMethodOrFieldType()throws Exception{
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsType.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+        
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(27, 19, 25,
+                          "`@MapKey` annotation can only be applied to methods with a return type of java.util.Map.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidReturnTypeOfMethod");
+
+        Diagnostic d2 = d(13, 11, 15,
+                          "`@MapKey` annotation can only be applied to fields of type java.util.Map.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidTypeOfField");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+    }
+    
 }
