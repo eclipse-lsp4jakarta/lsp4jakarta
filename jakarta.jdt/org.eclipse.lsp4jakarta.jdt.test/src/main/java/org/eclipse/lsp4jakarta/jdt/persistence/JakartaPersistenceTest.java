@@ -46,10 +46,11 @@ import org.mockito.MockedStatic;
 
 public class JakartaPersistenceTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
+    final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     @Test
     public void deleteMapKeyOrMapKeyClass() throws Exception {
-        final String MAP_INTERFACE_FQDN = "java.util.Map";
+
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
@@ -250,15 +251,15 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
     }
-    
+
     @Test
-    public void testMethodOrFieldType()throws Exception{
+    public void testMethodOrFieldType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsType.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
-        
+
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
@@ -271,6 +272,40 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidTypeOfField");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+
     }
-    
+
+    @Test
+    public void testAccessorAndNamingConventions() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsGetterConvention.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        try (MockedStatic<JDTTypeUtils> mocked = mockStatic(JDTTypeUtils.class)) {
+            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class))).thenReturn(MAP_INTERFACE_FQDN);
+
+            JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+            diagnosticsParams.setUris(Arrays.asList(uri));
+
+            Diagnostic d1 = d(37, 33, 41,
+                              "Method is not public and may not be accessible as expected.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMethodAccessSpecifier");
+
+            Diagnostic d2 = d(42, 33, 41,
+                              "This method does not conform to persistent property getter naming conventions.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMethodName");
+
+            Diagnostic d3 = d(47, 32, 42,
+                              "Method has no matching field name.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMapKeyAnnotationsFieldNotFound");
+
+            assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+            mocked.verify(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)), times(4));
+
+        }
+
+    }
+
 }
