@@ -19,7 +19,7 @@ public class MapKeyAnnotationsType {
 
     Map<Integer, String> testMap = new HashMap<>();
 
-    @MapKeyClass(Map.class)
+   
     public Map<Integer, String> getTestMap() {
         return this.testMap;
     }
