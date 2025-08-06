@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2023 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -214,7 +214,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
         TextEdit te1 = te(9, 4, 10, 4, "");
-        TextEdit te2 = te(10, 32, 10, 42, "");
+        TextEdit te2 = te(10, 32, 10, 68, "");
         CodeAction ca1 = ca(uri, "Remove @Inject", d1, te1);
         CodeAction ca2 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name'", d1, te2);
 
@@ -253,7 +253,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         TextEdit te10 = te(33, 4, 34, 4, "");
         TextEdit te11 = te(34, 45, 34, 55, "");
-        TextEdit te12 = te(34, 69, 34, 84, "");
+        TextEdit te12 = te(34, 69, 34, 109, "");
         CodeAction ca10 = ca(uri, "Remove @Inject", d5, te10);
         CodeAction ca11 = ca(uri, "Remove the '@Observes' modifier from parameter 'name1'", d5, te11);
         CodeAction ca12 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d5, te12);
