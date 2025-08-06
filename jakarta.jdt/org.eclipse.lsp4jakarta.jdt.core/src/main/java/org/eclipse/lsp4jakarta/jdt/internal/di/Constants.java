@@ -18,11 +18,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.di;
 public class Constants {
 
     /* Annotation Constants */
-    public static final String PRODUCES = "Produces";
-    public static final String INJECT = "Inject";
     public static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
-    public static final String QUALIFIER = "Qualifier";
-    public static final String NAMED = "Named";
 
     /* Diagnostics fields constants */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-di";
