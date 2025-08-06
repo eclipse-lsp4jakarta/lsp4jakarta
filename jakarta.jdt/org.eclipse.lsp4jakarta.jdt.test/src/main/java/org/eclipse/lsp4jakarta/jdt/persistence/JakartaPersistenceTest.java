@@ -18,13 +18,19 @@ import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.ca;
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.d;
 import static org.eclipse.lsp4jakarta.jdt.core.JakartaForJavaAssert.te;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -33,50 +39,63 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.BaseJakartaTest;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 public class JakartaPersistenceTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
+    final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     @Test
     public void deleteMapKeyOrMapKeyClass() throws Exception {
+
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAndMapKeyClassTogether.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
+        try (MockedStatic<JDTTypeUtils> mocked = mockStatic(JDTTypeUtils.class)) {
+            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class))).thenReturn(MAP_INTERFACE_FQDN);
+            mocked.when(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class))).thenReturn(MAP_INTERFACE_FQDN);
 
-        Diagnostic d1 = d(16, 32, 42,
-                          "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
+            JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+            diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d2 = d(11, 25, 32,
-                          "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
+            Diagnostic d1 = d(16, 32, 42,
+                              "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
+                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+            Diagnostic d2 = d(11, 25, 32,
+                              "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
+                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+            assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
 
-        TextEdit te1 = te(15, 4, 16, 4, "");
-        TextEdit te2 = te(14, 4, 15, 4, "");
-        CodeAction ca1 = ca(uri, "Remove @MapKeyClass", d1, te1);
-        CodeAction ca2 = ca(uri, "Remove @MapKey", d1, te2);
+            JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca2, ca1);
+            TextEdit te1 = te(15, 4, 16, 4, "");
+            TextEdit te2 = te(14, 4, 15, 4, "");
+            CodeAction ca1 = ca(uri, "Remove @MapKeyClass", d1, te1);
+            CodeAction ca2 = ca(uri, "Remove @MapKey", d1, te2);
 
-        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+            assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca2, ca1);
 
-        TextEdit te3 = te(9, 13, 10, 27, "");
-        TextEdit te4 = te(9, 4, 10, 4, "");
-        CodeAction ca3 = ca(uri, "Remove @MapKeyClass", d2, te3);
-        CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);
+            JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
 
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca4, ca3);
+            TextEdit te3 = te(9, 13, 10, 27, "");
+            TextEdit te4 = te(9, 4, 10, 4, "");
+            CodeAction ca3 = ca(uri, "Remove @MapKeyClass", d2, te3);
+            CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);
+
+            assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca4, ca3);
+
+            mocked.verify(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)), times(2));
+            mocked.verify(() -> JDTTypeUtils.getResolvedTypeName(any(IField.class)), times(2));
+        }
+
     }
 
     @Test
@@ -232,4 +251,61 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
     }
+
+    @Test
+    public void testMethodOrFieldType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsType.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(27, 19, 25,
+                          "`@MapKey` annotation can only be applied to methods with a return type of java.util.Map.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidReturnTypeOfMethod");
+
+        Diagnostic d2 = d(13, 11, 15,
+                          "`@MapKey` annotation can only be applied to fields of type java.util.Map.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidTypeOfField");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+
+    }
+
+    @Test
+    public void testAccessorAndNamingConventions() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsGetterConvention.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        try (MockedStatic<JDTTypeUtils> mocked = mockStatic(JDTTypeUtils.class)) {
+            mocked.when(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class))).thenReturn(MAP_INTERFACE_FQDN);
+
+            JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+            diagnosticsParams.setUris(Arrays.asList(uri));
+
+            Diagnostic d1 = d(37, 33, 41,
+                              "Method is not public and may not be accessible as expected.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMethodAccessSpecifier");
+
+            Diagnostic d2 = d(42, 33, 41,
+                              "This method does not conform to persistent property getter naming conventions.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMethodName");
+
+            Diagnostic d3 = d(47, 32, 42,
+                              "Method has no matching field name.",
+                              DiagnosticSeverity.Warning, "jakarta-persistence", "InvalidMapKeyAnnotationsFieldNotFound");
+
+            assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+            mocked.verify(() -> JDTTypeUtils.getResolvedResultTypeName(any(IMethod.class)), times(4));
+
+        }
+
+    }
+
 }
