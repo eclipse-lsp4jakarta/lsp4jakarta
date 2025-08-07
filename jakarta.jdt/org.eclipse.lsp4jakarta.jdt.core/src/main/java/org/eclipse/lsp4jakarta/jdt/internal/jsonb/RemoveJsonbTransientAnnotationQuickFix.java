@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -62,7 +62,7 @@ public class RemoveJsonbTransientAnnotationQuickFix extends RemoveAnnotationConf
         if (parentType != null) {
             JsonArray diagnosticData = (JsonArray) diagnostic.getData();
             List<String> annotations = IntStream.range(0, diagnosticData.size()).mapToObj(idx -> diagnosticData.get(idx).getAsString()).collect(Collectors.toList());
-            if (annotations.contains(Constants.JSONB_TRANSIENT)) {
+            if (annotations.contains(Constants.JSONB_TRANSIENT_FQ_NAME)) {
                 createCodeAction(diagnostic, context, parentType, codeActions,
                                  "jakarta.json.bind.annotation.JsonbTransient");
             }

@@ -90,15 +90,17 @@ public class ManagedBeanTest extends BaseJakartaTest {
         Diagnostic d1 = d(12, 16, 17,
                           "Scope type annotations must be specified by a producer field at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopeAnnotationsByProducerField");
-        d1.setData(new Gson().toJsonTree(Arrays.asList("Dependent", "ApplicationScoped", "Produces")));
+        d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.ApplicationScoped",
+                                                       "jakarta.enterprise.inject.Produces")));
 
         Diagnostic d2 = d(15, 25, 41, "Scope type annotations must be specified by a producer method at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopeAnnotationsByProducerMethod");
-        d2.setData(new Gson().toJsonTree(Arrays.asList("ApplicationScoped", "RequestScoped", "Produces")));
+        d2.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped", "jakarta.enterprise.context.RequestScoped",
+                                                       "jakarta.enterprise.inject.Produces")));
 
         Diagnostic d3 = d(10, 13, 29, "Scope type annotations must be specified by a managed bean class at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
-        d3.setData(new Gson().toJsonTree(Arrays.asList("ApplicationScoped", "RequestScoped")));
+        d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped", "jakarta.enterprise.context.RequestScoped")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
 
