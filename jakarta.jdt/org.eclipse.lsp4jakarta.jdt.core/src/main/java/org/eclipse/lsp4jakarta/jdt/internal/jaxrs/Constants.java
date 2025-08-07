@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,6 @@
 
 package org.eclipse.lsp4jakarta.jdt.internal.jaxrs;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * JAX-RS diagnostics constants.
@@ -24,14 +22,6 @@ public class Constants {
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-jaxrs";
     public static final String RESOURCE_METHOD = "ResourceMethod";
-
-    /* Annotation Constants */
-    public static final ArrayList<String> METHOD_DESIGNATORS = new ArrayList<String>(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"));
-
-    /* Annotations which make a resource method parameter a non entity parameter. */
-    public static final ArrayList<String> NON_ENTITY_PARAM_ANNOTATIONS = new ArrayList<String>(List.of("FormParam", "MatrixParam", "QueryParam", "PathParam", "CookieParam",
-                                                                                                       "HeaderParam", "Context", "BeanParam"));
-
     public static final String PATH_ANNOTATION = "jakarta.ws.rs.Path";
     public static final String PROVIDER_ANNOTATION = "jakarta.ws.rs.ext.Provider";
 
@@ -51,7 +41,7 @@ public class Constants {
                                                                          "jakarta.ws.rs.CookieParam",
                                                                          "jakarta.ws.rs.HeaderParam",
                                                                          "jakarta.ws.rs.core.Context",
-                                                                         "jakarta.ws.rs.BeanParam"};
+                                                                         "jakarta.ws.rs.BeanParam" };
     public final static String[] SET_OF_JAXRS_ANNOTATIONS1 = {
                                                                PATH_ANNOTATION,
                                                                PROVIDER_ANNOTATION };

@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2023 IBM Corporation.
+* Copyright (c) 2021, 2025 IBM Corporation.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,15 +24,10 @@ public class Constants {
     /* Annotation Constants */
     public static final String PRODUCES = "Produces";
     public static final String PRODUCES_FQ_NAME = "jakarta.enterprise.inject.Produces";
-    public static final String INJECT = "Inject";
     public static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
-    public static final String DISPOSES = "Disposes";
     public static final String DISPOSES_FQ_NAME = "jakarta.enterprise.inject.Disposes";
-    public static final String OBSERVES = "Observes";
     public static final String OBSERVES_FQ_NAME = "jakarta.enterprise.event.Observes";
-    public static final String OBSERVES_ASYNC = "ObservesAsync";
     public static final String OBSERVES_ASYNC_FQ_NAME = "jakarta.enterprise.event.ObservesAsync";
-    public static final String DEPENDENT = "Dependent";
     public static final String DEPENDENT_FQ_NAME = "jakarta.enterprise.context.Dependent";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
@@ -47,12 +42,8 @@ public class Constants {
     public static final String DIAGNOSTIC_CODE_INVALID_DISPOSES_PARAM = "RemoveDisposesOrConflictedAnnotations";
 
     public static final String DIAGNOSTIC_CODE_REDUNDANT_DISPOSES = "RemoveExtraDisposes";
-
-    public static final Set<String> INVALID_INITIALIZER_PARAMS = new HashSet<String>(Arrays.asList(DISPOSES, OBSERVES, OBSERVES_ASYNC));
     public static final String[] INVALID_INITIALIZER_PARAMS_FQ = { DISPOSES_FQ_NAME, OBSERVES_FQ_NAME,
                                                                    OBSERVES_ASYNC_FQ_NAME };
-
-    public static final Set<String> INVALID_PRODUCER_PARAMS = new HashSet<String>(Arrays.asList(DISPOSES, OBSERVES, OBSERVES_ASYNC));
     public static final String[] INVALID_PRODUCER_PARAMS_FQ = { DISPOSES_FQ_NAME, OBSERVES_FQ_NAME,
                                                                 OBSERVES_ASYNC_FQ_NAME };
 

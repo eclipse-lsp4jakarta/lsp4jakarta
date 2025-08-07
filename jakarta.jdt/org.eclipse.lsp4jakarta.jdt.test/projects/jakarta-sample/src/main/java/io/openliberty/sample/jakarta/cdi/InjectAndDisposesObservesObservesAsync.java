@@ -8,7 +8,7 @@ import jakarta.enterprise.event.ObservesAsync;
 public class InjectAndDisposesObservesObservesAsync {
     
     @Inject
-    public String greetDisposes(@Disposes String name) {
+    public String greetDisposes(@jakarta.enterprise.inject.Disposes String name) {
         return "Hi " + name + "!";
     }
     
@@ -32,7 +32,7 @@ public class InjectAndDisposesObservesObservesAsync {
     
     
     @Inject
-    public String greetObservesObservesAsync(@Observes String name1, @ObservesAsync String name2) {
+    public String greetObservesObservesAsync(@Observes String name1, @jakarta.enterprise.event.ObservesAsync String name2) {
         return "Hi " + name1 + " and " + name2 + "!";
     }
     

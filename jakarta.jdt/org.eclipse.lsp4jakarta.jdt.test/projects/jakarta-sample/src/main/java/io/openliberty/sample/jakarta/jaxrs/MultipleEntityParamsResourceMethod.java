@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021 IBM Corporation.
+* Copyright (c) 2021, 2025 IBM Corporation.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -32,7 +32,7 @@ public class MultipleEntityParamsResourceMethod {
 	
 	
 	@DELETE
-	public void resourceMethodWithBeanParamsAndEnityParams(String entityString, int entityInt, @BeanParam RequestBean requestBean, @BeanParam SessionBean sessionBean) {
+	public void resourceMethodWithBeanParamsAndEnityParams(String entityString, int entityInt, @jakarta.ws.rs.BeanParam RequestBean requestBean, @BeanParam SessionBean sessionBean) {
         
     }
 }
