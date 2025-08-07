@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.jsonb;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -171,9 +170,8 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         } else if (errorCode.equals(ErrorCode.InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor)) {
             diagnosticErrorMessage = Messages.getMessage("ErrorMessageJsonbTransientOnAccessor");
         }
-        List<String> diagnosticData = jsonbAnnotations.stream().collect(Collectors.toList());
         diagnostics.add(context.createDiagnostic(uri, diagnosticErrorMessage, range, Constants.DIAGNOSTIC_SOURCE,
-                                                 (JsonArray) (new Gson().toJsonTree(diagnosticData)),
+                                                 (JsonArray) (new Gson().toJsonTree(jsonbAnnotations)),
                                                  errorCode, DiagnosticSeverity.Error));
 
         return true;

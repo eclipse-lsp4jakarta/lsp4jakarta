@@ -36,6 +36,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveAnnotationProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
@@ -116,8 +117,7 @@ public class RemoveDynamicConstraintAnnotationQuickFix implements IJavaCodeActio
      * @return The code action label.
      */
     private static String getLabel(String annotation) {
-        String annotationName = annotation.contains(".") ? annotation.substring(annotation.lastIndexOf('.') + 1) : annotation;
-        return Messages.getMessage("RemoveConstraintAnnotation", annotationName);
+        return Messages.getMessage("RemoveConstraintAnnotation", DiagnosticUtils.getSimpleName(annotation));
     }
 
     /**

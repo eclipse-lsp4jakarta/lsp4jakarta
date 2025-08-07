@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -68,12 +67,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
 
             if (managedBeanAnnotations.size() > 1) {
-                List<String> diagnosticData = managedBeanAnnotations.stream().collect(Collectors.toList());
-
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(diagnosticData)),
+                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                          ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
             }
 
@@ -117,12 +114,11 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                         isInjectField = true;
                 }
                 if (isProducerField && fieldScopes.size() > 1) {
-                    List<String> diagnosticData = fieldScopes.stream().collect(Collectors.toList());
-                    diagnosticData.add(Constants.PRODUCES_FQ_NAME);
+                    fieldScopes.add(Constants.PRODUCES_FQ_NAME);
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsProducerField"), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(diagnosticData)),
+                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(fieldScopes)),
                                                              ErrorCode.InvalidNumberOfScopeAnnotationsByProducerField, DiagnosticSeverity.Error));
                 }
 
@@ -181,12 +177,11 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
 
                 if (isProducerMethod && methodScopes.size() > 1) {
-                    List<String> diagnosticData = methodScopes.stream().collect(Collectors.toList());
-                    diagnosticData.add(Constants.PRODUCES_FQ_NAME);
+                    methodScopes.add(Constants.PRODUCES_FQ_NAME);
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsProducerMethod"), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(diagnosticData)),
+                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(methodScopes)),
                                                              ErrorCode.InvalidNumberOfScopeAnnotationsByProducerMethod, DiagnosticSeverity.Error));
                 }
 
