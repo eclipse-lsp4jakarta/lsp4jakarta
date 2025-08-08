@@ -18,7 +18,7 @@ This project contains:
 - [Client IDEs](#client-ides)
 - [Features](#jakarta-ee-api-language-features)
    - [Jakarta Annotations](#jakarta-annotations)
-   - [Jakarta Bean Validation](#jakarta-bean-validation)
+   - [Jakarta Validation](#jakarta-validation)
    - [Jakarta Contexts and Dependency Injection](#jakarta-contexts-and-dependency-injection)
    - [Jakarta Dependency Injection](#jakarta-dependency-injection)
    - [Jakarta JSON Binding](#jakarta-json-binding)
@@ -72,15 +72,15 @@ Eclipse LSP4Jakarta provides the following [Jakarta Annotations diagnostics](./j
 | A method with the @PostConstruct/@PreDestroy annotation must not have any parameters. | Error |  Remove @PostConstruct/@PreDestroy OR  Remove all parameters | 
 | A method with the @PostConstruct/@PreDestroy annotation must not throw checked exceptions. | Warning | N/A |
 
-### Jakarta Bean Validation
+### Jakarta Validation
 
-Eclipse LSP4Jakarta provides the following [Jakarta Bean Validation snippets](./jakarta.ls/src/main/resources/bean-validation.json).
+Eclipse LSP4Jakarta provides the following [Jakarta Validation snippets](./jakarta.ls/src/main/resources/validation.json).
 
 | Snippet prefix | Description |
 | --------- | ------------ |
 | @Email | Email address constraint, which validates a well-formed email address |
 
-Eclipse LSP4Jakarta provides the following [Jakarta Bean Validation diagnostics](./jakarta.jdt/org.eclipse.lsp4jakarta.jdt.core/src/main/java/org/eclipse/lsp4jakarta/jdt/core/beanvalidation/).
+Eclipse LSP4Jakarta provides the following [Jakarta Validation diagnostics](./jakarta.jdt/org.eclipse.lsp4jakarta.jdt.core/src/main/java/org/eclipse/lsp4jakarta/jdt/core/validation/).
 
 | Diagnostic description | Severity | Associated quick-fixes |
 | --------- | ----- | ------------ |

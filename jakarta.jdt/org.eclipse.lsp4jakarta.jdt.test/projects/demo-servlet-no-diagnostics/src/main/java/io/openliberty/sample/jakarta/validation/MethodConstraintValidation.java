@@ -1,7 +1,7 @@
-package io.openliberty.sample.jakarta.beanvalidation;
+package io.openliberty.sample.jakarta.validation;
 
-import jakarta.validation.constraints.AssertFalse;
-import jakarta.validation.constraints.AssertTrue;
+import jakarta.fake.constraints.AssertFalse;
+import jakarta.fake.constraints.AssertTrue;
 
 public class MethodConstraintValidation {
 

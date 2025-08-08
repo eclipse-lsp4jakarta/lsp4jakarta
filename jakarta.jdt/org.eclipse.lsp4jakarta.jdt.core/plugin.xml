@@ -90,52 +90,52 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />                  
    </extension>
    
-   <!-- Bean Validation -->
+   <!-- Jakarta Validation -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
-      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.BeanValidationDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.validation.ValidationDiagnosticsParticipant" />
             <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidConstrainAnnotationOnStaticMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidConstrainAnnotationOnStaticMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidConstrainAnnotationOnStaticMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidConstrainAnnotationOnStaticMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonBooleanMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonBooleanMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonBooleanMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonBooleanMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonDateTimeMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonDateTimeMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonDateTimeMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonDateTimeMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonMinMaxMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonMinMaxMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonMinMaxMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonMinMaxMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonPositiveMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonPositiveMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonPositiveMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonPositiveMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonStringMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonStringMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonStringMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  targetDiagnostic="jakarta-validation#InvalidAnnotationOnNonStringMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.validation.RemoveStaticModifierQuickFix" />
    </extension>
    
    <!-- Dependecy injection -->
