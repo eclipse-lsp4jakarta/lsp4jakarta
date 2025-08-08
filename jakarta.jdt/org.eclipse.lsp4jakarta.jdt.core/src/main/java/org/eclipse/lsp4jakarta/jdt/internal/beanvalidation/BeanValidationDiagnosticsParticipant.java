@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020, 2023 IBM Corporation and others.
+* Copyright (c) 2020, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,26 +15,22 @@ package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
 
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_FALSE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_TRUE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BIG_DECIMAL;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BIG_INTEGER;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BOOLEAN;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BYTE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.CHAR_SEQUENCE;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BOOLEAN_FQ;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.CHAR_SEQUENCE_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MAX;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MIN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DIGITS;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DOUBLE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.EMAIL;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FLOAT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FUTURE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.FUTURE_OR_PRESENT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.INTEGER;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.LONG;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.MAX;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.MIN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE_OR_ZERO;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_BLANK;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_CHAR_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
@@ -42,8 +38,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSI
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SHORT;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING_FQ;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,20 +142,18 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 if (matchedAnnotation.equals(ASSERT_FALSE) || matchedAnnotation.equals(ASSERT_TRUE)) {
                     String message = isMethod ? Messages.getMessage("AnnotationBooleanMethods", "@" + annotationName) : Messages.getMessage("AnnotationBooleanFields",
                                                                                                                                             "@" + annotationName);
-                    if (!type.equals(getSignatureFormatOfType(BOOLEAN)) && !type.equals(Signature.SIG_BOOLEAN)) {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                                      new String[] { BOOLEAN_FQ });
+                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BOOLEAN)) {
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  annotationName, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(DECIMAL_MAX) || matchedAnnotation.equals(DECIMAL_MIN)
                            || matchedAnnotation.equals(DIGITS)) {
-                    if (!type.equals(getSignatureFormatOfType(BIG_DECIMAL))
-                        && !type.equals(getSignatureFormatOfType(BIG_INTEGER))
-                        && !type.equals(getSignatureFormatOfType(CHAR_SEQUENCE))
-                        && !type.equals(getSignatureFormatOfType(BYTE))
-                        && !type.equals(getSignatureFormatOfType(SHORT))
-                        && !type.equals(getSignatureFormatOfType(INTEGER))
-                        && !type.equals(getSignatureFormatOfType(LONG)) && !type.equals(Signature.SIG_BYTE)
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                                      NUMERIC_AND_CHAR_WRAPPER_TYPES);
+                    if ((null == dataTypeFQName) && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
                         && !type.equals(Signature.SIG_LONG)) {
                         String message = isMethod ? Messages.getMessage("AnnotationBigDecimalMethods", "@" + annotationName) : Messages.getMessage("AnnotationBigDecimalFields",
@@ -192,12 +185,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(MIN) || matchedAnnotation.equals(MAX)) {
-                    if (!type.equals(getSignatureFormatOfType(BIG_DECIMAL))
-                        && !type.equals(getSignatureFormatOfType(BIG_INTEGER))
-                        && !type.equals(getSignatureFormatOfType(BYTE))
-                        && !type.equals(getSignatureFormatOfType(SHORT))
-                        && !type.equals(getSignatureFormatOfType(INTEGER))
-                        && !type.equals(getSignatureFormatOfType(LONG)) && !type.equals(Signature.SIG_BYTE)
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                                      NUMERIC_WRAPPER_TYPES);
+                    if ((null == dataTypeFQName) && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
                         && !type.equals(Signature.SIG_LONG)) {
                         String message = isMethod ? Messages.getMessage("AnnotationMinMaxMethods", "@" + annotationName) : Messages.getMessage("AnnotationMinMaxFields",
@@ -208,14 +198,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     }
                 } else if (matchedAnnotation.equals(NEGATIVE) || matchedAnnotation.equals(NEGATIVE_OR_ZERO)
                            || matchedAnnotation.equals(POSITIVE) || matchedAnnotation.equals(POSITIVE_OR_ZERO)) {
-                    if (!type.equals(getSignatureFormatOfType(BIG_DECIMAL))
-                        && !type.equals(getSignatureFormatOfType(BIG_INTEGER))
-                        && !type.equals(getSignatureFormatOfType(BYTE))
-                        && !type.equals(getSignatureFormatOfType(SHORT))
-                        && !type.equals(getSignatureFormatOfType(INTEGER))
-                        && !type.equals(getSignatureFormatOfType(LONG))
-                        && !type.equals(getSignatureFormatOfType(FLOAT))
-                        && !type.equals(getSignatureFormatOfType(DOUBLE)) && !type.equals(Signature.SIG_BYTE)
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                                      NUMERIC_AND_DECIMAL_WRAPPER_TYPES);
+                    if ((null == dataTypeFQName) && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
                         && !type.equals(Signature.SIG_LONG) && !type.equals(Signature.SIG_FLOAT)
                         && !type.equals(Signature.SIG_DOUBLE)) {
@@ -263,22 +248,14 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                  IType declaringType,
                                  List<Diagnostic> diagnostics,
                                  String annotationName, boolean isMethod, String type) throws JavaModelException {
-        if (!type.equals(getSignatureFormatOfType(STRING))
-            && !type.equals(getSignatureFormatOfType(CHAR_SEQUENCE))) {
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                          new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
+        if (dataTypeFQName == null) {
             String message = isMethod ? Messages.getMessage("AnnotationStringMethods", "@" + annotationName) : Messages.getMessage("AnnotationStringFields", "@" + annotationName);
             diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                      annotationName, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
                                                      DiagnosticSeverity.Error));
         }
-    }
-
-    /**
-     * Refer to Class signature documentation for the formating
-     * https://www.ibm.com/support/knowledgecenter/sl/SS5JSH_9.5.0/org.eclipse.jdt.
-     * doc.isv/reference/api/org/eclipse/jdt/core/Signature.html
-     */
-    private static String getSignatureFormatOfType(String type) {
-        return "Q" + type + ";";
     }
 
     private static String getDataTypeName(String type) {

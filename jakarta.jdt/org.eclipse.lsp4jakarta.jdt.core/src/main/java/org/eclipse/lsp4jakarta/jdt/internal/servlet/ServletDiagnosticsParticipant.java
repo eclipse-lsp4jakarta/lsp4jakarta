@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -74,7 +74,7 @@ public class ServletDiagnosticsParticipant implements IJavaDiagnosticsParticipan
             if (webServletAnnotation != null) {
                 // check if the class extends HttpServlet
                 try {
-                    int r = TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.HTTP_SERVLET);
+                    int r = TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.HTTP_SERVLET_FQ_NAME);
                     if (r == -1) {
                         Range range = PositionUtils.toNameRange(type, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,

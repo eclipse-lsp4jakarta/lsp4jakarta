@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,7 +18,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.servlet;
 public class Constants {
 
     /* @WEBListener */
-    public static final String WEB_LISTENER = "WebListener";
     public static final String WEB_LISTENER_FQ_NAME = "jakarta.servlet.annotation.WebListener";
     public static final String SERVLET_CONTEXT_LISTENER = "ServletContextListener";
     public static final String SERVLET_CONTEXT_LISTENER_FQ_NAME = "jakarta.servlet.ServletContextListener";
@@ -36,12 +35,11 @@ public class Constants {
     public static final String HTTP_SESSION_ID_LISTENER_FQ_NAME = "jakarta.servlet.http.HttpSessionIdListener";
 
     /* @WEBServlet */
-    public static final String WEB_SERVLET = "WebServlet";
     public static final String WEB_SERVLET_FQ_NAME = "jakarta.servlet.annotation.WebServlet";
     public static final String HTTP_SERVLET = "HttpServlet";
+    public static final String HTTP_SERVLET_FQ_NAME = "jakarta.servlet.http.HttpServlet";
 
     /* @WEBFilter */
-    public static final String WEBFILTER = "WebFilter";
     public static final String WEBFILTER_FQ_NAME = "jakarta.servlet.annotation.WebFilter";
     public static final String FILTER = "Filter";
     public static final String FILTER_FQ_NAME = "jakarta.servlet.Filter";
