@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020, 2023 IBM Corporation, Reza Akhavan and others.
+* Copyright (c) 2020, 2025 IBM Corporation, Reza Akhavan and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -62,17 +62,17 @@ public class Constants {
     public static final String INSTANT = "java.time.Instant";
     public static final String CALENDAR = "java.util.Calendar";
     public static final String DATE = "java.util.Date";
-    public static final String BOOLEAN = "Boolean";
-    public static final String CHAR_SEQUENCE = "CharSequence";
-    public static final String STRING = "String";
-    public static final String DOUBLE = "Double";
-    public static final String FLOAT = "Float";
-    public static final String LONG = "Long";
-    public static final String INTEGER = "Integer";
-    public static final String SHORT = "Short";
-    public static final String BYTE = "Byte";
-    public static final String BIG_INTEGER = "BigInteger";
-    public static final String BIG_DECIMAL = "BigDecimal";
+    public static final String BOOLEAN_FQ = "java.lang.Boolean";
+    public static final String CHAR_SEQUENCE_FQ = "java.lang.CharSequence";
+    public static final String STRING_FQ = "java.lang.String";
+    public static final String DOUBLE_FQ = "java.lang.Double";
+    public static final String FLOAT_FQ = "java.lang.Float";
+    public static final String LONG_FQ = "java.lang.Long";
+    public static final String INTEGER_FQ = "java.lang.Integer";
+    public static final String SHORT_FQ = "java.lang.Short";
+    public static final String BYTE_FQ = "java.lang.Byte";
+    public static final String BIG_INTEGER_FQ = "java.math.BigInteger";
+    public static final String BIG_DECIMAL_FQ = "java.math.BigDecimal";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-bean-validation";
 
@@ -86,5 +86,13 @@ public class Constants {
                                                                                                                       OFFSET_DATE_TIME, MONTH_DAY,
                                                                                                                       LOCAL_TIME, LOCAL_DATE_TIME, LOCAL_DATE, INSTANT, CALENDAR,
                                                                                                                       DATE)));
+
+    public static final String[] NUMERIC_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
+                                                           INTEGER_FQ, LONG_FQ };
+
+    public final static String[] NUMERIC_AND_DECIMAL_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
+                                                                       INTEGER_FQ, LONG_FQ, FLOAT_FQ, DOUBLE_FQ };
+    public final static String[] NUMERIC_AND_CHAR_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
+                                                                    INTEGER_FQ, LONG_FQ, CHAR_SEQUENCE_FQ };
 
 }
