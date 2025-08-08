@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IProject;
@@ -26,9 +27,12 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaModelManager;
+
 
 /**
  * Modified from:
@@ -65,7 +69,39 @@ public class BaseJakartaTest {
         }
 
         IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(description.getName());
+
+        addJRT(javaProject);
+
         return javaProject;
+    }
+
+    public static void addJRT(IJavaProject javaProject) {
+        try {
+
+            IClasspathEntry[] resClasspath = javaProject.getResolvedClasspath(true);
+
+            boolean isPresent = Arrays.stream(resClasspath).anyMatch(e -> e.getPath().toString().contains("jrt-fs.jar"));
+
+            if (!isPresent) {
+                IClasspathEntry jrtEntry = JavaCore.newLibraryEntry(
+                                                                    new Path(System.getProperty("java.home") + "/lib/jrt-fs.jar"),
+                                                                    null,
+                                                                    null);
+                IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+                IClasspathEntry[] newClasspath = new IClasspathEntry[rawClasspath.length + 1];
+                System.arraycopy(rawClasspath, 0, newClasspath, 0, rawClasspath.length);
+                newClasspath[rawClasspath.length] = jrtEntry;
+
+                javaProject.setRawClasspath(newClasspath, null);
+
+                System.out.println("Added jrt-fs.jar to classpath");
+            }
+
+        } catch (JavaModelException e) {
+            // TODO Auto-generated catch block
+            //e.printStackTrace();
+        }
+
     }
 
     private static File copyProjectToWorkingDirectory(String projectName, String parentDirName) throws IOException {
