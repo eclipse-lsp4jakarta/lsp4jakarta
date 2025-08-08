@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -48,7 +48,7 @@ public class TypeHierarchyUtils {
      */
     public static int doesITypeHaveSuperType(IType type, String superType) throws CoreException {
         // Handle trivial case
-        if (type.getElementName().equals(superType)) {
+        if (isSuperType(type, superType)) {
             return 1;
         }
 
@@ -58,7 +58,7 @@ public class TypeHierarchyUtils {
         // Check if the type's supertypes contain the superType
         IType[] parents = typeHierarchy.getAllSupertypes(type);
         for (IType parentType : parents) {
-            if (parentType.getElementName().equals(superType)) {
+            if (isSuperType(parentType, superType)) {
                 r = 1;
                 break;
             }
@@ -81,6 +81,15 @@ public class TypeHierarchyUtils {
             }
         }
         return r;
+    }
+
+    private static boolean isSuperType(IType type, String superType) {
+
+        if (superType.endsWith("." + type.getElementName())) {
+            return type.getFullyQualifiedName().equals(superType);
+        } else {
+            return type.getElementName().equals(superType);
+        }
     }
 
     private static boolean hasKnownDeclaration(IType type) throws CoreException {
