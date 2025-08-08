@@ -16,6 +16,7 @@ package org.eclipse.lsp4jakarta.jdt.core;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IProject;
@@ -33,7 +34,6 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 
-
 /**
  * Modified from:
  * https://github.com/eclipse/lsp4mp/blob/bc926f75df2ca103d78c67b997c87adb7ab480b1/microprofile.jdt/org.eclipse.lsp4mp.jdt.test/src/main/java/org/eclipse/lsp4mp/jdt/core/BasePropertiesManagerTest.java
@@ -41,6 +41,8 @@ import org.eclipse.jdt.internal.core.JavaModelManager;
  *
  */
 public class BaseJakartaTest {
+
+    private static final Logger LOGGER = Logger.getLogger(BaseJakartaTest.class.getName());
 
     protected static IJavaProject loadJavaProject(String projectName, String parentDirName) throws CoreException, Exception {
         // Move project to working directory
@@ -94,7 +96,7 @@ public class BaseJakartaTest {
 
                 javaProject.setRawClasspath(newClasspath, null);
 
-                System.out.println("Added jrt-fs.jar to classpath");
+                LOGGER.info("Added jrt-fs.jar to classpath");
             }
 
         } catch (JavaModelException e) {
