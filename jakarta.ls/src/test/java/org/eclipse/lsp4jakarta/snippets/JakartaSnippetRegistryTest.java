@@ -110,6 +110,7 @@ public class JakartaSnippetRegistryTest {
         assertTrue("rest_head Java snippet is not present in SnippetRegistry", restHeadSnippet.isPresent());
 
         snippetsContextTest(restClassSnippet, "jakarta.ws.rs.GET", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(restGetSnippet, "jakarta.ws.rs.GET", JavaCursorContextKind.NONE);
         snippetsContextTest(restGetSnippet, "jakarta.ws.rs.GET", JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(restPostSnippet, "jakarta.ws.rs.POST", JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(restPutSnippet, "jakarta.ws.rs.PUT", JavaCursorContextKind.BEFORE_METHOD);
@@ -192,7 +193,11 @@ public class JakartaSnippetRegistryTest {
         ProjectLabelInfoEntry projectInfo1 = new ProjectLabelInfoEntry("", null, Arrays.asList(contextType));
         boolean match1 = ((SnippetContextForJava) context).isMatch(context(projectInfo1, javaCursorContextKind,
                                                                            snippet.get().getPrefixes().isEmpty() ? "" : snippet.get().getPrefixes().get(0)));
-        assertTrue("Project has no " + contextType + " type", match1);
+        if (javaCursorContextKind.getValue() == 10) {
+            assertFalse("Project should not have " + contextType + " type", match);
+        } else {
+            assertTrue("Project has no " + contextType + " type", match1);
+        }
 
     }
 

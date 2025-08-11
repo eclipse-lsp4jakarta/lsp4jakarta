@@ -194,6 +194,25 @@ public enum JavaCursorContextKind {
      * </code>
      */
     IN_CLASS(8),
+    
+    /**
+     * Added as part of syncing up ls4mp and lsp4jakarta as part of issue #520. This value could be used for future enhancements.
+     * The cursor is before a type declaration body at the root of a file.
+     * The cursor is before any annotations on the type.
+     *
+     * eg.
+     * <code>
+     * <br />
+     * package org.acme;<br />
+     * <br />
+     * |<br />
+     * &commat;Inject<br />
+     * public class MyClass {<br />
+     * <br />
+     * }<br />
+     * </code>
+     */
+    BEFORE_TOP_LEVEL_CLASS(9),
 
     /**
      * None of the above context apply.
@@ -212,7 +231,7 @@ public enum JavaCursorContextKind {
      * }<br />
      * </code>
      */
-    NONE(2000);
+    NONE(10);
 
     private final int value;
 
@@ -226,12 +245,7 @@ public enum JavaCursorContextKind {
 
     public static JavaCursorContextKind forValue(int value) {
         JavaCursorContextKind[] allValues = JavaCursorContextKind.values();
-
-        // Root cause and fix for JavaCursorContextKind IllegalArgumentException issue #520 when value passed is 2000
-        if (value == NONE.getValue()) {
-            return NONE;
-        }
-        if (value < 1 || value > allValues.length - 1)
+        if (value < 1 || value > allValues.length) //Refactored the code as enum values are synced up with lsp4mp, for issue #520
             throw new IllegalArgumentException("Illegal enum value: " + value);
         return allValues[value - 1];
     }
