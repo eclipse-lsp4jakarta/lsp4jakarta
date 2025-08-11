@@ -16,6 +16,7 @@ package org.eclipse.lsp4jakarta.jdt.core;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -77,7 +78,13 @@ public class BaseJakartaTest {
         return javaProject;
     }
 
-    public static void addJRT(IJavaProject javaProject) {
+    /**
+     * Ensures that the jrt-fs.jar is present on the given project's classpath
+     * If it is missing, the method adds it
+     *
+     * @param javaProject
+     */
+    private static void addJRT(IJavaProject javaProject) {
         try {
 
             IClasspathEntry[] resClasspath = javaProject.getResolvedClasspath(true);
@@ -100,8 +107,7 @@ public class BaseJakartaTest {
             }
 
         } catch (JavaModelException e) {
-            // TODO Auto-generated catch block
-            //e.printStackTrace();
+            LOGGER.log(Level.WARNING, "JavaModelException:" + e.toString());
         }
 
     }
