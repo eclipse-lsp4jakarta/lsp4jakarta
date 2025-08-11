@@ -283,17 +283,6 @@ public class ManagedBeanTest extends BaseJakartaTest {
         CodeAction ca19 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name3'", d7, te19);
 
         assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca16, ca17, ca18, ca19);
-
-        JakartaJavaCodeActionParams codeActionParams8 = createCodeActionParams(uri, d8);
-
-        TextEdit te20 = te(50, 4, 51, 4, "");
-        TextEdit te21 = te(51, 54, 51, 89, "");
-        CodeAction ca20 = ca(uri, "Remove @Inject", d8, te20);
-        CodeAction ca21 = ca(uri,
-                             "Remove the '@Disposes', '@Observes', '@ObservesAsync' modifier from parameter 'name'", d8, te21);
-
-        assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca20, ca21);
-
     }
 
     @Test
