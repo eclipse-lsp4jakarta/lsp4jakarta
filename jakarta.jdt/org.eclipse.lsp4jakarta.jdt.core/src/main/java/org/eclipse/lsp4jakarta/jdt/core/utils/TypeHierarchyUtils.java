@@ -83,15 +83,6 @@ public class TypeHierarchyUtils {
         return r;
     }
 
-    private static boolean isSuperType(IType type, String superType) {
-
-        if (superType.endsWith("." + type.getElementName())) {
-            return type.getFullyQualifiedName().equals(superType);
-        }
-        return type.getElementName().equals(superType);
-
-    }
-
     private static boolean hasKnownDeclaration(IType type) throws CoreException {
         String typeName = type.getElementName();
         final AtomicInteger references = new AtomicInteger(0);
@@ -120,5 +111,21 @@ public class TypeHierarchyUtils {
 
     private static IJavaSearchScope createSearchScope(IJavaProject javaProject) throws CoreException {
         return SearchEngine.createJavaSearchScope(new IJavaProject[] { javaProject }, IJavaSearchScope.SOURCES);
+    }
+    
+    /**
+     * isSuperType
+     * This checks whether the given type is a super type.
+     * @param type
+     * @param superType
+     * @return
+     */
+    private static boolean isSuperType(IType type, String superType) {
+
+        if (superType.endsWith("." + type.getElementName())) {
+            return type.getFullyQualifiedName().equals(superType);
+        }
+        return type.getElementName().equals(superType);
+
     }
 }
