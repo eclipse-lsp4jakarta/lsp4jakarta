@@ -153,9 +153,10 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
     protected String[] getAnnotations() {
         return this.annotations;
     }
-    
+
     /**
      * Matches the Annotation
+     *
      * @param fqn
      * @param typeName
      * @return
