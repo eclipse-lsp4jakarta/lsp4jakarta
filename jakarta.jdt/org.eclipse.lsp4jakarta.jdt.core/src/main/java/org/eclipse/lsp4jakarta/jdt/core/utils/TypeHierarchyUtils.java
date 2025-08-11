@@ -87,9 +87,9 @@ public class TypeHierarchyUtils {
 
         if (superType.endsWith("." + type.getElementName())) {
             return type.getFullyQualifiedName().equals(superType);
-        } else {
-            return type.getElementName().equals(superType);
         }
+        return type.getElementName().equals(superType);
+
     }
 
     private static boolean hasKnownDeclaration(IType type) throws CoreException {
