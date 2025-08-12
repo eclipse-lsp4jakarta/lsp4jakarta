@@ -58,7 +58,7 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-        TextEdit te = te(22, 0, 22, 22, "@Resource(name = \"aa\", type = \"\")");
+        TextEdit te = te(22, 0, 22, 22, "@Resource(name = \"aa\", type = Object.class)");
         CodeAction ca = ca(uri, "Insert 'type' attribute to @Resource", d1, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
 

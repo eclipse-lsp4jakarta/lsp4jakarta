@@ -409,9 +409,15 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-                StringLiteral stringValue = ast.newStringLiteral();
-                stringValue.setLiteralValue("");
-                newMemberValuePair.setValue(stringValue);
+                if ("type".equals(newAttr)) {
+                    TypeLiteral typeLiteral = ast.newTypeLiteral();
+                    typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
+                    newMemberValuePair.setValue(typeLiteral);
+                } else {
+                    StringLiteral stringValue = ast.newStringLiteral();
+                    stringValue.setLiteralValue("");
+                    newMemberValuePair.setValue(stringValue);
+                }
                 values.add(newMemberValuePair);
             }
         }
