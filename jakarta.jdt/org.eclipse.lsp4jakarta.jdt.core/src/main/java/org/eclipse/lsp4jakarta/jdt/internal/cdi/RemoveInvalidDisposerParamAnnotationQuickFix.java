@@ -25,7 +25,7 @@ public class RemoveInvalidDisposerParamAnnotationQuickFix extends RemoveMethodPa
      * Constructor.
      */
     public RemoveInvalidDisposerParamAnnotationQuickFix() {
-        super(Constants.INVALID_DISPOSER_PARAMS.toArray((String[]::new)));
+        super(Constants.INVALID_DISPOSER_FQ_PARAMS.toArray((String[]::new)));
     }
 
     /**
