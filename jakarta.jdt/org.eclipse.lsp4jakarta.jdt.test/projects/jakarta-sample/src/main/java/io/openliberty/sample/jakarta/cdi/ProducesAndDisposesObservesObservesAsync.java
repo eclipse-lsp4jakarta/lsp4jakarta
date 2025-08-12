@@ -52,7 +52,7 @@ public class ProducesAndDisposesObservesObservesAsync {
     
     
     @Produces
-    public String greetDisposesObservesObservesAsync2(@Disposes @Observes @jakarta.enterprise.event.ObservesAsync String name) {
+    public String greetDisposesObservesObservesAsync2(@Disposes @Observes @ObservesAsync String name) {
         return "Hi " + name + "!";
     }
 }
