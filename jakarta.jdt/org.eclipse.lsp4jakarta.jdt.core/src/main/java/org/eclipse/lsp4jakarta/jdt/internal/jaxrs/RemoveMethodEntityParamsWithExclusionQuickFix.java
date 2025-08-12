@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -26,8 +26,8 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
@@ -182,15 +182,15 @@ public class RemoveMethodEntityParamsWithExclusionQuickFix implements IJavaCodeA
      * @return true if the given parameter is an entity parameter, false otherwise
      */
     private boolean isEntityParam(SingleVariableDeclaration param) {
-        ArrayList<String> nonEntityParamAnnotations = Constants.NON_ENTITY_PARAM_ANNOTATIONS;
-
+        ArrayList<String> nonEntityParamAnnotations = new ArrayList<>(Arrays.asList(Constants.SET_OF_NON_ENTITY_PARAM_ANNOTATIONS));
         boolean isEntityParam = true;
         List<?> modifiers = param.modifiers();
         for (Object o : modifiers) {
             IExtendedModifier modifier = (IExtendedModifier) o;
             if (modifier.isAnnotation()) {
-                Name typeName = ((Annotation) modifier).getTypeName();
-                if (nonEntityParamAnnotations.contains(typeName.toString())) {
+                Annotation annotation = (Annotation) modifier;
+                ITypeBinding binding = annotation.resolveTypeBinding();
+                if (nonEntityParamAnnotations.contains(binding.getQualifiedName())) {
                     isEntityParam = false;
                     break;
                 }

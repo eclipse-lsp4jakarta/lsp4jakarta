@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2023 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -90,15 +90,17 @@ public class ManagedBeanTest extends BaseJakartaTest {
         Diagnostic d1 = d(12, 16, 17,
                           "Scope type annotations must be specified by a producer field at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopeAnnotationsByProducerField");
-        d1.setData(new Gson().toJsonTree(Arrays.asList("Dependent", "ApplicationScoped", "Produces")));
+        d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.ApplicationScoped",
+                                                       "jakarta.enterprise.inject.Produces")));
 
         Diagnostic d2 = d(15, 25, 41, "Scope type annotations must be specified by a producer method at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopeAnnotationsByProducerMethod");
-        d2.setData(new Gson().toJsonTree(Arrays.asList("ApplicationScoped", "RequestScoped", "Produces")));
+        d2.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped", "jakarta.enterprise.context.RequestScoped",
+                                                       "jakarta.enterprise.inject.Produces")));
 
         Diagnostic d3 = d(10, 13, 29, "Scope type annotations must be specified by a managed bean class at most once.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
-        d3.setData(new Gson().toJsonTree(Arrays.asList("ApplicationScoped", "RequestScoped")));
+        d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped", "jakarta.enterprise.context.RequestScoped")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
 
@@ -214,7 +216,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
         TextEdit te1 = te(9, 4, 10, 4, "");
-        TextEdit te2 = te(10, 32, 10, 42, "");
+        TextEdit te2 = te(10, 32, 10, 68, "");
         CodeAction ca1 = ca(uri, "Remove @Inject", d1, te1);
         CodeAction ca2 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name'", d1, te2);
 
@@ -253,7 +255,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         TextEdit te10 = te(33, 4, 34, 4, "");
         TextEdit te11 = te(34, 45, 34, 55, "");
-        TextEdit te12 = te(34, 69, 34, 84, "");
+        TextEdit te12 = te(34, 69, 34, 109, "");
         CodeAction ca10 = ca(uri, "Remove @Inject", d5, te10);
         CodeAction ca11 = ca(uri, "Remove the '@Observes' modifier from parameter 'name1'", d5, te11);
         CodeAction ca12 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d5, te12);
