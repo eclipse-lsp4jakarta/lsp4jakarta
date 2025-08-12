@@ -80,7 +80,6 @@ public abstract class RemoveMethodParamAnnotationQuickFix implements IJavaCodeAc
     public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
                                                      IProgressMonitor monitor) throws CoreException {
         List<CodeAction> codeActions = new ArrayList<>();
-
         ASTNode node = context.getCoveredNode();
         MethodDeclaration parentNode = (MethodDeclaration) node.getParent();
         List<SingleVariableDeclaration> parameters = (List<SingleVariableDeclaration>) parentNode.parameters();

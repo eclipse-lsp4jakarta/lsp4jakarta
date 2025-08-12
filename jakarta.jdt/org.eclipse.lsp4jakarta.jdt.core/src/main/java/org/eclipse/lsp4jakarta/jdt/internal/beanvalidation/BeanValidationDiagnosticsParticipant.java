@@ -57,6 +57,7 @@ import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.Constants;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
@@ -134,7 +135,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
             if (Flags.isStatic(element.getFlags())) {
                 String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
-                diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, annotationName,
+                diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
                                                          ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField, DiagnosticSeverity.Error));
             } else {
                 String type = (isMethod) ? ((IMethod) element).getReturnType() : ((IField) element).getTypeSignature();
@@ -146,7 +147,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                                       new String[] { BOOLEAN_FQ });
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BOOLEAN)) {
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 annotationName, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(DECIMAL_MAX) || matchedAnnotation.equals(DECIMAL_MIN)
@@ -159,19 +160,19 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         String message = isMethod ? Messages.getMessage("AnnotationBigDecimalMethods", "@" + annotationName) : Messages.getMessage("AnnotationBigDecimalFields",
                                                                                                                                                    "@" + annotationName);
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 annotationName,
+                                                                 matchedAnnotation,
                                                                  ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(EMAIL)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
-                                    type);
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
+                                    type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(NOT_BLANK)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
-                                    type);
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
+                                    type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(PATTERN)) {
-                    checkStringOnly(context, uri, element, range, declaringType, diagnostics, annotationName, isMethod,
-                                    type);
+                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
+                                    type, matchedAnnotation);
                 } else if (matchedAnnotation.equals(FUTURE) || matchedAnnotation.equals(FUTURE_OR_PRESENT)
                            || matchedAnnotation.equals(PAST) || matchedAnnotation.equals(PAST_OR_PRESENT)) {
                     String dataType = getDataTypeName(type);
@@ -181,7 +182,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         String message = isMethod ? Messages.getMessage("AnnotationDateMethods", "@" + annotationName) : Messages.getMessage("AnnotationDateFields",
                                                                                                                                              "@" + annotationName);
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 annotationName, ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(MIN) || matchedAnnotation.equals(MAX)) {
@@ -193,7 +194,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         String message = isMethod ? Messages.getMessage("AnnotationMinMaxMethods", "@" + annotationName) : Messages.getMessage("AnnotationMinMaxFields",
                                                                                                                                                "@" + annotationName);
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 annotationName, ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (matchedAnnotation.equals(NEGATIVE) || matchedAnnotation.equals(NEGATIVE_OR_ZERO)
@@ -207,7 +208,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         String message = isMethod ? Messages.getMessage("AnnotationPositiveMethods", "@" + annotationName) : Messages.getMessage("AnnotationPositiveFields",
                                                                                                                                                  "@" + annotationName);
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 annotationName, ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 }
@@ -244,16 +245,16 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
     }
 
-    private void checkStringOnly(JavaDiagnosticsContext context, String uri, IMember element, Range range,
+ private void checkStringOnly(JavaDiagnosticsContext context, String uri, IMember element, Range range,
                                  IType declaringType,
                                  List<Diagnostic> diagnostics,
-                                 String annotationName, boolean isMethod, String type) throws JavaModelException {
+                                 String annotationName, boolean isMethod, String type, String matchedAnnotation) throws JavaModelException {
         String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
                                                                           new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
         if (dataTypeFQName == null) {
             String message = isMethod ? Messages.getMessage("AnnotationStringMethods", "@" + annotationName) : Messages.getMessage("AnnotationStringFields", "@" + annotationName);
             diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                     annotationName, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
+                                                     matchedAnnotation, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
                                                      DiagnosticSeverity.Error));
         }
     }

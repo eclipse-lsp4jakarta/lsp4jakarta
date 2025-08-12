@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -36,6 +36,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveAnnotationProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
@@ -115,8 +116,8 @@ public class RemoveDynamicConstraintAnnotationQuickFix implements IJavaCodeActio
      *
      * @return The code action label.
      */
-    private static String getLabel(String annotationName) {
-        return Messages.getMessage("RemoveConstraintAnnotation", annotationName);
+    private static String getLabel(String annotation) {
+        return Messages.getMessage("RemoveConstraintAnnotation", DiagnosticUtils.getSimpleName(annotation));
     }
 
     /**
