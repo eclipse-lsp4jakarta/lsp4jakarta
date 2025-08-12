@@ -25,7 +25,7 @@ public class RemoveInvalidDisposerConflictParamAnnotationQuickFix extends Remove
      * Constructor.
      */
     public RemoveInvalidDisposerConflictParamAnnotationQuickFix() {
-        super(Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS.toArray((String[]::new)));
+        super(Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS);
     }
 
     /**
