@@ -309,7 +309,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                 numDisposes++;
                             } else if (Constants.OBSERVES_FQ_NAME.equals(matchedAnnotation)
                                        || Constants.OBSERVES_ASYNC_FQ_NAME.equals(matchedAnnotation)) {
-                                invalidAnnotations.add("@" + annotation.getElementName());
+                                invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation.getElementName()));
                             }
                         }
                     }
