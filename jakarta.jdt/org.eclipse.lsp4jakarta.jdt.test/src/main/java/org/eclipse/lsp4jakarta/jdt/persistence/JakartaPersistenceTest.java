@@ -232,7 +232,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
     }
-    
+
     @Test
     public void testMethodOrFieldType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
@@ -262,8 +262,6 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyAnnotationsGetterConvention.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
-
-       
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
