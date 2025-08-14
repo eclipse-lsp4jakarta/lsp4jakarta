@@ -10,7 +10,7 @@
  * Contributors:
  *     Yijia Jing
  *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.jsonp;
+package org.eclipse.lsp4jakarta.jdt.test.jsonp;
 
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;

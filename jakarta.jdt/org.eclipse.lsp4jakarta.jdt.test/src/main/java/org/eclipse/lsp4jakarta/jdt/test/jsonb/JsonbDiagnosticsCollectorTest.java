@@ -10,7 +10,7 @@
 * Contributors:
 *     IBM Corporation, Adit Rada, Yijia Jing - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.jsonb;
+package org.eclipse.lsp4jakarta.jdt.test.jsonb;
 
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
