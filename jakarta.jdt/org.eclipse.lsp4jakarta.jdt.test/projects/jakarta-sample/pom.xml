@@ -66,24 +66,24 @@
             <version>4.0.0</version>
         </dependency>
         <!-- Support for JDK 9 and above -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-	  <groupId>jdk</groupId>
-	  <artifactId>jrt-fs</artifactId>
-	  <version>17</version>
-	  <scope>system</scope>
-	  <systemPath>${java.home}/lib/jrt-fs.jar</systemPath>
-</dependency>
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>jdk</groupId>
+			<artifactId>jrt-fs</artifactId>
+			<version>17</version>
+			<scope>system</scope>
+			<systemPath>${java.home}/lib/jrt-fs.jar</systemPath>
+		</dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
-            <!-- Enable liberty-maven plugin -->
+			<!-- Enable liberty-maven plugin -->
             <plugin>
                 <groupId>io.openliberty.tools</groupId>
                 <artifactId>liberty-maven-plugin</artifactId>
@@ -99,7 +99,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
             </plugin>
-            <!-- Plugin to run functional tests -->
+			<!-- Plugin to run functional tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
