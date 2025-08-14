@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2019, 2025 Red Hat Inc. and others.
+* Copyright (c) 2019 Red Hat Inc. and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,9 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.core;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IProject;
@@ -29,10 +26,8 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 
 /**
@@ -42,8 +37,6 @@ import org.eclipse.jdt.internal.core.JavaModelManager;
  *
  */
 public class BaseJakartaTest {
-
-    private static final Logger LOGGER = Logger.getLogger(BaseJakartaTest.class.getName());
 
     protected static IJavaProject loadJavaProject(String projectName, String parentDirName) throws CoreException, Exception {
         // Move project to working directory
@@ -72,7 +65,6 @@ public class BaseJakartaTest {
         }
 
         IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(description.getName());
-
         return javaProject;
     }
 
