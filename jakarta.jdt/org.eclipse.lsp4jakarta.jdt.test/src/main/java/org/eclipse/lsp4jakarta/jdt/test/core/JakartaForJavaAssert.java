@@ -11,7 +11,7 @@
 * Contributors:
 *     Red Hat Inc. - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.core;
+package org.eclipse.lsp4jakarta.jdt.test.core;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -38,6 +38,7 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
+import org.eclipse.lsp4jakarta.jdt.core.PropertiesManagerForJava;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.junit.Assert;
 

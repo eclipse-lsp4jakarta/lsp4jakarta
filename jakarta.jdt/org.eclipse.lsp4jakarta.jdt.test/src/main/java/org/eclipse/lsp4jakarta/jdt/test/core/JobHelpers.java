@@ -10,7 +10,7 @@
  * Contributors:
  *      Sonatype, Inc. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.core;
+package org.eclipse.lsp4jakarta.jdt.test.core;
 
 import java.util.ArrayList;
 import java.util.Deque;
