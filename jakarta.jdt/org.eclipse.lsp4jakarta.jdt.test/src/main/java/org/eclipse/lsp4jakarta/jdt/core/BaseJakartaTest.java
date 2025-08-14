@@ -73,43 +73,7 @@ public class BaseJakartaTest {
 
         IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(description.getName());
 
-        addJRT(javaProject);
-
         return javaProject;
-    }
-
-    /**
-     * Ensures that the jrt-fs.jar is present on the given project's classpath
-     * If it is missing, the method adds it
-     *
-     * @param javaProject
-     */
-    private static void addJRT(IJavaProject javaProject) {
-        try {
-
-            IClasspathEntry[] resClasspath = javaProject.getResolvedClasspath(true);
-
-            boolean isPresent = Arrays.stream(resClasspath).anyMatch(e -> e.getPath().toString().contains("jrt-fs.jar"));
-
-            if (!isPresent) {
-                IClasspathEntry jrtEntry = JavaCore.newLibraryEntry(
-                                                                    new Path(System.getProperty("java.home") + "/lib/jrt-fs.jar"),
-                                                                    null,
-                                                                    null);
-                IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
-                IClasspathEntry[] newClasspath = new IClasspathEntry[rawClasspath.length + 1];
-                System.arraycopy(rawClasspath, 0, newClasspath, 0, rawClasspath.length);
-                newClasspath[rawClasspath.length] = jrtEntry;
-
-                javaProject.setRawClasspath(newClasspath, null);
-
-                LOGGER.info("Added jrt-fs.jar to classpath");
-            }
-
-        } catch (JavaModelException e) {
-            LOGGER.log(Level.WARNING, "JavaModelException:" + e.toString());
-        }
-
     }
 
     private static File copyProjectToWorkingDirectory(String projectName, String parentDirName) throws IOException {
