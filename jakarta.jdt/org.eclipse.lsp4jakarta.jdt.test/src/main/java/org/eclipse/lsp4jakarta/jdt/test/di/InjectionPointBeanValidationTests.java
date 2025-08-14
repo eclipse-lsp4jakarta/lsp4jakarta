@@ -10,7 +10,7 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.di;
+package org.eclipse.lsp4jakarta.jdt.test.di;
 
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;

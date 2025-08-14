@@ -11,7 +11,7 @@
  *     IBM Corporation, Matthew Shocrylas - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.lsp4jakarta.jdt.jaxrs;
+package org.eclipse.lsp4jakarta.jdt.test.jaxrs;
 
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
