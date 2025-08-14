@@ -72,6 +72,13 @@
             <version>2.3.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+	  <groupId>jdk</groupId>
+	  <artifactId>jrt-fs</artifactId>
+	  <version>17</version>
+	  <scope>system</scope>
+	  <systemPath>${java.home}/lib/jrt-fs.jar</systemPath>
+</dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
