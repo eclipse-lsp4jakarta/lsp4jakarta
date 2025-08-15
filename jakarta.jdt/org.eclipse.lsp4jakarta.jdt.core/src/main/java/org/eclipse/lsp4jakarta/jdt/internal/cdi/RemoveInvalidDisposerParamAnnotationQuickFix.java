@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 IBM Corporation and others.
+* Copyright (c) 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,16 +16,16 @@ import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 
 /**
- * Removes the @Disposes, @Observes and @ObservesAsync annotations from
+ * Removes the @Disposes annotations from
  * the declaring element.
  */
-public class RemoveInvalidInitializerParamAnnotationQuickFix extends RemoveMethodParamAnnotationQuickFix {
+public class RemoveInvalidDisposerParamAnnotationQuickFix extends RemoveMethodParamAnnotationQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveInvalidInitializerParamAnnotationQuickFix() {
-        super(Constants.INVALID_INITIALIZER_PARAMS_FQ);
+    public RemoveInvalidDisposerParamAnnotationQuickFix() {
+        super(Constants.INVALID_DISPOSER_FQ_PARAMS);
     }
 
     /**
@@ -33,7 +33,7 @@ public class RemoveInvalidInitializerParamAnnotationQuickFix extends RemoveMetho
      */
     @Override
     public String getParticipantId() {
-        return RemoveInvalidInitializerParamAnnotationQuickFix.class.getName();
+        return RemoveInvalidDisposerParamAnnotationQuickFix.class.getName();
     }
 
     /**
@@ -41,6 +41,6 @@ public class RemoveInvalidInitializerParamAnnotationQuickFix extends RemoveMetho
      */
     @Override
     protected ICodeActionId getCodeActionId() {
-        return JakartaCodeActionId.CDIRemoveInvalidInjectAnnotations;
+        return JakartaCodeActionId.CDIRemoveInvalidDisposerAnnotations;
     }
 }
