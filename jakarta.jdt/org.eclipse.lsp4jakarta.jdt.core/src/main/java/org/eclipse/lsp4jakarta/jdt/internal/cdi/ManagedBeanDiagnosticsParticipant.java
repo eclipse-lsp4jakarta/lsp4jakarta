@@ -70,7 +70,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
-            boolean nonStaticPublicPresent = false;
+            boolean nonStaticPublicFieldPresent = false;
             for (IField field : fields) {
                 int fieldFlags = field.getFlags();
                 String[] annotationNames = Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
@@ -86,7 +86,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 if (isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
                     && (!isDependent || hasMultipleScopes)) {
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
-                    nonStaticPublicPresent = true;
+                    nonStaticPublicFieldPresent = true;
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -261,7 +261,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidGenericManagedBeanClassWithNoDependentScope, DiagnosticSeverity.Error));
 
                     // The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
-                } else if (nonStaticPublicPresent) {
+                } else if (nonStaticPublicFieldPresent) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
