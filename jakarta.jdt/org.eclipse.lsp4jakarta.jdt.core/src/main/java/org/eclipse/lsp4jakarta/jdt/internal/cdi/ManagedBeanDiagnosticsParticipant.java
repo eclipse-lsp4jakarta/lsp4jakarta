@@ -66,6 +66,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                              scopeFQNames);
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
+            boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
@@ -83,7 +84,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 //
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#managed_beans
                 if (isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
-                    && (!isDependent || managedBeanAnnotations.size() > 1)) {
+                    && (!isDependent || hasMultipleScopes)) {
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
                     nonStaticPublicPresent = true;
                     diagnostics.add(context.createDiagnostic(uri,
@@ -250,10 +251,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
             if (isManagedBean) {
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
 
                 // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
-                if (isClassGeneric && (!isDependent || managedBeanAnnotations.size() > 1)) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -261,15 +262,13 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
                 } else if (nonStaticPublicPresent) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidManagedBeanWithNonStaticPublicField, DiagnosticSeverity.Error));
 
                     // Scope type annotations must be specified by a managed bean class at most once.
-                } else if (managedBeanAnnotations.size() > 1) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                } else if (hasMultipleScopes) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
