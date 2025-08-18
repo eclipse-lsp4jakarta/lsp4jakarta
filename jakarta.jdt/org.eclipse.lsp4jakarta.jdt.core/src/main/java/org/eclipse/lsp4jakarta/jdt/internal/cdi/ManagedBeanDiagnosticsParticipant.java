@@ -266,6 +266,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidManagedBeanWithNonStaticPublicField, DiagnosticSeverity.Error));
+
+                    // Scope type annotations must be specified by a managed bean class at most once.
                 } else if (managedBeanAnnotations.size() > 1) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
