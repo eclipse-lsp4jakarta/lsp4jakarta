@@ -83,8 +83,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // problem and treats it as a definition error.
                 //
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#managed_beans
-                if (isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
-                    && (!isDependent || hasMultipleScopes)) {
+                if (validateNonStaticPublicField(isManagedBean, isDependent, hasMultipleScopes, fieldFlags)) {
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
                     nonStaticPublicFieldPresent = true;
                     diagnostics.add(context.createDiagnostic(uri,
@@ -412,6 +411,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
     private String createInvalidDisposesLabel(Set<String> invalidAnnotations) {
         return Messages.getMessage("ManagedBeanInvalidDisposer", String.join(", ", invalidAnnotations));
+    }
+
+    private boolean validateNonStaticPublicField(boolean isManagedBean, boolean isDependent, boolean hasMultipleScopes,
+                                                 int fieldFlags) {
+        return isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
+               && (!isDependent || hasMultipleScopes);
     }
 
 }
