@@ -413,6 +413,16 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         return Messages.getMessage("ManagedBeanInvalidDisposer", String.join(", ", invalidAnnotations));
     }
 
+    /**
+     * validateNonStaticPublicField
+     * The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
+     *
+     * @param isManagedBean
+     * @param isDependent
+     * @param hasMultipleScopes
+     * @param fieldFlags
+     * @return
+     */
     private boolean validateNonStaticPublicField(boolean isManagedBean, boolean isDependent, boolean hasMultipleScopes,
                                                  int fieldFlags) {
         return isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
