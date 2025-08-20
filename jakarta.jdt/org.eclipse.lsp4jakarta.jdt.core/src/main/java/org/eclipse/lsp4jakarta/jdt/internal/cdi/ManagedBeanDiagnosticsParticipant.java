@@ -415,7 +415,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
     /**
      * validateNonStaticPublicField
-     * The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
+     * This is to verify whether the @Dependent annotation must be the only scope applied to a managed bean that contains a non-static public field.
      *
      * @param isManagedBean
      * @param isDependent
