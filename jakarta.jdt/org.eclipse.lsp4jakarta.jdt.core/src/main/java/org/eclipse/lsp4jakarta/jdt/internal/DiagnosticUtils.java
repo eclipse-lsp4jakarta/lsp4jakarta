@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -91,7 +91,8 @@ public class DiagnosticUtils {
             if (isImportedJavaElement(type.getCompilationUnit(), javaElementFQName) == true)
                 return true;
             // only check fully qualified java element
-            if (javaElementFQName.equals(javaElementName)) {
+            // The second condition handles implicit java.lang types, which don't require explicit imports.
+            if (javaElementFQName.equals(javaElementName) || javaElementFQName.startsWith("java.lang")) {
                 String[][] fqName = type.resolveType(javaElementName); // the call could be expensive
                 if (fqName != null && fqName.length == 1) {
                     return javaElementFQName.equals(JavaModelUtil.concatenateName(fqName[0][0], fqName[0][1]));

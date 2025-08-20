@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -79,7 +80,6 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
             newRoot = ASTResolving.createQuickFixAST(getCompilationUnit(), null);
         }
         ImportRewrite imports = createImportRewrite(newRoot);
-
         if (declNode instanceof VariableDeclarationFragment) {
             declNode = declNode.getParent();
         }
@@ -88,13 +88,6 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
         boolean isType = declNode instanceof TypeDeclaration;
 
         String[] annotations = getAnnotations();
-
-        // get short name of annotations
-        String[] annotationShortNames = new String[annotations.length];
-        for (int i = 0; i < annotations.length; i++) {
-            String shortName = annotations[i].substring(annotations[i].lastIndexOf(".") + 1, annotations[i].length());
-            annotationShortNames[i] = shortName;
-        }
 
         if (isField || isMethod || isType) {
             AST ast = declNode.getAST();
@@ -112,17 +105,19 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
             } else {
                 children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
             }
-
             // find and save existing annotation, then remove it from ast
             for (ASTNode child : children) {
                 if (child instanceof Annotation) {
                     Annotation annotation = (Annotation) child;
-                    // IAnnotationBinding annotationBinding = annotation.resolveAnnotationBinding();
-
-                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::equals);
-                    if (containsAnnotation) {
-                        rewrite.remove(child, null);
+                    String matchingFqn = Arrays.stream(annotations).filter(fqn -> matchesAnnotation(fqn, annotation.getTypeName().toString())).findFirst().orElse(null);
+                    if (matchingFqn != null) {
+                        // Resolving fully qualified name from Annotation to fix issue #567
+                        ITypeBinding binding = annotation.resolveTypeBinding();
+                        if (binding.getQualifiedName().equals(matchingFqn)) {
+                            rewrite.remove(child, null);
+                        }
                     }
+
                 }
             }
 
@@ -157,5 +152,17 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
      */
     protected String[] getAnnotations() {
         return this.annotations;
+    }
+
+    /**
+     * Matches the Annotation
+     *
+     * @param fqn
+     * @param typeName
+     * @return
+     */
+
+    private static boolean matchesAnnotation(String fqn, String typeName) {
+        return fqn.equals(typeName) || fqn.endsWith("." + typeName);
     }
 }
