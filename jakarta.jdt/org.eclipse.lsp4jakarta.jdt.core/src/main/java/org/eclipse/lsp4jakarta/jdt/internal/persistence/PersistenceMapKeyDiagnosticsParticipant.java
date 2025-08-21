@@ -12,7 +12,6 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,9 +48,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * of @MapKeyClass, @MapKey, and @MapKeyJoinColumn annotations.
  */
 public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
-	
-	private static final Logger LOGGER = Logger.getLogger(PersistenceMapKeyDiagnosticsParticipant.class.getName());
-	final String MAP_INTERFACE_FQDN = "java.util.Map";
+
+    private static final Logger LOGGER = Logger.getLogger(PersistenceMapKeyDiagnosticsParticipant.class.getName());
+    final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     /**
      * {@inheritDoc}
@@ -71,7 +70,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         IMethod[] methods;
         IField[] fields;
 
-        
         for (IType type : alltypes) {
             methods = type.getMethods();
             collectMemberDiagnostics(methods, type, unit, diagnostics, context);
@@ -120,7 +118,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
-            List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
+                                          List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
 
         List<IAnnotation> mapKeyJoinCols = null;
         boolean hasMapKeyAnnotation = false;
@@ -142,7 +140,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             for (IAnnotation annotation : allAnnotations) {
                 String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                        Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
+                                                                                     Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
                 if (matchedAnnotation != null) {
                     if (Constants.MAPKEY.equals(matchedAnnotation))
                         hasMapKeyAnnotation = true;
@@ -156,12 +154,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
             if (hasMapKeyAnnotation) {
                 hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
-                collectAccessorDiagnostics(member,type, context, diagnostics);
+                collectAccessorDiagnostics(member, type, context, diagnostics);
             }
 
             if (hasMapKeyClassAnnotation) {
                 hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
-                collectAccessorDiagnostics(member,type, context, diagnostics);
+                collectAccessorDiagnostics(member, type, context, diagnostics);
             }
 
             if (!hasTypeDiagnostics && (hasMapKeyAnnotation && hasMapKeyClassAnnotation)) {
@@ -172,13 +170,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             // we must ensure each has a name and referencedColumnName
             if (mapKeyJoinCols.size() > 1) {
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
-                        diagnostics);
+                                                    diagnostics);
             }
         }
     }
 
     private boolean collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
-            List<Diagnostic> diagnostics) throws CoreException {
+                                           List<Diagnostic> diagnostics) throws CoreException {
 
         boolean hasTypeDiagnostics = false;
         Range range = null;
@@ -226,13 +224,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         if (messageKey != null) {
             hasTypeDiagnostics = true;
             diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute),
-                    range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
         return hasTypeDiagnostics;
     }
 
     private void collectMapKeyAnnotationsDiagnostics(IMember member, JavaDiagnosticsContext context,
-            List<Diagnostic> diagnostics) throws CoreException {
+                                                     List<Diagnostic> diagnostics) throws CoreException {
 
         Range range = null;
         String messageKey = null;
@@ -254,12 +252,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         if (messageKey != null) {
             diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                    Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
     }
 
-    private void collectAccessorDiagnostics(IMember member,IType type, JavaDiagnosticsContext context,
-            List<Diagnostic> diagnostics) throws CoreException {
+    private void collectAccessorDiagnostics(IMember member, IType type, JavaDiagnosticsContext context,
+                                            List<Diagnostic> diagnostics) throws CoreException {
         Range range = null;
         String messageKey = null;
         ErrorCode errorCode = null;
@@ -273,7 +271,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             boolean isPropertyExist = false;
 
             if (isStartsWithGet) {
-                isPropertyExist = hasField((IMethod) member,type);
+                isPropertyExist = hasField((IMethod) member, type);
             }
 
             if (!isPublic) {
@@ -290,11 +288,11 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             if (messageKey != null) {
                 range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
                 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
-                        Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
+                                                         Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
             }
         }
     }
-    
+
     private boolean hasField(IMethod method, IType type) throws JavaModelException {
 
         boolean isPropertyExist = false;
