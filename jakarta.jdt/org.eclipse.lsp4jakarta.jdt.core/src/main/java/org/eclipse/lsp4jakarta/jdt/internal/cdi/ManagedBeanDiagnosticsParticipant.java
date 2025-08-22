@@ -65,17 +65,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                              Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
                                                                                              scopeFQNames);
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
-
-            if (managedBeanAnnotations.size() > 1) {
-                Range range = PositionUtils.toNameRange(type, context.getUtils());
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
-                                                         ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
-            }
+            boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
+            boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
+            boolean nonStaticPublicFieldPresent = false;
             for (IField field : fields) {
                 int fieldFlags = field.getFlags();
                 String[] annotationNames = Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
@@ -88,13 +83,14 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // problem and treats it as a definition error.
                 //
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#managed_beans
-                if (isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
-                    && !managedBeanAnnotations.contains(Constants.DEPENDENT_FQ_NAME)) {
+                if (validateNonStaticPublicField(isManagedBean, isDependent, hasMultipleScopes, fieldFlags)) {
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
+                    nonStaticPublicFieldPresent = true;
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidManagedBeanWithNonStaticPublicField, DiagnosticSeverity.Error));
+
                 }
 
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#declaring_bean_scope
@@ -252,19 +248,32 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
 
-            // If a managed bean class is of generic type, it must be annotated
-            // with @Dependent
             if (isManagedBean) {
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
-                boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
 
-                if (isClassGeneric && !isDependent) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
+                if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidGenericManagedBeanClassWithNoDependentScope, DiagnosticSeverity.Error));
+
+                    // The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
+                } else if (nonStaticPublicFieldPresent) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidManagedBeanWithNonStaticPublicField, DiagnosticSeverity.Error));
+
+                    // Scope type annotations must be specified by a managed bean class at most once.
+                } else if (hasMultipleScopes) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
+                                                             ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
+
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
@@ -402,6 +411,22 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
     private String createInvalidDisposesLabel(Set<String> invalidAnnotations) {
         return Messages.getMessage("ManagedBeanInvalidDisposer", String.join(", ", invalidAnnotations));
+    }
+
+    /**
+     * validateNonStaticPublicField
+     * This is to verify whether the @Dependent annotation must be the only scope applied to a managed bean that contains a non-static public field.
+     *
+     * @param isManagedBean
+     * @param isDependent
+     * @param hasMultipleScopes
+     * @param fieldFlags
+     * @return
+     */
+    private boolean validateNonStaticPublicField(boolean isManagedBean, boolean isDependent, boolean hasMultipleScopes,
+                                                 int fieldFlags) {
+        return isManagedBean && Flags.isPublic(fieldFlags) && !Flags.isStatic(fieldFlags)
+               && (!isDependent || hasMultipleScopes);
     }
 
 }
