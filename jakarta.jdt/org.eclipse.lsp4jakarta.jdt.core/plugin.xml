@@ -300,6 +300,9 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultPublicConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidInitializerParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerParamAnnotationQuickFix" /> 
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
