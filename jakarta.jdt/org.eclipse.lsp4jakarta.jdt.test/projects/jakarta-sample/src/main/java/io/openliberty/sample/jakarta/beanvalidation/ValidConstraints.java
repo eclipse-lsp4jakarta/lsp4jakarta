@@ -43,10 +43,10 @@ public class ValidConstraints {
     private BigDecimal bigDecimal;
     
     @Digits(integer=5, fraction=1)
-    private BigInteger digies;
+    private java.math.BigInteger digies;
     
     @Email
-    private String emailAddress;
+    private java.lang.String emailAddress;
     
     @FutureOrPresent
     private Calendar graduationDate;
