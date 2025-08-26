@@ -195,6 +195,12 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca = ca(uri, "Remove constraint annotation AssertTrue from element", d1, te);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+        
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d2);
+        TextEdit te6 = te(12, 4, 13, 4, "");
+        CodeAction ca6 = ca(uri, "Remove constraint annotation AssertFalse from element", d2, te6);
+
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca6);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d19);
         TextEdit te1 = te(59, 4, 60, 4, "");
