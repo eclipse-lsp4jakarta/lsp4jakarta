@@ -196,12 +196,6 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
         
-        
-        
-        
-        
-        
-        
         JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d3);
         TextEdit te7 = te(15, 4, 16, 4, "");
         CodeAction ca7 = ca(uri, "Remove constraint annotation DecimalMax from element", d3, te7);
