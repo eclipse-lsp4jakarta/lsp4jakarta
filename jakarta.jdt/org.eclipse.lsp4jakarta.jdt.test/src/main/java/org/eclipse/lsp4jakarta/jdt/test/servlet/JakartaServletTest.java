@@ -41,7 +41,6 @@ public class JakartaServletTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     @Test
-    //@Ignore // getAllSuperTypes() returns nothing for tests. See #232
     public void ExtendWebServlet() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DontExtendHttpServlet.java"));
@@ -67,7 +66,6 @@ public class JakartaServletTest extends BaseJakartaTest {
     }
 
     @Test
-    //@Ignore // getAllSuperTypes() returns nothing for tests. See #232
     public void CompleteWebServletAnnotation() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebServlet.java"));
