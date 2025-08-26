@@ -67,7 +67,7 @@ public class JakartaServletTest extends BaseJakartaTest {
     }
 
     @Test
-    @Ignore // getAllSuperTypes() returns nothing for tests. See #232
+    //@Ignore // getAllSuperTypes() returns nothing for tests. See #232
     public void CompleteWebServletAnnotation() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebServlet.java"));
@@ -88,7 +88,7 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         TextEdit te2 = te(9, 0, 10, 0, "@WebServlet(urlPatterns = \"\")\n");
         CodeAction ca2 = ca(uri, "Add the `urlPatterns` attribute to @WebServlet", d, te2);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca2, ca1);
     }
 
     @Test
