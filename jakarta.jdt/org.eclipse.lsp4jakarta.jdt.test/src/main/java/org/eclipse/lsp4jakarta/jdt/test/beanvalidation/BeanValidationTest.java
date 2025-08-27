@@ -195,7 +195,7 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca = ca(uri, "Remove constraint annotation AssertTrue from element", d1, te);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
-        
+
         JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d2);
         TextEdit te6 = te(12, 4, 13, 4, "");
         CodeAction ca6 = ca(uri, "Remove constraint annotation AssertFalse from element", d2, te6);
@@ -219,6 +219,24 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca9 = ca(uri, "Remove constraint annotation Digits from element", d5, te9);
 
         assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca9);
+
+        JakartaJavaCodeActionParams codeActionParams9 = createCodeActionParams(uri, d6);
+        TextEdit te10 = te(22, 4, 23, 4, "");
+        CodeAction ca10 = ca(uri, "Remove constraint annotation Email from element", d6, te10);
+
+        assertJavaCodeAction(codeActionParams9, IJDT_UTILS, ca10);
+
+        JakartaJavaCodeActionParams codeActionParams10 = createCodeActionParams(uri, d7);
+        TextEdit te11 = te(25, 4, 26, 4, "");
+        CodeAction ca11 = ca(uri, "Remove constraint annotation FutureOrPresent from element", d7, te11);
+
+        assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca11);
+
+        JakartaJavaCodeActionParams codeActionParams11 = createCodeActionParams(uri, d8);
+        TextEdit te12 = te(28, 4, 29, 4, "");
+        CodeAction ca12 = ca(uri, "Remove constraint annotation Future from element", d8, te12);
+
+        assertJavaCodeAction(codeActionParams11, IJDT_UTILS, ca12);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d19);
         TextEdit te1 = te(59, 4, 60, 4, "");
