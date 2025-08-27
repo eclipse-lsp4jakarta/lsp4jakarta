@@ -61,7 +61,7 @@ public class ResourcesAnnotationTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(17, 0, 18, 0, "@Resources({ @Resource(name = \"aaa\", type = \"\"), @Resource(type = Object.class) })\n");
+        TextEdit te1 = te(17, 0, 18, 0, "@Resources({ @Resource(name = \"aaa\", type = Object.class), @Resource(type = Object.class) })\n");
         CodeAction ca1 = ca(uri, "Insert 'type' attribute to @Resource", d1, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1);
 
@@ -71,7 +71,7 @@ public class ResourcesAnnotationTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca2);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d3);
-        TextEdit te3 = te(21, 0, 21, 15, "@Resources({ @Resource(name = \"\", type = \"\") })");
+        TextEdit te3 = te(21, 0, 21, 15, "@Resources({ @Resource(name = \"\", type = Object.class) })");
         CodeAction ca3 = ca(uri, "Insert 'name,type' attributes to @Resource", d3, te3);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3);
     }
