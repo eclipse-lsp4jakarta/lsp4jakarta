@@ -225,6 +225,7 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca10 = ca(uri, "Remove constraint annotation Email from element", d6, te10);
 
         assertJavaCodeAction(codeActionParams9, IJDT_UTILS, ca10);
+          
 
         JakartaJavaCodeActionParams codeActionParams10 = createCodeActionParams(uri, d7);
         TextEdit te11 = te(25, 4, 26, 4, "");
