@@ -225,6 +225,12 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca13 = ca(uri, "Remove constraint annotation Min from element", d9, te13);
         
         assertJavaCodeAction(codeActionParams12, IJDT_UTILS, ca13);
+        
+        JakartaJavaCodeActionParams codeActionParams13 = createCodeActionParams(uri, d10);
+        TextEdit te14 = te(32, 4, 33, 4, "");
+        CodeAction ca14 = ca(uri, "Remove constraint annotation Max from element", d10, te14);
+        
+        assertJavaCodeAction(codeActionParams13, IJDT_UTILS, ca14);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d19);
         TextEdit te1 = te(59, 4, 60, 4, "");
