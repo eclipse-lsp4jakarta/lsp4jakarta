@@ -202,21 +202,19 @@ public class JakartaServletTest extends BaseJakartaTest {
 
     @Test
     public void CompleteWebFilterAnnotation() throws Exception {
-        Module module = createMavenModule(new File("src/test/resources/projects/maven/jakarta-sample"));
-        IPsiUtils utils = PsiUtilsLSImpl.getInstance(myProject);
+    	IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebFilter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
 
-        VirtualFile javaFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(ModuleUtilCore.getModuleDirPath(module)
-                + "/src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebFilter.java");
-        String uri = VfsUtilCore.virtualToIoFile(javaFile).toURI().toString();
-
-        JakartaDiagnosticsParams diagnosticsParams = new JakartaDiagnosticsParams();
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = JakartaForJavaAssert.d(5, 0, 12,
+        Diagnostic d = d(5, 0, 12,
                 "The annotation @WebFilter must define the attribute 'urlPatterns', 'servletNames' or 'value'.",
                 DiagnosticSeverity.Error, "jakarta-servlet", "CompleteWebFilterAttributes");
-
-        JakartaForJavaAssert.assertJavaDiagnostics(diagnosticsParams, utils, d);
+       
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        
         String newText = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.*;\n" +
                 "import jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(servletNames=\"\")\npublic abstract class InvalidWebFilter " +
                 "implements Filter {\n\n}\n\n\n";
@@ -227,16 +225,18 @@ public class JakartaServletTest extends BaseJakartaTest {
                 "import jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(\"\")\npublic abstract class InvalidWebFilter " +
                 "implements Filter {\n\n}\n\n\n";
 
-        JakartaJavaCodeActionParams codeActionParams = JakartaForJavaAssert.createCodeActionParams(uri, d);
-        TextEdit te1 = JakartaForJavaAssert.te(0, 0, 11, 0, newText);
-        CodeAction ca1 = JakartaForJavaAssert.ca(uri, "Add the `servletNames` attribute to @WebFilter", d, te1);
-
-        TextEdit te2 = JakartaForJavaAssert.te(0, 0, 11, 0, newText1);
-        CodeAction ca2 = JakartaForJavaAssert.ca(uri, "Add the `urlPatterns` attribute to @WebFilter", d, te2);
-
-        TextEdit te3 = JakartaForJavaAssert.te(0, 0, 11, 0, newText2);
-        CodeAction ca3 = JakartaForJavaAssert.ca(uri, "Add the `value` attribute to @WebFilter", d, te3);
-        JakartaForJavaAssert.assertJavaCodeAction(codeActionParams, utils, ca1, ca2, ca3);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        
+        TextEdit te1 = te(0, 0, 11, 0, newText);
+        CodeAction ca1 = ca(uri, "Add the `servletNames` attribute to @WebFilter", d, te1);
+        
+        TextEdit te2 = te(0, 0, 11, 0, newText1);
+        CodeAction ca2 = ca(uri, "Add the `urlPatterns` attribute to @WebFilter", d, te2);
+        
+        TextEdit te3 = te(0, 0, 11, 0, newText2);
+        CodeAction ca3 = ca(uri, "Add the `value` attribute to @WebFilter", d, te3);
+        
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3);
 
     }
 
