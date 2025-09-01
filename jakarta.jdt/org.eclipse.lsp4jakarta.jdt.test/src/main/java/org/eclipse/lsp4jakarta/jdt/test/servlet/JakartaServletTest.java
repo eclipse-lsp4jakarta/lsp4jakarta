@@ -164,21 +164,22 @@ public class JakartaServletTest extends BaseJakartaTest {
     
     @Test
     public void RemoveDuplicateAttribute() throws Exception {
-        Module module = createMavenModule(new File("src/test/resources/projects/maven/jakarta-sample"));
-        IPsiUtils utils = PsiUtilsLSImpl.getInstance(myProject);
+        
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
 
-        VirtualFile javaFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(ModuleUtilCore.getModuleDirPath(module)
-                + "/src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebServlet.java");
-        String uri = VfsUtilCore.virtualToIoFile(javaFile).toURI().toString();
-
-        JakartaDiagnosticsParams diagnosticsParams = new JakartaDiagnosticsParams();
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
-
-        Diagnostic d = JakartaForJavaAssert.d(5, 0, 41,
-                "The @WebServlet annotation cannot have both 'value' and 'urlPatterns' attributes specified at once.",
+        
+        
+        Diagnostic d = d(5, 0, 41,
+        		"The @WebServlet annotation cannot have both 'value' and 'urlPatterns' attributes specified at once.",
                 DiagnosticSeverity.Error, "jakarta-servlet", "InvalidHttpServletAttribute");
 
-        JakartaForJavaAssert.assertJavaDiagnostics(diagnosticsParams, utils, d);
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        
         String newText = "package io.openliberty.sample.jakarta.servlet;\n\n" +
                 "import jakarta.servlet.annotation.WebServlet;\nimport jakarta.servlet.http.HttpServlet;\n\n@WebServlet( value = \"\")\n" +
                 "public class DuplicateAttributeWebServlet extends HttpServlet {\n\n}\n\n";
@@ -186,13 +187,17 @@ public class JakartaServletTest extends BaseJakartaTest {
                 "import jakarta.servlet.http.HttpServlet;\n\n@WebServlet(urlPatterns = \"\" )\n" +
                 "public class DuplicateAttributeWebServlet extends HttpServlet {\n\n}\n\n";
 
-        JakartaJavaCodeActionParams codeActionParams = JakartaForJavaAssert.createCodeActionParams(uri, d);
-        TextEdit te1 = JakartaForJavaAssert.te(0, 0, 10, 0, newText);
-        CodeAction ca1 = JakartaForJavaAssert.ca(uri, "Remove the `urlPatterns` attribute from @WebServlet", d, te1);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        
+        TextEdit te1 = te(0, 0, 10, 0, newText);
+        CodeAction ca1 = ca(uri, "Remove the `urlPatterns` attribute from @WebServlet", d, te1);
 
-        TextEdit te2 = JakartaForJavaAssert.te(0, 0, 10, 0, newText1);
-        CodeAction ca2 = JakartaForJavaAssert.ca(uri, "Remove the `value` attribute from @WebServlet", d, te2);
-        JakartaForJavaAssert.assertJavaCodeAction(codeActionParams, utils, ca1, ca2);
+        TextEdit te2 = te(0, 0, 10, 0, newText1);
+        CodeAction ca2 = ca(uri, "Remove the `value` attribute from @WebServlet", d, te2);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+    
+        
     }
 
     @Test
