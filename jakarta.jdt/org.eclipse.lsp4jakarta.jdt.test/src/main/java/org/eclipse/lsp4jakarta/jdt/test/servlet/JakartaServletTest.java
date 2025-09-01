@@ -160,4 +160,112 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3, ca4, ca5, ca6, ca7);
     }
+    
+    
+    @Test
+    public void RemoveDuplicateAttribute() throws Exception {
+        Module module = createMavenModule(new File("src/test/resources/projects/maven/jakarta-sample"));
+        IPsiUtils utils = PsiUtilsLSImpl.getInstance(myProject);
+
+        VirtualFile javaFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(ModuleUtilCore.getModuleDirPath(module)
+                + "/src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebServlet.java");
+        String uri = VfsUtilCore.virtualToIoFile(javaFile).toURI().toString();
+
+        JakartaDiagnosticsParams diagnosticsParams = new JakartaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = JakartaForJavaAssert.d(5, 0, 41,
+                "The @WebServlet annotation cannot have both 'value' and 'urlPatterns' attributes specified at once.",
+                DiagnosticSeverity.Error, "jakarta-servlet", "InvalidHttpServletAttribute");
+
+        JakartaForJavaAssert.assertJavaDiagnostics(diagnosticsParams, utils, d);
+        String newText = "package io.openliberty.sample.jakarta.servlet;\n\n" +
+                "import jakarta.servlet.annotation.WebServlet;\nimport jakarta.servlet.http.HttpServlet;\n\n@WebServlet( value = \"\")\n" +
+                "public class DuplicateAttributeWebServlet extends HttpServlet {\n\n}\n\n";
+        String newText1 = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.annotation.WebServlet;\n" +
+                "import jakarta.servlet.http.HttpServlet;\n\n@WebServlet(urlPatterns = \"\" )\n" +
+                "public class DuplicateAttributeWebServlet extends HttpServlet {\n\n}\n\n";
+
+        JakartaJavaCodeActionParams codeActionParams = JakartaForJavaAssert.createCodeActionParams(uri, d);
+        TextEdit te1 = JakartaForJavaAssert.te(0, 0, 10, 0, newText);
+        CodeAction ca1 = JakartaForJavaAssert.ca(uri, "Remove the `urlPatterns` attribute from @WebServlet", d, te1);
+
+        TextEdit te2 = JakartaForJavaAssert.te(0, 0, 10, 0, newText1);
+        CodeAction ca2 = JakartaForJavaAssert.ca(uri, "Remove the `value` attribute from @WebServlet", d, te2);
+        JakartaForJavaAssert.assertJavaCodeAction(codeActionParams, utils, ca1, ca2);
+    }
+
+    @Test
+    public void CompleteWebFilterAnnotation() throws Exception {
+        Module module = createMavenModule(new File("src/test/resources/projects/maven/jakarta-sample"));
+        IPsiUtils utils = PsiUtilsLSImpl.getInstance(myProject);
+
+        VirtualFile javaFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(ModuleUtilCore.getModuleDirPath(module)
+                + "/src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebFilter.java");
+        String uri = VfsUtilCore.virtualToIoFile(javaFile).toURI().toString();
+
+        JakartaDiagnosticsParams diagnosticsParams = new JakartaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = JakartaForJavaAssert.d(5, 0, 12,
+                "The annotation @WebFilter must define the attribute 'urlPatterns', 'servletNames' or 'value'.",
+                DiagnosticSeverity.Error, "jakarta-servlet", "CompleteWebFilterAttributes");
+
+        JakartaForJavaAssert.assertJavaDiagnostics(diagnosticsParams, utils, d);
+        String newText = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.*;\n" +
+                "import jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(servletNames=\"\")\npublic abstract class InvalidWebFilter " +
+                "implements Filter {\n\n}\n\n\n";
+        String newText1 = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.*;\n" +
+                "import jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(urlPatterns=\"\")\npublic abstract class InvalidWebFilter " +
+                "implements Filter {\n\n}\n\n\n";
+        String newText2 = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.*;\n" +
+                "import jakarta.servlet.annotation.WebFilter;\n\n@WebFilter(\"\")\npublic abstract class InvalidWebFilter " +
+                "implements Filter {\n\n}\n\n\n";
+
+        JakartaJavaCodeActionParams codeActionParams = JakartaForJavaAssert.createCodeActionParams(uri, d);
+        TextEdit te1 = JakartaForJavaAssert.te(0, 0, 11, 0, newText);
+        CodeAction ca1 = JakartaForJavaAssert.ca(uri, "Add the `servletNames` attribute to @WebFilter", d, te1);
+
+        TextEdit te2 = JakartaForJavaAssert.te(0, 0, 11, 0, newText1);
+        CodeAction ca2 = JakartaForJavaAssert.ca(uri, "Add the `urlPatterns` attribute to @WebFilter", d, te2);
+
+        TextEdit te3 = JakartaForJavaAssert.te(0, 0, 11, 0, newText2);
+        CodeAction ca3 = JakartaForJavaAssert.ca(uri, "Add the `value` attribute to @WebFilter", d, te3);
+        JakartaForJavaAssert.assertJavaCodeAction(codeActionParams, utils, ca1, ca2, ca3);
+
+    }
+
+    @Test
+    public void RemoveDuplicateWebFilterAttributes() throws Exception {
+        Module module = createMavenModule(new File("src/test/resources/projects/maven/jakarta-sample"));
+        IPsiUtils utils = PsiUtilsLSImpl.getInstance(myProject);
+
+        VirtualFile javaFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(ModuleUtilCore.getModuleDirPath(module)
+                + "/src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebFilter.java");
+        String uri = VfsUtilCore.virtualToIoFile(javaFile).toURI().toString();
+
+        JakartaDiagnosticsParams diagnosticsParams = new JakartaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = JakartaForJavaAssert.d(5, 0, 40,
+                "The annotation @WebFilter can not have both 'value' and 'urlPatterns' attributes specified at once.",
+                DiagnosticSeverity.Error, "jakarta-servlet", "InvalidWebFilterAttribute");
+
+        JakartaForJavaAssert.assertJavaDiagnostics(diagnosticsParams, utils, d);
+        String newText1 = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.annotation.WebFilter;\n" +
+                "import jakarta.servlet.Filter;\n\n@WebFilter( value = \"\")\n" +
+                "public abstract class DuplicateAttributeWebFilter implements Filter {\n\n}\n\n";
+        String newText2 = "package io.openliberty.sample.jakarta.servlet;\n\nimport jakarta.servlet.annotation.WebFilter;\n" +
+                "import jakarta.servlet.Filter;\n\n@WebFilter(urlPatterns = \"\" )\n" +
+                "public abstract class DuplicateAttributeWebFilter implements Filter {\n\n}\n\n";
+
+        JakartaJavaCodeActionParams codeActionParams = JakartaForJavaAssert.createCodeActionParams(uri, d);
+
+        TextEdit te1 = JakartaForJavaAssert.te(0, 0, 10, 0, newText1);
+        CodeAction ca1 = JakartaForJavaAssert.ca(uri, "Remove the `urlPatterns` attribute from @WebFilter", d, te1);
+
+        TextEdit te2 = JakartaForJavaAssert.te(0, 0, 10, 0, newText2);
+        CodeAction ca2 = JakartaForJavaAssert.ca(uri, "Remove the `value` attribute from @WebFilter", d, te2);
+        JakartaForJavaAssert.assertJavaCodeAction(codeActionParams, utils, ca1, ca2);
+    }
 }
