@@ -241,6 +241,9 @@
                   targetDiagnostic="jakarta-servlet#WebFilterAnnotationAttributeConflict"
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteFilterAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-servlet#WebFilterAnnotationMissingAttributes"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteFilterAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-servlet#ClassWebFilterAnnotatedNoFilterInterfaceImpl"
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertImplementsClauseToImplFilterQuickFix" />      
 
