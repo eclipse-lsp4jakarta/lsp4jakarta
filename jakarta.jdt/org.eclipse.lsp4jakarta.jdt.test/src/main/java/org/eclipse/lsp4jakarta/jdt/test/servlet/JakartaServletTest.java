@@ -160,12 +160,11 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3, ca4, ca5, ca6, ca7);
     }
-    
-    
+
     @Test
     public void RemoveDuplicateAttribute() throws Exception {
-        
-    	IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebServlet.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
@@ -189,13 +188,13 @@ public class JakartaServletTest extends BaseJakartaTest {
         TextEdit te2 = te(5, 0, 6, 0, newText1);
         CodeAction ca2 = ca(uri, "Remove the `value` attribute from @WebServlet", d, te2);
 
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);        
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
     }
 
     @Test
     public void CompleteWebFilterAnnotation() throws Exception {
-    	
-    	IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebFilter.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
@@ -228,8 +227,8 @@ public class JakartaServletTest extends BaseJakartaTest {
 
     @Test
     public void RemoveDuplicateWebFilterAttributes() throws Exception {
-    	
-    	IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebFilter.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
