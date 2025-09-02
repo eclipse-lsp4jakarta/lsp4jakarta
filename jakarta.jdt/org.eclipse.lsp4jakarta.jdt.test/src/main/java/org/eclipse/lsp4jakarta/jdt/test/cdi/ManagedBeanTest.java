@@ -53,13 +53,13 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // test expected diagnostic
         Diagnostic d1 = d(9, 12, 13,
-                          "The @Dependent annotation must be defined by a managed bean with a non-static public field.",
+                          "The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidManagedBeanWithNonStaticPublicField");
         Diagnostic d2 = d(6, 12, 13,
-                          "The @Dependent annotation must be defined by a managed bean with a non-static public field.",
+                          "The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidManagedBeanWithNonStaticPublicField");
         Diagnostic d3 = d(5, 13, 24,
-                          "Managed bean class of generic type must have scope @Dependent.",
+                          "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
@@ -75,6 +75,80 @@ public class ManagedBeanTest extends BaseJakartaTest {
         TextEdit te3 = te(4, 0, 5, 0, "@Dependent\n");
         CodeAction ca3 = ca(uri, "Replace current scope with @Dependent", d3, te3);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3);
+    }
+
+    @Test
+    public void ManagedBeanWithDependent() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ManagedBeanWithDependent.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // test expected diagnostic
+        Diagnostic d1 = d(37, 6, 36,
+                          "Scope type annotations must be specified by a managed bean class at most once.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
+        d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped", "jakarta.enterprise.context.RequestScoped")));
+
+        Diagnostic d2 = d(27, 6, 33,
+                          "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
+        Diagnostic d3 = d(18, 12, 13,
+                          "The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidManagedBeanWithNonStaticPublicField");
+
+        Diagnostic d4 = d(17, 6, 27,
+                          "The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidManagedBeanWithNonStaticPublicField");
+        Diagnostic d5 = d(7, 12, 13,
+                          "The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidManagedBeanWithNonStaticPublicField");
+
+        Diagnostic d6 = d(6, 13, 37,
+                          "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+
+        // Assert for diagnostic d1
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te11 = te(35, 0, 36, 0, "");
+        CodeAction ca11 = ca(uri, "Remove @RequestScoped", d1, te11);
+        TextEdit te12 = te(35, 14, 36, 14, "");
+        CodeAction ca12 = ca(uri, "Remove @SessionScoped", d1, te12);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca11, ca12);
+
+        // Assert for diagnostic d2
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        TextEdit te2 = te(25, 0, 26, 14, "@Dependent");
+        CodeAction ca2 = ca(uri, "Replace current scope with @Dependent", d2, te2);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
+
+        // Assert for diagnostic d3
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
+        TextEdit te3 = te(14, 0, 16, 14, "@Dependent");
+        CodeAction ca3 = ca(uri, "Replace current scope with @Dependent", d3, te3);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3);
+
+        // Assert for diagnostic d4
+        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d4);
+        TextEdit te4 = te(14, 0, 16, 14, "@Dependent");
+        CodeAction ca4 = ca(uri, "Replace current scope with @Dependent", d4, te4);
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
+
+        // Assert for diagnostic d5
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te5 = te(4, 0, 6, 0, "@Dependent\n");
+        CodeAction ca5 = ca(uri, "Replace current scope with @Dependent", d5, te5);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
+
+        // Assert for diagnostic d6
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d6);
+        TextEdit te6 = te(4, 0, 6, 0, "@Dependent\n");
+        CodeAction ca6 = ca(uri, "Replace current scope with @Dependent", d6, te6);
+        assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca6);
     }
 
     @Test

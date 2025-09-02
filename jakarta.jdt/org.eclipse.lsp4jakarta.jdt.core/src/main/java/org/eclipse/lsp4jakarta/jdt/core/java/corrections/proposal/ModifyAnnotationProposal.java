@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -401,17 +401,25 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
     }
 
     private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values) {
-        // add new String attributes
-        // we are adding empty strings for values because we cannot know what the user
-        // wishes to have - they will have to add that themselves
-        // ie: name="" or type=""
+    	// Add new attributes of type String or Class.
+    	// For initial values, we use empty strings for String types and Object.class for Class types,
+    	// since the user's intended values are unknown at this stage,
+    	// These placeholders (e.g., name = "", type = Object.class) must be updated by the user as needed.
+    	// when an annotation in Jakarta EE declares an attribute named type, it’s always of the form of Class<?>
+
         for (String newAttr : this.attributesToAdd) {
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-                StringLiteral stringValue = ast.newStringLiteral();
-                stringValue.setLiteralValue("");
-                newMemberValuePair.setValue(stringValue);
+                if ("type".equals(newAttr)) {
+                    TypeLiteral typeLiteral = ast.newTypeLiteral();
+                    typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
+                    newMemberValuePair.setValue(typeLiteral);
+                } else {
+                    StringLiteral stringValue = ast.newStringLiteral();
+                    stringValue.setLiteralValue("");
+                    newMemberValuePair.setValue(stringValue);
+                }
                 values.add(newMemberValuePair);
             }
         }

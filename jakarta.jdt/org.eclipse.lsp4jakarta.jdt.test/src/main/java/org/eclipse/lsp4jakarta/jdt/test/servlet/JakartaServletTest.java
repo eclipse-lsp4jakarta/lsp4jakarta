@@ -41,7 +41,6 @@ public class JakartaServletTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     @Test
-    @Ignore // getAllSuperTypes() returns nothing for tests. See #232
     public void ExtendWebServlet() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DontExtendHttpServlet.java"));
@@ -52,20 +51,21 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         // expected
         Diagnostic d = d(5, 13, 34, "Annotated classes with @WebServlet must extend the HttpServlet class.",
-                         DiagnosticSeverity.Warning, "jakarta-servlet",
-                         "WebServletAnnotatedClassUnknownSuperTypeDoesNotExtendHttpServlet");
+                         DiagnosticSeverity.Error, "jakarta-servlet",
+                         "WebServletAnnotatedClassDoesNotExtendHttpServlet");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
 
         // test associated quick-fix code action
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
-        TextEdit te = te(5, 34, 5, 34, " extends HttpServlet");
+        TextEdit te = te(2, 45, 5, 34, "\nimport jakarta.servlet.http.HttpServlet;\n\n"
+                                       + "@WebServlet(name = \"demoServlet\", urlPatterns = { \"/demo\" })\npublic class DontExtendHttpServlet extends HttpServlet");
+
         CodeAction ca = ca(uri, "Let 'DontExtendHttpServlet' extend 'HttpServlet'", d, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
     }
 
     @Test
-    @Ignore // getAllSuperTypes() returns nothing for tests. See #232
     public void CompleteWebServletAnnotation() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebServlet.java"));
@@ -86,7 +86,7 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         TextEdit te2 = te(9, 0, 10, 0, "@WebServlet(urlPatterns = \"\")\n");
         CodeAction ca2 = ca(uri, "Add the `urlPatterns` attribute to @WebServlet", d, te2);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca2, ca1);
     }
 
     @Test
