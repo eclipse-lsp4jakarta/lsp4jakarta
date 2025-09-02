@@ -220,6 +220,24 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca9);
 
+        JakartaJavaCodeActionParams codeActionParams9 = createCodeActionParams(uri, d6);
+        TextEdit te10 = te(22, 4, 23, 4, "");
+        CodeAction ca10 = ca(uri, "Remove constraint annotation Email from element", d6, te10);
+
+        assertJavaCodeAction(codeActionParams9, IJDT_UTILS, ca10);
+
+        JakartaJavaCodeActionParams codeActionParams10 = createCodeActionParams(uri, d7);
+        TextEdit te11 = te(25, 4, 26, 4, "");
+        CodeAction ca11 = ca(uri, "Remove constraint annotation FutureOrPresent from element", d7, te11);
+
+        assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca11);
+
+        JakartaJavaCodeActionParams codeActionParams11 = createCodeActionParams(uri, d8);
+        TextEdit te12 = te(28, 4, 29, 4, "");
+        CodeAction ca12 = ca(uri, "Remove constraint annotation Future from element", d8, te12);
+
+        assertJavaCodeAction(codeActionParams11, IJDT_UTILS, ca12);
+
         JakartaJavaCodeActionParams codeActionParams12 = createCodeActionParams(uri, d9);
         TextEdit te13 = te(31, 4, 32, 4, "");
         CodeAction ca13 = ca(uri, "Remove constraint annotation Min from element", d9, te13);
