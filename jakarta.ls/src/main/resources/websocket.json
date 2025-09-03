@@ -1,0 +1,38 @@
+{
+    "Jakarta WebSocket - Server Endpoint class": {
+      "prefix": "serverendpoint_class",
+      "body": [
+        "package ${1:packagename};",
+        "",
+        "import jakarta.websocket.server.ServerEndpoint;",
+        "",
+        "@ServerEndpoint(\"${2:/path}\")",
+        "public class ${TM_FILENAME_BASE} {",
+        "",
+        "}"
+      ],
+      "description": "WebSocket Server endpoint",
+      "context": {
+        "type": "jakarta.websocket.server.ServerEndpoint",
+        "contentType": "class"
+      }
+    },
+	"Jakarta WebSocket - Client Endpoint class": {
+	      "prefix": "clientendpoint_class",
+	      "body": [
+	        "package ${1:packagename};",
+	        "",
+	        "import jakarta.websocket.ClientEndpoint;",
+	        "",
+	        "@ClientEndpoint",
+	        "public class ${TM_FILENAME_BASE} {",
+	        "",
+	        "}"
+	      ],
+	      "description": "WebSocket Client endpoint",
+	      "context": {
+	        "type": "jakarta.websocket.ClientEndpoint",
+	        "contentType": "class"
+	      }
+	    }
+  }
