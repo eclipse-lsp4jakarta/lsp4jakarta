@@ -1,38 +1,115 @@
 {
-    "Jakarta WebSocket - Server Endpoint class": {
-      "prefix": "serverendpoint_class",
-      "body": [
-        "package ${1:packagename};",
-        "",
-        "import jakarta.websocket.server.ServerEndpoint;",
-        "",
-        "@ServerEndpoint(\"${2:/path}\")",
-        "public class ${TM_FILENAME_BASE} {",
-        "",
-        "}"
-      ],
-      "description": "WebSocket Server endpoint",
-      "context": {
-        "type": "jakarta.websocket.server.ServerEndpoint",
-        "contentType": "class"
-      }
-    },
+	"Jakarta WebSocket - Server Endpoint class": {
+		"prefix": "server_endpoint",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			
+			"import jakarta.websocket.server.ServerEndpoint;",
+			"",
+			"@ServerEndpoint(\"${2:/path}\")",
+			"public class ${TM_FILENAME_BASE} {",
+			"",
+			"\t@OnOpen",
+			"\tpublic void onOpen(Session session) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnMessage",
+			"\tpublic void onMessage(Session session, String message) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnClose",
+			"\tpublic void onClose(Session session) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnError",
+			"\tpublic void onError(Session session, Throwable throwable) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"}"
+		],
+		"description": "WebSocket Server endpoint",
+		"context": {
+			"type": "jakarta.websocket.server.ServerEndpoint",
+			"contentType": "class"
+		}
+	},
 	"Jakarta WebSocket - Client Endpoint class": {
-	      "prefix": "clientendpoint_class",
-	      "body": [
-	        "package ${1:packagename};",
-	        "",
-	        "import jakarta.websocket.ClientEndpoint;",
-	        "",
-	        "@ClientEndpoint",
-	        "public class ${TM_FILENAME_BASE} {",
-	        "",
-	        "}"
-	      ],
-	      "description": "WebSocket Client endpoint",
-	      "context": {
-	        "type": "jakarta.websocket.ClientEndpoint",
-	        "contentType": "class"
-	      }
-	    }
-  }
+		"prefix": "client_endpoint",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			
+			"import jakarta.websocket.ClientEndpoint;",
+			"",
+			"@ClientEndpoint",
+			"public class ${TM_FILENAME_BASE} {",
+			"",
+			"\t@OnOpen",
+			"\tpublic void onOpen(Session session) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnMessage",
+			"\tpublic void onMessage(Session session, String message) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnClose",
+			"\tpublic void onClose(Session session) throws IOException {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@OnError",
+			"\tpublic void onError(Session session, Throwable throwable) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"}"
+		],
+		"description": "WebSocket Client endpoint",
+		"context": {
+			"type": "jakarta.websocket.ClientEndpoint",
+			"contentType": "class"
+		}
+	},
+	"Jakarta WebSocket - Programmatic Endpoint class": {
+		"prefix": "programmatic_endpoint",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.websocket.CloseReason;",
+			"import jakarta.websocket.Endpoint;",
+			"import jakarta.websocket.EndpointConfig;",
+			"import jakarta.websocket.Session;",
+			"",
+			"public class ${TM_FILENAME_BASE} extends Endpoint {",
+			"",
+			"\t@Override",
+			"\tpublic void onOpen(Session session, EndpointConfig config) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@Override",
+			"\tpublic void onClose(Session session, CloseReason closeReason) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@Override",
+			"\tpublic void onError(Session session, Throwable error) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"}"
+		],
+		"description": "WebSocket programmatic endpoint",
+		"context": {
+			"type": "jakarta.websocket.Endpoint",
+			"contentType": "class"
+		}
+	}
+}
