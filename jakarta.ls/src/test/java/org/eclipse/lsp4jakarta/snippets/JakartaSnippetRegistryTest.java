@@ -172,10 +172,15 @@ public class JakartaSnippetRegistryTest {
 
     }
     
+    @Test
     public void websocketSnippetsTest() {
     	Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
     	Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
     	Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
+    	
+    	assertTrue("server_endpoint Java snippet is not present in SnippetRegistry", wsServerSnippet.isPresent());
+    	assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
+    	assertTrue("programmatic_endpoint Java snippet is not present in SnippetRegistry", wsProgrammaticSnippet.isPresent());
     	
     }
 
