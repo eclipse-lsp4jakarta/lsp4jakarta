@@ -100,7 +100,13 @@ public class InsertStaticModifierQuickFix implements IJavaCodeActionParticipant 
                 makeMemberTypeStaticIfNeeded(context, toResolve, fieldType);
             }
         }
-       
+        // Case 2: @Inject on a method
+        else if (node.getParent() instanceof MethodDeclaration) {
+            IMethodBinding methodBinding = (IMethodBinding) getBinding(node);
+            for (ITypeBinding paramType : methodBinding.getParameterTypes()) {
+                makeMemberTypeStaticIfNeeded(context, toResolve, paramType);
+            }
+        }
 
         return toResolve;
     }
