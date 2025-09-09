@@ -171,24 +171,24 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_METHOD_ANNOTATIONS);
 
     }
-    
+
     @Test
     public void websocketSnippetsTest() {
-    	Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
-    	Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
-    	Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
-    	
-    	assertTrue("server_endpoint Java snippet is not present in SnippetRegistry", wsServerSnippet.isPresent());
-    	assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
-    	assertTrue("programmatic_endpoint Java snippet is not present in SnippetRegistry", wsProgrammaticSnippet.isPresent());
-    	
-    	snippetsContextTest(wsServerSnippet, "jakarta.websocket.server.ServerEndpoint",
-                JavaCursorContextKind.IN_EMPTY_FILE);
-    	snippetsContextTest(wsClientSnippet, "jakarta.websocket.ClientEndpoint",
-                JavaCursorContextKind.IN_EMPTY_FILE);
-    	snippetsContextTest(wsProgrammaticSnippet, "jakarta.websocket.Endpoint",
-                JavaCursorContextKind.IN_EMPTY_FILE);
-    	
+        Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
+        Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
+        Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
+
+        assertTrue("server_endpoint Java snippet is not present in SnippetRegistry", wsServerSnippet.isPresent());
+        assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
+        assertTrue("programmatic_endpoint Java snippet is not present in SnippetRegistry", wsProgrammaticSnippet.isPresent());
+
+        snippetsContextTest(wsServerSnippet, "jakarta.websocket.server.ServerEndpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(wsClientSnippet, "jakarta.websocket.ClientEndpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(wsProgrammaticSnippet, "jakarta.websocket.Endpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+
     }
 
     // Verify whether the snippet is present in the registry.
