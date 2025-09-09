@@ -84,7 +84,51 @@ public class InsertStaticModifierQuickFix implements IJavaCodeActionParticipant 
         return codeActions;
     }
 
-   
+    @Override
+    public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
+        CodeAction toResolve = context.getUnresolved();
+        ASTNode node = context.getCoveredNode();
+        if (node == null) {
+            return toResolve;
+        }
+        // Case 1: @Inject on a field
+
+        if (node.getParent() instanceof VariableDeclarationFragment) {
+            IVariableBinding binding = (IVariableBinding) getBinding(node);
+            if (binding != null) {
+                ITypeBinding fieldType = binding.getType();
+                makeMemberTypeStaticIfNeeded(context, toResolve, fieldType);
+            }
+        }
+       
+
+        return toResolve;
+    }
+
+    private CodeAction makeMemberTypeStaticIfNeeded(
+                                                    JavaCodeActionResolveContext context,
+                                                    CodeAction toResolve,
+                                                    ITypeBinding innerType) {
+
+        CompilationUnit astRoot = context.getASTRoot();
+        ASTNode declNode = astRoot.findDeclaringNode(innerType);
+        if (!(declNode instanceof TypeDeclaration innerDecl))
+            return null;
+
+        if (Modifier.isStatic(innerDecl.getModifiers()))
+            return null;
+
+        try {
+            ModifyModifiersProposal proposal = new ModifyModifiersProposal(getLabel(), context.getCompilationUnit(), astRoot, innerType.getTypeDeclaration(), 0, innerDecl, List.of("static"));
+            toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
+            return toResolve;
+
+        } catch (NoSuchMethodError | IllegalArgumentException | CoreException e) {
+            LOGGER.log(Level.SEVERE, "Unable to create ModifyModifiersProposal", e);
+            return null;
+        }
+    }
+
     protected String getLabel() {
         return Messages.getMessage("MakeInnerClassStatic");
     }
