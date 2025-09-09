@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation and others.
+ * Copyright (c) 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -62,14 +62,14 @@ public class InnerClassInjectionTest extends BaseJakartaTest {
         // Create expected quick fixes.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
         TextEdit te = te(33, 7, 33, 7, " static");
-        CodeAction ca = ca(uri, "Make inner class static", d1, te);
+        CodeAction ca = ca(uri, "Add 'static' modifier to the nested class", d1, te);
         TextEdit te1 = te(21, 1, 22, 1, "");
         CodeAction ca1 = ca(uri, "Remove @Inject", d1, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca, ca1);
 
         codeActionParams = createCodeActionParams(uri, d2);
         te = te(33, 7, 33, 7, " static");
-        ca = ca(uri, "Make inner class static", d2, te);
+        ca = ca(uri, "Add 'static' modifier to the nested class", d2, te);
         te1 = te(28, 1, 29, 1, "");
         ca1 = ca(uri, "Remove @Inject", d2, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca, ca1);

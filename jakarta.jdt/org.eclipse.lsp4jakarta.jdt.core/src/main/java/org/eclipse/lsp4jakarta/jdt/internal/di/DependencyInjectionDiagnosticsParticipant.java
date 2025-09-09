@@ -185,7 +185,17 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
         });
     }
 
+    /**
+     * hasNonStaticInnerClass
+     * This will check whether the parent class contains any nested class that has no static field matching the field’s type.
+     *
+     * @param outerType
+     * @param injectedTypeName
+     * @return
+     * @throws JavaModelException
+     */
     private boolean hasNonStaticInnerClass(IType outerType, String injectedTypeName) throws JavaModelException {
+
         for (IType inner : outerType.getTypes()) {
             if (inner.getFullyQualifiedName().endsWith(injectedTypeName)) {
                 return !Flags.isStatic(inner.getFlags());
