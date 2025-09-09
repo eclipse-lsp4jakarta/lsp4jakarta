@@ -80,6 +80,8 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
 
     /**
      * {@inheritDoc}
+     * Resolves a code action by inserting the appropriate modifier into a nested class matching
+     * the annotated field or method parameter type.
      */
     @Override
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
@@ -107,6 +109,7 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
 
     /**
      * insert Modifier to the Node
+     * Add modifier to the corresponding node element
      *
      * @param context
      * @param toResolve
