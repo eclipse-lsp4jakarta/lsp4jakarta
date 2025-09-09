@@ -44,7 +44,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifier
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
- * Removes the static modifier from the declaring element.
+ * Insert the static modifier to the Nested class.
  */
 public class InsertStaticModifierQuickFix implements IJavaCodeActionParticipant {
 
