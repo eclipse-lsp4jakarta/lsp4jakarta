@@ -84,6 +84,9 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                                                              ErrorCode.InvalidNumerOfJsonbCreatorAnnotationsInClass, DiagnosticSeverity.Error));
                 }
             }
+            //Changes to support lsp4jakarta issue #291 to add diagnostic for Property Name Uniqueness
+            List<String> propertyNames = new ArrayList<String>();
+            List<String> uniquePropertyNames = new ArrayList<String>();
             // fields
             for (IField field : type.getFields()) {
                 collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
