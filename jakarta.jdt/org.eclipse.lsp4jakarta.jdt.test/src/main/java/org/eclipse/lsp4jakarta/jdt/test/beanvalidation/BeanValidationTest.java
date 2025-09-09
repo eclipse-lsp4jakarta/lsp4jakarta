@@ -210,7 +210,7 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d4);
         TextEdit te8 = te(16, 4, 17, 4, "");
-        CodeAction ca8 = ca(uri, "Remove constraint annotation DecimalMin from element", d4, te8);
+        CodeAction ca8 = ca(uri, "Remove constraint annotation DecimalMin from element", d3, te8);
 
         assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca8);
 
