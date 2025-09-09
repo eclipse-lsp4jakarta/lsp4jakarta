@@ -171,6 +171,13 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_METHOD_ANNOTATIONS);
 
     }
+    
+    public void websocketSnippetsTest() {
+    	Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
+    	Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
+    	Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
+    	
+    }
 
     // Verify whether the snippet is present in the registry.
     private static Optional<Snippet> findByPrefix(String prefix, JavaTextDocumentSnippetRegistry registry) {
