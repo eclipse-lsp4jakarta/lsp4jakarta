@@ -182,6 +182,13 @@ public class JakartaSnippetRegistryTest {
     	assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
     	assertTrue("programmatic_endpoint Java snippet is not present in SnippetRegistry", wsProgrammaticSnippet.isPresent());
     	
+    	snippetsContextTest(wsServerSnippet, "jakarta.websocket.server.ServerEndpoint",
+                JavaCursorContextKind.IN_EMPTY_FILE);
+    	snippetsContextTest(wsClientSnippet, "jakarta.websocket.ClientEndpoint",
+                JavaCursorContextKind.IN_EMPTY_FILE);
+    	snippetsContextTest(wsProgrammaticSnippet, "jakarta.websocket.Endpoint",
+                JavaCursorContextKind.IN_EMPTY_FILE);
+    	
     }
 
     // Verify whether the snippet is present in the registry.
