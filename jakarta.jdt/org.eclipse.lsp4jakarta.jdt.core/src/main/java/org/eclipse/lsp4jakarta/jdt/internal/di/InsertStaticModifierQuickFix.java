@@ -58,7 +58,33 @@ public class InsertStaticModifierQuickFix implements IJavaCodeActionParticipant 
         super();
     }
 
-  
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context,
+                                                     Diagnostic diagnostic,
+                                                     IProgressMonitor monitor) throws CoreException {
+        ASTNode node = context.getCoveredNode();
+        List<CodeAction> codeActions = new ArrayList<>();
+        if (node == null) {
+            return codeActions;
+        }
+        IBinding parentType = getBinding(node);
+        if (parentType != null) {
+            ExtendedCodeAction codeAction = new ExtendedCodeAction(getLabel());
+            codeAction.setRelevance(0);
+            codeAction.setKind(CodeActionKind.QuickFix);
+            codeAction.setDiagnostics(Arrays.asList(diagnostic));
+            codeAction.setData(new CodeActionResolveData(context.getUri(), getParticipantId(), context.getParams().getRange(), null, context.getParams().isResourceOperationSupported(), context.getParams().isCommandConfigurationUpdateSupported(), getCodeActionId()));
+
+            codeActions.add(codeAction);
+        }
+
+        return codeActions;
+    }
+
+   
     protected String getLabel() {
         return Messages.getMessage("MakeInnerClassStatic");
     }
