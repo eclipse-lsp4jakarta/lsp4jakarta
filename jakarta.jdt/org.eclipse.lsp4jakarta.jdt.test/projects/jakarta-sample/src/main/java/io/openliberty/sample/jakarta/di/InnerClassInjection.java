@@ -27,7 +27,7 @@ public class InnerClassInjection {
 	}
 
 	@Inject
-	public void setBean(InnerBean bean) {
+	public void setBean(io.openliberty.sample.jakarta.di.InnerClassInjection.InnerBean bean) {
 		this.bean = bean;
 	}
 
