@@ -49,6 +49,7 @@ public class Constants {
     //Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
     public static final String[] INVALID_DISPOSER_FQ_PARAMS = { DISPOSES_FQ_NAME };
     public static final String[] INVALID_DISPOSER_FQ_CONFLICTED_PARAMS = { OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME };
+    public static final Set<String> MUTUALLY_EXCLUSIVE_ANNOTATIONS = new HashSet<String>(Arrays.asList("@Disposes","@Observes","@ObservesAsync"));
     // List can be found in the cdi doc here:
     // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#bean_defining_annotations
     public static final Set<String> SCOPES = new HashSet<String>(Arrays.asList("Dependent", "ApplicationScoped", "ConversationScoped", "RequestScoped", "SessionScoped",
