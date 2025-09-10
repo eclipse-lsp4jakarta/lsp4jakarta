@@ -197,7 +197,9 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
     private boolean hasNonStaticInnerClass(IType outerType, String injectedTypeName) throws JavaModelException {
 
         for (IType inner : outerType.getTypes()) {
-            if (inner.getFullyQualifiedName().endsWith(injectedTypeName)) {
+            // convert JVM binary name to Source code reference to the nested class
+            String innerFqName = inner.getFullyQualifiedName().replace('$', '.');
+            if (DiagnosticUtils.isMatchedNestedClass(outerType, injectedTypeName, innerFqName)) {
                 return !Flags.isStatic(inner.getFlags());
             }
         }
