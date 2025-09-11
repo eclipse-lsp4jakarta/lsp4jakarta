@@ -17,26 +17,34 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifiersProposal;
 
 /**
  * Add modifiers to the Nested Class.
  */
 public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeActionParticipant {
+
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(InsertModifierToNestedClassQuickFix.class.getName());
 
     /** Code action label template. */
     private static final String CODE_ACTION_LABEL = "Add ''{0}'' modifier to the nested class";
@@ -116,8 +124,29 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
      * @param paramType
      * @return
      */
-    protected abstract CodeAction insertModifier(JavaCodeActionResolveContext context, CodeAction toResolve,
-                                                 ITypeBinding paramType);
+    protected CodeAction insertModifier(
+                                        JavaCodeActionResolveContext context,
+                                        CodeAction toResolve,
+                                        ITypeBinding type) {
+
+        CompilationUnit astRoot = context.getASTRoot();
+        ASTNode declNode = astRoot.findDeclaringNode(type);
+        if (!(declNode instanceof TypeDeclaration innerDecl))
+            return null;
+
+        if (isModifierExist(innerDecl))
+            return null;
+
+        try {
+            ModifyModifiersProposal proposal = new ModifyModifiersProposal(getLabel(modifier), context.getCompilationUnit(), astRoot, type.getTypeDeclaration(), 0, innerDecl, List.of(modifier));
+            toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
+            return toResolve;
+
+        } catch (NoSuchMethodError | IllegalArgumentException | CoreException e) {
+            LOGGER.log(Level.SEVERE, "Unable to create ModifyModifiersProposal", e);
+            return null;
+        }
+    }
 
     /**
      * Returns the named entity associated to the given node.
@@ -152,4 +181,13 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
      * @return the id for this code action
      */
     protected abstract ICodeActionId getCodeActionId();
+
+    /**
+     * isModifierExist
+     * This check verifies whether the modifier already exists on the node.
+     *
+     * @param typeDeclaration
+     * @return
+     */
+    protected abstract boolean isModifierExist(TypeDeclaration typeDeclaration);
 }

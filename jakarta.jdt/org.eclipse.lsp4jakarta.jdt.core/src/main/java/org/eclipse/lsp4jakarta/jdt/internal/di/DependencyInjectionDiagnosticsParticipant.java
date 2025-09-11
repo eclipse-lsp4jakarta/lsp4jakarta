@@ -74,7 +74,7 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                 Range range = PositionUtils.toNameRange(field,
                                                         context.getUtils());
                 if (containsAnnotation(type, field.getAnnotations(), INJECT_FQ_NAME)) {
-                	
+
                     if (Flags.isFinal(field.getFlags())) {
                         String msg = Messages.getMessage("InjectNoFinalField");
 
