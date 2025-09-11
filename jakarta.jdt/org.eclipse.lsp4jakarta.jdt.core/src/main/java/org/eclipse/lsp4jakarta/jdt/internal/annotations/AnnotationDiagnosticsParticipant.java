@@ -24,11 +24,14 @@ import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageDeclaration;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -38,6 +41,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -59,6 +63,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         String uri = context.getUri();
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
+        IJavaProject javaProject = unit.getJavaProject();
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         if (unit != null) {
@@ -252,7 +257,17 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-
+                        boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
+                        if(checkedExceptionPresent) {
+                        	String diagnosticMessage = Messages.getMessage(
+        							"A method with the annotation @PostConstruct must not throw checked exceptions.");
+                            diagnostics.add(
+        							context.createDiagnostic(uri, diagnosticMessage, methodRange,
+        									Constants.DIAGNOSTIC_SOURCE,
+        									ErrorCode.PostConstructException,
+        									DiagnosticSeverity.Error));
+                        }
+                        
                         if (method.getNumberOfParameters() != 0) {
 
                             String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
@@ -272,21 +287,22 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                      DiagnosticSeverity.Error));
                         }
 
-                        if (method.getExceptionTypes().length != 0) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotThrow",
-                                                                           "@PostConstruct");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PostConstructException,
-                                                                     DiagnosticSeverity.Warning));
-                        }
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation,
                                                                Constants.PRE_DESTROY_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-
+                        boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
+                        if(checkedExceptionPresent) {
+                        	String diagnosticMessage = Messages.getMessage(
+        							"A method with the annotation @PreDestroy must not throw checked exceptions.");
+                            diagnostics.add(
+        							context.createDiagnostic(uri, diagnosticMessage, methodRange,
+        									Constants.DIAGNOSTIC_SOURCE,
+        									ErrorCode.PreDestroyException,
+        									DiagnosticSeverity.Error));
+                        }
                         if (method.getNumberOfParameters() != 0) {
                             String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
                                                                            "@PreDestroy");
@@ -304,15 +320,6 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                      ErrorCode.PreDestroyStatic,
                                                                      DiagnosticSeverity.Error));
                         }
-
-                        if (method.getExceptionTypes().length != 0) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotThrow",
-                                                                           "@PreDestroy");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PreDestroyException,
-                                                                     DiagnosticSeverity.Warning));
-                        }
                     }
                 }
             }
@@ -320,7 +327,9 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
 
         return diagnostics;
     }
+    
 
+    
     /**
      * Returns true if the input annotation is valid. False, otherwise.
      *
