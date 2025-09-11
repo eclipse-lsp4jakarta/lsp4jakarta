@@ -328,7 +328,32 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         return diagnostics;
     }
     
-
+/**
+ * isCheckedExceptionPresent
+ * isCheckedExceptionPresent
+ * 
+ * @param javaProject
+ * @param method
+ * @return
+ * @throws JavaModelException
+ * @throws CoreException
+ */
+    private boolean isCheckedExceptionPresent(IJavaProject javaProject, IMethod method) throws JavaModelException, CoreException {
+		
+		IType parentType = method.getDeclaringType();
+		String[] exceptionSignatures = method.getExceptionTypes();
+		for (String sig : exceptionSignatures) {
+			String fqName = DiagnosticUtils.getFullyQualifiedName(parentType, Signature.toString(sig));
+			if(null != fqName) {
+				IType exceptionType = javaProject.findType(fqName);
+				if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
+						TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
+	                return true;
+				}
+			}
+		}
+		return false;
+	}
     
     /**
      * Returns true if the input annotation is valid. False, otherwise.
