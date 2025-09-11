@@ -385,7 +385,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation));
                 }
                 
-                if(paramScopes.size() == 3 && invalidAnnotations.containsAll(expected) && invalidAnnotations.size() == expected.size()) {
+                if(paramScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
                     mutuallyExclusive = true;
                 }
                 
