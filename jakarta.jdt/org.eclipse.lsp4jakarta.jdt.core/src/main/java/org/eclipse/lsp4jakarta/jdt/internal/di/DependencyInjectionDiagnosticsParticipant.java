@@ -201,7 +201,9 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
             // convert JVM binary name to Source code reference to the nested class
             String innerFqName = inner.getFullyQualifiedName().replace('$', '.');
             if (DiagnosticUtils.nameEndsWith(innerFqName, injectedTypeName)) {
-                return ManagedBean.isInnerClass(ManagedBean.getChildITypeByName(outerType, injectedTypeName));
+                if (innerFqName.equals(ManagedBean.getFullyQualifiedClassName(outerType, injectedTypeName))) {
+                    return ManagedBean.isInnerClass(inner);
+                }
             }
         }
         return false;
