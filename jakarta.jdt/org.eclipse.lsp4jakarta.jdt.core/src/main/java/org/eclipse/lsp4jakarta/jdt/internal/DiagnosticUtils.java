@@ -279,20 +279,20 @@ public class DiagnosticUtils {
     /**
      * getFullyQualifiedName
      * resolve FullyQualifiedName from simple Name
-     * 
+     *
      * @param type
      * @param simpleName
      * @return
      * @throws JavaModelException
      */
     public static String getFullyQualifiedName(IType type, String simpleName) throws JavaModelException {
-    	String[][] fqName = type.resolveType(simpleName); // the call could be expensive
+        String[][] fqName = type.resolveType(simpleName); // the call could be expensive
         if (fqName != null && fqName.length == 1) {
             return JavaModelUtil.concatenateName(fqName[0][0], fqName[0][1]);
         }
         return null;
     }
-    
+
     /**
      * Returns true if the given method is a constructor and false otherwise.
      *

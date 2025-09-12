@@ -258,16 +258,16 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
-                        if(checkedExceptionPresent) {
-                        	String diagnosticMessage = Messages.getMessage(
-        							"A method with the annotation @PostConstruct must not throw checked exceptions.");
+                        if (checkedExceptionPresent) {
+                            String diagnosticMessage = Messages.getMessage(
+                                                                           "MustNotThrowCheckedException", "@PostConstruct");
                             diagnostics.add(
-        							context.createDiagnostic(uri, diagnosticMessage, methodRange,
-        									Constants.DIAGNOSTIC_SOURCE,
-        									ErrorCode.PostConstructException,
-        									DiagnosticSeverity.Error));
+                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.PostConstructException,
+                                                                     DiagnosticSeverity.Error));
                         }
-                        
+
                         if (method.getNumberOfParameters() != 0) {
 
                             String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
@@ -294,14 +294,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
-                        if(checkedExceptionPresent) {
-                        	String diagnosticMessage = Messages.getMessage(
-        							"A method with the annotation @PreDestroy must not throw checked exceptions.");
+                        if (checkedExceptionPresent) {
+                            String diagnosticMessage = Messages.getMessage(
+                                                                           "MustNotThrowCheckedException", "@PreDestroy");
                             diagnostics.add(
-        							context.createDiagnostic(uri, diagnosticMessage, methodRange,
-        									Constants.DIAGNOSTIC_SOURCE,
-        									ErrorCode.PreDestroyException,
-        									DiagnosticSeverity.Error));
+                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.PreDestroyException,
+                                                                     DiagnosticSeverity.Error));
                         }
                         if (method.getNumberOfParameters() != 0) {
                             String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
@@ -327,34 +327,34 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
 
         return diagnostics;
     }
-    
-/**
- * isCheckedExceptionPresent
- * isCheckedExceptionPresent
- * 
- * @param javaProject
- * @param method
- * @return
- * @throws JavaModelException
- * @throws CoreException
- */
+
+    /**
+     * isCheckedExceptionPresent
+     * This method scans the exception signatures to identify if any checked exceptions are declared.
+     *
+     * @param javaProject
+     * @param method
+     * @return
+     * @throws JavaModelException
+     * @throws CoreException
+     */
     private boolean isCheckedExceptionPresent(IJavaProject javaProject, IMethod method) throws JavaModelException, CoreException {
-		
-		IType parentType = method.getDeclaringType();
-		String[] exceptionSignatures = method.getExceptionTypes();
-		for (String sig : exceptionSignatures) {
-			String fqName = DiagnosticUtils.getFullyQualifiedName(parentType, Signature.toString(sig));
-			if(null != fqName) {
-				IType exceptionType = javaProject.findType(fqName);
-				if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
-						TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
-	                return true;
-				}
-			}
-		}
-		return false;
-	}
-    
+
+        IType parentType = method.getDeclaringType();
+        String[] exceptionSignatures = method.getExceptionTypes();
+        for (String sig : exceptionSignatures) {
+            String fqName = DiagnosticUtils.getFullyQualifiedName(parentType, Signature.toString(sig));
+            if (null != fqName) {
+                IType exceptionType = javaProject.findType(fqName);
+                if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
+                      TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns true if the input annotation is valid. False, otherwise.
      *
