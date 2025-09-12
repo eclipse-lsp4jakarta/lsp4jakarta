@@ -257,8 +257,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        boolean checkedExceptionPresent = isCheckedExceptionPresent(method);
-                        if (checkedExceptionPresent) {
+                        if (isCheckedExceptionPresent(method)) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MustNotThrowCheckedException", "@PostConstruct");
                             diagnostics.add(
@@ -293,8 +292,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        boolean checkedExceptionPresent = isCheckedExceptionPresent(method);
-                        if (checkedExceptionPresent) {
+                        if (isCheckedExceptionPresent(method)) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MustNotThrowCheckedException", "@PreDestroy");
                             diagnostics.add(
