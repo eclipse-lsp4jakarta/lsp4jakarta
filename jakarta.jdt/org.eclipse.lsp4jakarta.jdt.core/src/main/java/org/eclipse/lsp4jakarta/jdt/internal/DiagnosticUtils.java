@@ -103,26 +103,6 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Returns true if the java element name matches the given fully qualified java
-     * element name and false otherwise.
-     *
-     * @param type
-     * @param javaElementName
-     * @param javaElementFQName
-     * @return
-     * @throws JavaModelException
-     */
-    public static boolean isMatchedNestedClass(IType type, String javaElementName, String javaElementFQName) throws JavaModelException {
-        if (nameEndsWith(javaElementFQName, javaElementName)) {
-            String[][] fqName = type.resolveType(javaElementName); // the call could be expensive
-            if (fqName != null && fqName.length == 1) {
-                return javaElementFQName.equals(JavaModelUtil.concatenateName(fqName[0][0], fqName[0][1]));
-            }
-        }
-        return false;
-    }
-
-    /**
      * Returns true if the given Java class imports the given Java element and false
      * otherwise.
      *
@@ -275,7 +255,7 @@ public class DiagnosticUtils {
      * @return true if the given fully qualified name ends with the given name and
      *         false otherwise
      */
-    protected static boolean nameEndsWith(String fqName, String name) {
+    public static boolean nameEndsWith(String fqName, String name) {
         // add a prefix '.' to simple name
         // e.g. 'jakarta.validation.constraints.DecimalMin' should NOT end with 'Min'
         // here

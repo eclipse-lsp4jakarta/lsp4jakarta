@@ -83,7 +83,7 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                                                                  ErrorCode.InvalidInjectAnnotationOnFinalField,
                                                                  DiagnosticSeverity.Error));
                     }
-                    if (hasNonStaticInnerClass(type, Signature.toString(field.getTypeSignature()))) {
+                    if (isNonStaticInnerClass(type, Signature.toString(field.getTypeSignature()))) {
                         String msg = Messages.getMessage("InjectNonStaticInnerClass");
                         diagnostics.add(
                                         context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
@@ -133,7 +133,7 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                     }
                     String[] paramTypes = method.getParameterTypes();
                     for (String paramType : paramTypes) {
-                        if (hasNonStaticInnerClass(type, Signature.toString(paramType))) {
+                        if (isNonStaticInnerClass(type, Signature.toString(paramType))) {
                             String msg = Messages.getMessage("InjectNonStaticInnerClass");
                             diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
                                                                      ErrorCode.InvalidInjectAnnotationOnNonStaticInnerClass,
@@ -187,7 +187,7 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
     }
 
     /**
-     * hasNonStaticInnerClass
+     * isNonStaticInnerClass
      * This will check whether the parent class contains any nested class that has no static field matching the field’s type.
      *
      * @param outerType
@@ -195,13 +195,13 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
      * @return
      * @throws JavaModelException
      */
-    private boolean hasNonStaticInnerClass(IType outerType, String injectedTypeName) throws JavaModelException {
+    private boolean isNonStaticInnerClass(IType outerType, String injectedTypeName) throws JavaModelException {
 
         for (IType inner : outerType.getTypes()) {
             // convert JVM binary name to Source code reference to the nested class
             String innerFqName = inner.getFullyQualifiedName().replace('$', '.');
-            if (DiagnosticUtils.isMatchedNestedClass(outerType, injectedTypeName, innerFqName)) {
-                return !Flags.isStatic(inner.getFlags());
+            if (DiagnosticUtils.nameEndsWith(innerFqName, injectedTypeName)) {
+                return ManagedBean.isInnerClass(ManagedBean.getChildITypeByName(outerType, injectedTypeName));
             }
         }
         return false;
