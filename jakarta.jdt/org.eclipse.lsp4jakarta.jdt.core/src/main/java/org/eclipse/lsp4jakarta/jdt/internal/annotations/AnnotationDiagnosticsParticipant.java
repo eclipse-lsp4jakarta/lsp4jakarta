@@ -44,6 +44,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
@@ -63,7 +64,6 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         String uri = context.getUri();
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
-        IJavaProject javaProject = unit.getJavaProject();
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         if (unit != null) {
@@ -257,7 +257,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
+                        boolean checkedExceptionPresent = isCheckedExceptionPresent(method);
                         if (checkedExceptionPresent) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MustNotThrowCheckedException", "@PostConstruct");
@@ -293,7 +293,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        boolean checkedExceptionPresent = isCheckedExceptionPresent(javaProject, method);
+                        boolean checkedExceptionPresent = isCheckedExceptionPresent(method);
                         if (checkedExceptionPresent) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MustNotThrowCheckedException", "@PreDestroy");
@@ -332,24 +332,20 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * isCheckedExceptionPresent
      * This method scans the exception signatures to identify if any checked exceptions are declared.
      *
-     * @param javaProject
      * @param method
      * @return
      * @throws JavaModelException
      * @throws CoreException
      */
-    private boolean isCheckedExceptionPresent(IJavaProject javaProject, IMethod method) throws JavaModelException, CoreException {
+    private boolean isCheckedExceptionPresent(IMethod method) throws JavaModelException, CoreException {
 
         IType parentType = method.getDeclaringType();
         String[] exceptionSignatures = method.getExceptionTypes();
         for (String sig : exceptionSignatures) {
-            String fqName = DiagnosticUtils.getFullyQualifiedName(parentType, Signature.toString(sig));
-            if (null != fqName) {
-                IType exceptionType = javaProject.findType(fqName);
-                if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
-                      TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
-                    return true;
-                }
+            IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
+            if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
+                  TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
+                return true;
             }
         }
         return false;
