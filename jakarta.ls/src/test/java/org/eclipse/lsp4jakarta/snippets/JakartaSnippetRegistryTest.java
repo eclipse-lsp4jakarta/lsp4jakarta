@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -169,6 +169,25 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(transactionalSnippet, "jakarta.transaction.Transactional",
                             JavaCursorContextKind.IN_METHOD_ANNOTATIONS);
+
+    }
+
+    @Test
+    public void websocketSnippetsTest() {
+        Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
+        Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
+        Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
+
+        assertTrue("server_endpoint Java snippet is not present in SnippetRegistry", wsServerSnippet.isPresent());
+        assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
+        assertTrue("programmatic_endpoint Java snippet is not present in SnippetRegistry", wsProgrammaticSnippet.isPresent());
+
+        snippetsContextTest(wsServerSnippet, "jakarta.websocket.server.ServerEndpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(wsClientSnippet, "jakarta.websocket.ClientEndpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(wsProgrammaticSnippet, "jakarta.websocket.Endpoint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
 
     }
 
