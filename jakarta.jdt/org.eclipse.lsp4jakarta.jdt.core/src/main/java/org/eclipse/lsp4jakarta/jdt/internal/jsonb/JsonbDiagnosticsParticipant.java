@@ -44,6 +44,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.Gson;
@@ -179,12 +180,9 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         hierarchy.add(type);
         String superClassName = type.getSuperclassName();
         if (superClassName != null) {
-            String[][] fullQualifiedSuperName = type.resolveType(superClassName);
-            if (fullQualifiedSuperName != null && fullQualifiedSuperName.length > 0) {
-                String fqSuper = fullQualifiedSuperName[0][0] + "." + fullQualifiedSuperName[0][1];
-                IType superType = type.getJavaProject().findType(fqSuper);
-                collectSuperTypes(superType, hierarchy);
-            }
+            String fqSuper= ManagedBean.getFullyQualifiedClassName(type, superClassName);
+            IType superType = type.getJavaProject().findType(fqSuper);
+            collectSuperTypes(superType, hierarchy);
         }
     }
 
