@@ -6,12 +6,12 @@ public class JsonbTransientDiagnosticSubSubClass extends JsonbTransientDiagnosti
 	
 
     @JsonbProperty("name")
-    private String subFirstName;    // Diagnostic: @JsonbProperty property uniqueness, multiple properties cannot have same property names.
+    private String subFirstName;    // Diagnostic: @JsonbProperty property uniqueness in subclass, multiple properties cannot have same property names.
     
     @JsonbProperty("fav_editor")
-    private String subfavoriteEditor;    // Diagnostic: @JsonbProperty property uniqueness, multiple properties cannot have same property names.
+    private String subfavoriteEditor;    // Diagnostic: @JsonbProperty property uniqueness in subclass, multiple properties cannot have same property names.
     
     @JsonbProperty("fav_lang1")
-    private String subfavoriteEditor2;    // Diagnostic: @JsonbProperty property uniqueness, multiple properties cannot have same property names.
+    private String subfavoriteEditor2;    // Diagnostic: @JsonbProperty property uniqueness in subclass, multiple properties cannot have same property names.
 
 }
