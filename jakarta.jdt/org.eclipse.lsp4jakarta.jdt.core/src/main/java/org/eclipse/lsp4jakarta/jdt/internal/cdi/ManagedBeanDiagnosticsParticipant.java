@@ -390,8 +390,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 
                 if (paramScopes != null && !paramScopes.isEmpty()) {
                     paramScopesSet = new LinkedHashSet<>(paramScopes);
-                    uniqueParamScopes = new ArrayList<>(paramScopesSet);
-                    if (uniqueParamScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
+                    if (paramScopesSet.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
                         mutuallyExclusive = true;
                     }
                 }
