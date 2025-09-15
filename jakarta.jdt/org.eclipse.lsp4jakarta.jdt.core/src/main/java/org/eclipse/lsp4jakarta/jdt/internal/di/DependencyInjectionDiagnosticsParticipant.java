@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2024 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -70,16 +71,27 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
         for (IType type : alltypes) {
             IField[] allFields = type.getFields();
             for (IField field : allFields) {
-                if (Flags.isFinal(field.getFlags())
-                    && containsAnnotation(type, field.getAnnotations(), INJECT_FQ_NAME)) {
-                    String msg = Messages.getMessage("InjectNoFinalField");
-                    Range range = PositionUtils.toNameRange(field,
-                                                            context.getUtils());
-                    diagnostics.add(
-                                    context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidInjectAnnotationOnFinalField,
-                                                             DiagnosticSeverity.Error));
+                Range range = PositionUtils.toNameRange(field,
+                                                        context.getUtils());
+                if (containsAnnotation(type, field.getAnnotations(), INJECT_FQ_NAME)) {
+
+                    if (Flags.isFinal(field.getFlags())) {
+                        String msg = Messages.getMessage("InjectNoFinalField");
+
+                        diagnostics.add(
+                                        context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInjectAnnotationOnFinalField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                    if (isNonStaticInnerClass(type, Signature.toString(field.getTypeSignature()))) {
+                        String msg = Messages.getMessage("InjectNonStaticInnerClass");
+                        diagnostics.add(
+                                        context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInjectAnnotationOnNonStaticInnerClass,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
+
             }
 
             List<IMethod> injectedConstructors = new ArrayList<IMethod>();
@@ -119,6 +131,16 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                                                                  ErrorCode.InvalidInjectAnnotationOnGenericMethod,
                                                                  DiagnosticSeverity.Error));
                     }
+                    String[] paramTypes = method.getParameterTypes();
+                    for (String paramType : paramTypes) {
+                        if (isNonStaticInnerClass(type, Signature.toString(paramType))) {
+                            String msg = Messages.getMessage("InjectNonStaticInnerClass");
+                            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.InvalidInjectAnnotationOnNonStaticInnerClass,
+                                                                     DiagnosticSeverity.Error));
+                        }
+                    }
+
                 }
             }
 
@@ -162,6 +184,29 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                 return false;
             }
         });
+    }
+
+    /**
+     * isNonStaticInnerClass
+     * This will check whether the parent class contains any nested class that has no static field matching the field’s type.
+     *
+     * @param outerType
+     * @param injectedTypeName
+     * @return
+     * @throws JavaModelException
+     */
+    private boolean isNonStaticInnerClass(IType outerType, String injectedTypeName) throws JavaModelException {
+
+        for (IType inner : outerType.getTypes()) {
+            // convert JVM binary name to Source code reference to the nested class
+            String innerFqName = inner.getFullyQualifiedName().replace('$', '.');
+            if (DiagnosticUtils.nameEndsWith(innerFqName, injectedTypeName)) {
+                if (innerFqName.equals(ManagedBean.getFullyQualifiedClassName(outerType, injectedTypeName))) {
+                    return ManagedBean.isInnerClass(inner);
+                }
+            }
+        }
+        return false;
     }
 
     /**

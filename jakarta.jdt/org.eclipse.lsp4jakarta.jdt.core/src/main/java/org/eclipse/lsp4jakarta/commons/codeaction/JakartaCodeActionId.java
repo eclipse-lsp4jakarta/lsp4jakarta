@@ -23,6 +23,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     jaxrsInsertPublicCtrtToClass,
     MakeConstructorPublic,
     MakeMethodPublic,
+    MakeMethodStatic,
     RemoveAllEntityParametersExcept,
     // Annotations
     ChangeReturnTypeToVoid,
