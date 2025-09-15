@@ -75,4 +75,10 @@ public class JsonbTransientDiagnostic {
     private void setFavoriteEditor(String favoriteEditor) {
         this.favoriteEditor = favoriteEditor;
     }
+    
+    @JsonbProperty("title")
+    private String title1;    // Diagnostic: @JsonbProperty property uniqueness, multiple properties cannot have same property names.
+
+    @JsonbProperty("\u0074\u0069\u0074\u006C\u0065")
+    private String title2;    // Diagnostic: @JsonbProperty property uniqueness, multiple properties cannot have same property names.
 }
