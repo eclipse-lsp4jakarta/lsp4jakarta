@@ -353,6 +353,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         // this method will be called to scan all methods looking for either @Produces annotations OR @Inject annotations. In either
         // scenario this method will then check for disallowed parameter annotations and add diagnostics to be displayed if detected.
         Set<String> expected = Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS; //Added for issue #540 lap4jakarta - adding mutually exclusive quick fixes
+        Set<String> paramScopesSet;
+        List<String> uniqueParamScopes;
         boolean mutuallyExclusive = false;
         for (IMethod method : type.getMethods()) {
             IAnnotation targetAnnotation = null;
@@ -386,10 +388,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation));
                 }
                 
-                Set<String> paramScopesSet = new LinkedHashSet<>(paramScopes);
-                List<String> uniqueParamScopes = new ArrayList<>(paramScopesSet);
-                if(uniqueParamScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
-                    mutuallyExclusive = true;
+                if (paramScopes != null && !paramScopes.isEmpty()) {
+                    paramScopesSet = new LinkedHashSet<>(paramScopes);
+                    uniqueParamScopes = new ArrayList<>(paramScopesSet);
+                    if (uniqueParamScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
+                        mutuallyExclusive = true;
+                    }
                 }
                 
             }
