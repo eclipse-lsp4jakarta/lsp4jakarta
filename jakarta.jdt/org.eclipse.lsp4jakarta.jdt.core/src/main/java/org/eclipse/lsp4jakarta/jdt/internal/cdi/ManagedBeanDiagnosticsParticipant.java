@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -385,7 +386,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation));
                 }
                 
-                if(paramScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
+                Set<String> paramScopesSet = new LinkedHashSet<>(paramScopes);
+                List<String> uniqueParamScopes = new ArrayList<>(paramScopesSet);
+                if(uniqueParamScopes.size() == Constants.MUTUALLY_EXCLUSIVE_ANNOTATIONS.size() && invalidAnnotations.equals(expected)) {
                     mutuallyExclusive = true;
                 }
                 
