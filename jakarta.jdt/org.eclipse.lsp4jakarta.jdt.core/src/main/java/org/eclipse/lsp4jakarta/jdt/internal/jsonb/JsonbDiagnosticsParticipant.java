@@ -257,8 +257,10 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private void createJsonbPropertyUniquenessDiagnostics(JavaDiagnosticsContext context, String uri,
             List<Diagnostic> diagnostics, IField field, IType type) throws JavaModelException {
         String msg = Messages.getMessage("ErrorMessageJsonbPropertyUniquenessField");
+        List<String> jsonbAnnotationsForField = getJsonbAnnotationNames(type, field);
         Range range = PositionUtils.toNameRange(field, context.getUtils());
         diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                (JsonArray) (new Gson().toJsonTree(jsonbAnnotationsForField)),
                 ErrorCode.InvalidPropertyNamesOnJsonbFields, DiagnosticSeverity.Error));
     }
 
