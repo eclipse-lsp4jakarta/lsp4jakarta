@@ -10,10 +10,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
@@ -30,7 +27,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant{
 
-	 private static final Logger LOGGER = Logger.getLogger(PrefixSlashAnnotationQuickFix.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(PrefixSlashAnnotationQuickFix.class.getName());
+	
 	@Override
 	public String getParticipantId() {
 		return PrefixSlashAnnotationQuickFix.class.getName();
@@ -57,7 +55,6 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
 		CodeAction toResolve = context.getUnresolved();
 		ASTNode node = context.getCoveredNode();
 		IBinding parentType = getBinding(node);
-
 		
 		ChangeCorrectionProposal proposal = new PrefixSlashAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), 0, parentType, node);
 
@@ -66,7 +63,6 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
         } catch (CoreException e) {
             LOGGER.log(Level.SEVERE, "Unable to create workspace edit to change a method's retrun type", e);
         }
-
         return toResolve;
 	}
 
@@ -90,8 +86,7 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
     protected IBinding getBinding(ASTNode node) {
     	if (node.getParent() instanceof TypeDeclaration) {
             return ((TypeDeclaration) node.getParent()).resolveBinding();
-        }
-    	
+        }   	
         return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
     }
 }
