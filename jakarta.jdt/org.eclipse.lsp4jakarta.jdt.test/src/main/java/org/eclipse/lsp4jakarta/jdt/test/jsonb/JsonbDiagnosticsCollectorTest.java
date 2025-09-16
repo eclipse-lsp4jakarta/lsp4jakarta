@@ -195,7 +195,17 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                 DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+        Diagnostic d2 = d(17, 19, 34,
+                "Multiple fields or properties with @JsonbProperty must not have JSON members with duplicate names, which violates the property uniqueness.",
+                DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
+        d2.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+        
+        Diagnostic d3 = d(20, 19, 34,
+                "Multiple fields or properties with @JsonbProperty must not have JSON members with duplicate names, which violates the property uniqueness.",
+                DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
+        d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
     
     @Test
