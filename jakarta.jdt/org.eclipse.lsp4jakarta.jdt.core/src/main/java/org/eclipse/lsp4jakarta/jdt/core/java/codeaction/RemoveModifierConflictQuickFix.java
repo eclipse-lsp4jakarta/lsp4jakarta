@@ -46,9 +46,6 @@ public abstract class RemoveModifierConflictQuickFix implements IJavaCodeActionP
     /** Map key to retrieve a list of modifiers. */
     public static final String MODIFIERS_KEY = "modifiers";
 
-    /** Code action label template. */
-    private static final String CODE_ACTION_LABEL = "Remove the ''{0}'' modifier";
-
     /**
      * Array of modifiers to remove.
      */
