@@ -57,8 +57,9 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
 		CodeAction toResolve = context.getUnresolved();
 		ASTNode node = context.getCoveredNode();
 		IBinding parentType = getBinding(node);
+
 		
-		ChangeCorrectionProposal proposal = new PrefixSlashAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), 0, parentType);
+		ChangeCorrectionProposal proposal = new PrefixSlashAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), 0, parentType, node);
 
 		try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
