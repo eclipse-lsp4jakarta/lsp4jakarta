@@ -25,19 +25,19 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrecti
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.PrefixSlashAnnotationProposal;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
-public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant{
+public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant {
 
-	private static final Logger LOGGER = Logger.getLogger(PrefixSlashAnnotationQuickFix.class.getName());
-	
-	@Override
-	public String getParticipantId() {
-		return PrefixSlashAnnotationQuickFix.class.getName();
-	}
+    private static final Logger LOGGER = Logger.getLogger(PrefixSlashAnnotationQuickFix.class.getName());
 
-	@Override
-	public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
-			IProgressMonitor monitor) throws CoreException {
-		List<CodeAction> codeActions = new ArrayList<>();
+    @Override
+    public String getParticipantId() {
+        return PrefixSlashAnnotationQuickFix.class.getName();
+    }
+
+    @Override
+    public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
+                                                     IProgressMonitor monitor) throws CoreException {
+        List<CodeAction> codeActions = new ArrayList<>();
         ExtendedCodeAction codeAction = new ExtendedCodeAction(getLabel());
         codeAction.setRelevance(0);
         codeAction.setKind(CodeActionKind.QuickFix);
@@ -47,26 +47,26 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
         codeAction.setData(new CodeActionResolveData(context.getUri(), getParticipantId(), context.getParams().getRange(), null, context.getParams().isResourceOperationSupported(), context.getParams().isCommandConfigurationUpdateSupported(), id));
         codeActions.add(codeAction);
         return codeActions;
-	}
+    }
 
-	@Override
-	public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
+    @Override
+    public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
 
-		CodeAction toResolve = context.getUnresolved();
-		ASTNode node = context.getCoveredNode();
-		IBinding parentType = getBinding(node);
-		
-		ChangeCorrectionProposal proposal = new PrefixSlashAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), 0, parentType, node);
+        CodeAction toResolve = context.getUnresolved();
+        ASTNode node = context.getCoveredNode();
+        IBinding parentType = getBinding(node);
 
-		try {
+        ChangeCorrectionProposal proposal = new PrefixSlashAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), 0, parentType, node);
+
+        try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
         } catch (CoreException e) {
             LOGGER.log(Level.SEVERE, "Unable to create workspace edit to change a method's retrun type", e);
         }
         return toResolve;
-	}
+    }
 
-	/**
+    /**
      * Returns the code action label.
      *
      * @return The code action label.
@@ -74,7 +74,7 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
     private String getLabel() {
         return Messages.getMessage("PrefixSlashToValueAttribute");
     }
-    
+
     /**
      * Returns the named entity associated to the given node.
      *
@@ -84,9 +84,9 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
      */
     @SuppressWarnings("restriction")
     protected IBinding getBinding(ASTNode node) {
-    	if (node.getParent() instanceof TypeDeclaration) {
+        if (node.getParent() instanceof TypeDeclaration) {
             return ((TypeDeclaration) node.getParent()).resolveBinding();
-        }   	
+        }
         return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
     }
 }
