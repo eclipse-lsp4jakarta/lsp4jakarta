@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2023 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,7 +13,6 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +33,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifiersProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Removes modifiers from the declaring element.
@@ -178,7 +178,7 @@ public abstract class RemoveModifierConflictQuickFix implements IJavaCodeActionP
      * @return The label associated with the input modifier.
      */
     protected String getLabel(String... modifier) {
-        return MessageFormat.format(CODE_ACTION_LABEL, modifier[0]);
+        return Messages.getMessage("RemoveModifier", modifier[0]);
     }
 
     /**
