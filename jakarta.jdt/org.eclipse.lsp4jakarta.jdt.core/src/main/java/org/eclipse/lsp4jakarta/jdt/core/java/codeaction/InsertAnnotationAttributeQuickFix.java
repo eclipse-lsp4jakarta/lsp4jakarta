@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021 Red Hat Inc. and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,7 +13,6 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +30,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.InsertAnnotationAttributeProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * QuickFix for inserting attribute of a given annotation.
@@ -41,8 +41,6 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.InsertAnnotati
 public abstract class InsertAnnotationAttributeQuickFix implements IJavaCodeActionParticipant {
 
     private static final Logger LOGGER = Logger.getLogger(InsertAnnotationAttributeQuickFix.class.getName());
-
-    private static final String CODE_ACTION_LABEL = "Insert ''{0}'' attribute";
 
     private final String attributeName;
 
@@ -89,7 +87,7 @@ public abstract class InsertAnnotationAttributeQuickFix implements IJavaCodeActi
     protected abstract ICodeActionId getCodeActionId();
 
     private static String getLabel(String memberName) {
-        return MessageFormat.format(CODE_ACTION_LABEL, memberName);
+        return Messages.getMessage("InsertAttribute", memberName);
     }
 
 }
