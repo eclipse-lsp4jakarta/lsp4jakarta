@@ -19,9 +19,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -31,20 +28,20 @@ import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMember;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4jakarta.commons.utils.JsonPropertyUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
-import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.Gson;
@@ -94,19 +91,18 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 }
             }
             //Changes to support lsp4jakarta issue #291 to add diagnostic for Property Name Uniqueness
-            List<String> propertyNames = new ArrayList<String>();
-            List<String> uniquePropertyNames = new ArrayList<String>();
+            Set<String> propertyNames = new LinkedHashSet<String>();
+            Set<String> uniquePropertyNames = new LinkedHashSet<String>();
             // fields
             for (IField field : type.getFields()) {
                 collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
                 collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
                 // Get unique property name values from the fields into a list uniquePropertyNames
-                uniquePropertyNames = collectJsonbUniquePropertyNames(context, uri, diagnostics, type, propertyNames,
-                                                                      field);
+                uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
+                        field);
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
-            collectJsonbPropertyUniquenessDiagnostics(uniquePropertyNames, context, uri, diagnostics, type,
-                                                      propertyNames);
+            collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
         }
         return diagnostics;
     }
@@ -121,12 +117,11 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @throws JavaModelException
      * @description Method to collect JsonbProperty uniqueness diagnostics
      */
-    private void collectJsonbPropertyUniquenessDiagnostics(List<String> uniquePropertyNames,
-            JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics, IType type,
-            List<String> propertyNames) throws JavaModelException {
+    private void collectJsonbPropertyUniquenessDiagnostics(ICompilationUnit unit, Set<String> uniquePropertyNames,
+            JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics, IType type) throws JavaModelException {
         Set<IType> hierarchy = new LinkedHashSet<>();
-        collectSuperTypes(type, hierarchy);
-        Map<String, List<IField>> jsonbMap = buildPropertyMap(uniquePropertyNames, hierarchy);
+        TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
+        Map<String, List<IField>> jsonbMap = buildPropertyMap(uniquePropertyNames, hierarchy, unit);
         for (Map.Entry<String, List<IField>> entry : jsonbMap.entrySet()) { // Iterates through set of all key values pairs inside the map
             List<IField> fields = entry.getValue();
             if (fields.size() > Constants.DUPLICATE_PROPERTY_VALUE) {
@@ -145,16 +140,16 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @throws JavaModelException
      * @description This method collects the property name and fields using the same name if it's duplicated and builds it into a Map.
      */
-    private Map<String, List<IField>> buildPropertyMap(List<String> uniquePropertyNames, Set<IType> hierarchy)
+    private Map<String, List<IField>> buildPropertyMap(Set<String> uniquePropertyNames, Set<IType> hierarchy, ICompilationUnit unit)
             throws JavaModelException {
         Map<String, List<IField>> jsonbMap = new HashMap<>();
         for (IType finaltype : hierarchy) {
             for (IField field : finaltype.getFields()) { // Iterates through all fields in super and subclass
                 for (IAnnotation annotation : field.getAnnotations()) {
-                    if (Constants.JSONB_PROPERTY.contains(annotation.getElementName())) {
-                        String propertyName = extractPropertyNameFromJsonField(annotation);
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.JSONB_PROPERTY)) {
+                        String propertyName = JsonPropertyUtils.extractPropertyNameFromJsonField(annotation);
                         if (propertyName != null) {
-                            propertyName = decodeUniCodeName(propertyName);
+                            propertyName = JsonPropertyUtils.decodeUniCodeName(propertyName);
                             if (uniquePropertyNames.contains(propertyName)) {
                                 // Checks if the propertyName exists, if not, creates a new key for the property with List<IField> as value. 
                                 // If it exists, add the field into the list.
@@ -169,24 +164,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     }
 
     /**
-     * @param type
-     * @param hierarchy
-     * @throws JavaModelException
-     * @description This method traverses back to collect the super classes of the respective class
-     */
-    private void collectSuperTypes(IType type, Set<IType> hierarchy) throws JavaModelException {
-        if (type == null && hierarchy.contains(type))
-            return;
-        hierarchy.add(type);
-        String superClassName = type.getSuperclassName();
-        if (superClassName != null) {
-            String fqSuper= ManagedBean.getFullyQualifiedClassName(type, superClassName);
-            IType superType = type.getJavaProject().findType(fqSuper);
-            collectSuperTypes(superType, hierarchy);
-        }
-    }
-
-    /**
      * @param context
      * @param uri
      * @param diagnostics
@@ -197,52 +174,19 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @throws JavaModelException
      * @description Method collects distinct property name values to be referenced for finding duplicates
      */
-    private List<String> collectJsonbUniquePropertyNames(JavaDiagnosticsContext context, String uri,
-            List<Diagnostic> diagnostics, IType type, List<String> propertyNames, IField field)
+    private Set<String> collectJsonbUniquePropertyNames(ICompilationUnit unit, JavaDiagnosticsContext context, String uri,
+            List<Diagnostic> diagnostics, IType type, Set<String> propertyNames, IField field)
             throws JavaModelException {
         for (IAnnotation annotation : field.getAnnotations()) {
-            if (Constants.JSONB_PROPERTY.contains(annotation.getElementName())) { // Checks whether annotation is JsonbProperty
-                String propertyName = extractPropertyNameFromJsonField(annotation);
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.JSONB_PROPERTY)) { // Checks whether annotation is JsonbProperty
+                String propertyName = JsonPropertyUtils.extractPropertyNameFromJsonField(annotation);
                 if (propertyName != null) {
-                    propertyName = decodeUniCodeName(propertyName);
+                    propertyName = JsonPropertyUtils.decodeUniCodeName(propertyName);
                     propertyNames.add(propertyName);
                 }
             }
         }
-        return propertyNames.stream().distinct().collect(Collectors.toList()); // This adds only unique value of property names
-    }
-
-    /**
-     * @param propertyName
-     * @return String
-     * @description Method decodes unicode property name value to string value
-     */
-    private String decodeUniCodeName(String propertyName) {
-        Pattern pattern = Pattern.compile(Constants.JSONB_PROPERTYNAME_UNICODE); // Pattern for detecting unicode sequence
-        Matcher matcher = pattern.matcher(propertyName);
-        StringBuffer decoded = new StringBuffer();
-        while (matcher.find()) {
-            String unicode = matcher.group(1);
-            char decodedChar = (char) Integer.parseInt(unicode, 16);
-            matcher.appendReplacement(decoded, Character.toString(decodedChar));
-        }
-        matcher.appendTail(decoded);
-        return decoded.toString();
-    }
-
-    /**
-     * @param annotation
-     * @return String
-     * @throws JavaModelException
-     * @description Method extracts property name value from the annotation
-     */
-    private String extractPropertyNameFromJsonField(IAnnotation annotation) throws JavaModelException {
-        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-            if (pair.getValue() instanceof String) {
-                return (String) pair.getValue();
-            }
-        }
-        return null;
+        return propertyNames;
     }
 
     /**
