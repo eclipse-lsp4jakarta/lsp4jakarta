@@ -340,9 +340,16 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         String[] exceptionSignatures = method.getExceptionTypes();
         for (String sig : exceptionSignatures) {
             IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
-            if (!(TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) < 0 ||
-                  TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) > 0)) {
-                return true;
+            /*
+             * A checked exception is any class that extends java.lang.Exception but not
+             * java.lang.RuntimeException.
+             * An unchecked exception is any class that extends java.lang.RuntimeException
+             * or java.lang.Error.
+             */
+            if (TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) > 0) {
+                if (TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) < 0) {
+                    return true;
+                }
             }
         }
         return false;
