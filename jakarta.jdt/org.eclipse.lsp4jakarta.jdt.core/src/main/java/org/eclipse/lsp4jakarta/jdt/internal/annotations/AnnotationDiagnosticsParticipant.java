@@ -346,13 +346,35 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
              * An unchecked exception is any class that extends java.lang.RuntimeException
              * or java.lang.Error.
              */
-            if (TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) > 0) {
-                if (TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) < 0) {
+            if (extendsException(exceptionType)) {
+                if (notExtendsRunTimeException(exceptionType)) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    /**
+     * notExtendsRunTimeException
+     *
+     * @param exceptionType
+     * @return
+     * @throws CoreException
+     */
+    private boolean notExtendsRunTimeException(IType exceptionType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) < 0;
+    }
+
+    /**
+     * extendsException
+     *
+     * @param exceptionType
+     * @return
+     * @throws CoreException
+     */
+    private boolean extendsException(IType exceptionType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) > 0;
     }
 
     /**
