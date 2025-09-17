@@ -1,3 +1,15 @@
+/*******************************************************************************
+* Copyright (c) 2025 IBM Corporation and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     IBM Corporation - initial implementation
+*******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -13,6 +25,11 @@ import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.lsp4j.CodeActionKind;
 
+/**
+ *
+ * CodeAction proposal to add slash to the beginning of the annotation value
+ *
+ */
 public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal {
 
     private final String VALUE_ATTRIBUTE = "value";
@@ -24,6 +41,9 @@ public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal 
         this.annotationNode = annotationNode;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ASTRewrite getRewrite() {
         AST ast = annotationNode.getAST();

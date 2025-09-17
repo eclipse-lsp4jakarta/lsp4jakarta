@@ -1,3 +1,15 @@
+/*******************************************************************************
+* Copyright (c) 2025 IBM Corporation and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     IBM Corporation - initial implementation
+*******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.websocket;
 
 import java.util.ArrayList;
@@ -25,15 +37,26 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrecti
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.PrefixSlashAnnotationProposal;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
+/**
+ *
+ * QuickFix to add a slash to the beginning of annotation value
+ *
+ */
 public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant {
 
     private static final Logger LOGGER = Logger.getLogger(PrefixSlashAnnotationQuickFix.class.getName());
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getParticipantId() {
         return PrefixSlashAnnotationQuickFix.class.getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
                                                      IProgressMonitor monitor) throws CoreException {
@@ -49,6 +72,9 @@ public class PrefixSlashAnnotationQuickFix implements IJavaCodeActionParticipant
         return codeActions;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
 
