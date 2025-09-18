@@ -35,6 +35,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 public class PreDestroyAnnotationTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
@@ -50,30 +52,46 @@ public class PreDestroyAnnotationTest extends BaseJakartaTest {
 
         // expected annotations
 
-        Diagnostic d1 = d(20, 16, 28, "A method with the @PreDestroy annotation must not have any parameters.",
+        Diagnostic d1 = d(24, 16, 28, "A method with the @PreDestroy annotation must not have any parameters.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyParams");
 
-        Diagnostic d2 = d(26, 20, 31, "A method with the @PreDestroy annotation must not be static.",
+        Diagnostic d2 = d(31, 20, 31, "A method with the @PreDestroy annotation must not be static.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyStatic");
 
-        Diagnostic d3 = d(31, 13, 25, "A method with the @PreDestroy annotation must not throw checked exceptions.",
-                          DiagnosticSeverity.Warning, "jakarta-annotations", "PreDestroyException");
+        Diagnostic d3 = d(36, 13, 25, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d3.setData(new Gson().toJsonTree(Arrays.asList("java.lang.Exception")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d2, d1, d3);
+        Diagnostic d4 = d(51, 13, 29, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d4.setData(new Gson().toJsonTree(Arrays.asList("java.io.IOException")));
+
+        Diagnostic d5 = d(56, 13, 34, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d5.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.annotations.CustomCheckedException")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d2, d1, d3, d4, d5);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-        TextEdit te = te(19, 1, 20, 1, "");
-        TextEdit te1 = te(20, 29, 20, 40, "");
+        TextEdit te = te(23, 1, 24, 1, "");
+        TextEdit te1 = te(24, 29, 24, 40, "");
         CodeAction ca = ca(uri, "Remove @PreDestroy", d1, te);
         CodeAction ca1 = ca(uri, "Remove all parameters", d1, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca, ca1);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
-        TextEdit te2 = te(25, 1, 26, 1, "");
-        TextEdit te3 = te(26, 7, 26, 14, "");
+        TextEdit te2 = te(30, 1, 31, 1, "");
+        TextEdit te3 = te(31, 7, 31, 14, "");
         CodeAction ca2 = ca(uri, "Remove @PreDestroy", d2, te2);
         CodeAction ca3 = ca(uri, "Remove the 'static' modifier", d2, te3);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca2, ca3);
+
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te51 = te(55, 1, 56, 1, "");
+        TextEdit te52 = te(56, 44, 56, 68, "");
+        CodeAction ca51 = ca(uri, "Remove @PreDestroy", d5, te51);
+        CodeAction ca52 = ca(uri, "Remove all checked exceptions.", d5, te52);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca51, ca52);
 
     }
 
