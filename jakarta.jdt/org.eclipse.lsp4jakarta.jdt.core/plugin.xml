@@ -78,7 +78,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PostConstructException"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveThrownCheckedExceptionsQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PostConstructException"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePostConstructAnnotationQuickFix" />
@@ -96,7 +96,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />   
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyException"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveThrownCheckedExceptionsQuickFix" />    
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyException"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           

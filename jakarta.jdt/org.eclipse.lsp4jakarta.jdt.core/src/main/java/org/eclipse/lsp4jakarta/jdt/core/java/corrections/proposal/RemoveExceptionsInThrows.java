@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2023 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *     IBM Corporation, Bera Sogut - initial API and implementation
+ *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
@@ -27,18 +27,12 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.lsp4j.CodeActionKind;
-import org.eclipse.lsp4jakarta.jdt.internal.jaxrs.RemoveMethodEntityParamsWithExclusionQuickFix;
 
 /**
- * Code action proposal for removing parameters of a method except one. Used by
- * JAX-RS ResourceMethodMultipleEntityParamsQuickFix.
- *
- * @author Bera Sogut
- * @see CodeActionHandler
- * @see RemoveMethodEntityParamsWithExclusionQuickFix
- *
+ * Code action proposal for removing exceptions of a method.
+ * RemoveExceptionsInThrows
  */
-public class RemoveThrownExceptionsProposal extends ASTRewriteCorrectionProposal {
+public class RemoveExceptionsInThrows extends ASTRewriteCorrectionProposal {
 
     private final CompilationUnit invocationNode;
     private final IBinding binding;
@@ -46,8 +40,8 @@ public class RemoveThrownExceptionsProposal extends ASTRewriteCorrectionProposal
     // parameters to remove
     private final List<Type> exceptions;
 
-    public RemoveThrownExceptionsProposal(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
-                                          IBinding binding, int relevance, List<Type> exceptions) {
+    public RemoveExceptionsInThrows(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
+                                    IBinding binding, int relevance, List<Type> exceptions) {
         super(label, CodeActionKind.QuickFix, targetCU, null, relevance);
         this.invocationNode = invocationNode;
         this.binding = binding;

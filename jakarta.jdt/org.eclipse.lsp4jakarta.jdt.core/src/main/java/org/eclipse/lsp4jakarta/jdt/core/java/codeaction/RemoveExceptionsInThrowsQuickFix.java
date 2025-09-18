@@ -36,19 +36,19 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
-import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveThrownExceptionsProposal;
+import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveExceptionsInThrows;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
 /**
- * Removes all the parameters from the active method.
+ * Removes Exceptions from the active method.
  */
-public abstract class RemoveThrownExceptionsQuickFix implements IJavaCodeActionParticipant {
+public abstract class RemoveExceptionsInThrowsQuickFix implements IJavaCodeActionParticipant {
 
     /** Logger object to record events for this class. */
-    private static final Logger LOGGER = Logger.getLogger(RemoveThrownExceptionsQuickFix.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(RemoveExceptionsInThrowsQuickFix.class.getName());
 
     private String messageIdentifier;
 
@@ -57,9 +57,9 @@ public abstract class RemoveThrownExceptionsQuickFix implements IJavaCodeActionP
     /**
      * Constructor.
      *
-     * @param modifiers The modifiers to remove.
+     * @param messageIdentifier.
      */
-    public RemoveThrownExceptionsQuickFix(String messageIdentifier) {
+    public RemoveExceptionsInThrowsQuickFix(String messageIdentifier) {
         this.messageIdentifier = messageIdentifier;
     }
 
@@ -68,7 +68,7 @@ public abstract class RemoveThrownExceptionsQuickFix implements IJavaCodeActionP
      */
     @Override
     public String getParticipantId() {
-        return RemoveThrownExceptionsQuickFix.class.getName();
+        return RemoveExceptionsInThrowsQuickFix.class.getName();
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class RemoveThrownExceptionsQuickFix implements IJavaCodeActionP
         MethodDeclaration parentNode = (MethodDeclaration) node.getParent();
         IMethodBinding parentMethod = parentNode.resolveBinding();
         List<Type> exceptionsToRemove = getFilteredExceptions(parentNode, exceptions);
-        ChangeCorrectionProposal proposal = new RemoveThrownExceptionsProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), parentMethod, 0, exceptionsToRemove);
+        ChangeCorrectionProposal proposal = new RemoveExceptionsInThrows(getLabel(), context.getCompilationUnit(), context.getASTRoot(), parentMethod, 0, exceptionsToRemove);
 
         try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
@@ -130,7 +130,7 @@ public abstract class RemoveThrownExceptionsQuickFix implements IJavaCodeActionP
      * getFilteredExceptions
      *
      * @param parentNode
-     * @param exceptions2
+     * @param exceptions
      * @return
      */
     private List<Type> getFilteredExceptions(MethodDeclaration parentNode, List<String> exceptions) {

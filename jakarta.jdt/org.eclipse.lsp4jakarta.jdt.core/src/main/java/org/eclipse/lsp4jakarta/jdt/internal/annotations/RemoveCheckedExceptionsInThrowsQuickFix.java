@@ -13,11 +13,11 @@
 package org.eclipse.lsp4jakarta.jdt.internal.annotations;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveThrownExceptionsQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveExceptionsInThrowsQuickFix;
 
-public class RemoveThrownCheckedExceptionsQuickFix extends RemoveThrownExceptionsQuickFix {
+public class RemoveCheckedExceptionsInThrowsQuickFix extends RemoveExceptionsInThrowsQuickFix {
 
-    public RemoveThrownCheckedExceptionsQuickFix() {
+    public RemoveCheckedExceptionsInThrowsQuickFix() {
         super("RemoveCheckedExceptions");
     }
 
@@ -26,7 +26,7 @@ public class RemoveThrownCheckedExceptionsQuickFix extends RemoveThrownException
      */
     @Override
     public String getParticipantId() {
-        return RemoveThrownCheckedExceptionsQuickFix.class.getName();
+        return RemoveCheckedExceptionsInThrowsQuickFix.class.getName();
     }
 
     /**
