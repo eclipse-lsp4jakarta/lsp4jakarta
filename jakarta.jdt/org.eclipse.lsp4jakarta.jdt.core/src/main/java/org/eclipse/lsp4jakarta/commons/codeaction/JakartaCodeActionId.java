@@ -32,6 +32,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAllParameters,
     RemoveAnnotationPreDestroy,
     RemoveAnnotationPostConstruct,
+    RemoveCheckedExceptions,
     AnnotationRemoveStaticModifier,
     // Bean validation
     RemoveConstraintAnnotation,
