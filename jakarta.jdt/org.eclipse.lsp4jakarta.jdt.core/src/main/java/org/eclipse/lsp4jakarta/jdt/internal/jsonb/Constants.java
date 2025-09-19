@@ -28,7 +28,7 @@ public class Constants {
 
     public static final String JSONB_CREATOR = JSONB_PACKAGE + JSONB_PREFIX + "Creator";
     public static final int MAX_METHOD_WITH_JSONBCREATOR = 1;
-    public static final int DUPLICATE_PROPERTY_VALUE = 1;
+    public static final int MAX_DUPLICATE_PROPERTY_COUNT = 1;
     public static final String JSONB_PROPERTYNAME_UNICODE = "\\\\u([0-9A-Fa-f]{4})";
 
     public static final String JSONB_TRANSIENT = JSONB_PREFIX + "Transient";

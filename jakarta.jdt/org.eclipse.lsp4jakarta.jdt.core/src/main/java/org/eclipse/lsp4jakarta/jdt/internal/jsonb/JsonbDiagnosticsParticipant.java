@@ -124,7 +124,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         Map<String, List<IField>> jsonbMap = buildPropertyMap(uniquePropertyNames, hierarchy, unit);
         for (Map.Entry<String, List<IField>> entry : jsonbMap.entrySet()) { // Iterates through set of all key values pairs inside the map
             List<IField> fields = entry.getValue();
-            if (fields.size() > Constants.DUPLICATE_PROPERTY_VALUE) {
+            if (fields.size() > Constants.MAX_DUPLICATE_PROPERTY_COUNT) {
                 for (IField f : fields) {
                     if (f.getDeclaringType().equals(type)) // Creates diagnostics in the subclass
                         createJsonbPropertyUniquenessDiagnostics(context, uri, diagnostics, f, type);
