@@ -20,7 +20,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 public enum ErrorCode implements IJavaErrorCode {
     InvalidNumerOfJsonbCreatorAnnotationsInClass,
     InvalidJSonBindindAnnotationWithJsonbTransientOnField,
-    InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor;
+    InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor,
+    InvalidPropertyNamesOnJsonbFields;
 
     /**
      * {@inheritDoc}
