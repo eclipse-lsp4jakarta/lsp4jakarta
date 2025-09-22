@@ -28,17 +28,20 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.MIN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NEGATIVE_OR_ZERO;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_BLANK;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_EMPTY;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_CHAR_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PRIMITIVE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SIZE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING_FQ;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_CHAR_WRAPPER_TYPES;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +63,12 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
@@ -126,7 +132,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     private void validAnnotation(JavaDiagnosticsContext context, String uri, IMember element, Range range,
                                  IAnnotation annotation,
                                  String matchedAnnotation,
-                                 List<Diagnostic> diagnostics) throws JavaModelException {
+                                 List<Diagnostic> diagnostics) throws CoreException {
         IType declaringType = element.getDeclaringType();
         if (declaringType != null) {
             String annotationName = annotation.getElementName();
@@ -221,27 +227,41 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 // Collection, Map or Array was implemented
                 // for that custom type (which could as well be a user made subtype)
 
-//    			else if (annotation.getElementName().equals(NOT_EMPTY) || annotation.getElementName().equals(SIZE)) {
-//
-//    				System.out.println("--Field name: " + Signature.getTypeSignatureKind(fieldType));
-//    				System.out.println("--Field name: " + Signature.getParameterTypes(fieldType));
-//    				if (	!fieldType.equals(getSignatureFormatOfType(CHAR_SEQUENCE)) &&
-//    						!fieldType.contains("List") &&
-//    						!fieldType.contains("Set") &&
-//    						!fieldType.contains("Collection") &&
-//    						!fieldType.contains("Array") &&
-//    						!fieldType.contains("Vector") &&
-//    						!fieldType.contains("Stack") &&
-//    						!fieldType.contains("Queue") &&
-//    						!fieldType.contains("Deque") &&
-//    						!fieldType.contains("Map")) {
-//
-//    					diagnostics.add(new Diagnostic(fieldAnnotationrange,
-//    							"This annotation can only be used on CharSequence, Collection, Array, "
-//    							+ "Map type fields."));
-//    				}
-//    			}
+                else if (matchedAnnotation.equals(NOT_EMPTY) || matchedAnnotation.equals(SIZE)) {
+                    if (!(isSizeCompatible(declaringType, type))) {
+                        String message = isMethod ? Messages.getMessage("SizeOrNonEmptyAnnotationsMethod") : Messages.getMessage("SizeOrNonEmptyAnnotationsField");
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.UseSizeOrNonEmptyAnnotationOnlyOnArrayCharSequenceCollectionOrMapType,
+                                                                 DiagnosticSeverity.Error));
+
+                    }
+                }
             }
+        }
+    }
+
+    /**
+     * isSizeCompatible
+     * The annotated element size must be between the specified boundaries (included).
+     * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-size
+     * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-notempty
+     *
+     * @param parentType
+     * @param childTypeString
+     * @return
+     * @throws CoreException
+     */
+    boolean isSizeCompatible(IType parentType, String childTypeString) throws CoreException {
+        if (JDTTypeUtils.isArrayType(childTypeString)) {
+            return true;
+        } else if (PRIMITIVE_TYPES.contains(childTypeString)) {
+            return false;
+        } else {
+            IType fieldType = ManagedBean.getChildITypeByName(parentType, getDataTypeName(childTypeString));
+            return fieldType != null
+                   && doesITypeHaveSuperType(fieldType, Constants.CHAR_SEQUENCE_FQ)
+                   || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
+                   || doesITypeHaveSuperType(fieldType, Constants.MAP_FQ);
         }
     }
 
@@ -264,5 +284,18 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             return type.substring(1, length - 1);
         }
         return type;
+    }
+
+    /**
+     * doesITypeHaveSuperType
+     * Check if specified superType is present or not in the type hierarchy
+     *
+     * @param fieldType
+     * @param superType
+     * @return
+     * @throws CoreException
+     */
+    private boolean doesITypeHaveSuperType(IType fieldType, String superType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) > 0;
     }
 }
