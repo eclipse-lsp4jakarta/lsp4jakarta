@@ -364,4 +364,14 @@ public class JDTTypeUtils {
     public static boolean isVoidReturnType(IMethod method) throws JavaModelException {
         return SIG_VOID.equals(method.getReturnType());
     }
+
+    /**
+     * Return true if it is Array type, and false otherwise
+     *
+     * @param childTypeString
+     * @return
+     */
+    public static boolean isArrayType(String childTypeString) {
+        return null != childTypeString && childTypeString.startsWith("[");
+    }
 }
