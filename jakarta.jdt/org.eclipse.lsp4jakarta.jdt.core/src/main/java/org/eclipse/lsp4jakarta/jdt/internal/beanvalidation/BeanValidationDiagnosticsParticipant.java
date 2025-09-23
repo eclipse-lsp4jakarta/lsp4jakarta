@@ -231,7 +231,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     if (!(isSizeCompatible(declaringType, type))) {
                         String message = isMethod ? Messages.getMessage("SizeOrNonEmptyAnnotationsMethod") : Messages.getMessage("SizeOrNonEmptyAnnotationsField");
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                                 matchedAnnotation, ErrorCode.UseSizeOrNonEmptyAnnotationOnlyOnArrayCharSequenceCollectionOrMapType,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
                                                                  DiagnosticSeverity.Error));
 
                     }

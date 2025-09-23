@@ -24,7 +24,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidAnnotationOnNonDateTimeMethodOrField,
     InvalidAnnotationOnNonMinMaxMethodOrField,
     InvalidAnnotationOnNonPositiveMethodOrField,
-    UseSizeOrNonEmptyAnnotationOnlyOnArrayCharSequenceCollectionOrMapType,
+    InvalidAnnotationOnNonSizeMethodOrField,
     InvalidAnnotationOnNonStringMethodOrField;
 
     /**
