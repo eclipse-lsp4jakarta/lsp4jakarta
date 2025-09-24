@@ -233,7 +233,6 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
                                                                  DiagnosticSeverity.Error));
-
                     }
                 }
             }
@@ -252,16 +251,16 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      * @throws CoreException
      */
     boolean isSizeCompatible(IType parentType, String childTypeString) throws CoreException {
-        if (JDTTypeUtils.isArrayType(childTypeString)) {
+        if (isArrayType(childTypeString)) {
             return true;
         } else if (PRIMITIVE_TYPES.contains(childTypeString)) {
             return false;
         } else {
             IType fieldType = ManagedBean.getChildITypeByName(parentType, getDataTypeName(childTypeString));
             return fieldType != null
-                   && doesITypeHaveSuperType(fieldType, Constants.CHAR_SEQUENCE_FQ)
-                   || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
-                   || doesITypeHaveSuperType(fieldType, Constants.MAP_FQ);
+                   && (doesITypeHaveSuperType(fieldType, Constants.CHAR_SEQUENCE_FQ)
+                       || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
+                       || doesITypeHaveSuperType(fieldType, Constants.MAP_FQ));
         }
     }
 
@@ -297,5 +296,15 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      */
     private boolean doesITypeHaveSuperType(IType fieldType, String superType) throws CoreException {
         return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) > 0;
+    }
+
+    /**
+     * Return true if it is Array type, and false otherwise
+     *
+     * @param childTypeString
+     * @return
+     */
+    public static boolean isArrayType(String childTypeString) {
+        return null != childTypeString && childTypeString.startsWith("[");
     }
 }
