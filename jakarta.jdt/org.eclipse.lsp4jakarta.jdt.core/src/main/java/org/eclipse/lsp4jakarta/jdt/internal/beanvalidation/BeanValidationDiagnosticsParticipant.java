@@ -228,7 +228,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 // for that custom type (which could as well be a user made subtype)
 
                 else if (matchedAnnotation.equals(NOT_EMPTY) || matchedAnnotation.equals(SIZE)) {
-                    if (!(isSizeCompatible(declaringType, type))) {
+                    if (!(isSizeOrNonEmptyAllowed(declaringType, type))) {
                         String message = isMethod ? Messages.getMessage("SizeOrNonEmptyAnnotationsMethod") : Messages.getMessage("SizeOrNonEmptyAnnotationsField");
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
@@ -240,7 +240,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * isSizeCompatible
+     * isSizeOrNonEmptyAllowed
      * The annotated element size must be between the specified boundaries (included).
      * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-size
      * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-notempty
@@ -250,7 +250,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      * @return
      * @throws CoreException
      */
-    boolean isSizeCompatible(IType parentType, String childTypeString) throws CoreException {
+    boolean isSizeOrNonEmptyAllowed(IType parentType, String childTypeString) throws CoreException {
         if (isArrayType(childTypeString)) {
             return true;
         } else if (PRIMITIVE_TYPES.contains(childTypeString)) {

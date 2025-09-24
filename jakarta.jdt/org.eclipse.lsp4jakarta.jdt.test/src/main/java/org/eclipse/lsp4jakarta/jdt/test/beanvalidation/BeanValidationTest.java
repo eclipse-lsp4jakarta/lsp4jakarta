@@ -33,7 +33,6 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class BeanValidationTest extends BaseJakartaTest {
