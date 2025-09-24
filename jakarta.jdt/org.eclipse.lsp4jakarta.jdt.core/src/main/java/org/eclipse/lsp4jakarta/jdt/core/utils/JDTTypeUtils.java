@@ -364,5 +364,4 @@ public class JDTTypeUtils {
     public static boolean isVoidReturnType(IMethod method) throws JavaModelException {
         return SIG_VOID.equals(method.getReturnType());
     }
-
 }
