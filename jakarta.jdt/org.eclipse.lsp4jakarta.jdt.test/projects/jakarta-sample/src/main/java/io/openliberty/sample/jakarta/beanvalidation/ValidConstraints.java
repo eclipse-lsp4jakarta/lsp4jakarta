@@ -1,14 +1,18 @@
 package io.openliberty.sample.jakarta.beanvalidation;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Time;
 import java.time.OffsetDateTime;
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Map;
+import java.util.HashMap;
 
+import jakarta.validation.constraints.AssertFalse;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -25,11 +29,6 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.AssertFalse;
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Digits;
 
 public class ValidConstraints {
     @AssertTrue
@@ -89,7 +88,24 @@ public class ValidConstraints {
     @PositiveOrZero
     private int maybeZero;
 
-//    not yet implemented - see issue #63
-//    @Size
-//    private boolean wordMap;
+    @Size
+    private ValidConstraints[] validConstraintsList;
+    
+    @Size
+    private ArrayList<java.lang.Integer> list;
+    
+    @Size
+    private String name;
+    
+    @Size
+    private String[] names;
+    
+    @NotEmpty
+    private int[] numberArray;
+    
+    @NotEmpty
+    private HashMap map;
+    
+    @NotEmpty
+    private java.lang.Boolean[] checks;
 }
