@@ -141,6 +141,38 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-websocket", "InvalidEndpointPathNotTempleateOrPartialURI");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+        
+        // Expected code actions
+        JakartaJavaCodeActionParams codeActionsParams = createCodeActionParams(uri, d1);
+        String newText = "\"/path\"";
+        TextEdit te = te(7, 16, 7, 22, newText);
+        CodeAction ca = ca(uri, "Prefix value with '/'", d1, te);
+        assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
+        
+    }
+    
+    @Test
+    public void testServerEndpointNoSlashWithValueAttribute() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/websocket/ServerEndpointNoSlashValueAttribte.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+        Diagnostic d1 = d(7, 0, 29, "Server endpoint paths must start with a leading '/'.", DiagnosticSeverity.Error,
+                          "jakarta-websocket", "InvalidEndpointPathWithNoStartingSlash");
+        Diagnostic d2 = d(7, 0, 29, "Server endpoint paths must be a URI-template (level-1) or a partial URI.",
+                          DiagnosticSeverity.Error, "jakarta-websocket", "InvalidEndpointPathNotTempleateOrPartialURI");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+        
+        // Expected code actions
+        JakartaJavaCodeActionParams codeActionsParams = createCodeActionParams(uri, d1);
+        String newText = "\"/path\"";
+        TextEdit te = te(7, 22, 7, 28, newText);
+        CodeAction ca = ca(uri, "Prefix value with '/'", d1, te);
+        assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
+        
     }
 
     @Test
