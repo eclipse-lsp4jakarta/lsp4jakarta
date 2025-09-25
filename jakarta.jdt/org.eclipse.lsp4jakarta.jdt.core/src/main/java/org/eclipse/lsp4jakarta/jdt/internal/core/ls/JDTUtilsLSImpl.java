@@ -68,13 +68,15 @@ public class JDTUtilsLSImpl implements IJDTUtils {
     @Override
     public ICompilationUnit resolveCompilationUnit(String uriString) {
         ICompilationUnit unit = JDTUtils.resolveCompilationUnit(uriString);
-        try {
-            // Give underlying resource time to catch up
-            // (timeout at COMPILATION_UNIT_UPDATE_TIMEOUT milliseconds).
-            long endTime = System.currentTimeMillis() + COMPILATION_UNIT_UPDATE_TIMEOUT;
-            while (!unit.isConsistent() && System.currentTimeMillis() < endTime) {
+        if (unit != null) {
+            try {
+                // Give underlying resource time to catch up
+                // (timeout at COMPILATION_UNIT_UPDATE_TIMEOUT milliseconds).
+                long endTime = System.currentTimeMillis() + COMPILATION_UNIT_UPDATE_TIMEOUT;
+                while (!unit.isConsistent() && System.currentTimeMillis() < endTime) {
+                }
+            } catch (JavaModelException e) {
             }
-        } catch (JavaModelException e) {
         }
         return unit;
     }
