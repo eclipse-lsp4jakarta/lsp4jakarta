@@ -255,7 +255,7 @@ public class DiagnosticUtils {
      * @return true if the given fully qualified name ends with the given name and
      *         false otherwise
      */
-    protected static boolean nameEndsWith(String fqName, String name) {
+    public static boolean nameEndsWith(String fqName, String name) {
         // add a prefix '.' to simple name
         // e.g. 'jakarta.validation.constraints.DecimalMin' should NOT end with 'Min'
         // here

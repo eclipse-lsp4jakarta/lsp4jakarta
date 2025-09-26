@@ -145,6 +145,12 @@
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.di.InsertStaticModifierQuickFix" />                 
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveFinalModifierQuickFix" />
       <codeAction kind="quickfix"
@@ -241,6 +247,9 @@
                   targetDiagnostic="jakarta-servlet#WebFilterAnnotationAttributeConflict"
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteFilterAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-servlet#WebFilterAnnotationMissingAttributes"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteFilterAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-servlet#ClassWebFilterAnnotatedNoFilterInterfaceImpl"
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertImplementsClauseToImplFilterQuickFix" />      
 
@@ -300,7 +309,13 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultPublicConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidInitializerParamAnnotationQuickFix" />    
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidInitializerParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerParamAnnotationQuickFix" /> 
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />   
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidInjectAnnotatedMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />   
@@ -310,14 +325,17 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidProducerMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveProduceAnnotationQuickFix" />
-      <!-- These quick fixes remove remove the @Disposes annotation as well as the @Observes annotation.
-           They are mutually exclusive and only one needs to go.
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDisposesAnnotationOnMultipleMethodParams"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidProducerParamAnnotationQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDisposesAnnotationOnMultipleMethodParams"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidProducerParamAnnotationQuickFix" />
-      -->
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
    </extension>
 </plugin>

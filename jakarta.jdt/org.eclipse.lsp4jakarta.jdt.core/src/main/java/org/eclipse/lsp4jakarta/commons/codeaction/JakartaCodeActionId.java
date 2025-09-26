@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2024 Red Hat Inc. and others.
+* Copyright (c) 2023, 2025 Red Hat Inc. and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -23,6 +23,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     jaxrsInsertPublicCtrtToClass,
     MakeConstructorPublic,
     MakeMethodPublic,
+    MakeMethodStatic,
     RemoveAllEntityParametersExcept,
     // Annotations
     ChangeReturnTypeToVoid,
@@ -66,6 +67,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIInsertPublicCtrtToClass,
     CDIRemoveInvalidInjectAnnotations,
     CDIRemoveInvalidProducesAnnotations,
+    //Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
+    CDIRemoveInvalidDisposerAnnotations,
+    CDIRemoveInvalidDisposerConflictedAnnotations,
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
