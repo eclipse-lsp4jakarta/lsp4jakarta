@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,8 +12,6 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.websocket;
 
-import java.text.MessageFormat;
-
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -21,13 +19,13 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationAttributesQuickFix;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Inserts the @PathParam annotation with a default value attribute to a method
  * parameter.
  */
 public class InsertPathParamAnnotationQuickFix extends InsertAnnotationAttributesQuickFix {
-    private static final String CODE_ACTION_LABEL = "Insert @{0}";
 
     public InsertPathParamAnnotationQuickFix() {
         super("jakarta.websocket.server.PathParam", "value");
@@ -56,7 +54,7 @@ public class InsertPathParamAnnotationQuickFix extends InsertAnnotationAttribute
     protected String getLabel(String annotation, String[] attributes) {
         String[] parts = annotation.split("\\.");
         String AnnotationName = (parts.length > 1) ? parts[parts.length - 1] : annotation;
-        return MessageFormat.format(CODE_ACTION_LABEL, AnnotationName);
+        return Messages.getMessage("InsertPathParam", AnnotationName);
     }
 
     /**
