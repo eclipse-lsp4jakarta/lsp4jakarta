@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,7 +12,6 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +31,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyAnnotationProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Inserts the specified set of attributes the the specified annotation.
@@ -39,9 +39,6 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyAnnotati
 public abstract class InsertAnnotationAttributesQuickFix implements IJavaCodeActionParticipant {
     /** Logger object to record events for this class. */
     private static final Logger LOGGER = Logger.getLogger(InsertAnnotationAttributesQuickFix.class.getName());
-
-    /** Code action label template. */
-    private static final String CODE_ACTION_LABEL = "Insert ''{0}'' attribute{1} to @{2}";
 
     /** The annotation to which attributes are added. */
     private final String annotation;
@@ -129,7 +126,7 @@ public abstract class InsertAnnotationAttributesQuickFix implements IJavaCodeAct
         String AnnotationName = (parts.length > 1) ? parts[parts.length - 1] : annotation;
         String atributeNames = String.join(",", attributes);
         String pluralSuffix = (attributes.length > 1) ? "s" : "";
-        return MessageFormat.format(CODE_ACTION_LABEL, atributeNames, pluralSuffix, AnnotationName);
+        return Messages.getMessage("InsertAttributes", atributeNames, pluralSuffix, AnnotationName);
     }
 
     /**

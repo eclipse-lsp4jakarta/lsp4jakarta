@@ -13,7 +13,6 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +36,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifiersProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Add modifiers to the Nested Class.
@@ -45,9 +45,6 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
 
     /** Logger object to record events for this class. */
     private static final Logger LOGGER = Logger.getLogger(InsertModifierToNestedClassQuickFix.class.getName());
-
-    /** Code action label template. */
-    private static final String CODE_ACTION_LABEL = "Add ''{0}'' modifier to the nested class";
 
     /**
      * modifier to add.
@@ -172,7 +169,7 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
      * @return The label associated with the input modifier.
      */
     protected String getLabel(String modifier) {
-        return MessageFormat.format(CODE_ACTION_LABEL, modifier);
+        return Messages.getMessage("InsertModifierToNestedClass", modifier);
     }
 
     /**
