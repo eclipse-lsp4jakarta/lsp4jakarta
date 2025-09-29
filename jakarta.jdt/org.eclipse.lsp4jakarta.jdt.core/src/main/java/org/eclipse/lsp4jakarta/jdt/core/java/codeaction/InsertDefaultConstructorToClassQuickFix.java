@@ -1,6 +1,17 @@
+/*******************************************************************************
+* Copyright (c) 2025 IBM Corporation and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     IBM Corporation - initial implementation
+*******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +30,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.AddConstructorProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Inserts default constructor to the active class.
@@ -26,9 +38,6 @@ import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrecti
 public abstract class InsertDefaultConstructorToClassQuickFix implements IJavaCodeActionParticipant {
     /** Logger object to record events for this class. */
     private static final Logger LOGGER = Logger.getLogger(InsertDefaultConstructorToClassQuickFix.class.getName());
-
-    /** Code action label template. */
-    private static final String CODE_ACTION_LABEL = "Add a default ''{0}'' constructor to this class";
 
     /**
      * Access modifier for the new constructor.
@@ -109,7 +118,7 @@ public abstract class InsertDefaultConstructorToClassQuickFix implements IJavaCo
      * @return The code action label.
      */
     protected String getLabel(String am) {
-        return MessageFormat.format(CODE_ACTION_LABEL, am);
+        return Messages.getMessage("InsertDefaultConstructorToClass", am);
     }
 
     /**
