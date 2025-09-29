@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,8 +13,6 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
-
-import java.text.MessageFormat;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
@@ -35,10 +33,9 @@ import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 public class ImplementInterfaceProposal extends ASTRewriteCorrectionProposal {
-
-    private static final String TITLE_MESSAGE = "Let ''{0}'' implement ''{1}''";
 
     private IBinding fBinding;
     private CompilationUnit fAstRoot;
@@ -68,7 +65,7 @@ public class ImplementInterfaceProposal extends ASTRewriteCorrectionProposal {
 
         String[] args = { BasicElementLabels.getJavaElementName(binding.getName()),
                           BasicElementLabels.getJavaElementName(interfaceType) };
-        setDisplayName(MessageFormat.format(TITLE_MESSAGE, args));
+        setDisplayName(Messages.getMessage("ImplementInterface", args));
     }
 
     @Override
