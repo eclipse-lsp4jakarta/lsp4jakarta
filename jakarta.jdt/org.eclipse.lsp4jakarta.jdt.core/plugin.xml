@@ -157,6 +157,12 @@
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.di.InsertStaticModifierQuickFix" />                 
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveFinalModifierQuickFix" />
       <codeAction kind="quickfix"
