@@ -386,13 +386,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 for (String annotation : paramScopes) {
                     invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation));
                 }
-                
+
                 paramScopesSet = new LinkedHashSet<>(paramScopes);
-                if (paramScopesSet.size() == Constants.INVALID_INITIALIZER_PARAMS_FQ.length && paramScopesSet
-                        .equals(new LinkedHashSet<String>(Arrays.asList(Constants.INVALID_INITIALIZER_PARAMS_FQ)))) {
+                if (paramScopesSet.size() == Constants.INVALID_INITIALIZER_PARAMS_FQ.length && paramScopesSet.equals(Set.of(Constants.INVALID_INITIALIZER_PARAMS_FQ))) {
                     mutuallyExclusive = true;
                 }
-                
+
             }
 
             if (!invalidAnnotations.isEmpty()) {
