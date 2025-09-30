@@ -51,26 +51,32 @@ public class PostConstructAnnotationTest extends BaseJakartaTest {
 
         // expected Diagnostics
 
-        Diagnostic d1 = d(15, 19, 31, "A method with the @PostConstruct annotation must be void.",
+        Diagnostic d1 = d(19, 16, 28, "A method with the @PostConstruct annotation must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructReturnType");
 
-        Diagnostic d2 = d(20, 16, 28, "A method with the @PostConstruct annotation must not have any parameters.",
+        Diagnostic d2 = d(24, 13, 25, "A method with the @PostConstruct annotation must not have any parameters.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructParams");
 
-        Diagnostic d3 = d(25, 16, 28, "A method with the @PostConstruct annotation must not throw checked exceptions.",
-                          DiagnosticSeverity.Warning, "jakarta-annotations", "PostConstructException");
+        Diagnostic d3 = d(29, 13, 25, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+        Diagnostic d4 = d(44, 13, 29, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
+
+        Diagnostic d5 = d(49, 13, 40, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
-        TextEdit te1 = te(19, 4, 20, 4, "");
-        TextEdit te2 = te(20, 29, 20, 40, "");
+        TextEdit te1 = te(23, 1, 24, 1, "");
+        TextEdit te2 = te(24, 26, 24, 37, "");
         CodeAction ca1 = ca(uri, "Remove @PostConstruct", d2, te1);
         CodeAction ca2 = ca(uri, "Remove all parameters", d2, te2);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d1);
-        TextEdit te3 = te(15, 11, 15, 18, "void");
+        TextEdit te3 = te(19, 8, 19, 15, "void");
         CodeAction ca3 = ca(uri, "Change return type to void", d1, te3);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3);
     }
