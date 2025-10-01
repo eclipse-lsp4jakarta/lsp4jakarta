@@ -46,7 +46,7 @@ public class Constants {
     public static final String[] INVALID_PRODUCER_PARAMS_FQ = { DISPOSES_FQ_NAME, OBSERVES_FQ_NAME,
                                                                 OBSERVES_ASYNC_FQ_NAME };
 
-    //Added as part of fix that adds two quick fixes which are mutually exclusive issue #540
+    //Added as part of fix that adds two quick fixes for mutually exclusive annotations when used together
     public static final String[] INVALID_DISPOSER_FQ_PARAMS = { DISPOSES_FQ_NAME };
     public static final String[] INVALID_DISPOSER_FQ_CONFLICTED_PARAMS = { OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME };
     // List can be found in the cdi doc here:
