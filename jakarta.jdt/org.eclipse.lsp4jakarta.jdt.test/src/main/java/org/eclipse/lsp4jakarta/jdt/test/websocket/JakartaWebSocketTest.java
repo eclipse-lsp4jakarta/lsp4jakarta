@@ -141,16 +141,16 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-websocket", "InvalidEndpointPathNotTempleateOrPartialURI");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
-        
+
         // Expected code actions
         JakartaJavaCodeActionParams codeActionsParams = createCodeActionParams(uri, d1);
         String newText = "\"/path\"";
         TextEdit te = te(7, 16, 7, 22, newText);
         CodeAction ca = ca(uri, "Prefix value with '/'", d1, te);
         assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
-        
+
     }
-    
+
     @Test
     public void testServerEndpointNoSlashWithValueAttribute() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
@@ -165,14 +165,14 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-websocket", "InvalidEndpointPathNotTempleateOrPartialURI");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
-        
+
         // Expected code actions
         JakartaJavaCodeActionParams codeActionsParams = createCodeActionParams(uri, d1);
         String newText = "\"/path\"";
         TextEdit te = te(7, 22, 7, 28, newText);
         CodeAction ca = ca(uri, "Prefix value with '/'", d1, te);
         assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
-        
+
     }
 
     @Test
