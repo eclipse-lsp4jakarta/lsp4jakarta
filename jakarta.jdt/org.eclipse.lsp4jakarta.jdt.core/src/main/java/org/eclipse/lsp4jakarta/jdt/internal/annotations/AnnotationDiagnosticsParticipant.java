@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2023, 2024 IBM Corporation and others.
+* Copyright (c) 2021, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,6 +29,8 @@ import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageDeclaration;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -38,8 +40,10 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
@@ -252,6 +256,15 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        if (isCheckedExceptionPresent(method)) {
+                            String diagnosticMessage = Messages.getMessage(
+                                                                           "MethodMustNotThrow", "@PostConstruct");
+                            diagnostics.add(
+                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.PostConstructException,
+                                                                     DiagnosticSeverity.Error));
+                        }
 
                         if (method.getNumberOfParameters() != 0) {
 
@@ -272,21 +285,21 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                      DiagnosticSeverity.Error));
                         }
 
-                        if (method.getExceptionTypes().length != 0) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotThrow",
-                                                                           "@PostConstruct");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PostConstructException,
-                                                                     DiagnosticSeverity.Warning));
-                        }
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation,
                                                                Constants.PRE_DESTROY_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-
+                        if (isCheckedExceptionPresent(method)) {
+                            String diagnosticMessage = Messages.getMessage(
+                                                                           "MethodMustNotThrow", "@PreDestroy");
+                            diagnostics.add(
+                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.PreDestroyException,
+                                                                     DiagnosticSeverity.Error));
+                        }
                         if (method.getNumberOfParameters() != 0) {
                             String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
                                                                            "@PreDestroy");
@@ -304,21 +317,64 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                      ErrorCode.PreDestroyStatic,
                                                                      DiagnosticSeverity.Error));
                         }
-
-                        if (method.getExceptionTypes().length != 0) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotThrow",
-                                                                           "@PreDestroy");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PreDestroyException,
-                                                                     DiagnosticSeverity.Warning));
-                        }
                     }
                 }
             }
         }
 
         return diagnostics;
+    }
+
+    /**
+     * isCheckedExceptionPresent
+     * This method scans the exception signatures to identify if any checked exceptions are declared.
+     *
+     * @param method
+     * @return
+     * @throws JavaModelException
+     * @throws CoreException
+     */
+    private boolean isCheckedExceptionPresent(IMethod method) throws JavaModelException, CoreException {
+
+        IType parentType = method.getDeclaringType();
+        String[] exceptionSignatures = method.getExceptionTypes();
+        for (String sig : exceptionSignatures) {
+            IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
+            /*
+             * A checked exception is any class that extends java.lang.Exception but not
+             * java.lang.RuntimeException.
+             * An unchecked exception is any class that extends java.lang.RuntimeException
+             * or java.lang.Error.
+             */
+            if (extendsException(exceptionType)) {
+                if (notExtendsRunTimeException(exceptionType)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * notExtendsRunTimeException
+     *
+     * @param exceptionType The root type of which the super-types are checked.
+     * @return true if RuntimeException is not the superType of the given exception type.
+     * @throws CoreException
+     */
+    private boolean notExtendsRunTimeException(IType exceptionType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) == -1;
+    }
+
+    /**
+     * extendsException
+     *
+     * @param exceptionType The root type of which the super-types are checked.
+     * @return true if Exception is the superType of the given exception type.
+     * @throws CoreException
+     */
+    private boolean extendsException(IType exceptionType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) == 1;
     }
 
     /**
