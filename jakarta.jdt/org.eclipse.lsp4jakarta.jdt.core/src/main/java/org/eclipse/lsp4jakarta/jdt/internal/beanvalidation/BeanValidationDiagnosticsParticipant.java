@@ -240,7 +240,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
     /**
      * isSizeOrNonEmptyAllowed
-     * The annotated element size must be between the specified boundaries (included).
+     * This method checks whether the supported types for the Size and NotEmpty annotations are CharSequence, Collection, Map, or array.
      * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-size
      * https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0#builtinconstraints-notempty
      *
