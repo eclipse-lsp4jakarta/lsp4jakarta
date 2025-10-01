@@ -36,7 +36,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
-import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveExceptionsInThrows;
+import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyExceptionsInThrowsProposal;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 import com.google.gson.JsonArray;
@@ -93,7 +93,7 @@ public abstract class RemoveExceptionsInThrowsQuickFix implements IJavaCodeActio
      * getExceptions
      *
      * @param diagnosticData
-     * @return
+     * @return Get the exception list from diagnosticData
      */
     private List<String> getExceptions(JsonArray diagnosticData) {
         List<String> exceptions = new ArrayList<>(diagnosticData.size());
@@ -115,7 +115,7 @@ public abstract class RemoveExceptionsInThrowsQuickFix implements IJavaCodeActio
         MethodDeclaration parentNode = (MethodDeclaration) node.getParent();
         IMethodBinding parentMethod = parentNode.resolveBinding();
         List<Type> exceptionsToRemove = getFilteredExceptions(parentNode, exceptions);
-        ChangeCorrectionProposal proposal = new RemoveExceptionsInThrows(getLabel(), context.getCompilationUnit(), context.getASTRoot(), parentMethod, 0, exceptionsToRemove);
+        ChangeCorrectionProposal proposal = new ModifyExceptionsInThrowsProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), parentMethod, 0, exceptionsToRemove, null);
 
         try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
@@ -131,7 +131,7 @@ public abstract class RemoveExceptionsInThrowsQuickFix implements IJavaCodeActio
      *
      * @param parentNode
      * @param exceptions
-     * @return
+     * @return exceptions that need to be removed from the throws clause.
      */
     private List<Type> getFilteredExceptions(MethodDeclaration parentNode, List<String> exceptions) {
         List<Type> exceptionsDeclared = (List<Type>) parentNode.thrownExceptionTypes();

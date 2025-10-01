@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -30,22 +30,26 @@ import org.eclipse.lsp4j.CodeActionKind;
 
 /**
  * Code action proposal for removing exceptions of a method.
- * RemoveExceptionsInThrows
+ * ModifyExceptionsInThrowsProposal
  */
-public class RemoveExceptionsInThrows extends ASTRewriteCorrectionProposal {
+public class ModifyExceptionsInThrowsProposal extends ASTRewriteCorrectionProposal {
 
     private final CompilationUnit invocationNode;
     private final IBinding binding;
 
-    // parameters to remove
-    private final List<Type> exceptions;
+    // exceptions to remove
+    private final List<Type> exceptionsToRemove;
 
-    public RemoveExceptionsInThrows(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
-                                    IBinding binding, int relevance, List<Type> exceptions) {
+    // exceptions to insert
+    private final List<Type> exceptionsToAdd;
+
+    public ModifyExceptionsInThrowsProposal(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
+                                            IBinding binding, int relevance, List<Type> exceptionsToRemove, List<Type> exceptionsToAdd) {
         super(label, CodeActionKind.QuickFix, targetCU, null, relevance);
         this.invocationNode = invocationNode;
         this.binding = binding;
-        this.exceptions = exceptions;
+        this.exceptionsToRemove = exceptionsToRemove;
+        this.exceptionsToAdd = exceptionsToAdd;
     }
 
     @Override
@@ -67,9 +71,19 @@ public class RemoveExceptionsInThrows extends ASTRewriteCorrectionProposal {
             ListRewrite exceptionsList = rewrite.getListRewrite(declNode, MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY);
 
             // remove the exceptions
-            for (Type exception : exceptions) {
-                exceptionsList.remove(exception, null);
+            if (null != exceptionsToRemove) {
+                for (Type exception : exceptionsToRemove) {
+                    exceptionsList.remove(exception, null);
+                }
             }
+
+            // insert the exceptions
+            if (null != exceptionsToAdd) {
+                for (Type exception : exceptionsToAdd) {
+                    exceptionsList.insertLast(exception, null);
+                }
+            }
+
         }
 
         return rewrite;
