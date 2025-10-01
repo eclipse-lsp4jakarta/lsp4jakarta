@@ -250,6 +250,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-websocket#PathParamsMissingFromParam"
                   class="org.eclipse.lsp4jakarta.jdt.internal.websocket.InsertPathParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-websocket#InvalidEndpointPathWithNoStartingSlash"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.PrefixSlashAnnotationQuickFix" />
    </extension>
 
    <!-- Servlet -->

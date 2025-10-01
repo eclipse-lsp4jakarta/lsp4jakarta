@@ -262,7 +262,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
-                                                                           "MustNotThrowCheckedException", "@PostConstruct");
+                                                                           "MethodMustNotThrow", "@PostConstruct");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
@@ -299,7 +299,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
-                                                                           "MustNotThrowCheckedException", "@PreDestroy");
+                                                                           "MethodMustNotThrow", "@PreDestroy");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
@@ -366,23 +366,23 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     /**
      * notExtendsRunTimeException
      *
-     * @param exceptionType
-     * @return
+     * @param exceptionType The root type of which the super-types are checked.
+     * @return true if RuntimeException is not the superType of the given exception type.
      * @throws CoreException
      */
     private boolean notExtendsRunTimeException(IType exceptionType) throws CoreException {
-        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) < 0;
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.RUNTIME_EXCEPTION) == -1;
     }
 
     /**
      * extendsException
      *
-     * @param exceptionType
-     * @return
+     * @param exceptionType The root type of which the super-types are checked.
+     * @return true if Exception is the superType of the given exception type.
      * @throws CoreException
      */
     private boolean extendsException(IType exceptionType) throws CoreException {
-        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) > 0;
+        return TypeHierarchyUtils.doesITypeHaveSuperType(exceptionType, Constants.EXCEPTION) == 1;
     }
 
     /**
