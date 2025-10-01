@@ -294,7 +294,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      * @throws CoreException
      */
     private boolean doesITypeHaveSuperType(IType fieldType, String superType) throws CoreException {
-        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) > 0;
+        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
     }
 
     /**
