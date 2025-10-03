@@ -13,12 +13,14 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -27,6 +29,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.DefaultWorkingCopyOwner;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 
 /**
  * This class provides type hierarchy utilities for checking the
@@ -112,10 +115,11 @@ public class TypeHierarchyUtils {
     private static IJavaSearchScope createSearchScope(IJavaProject javaProject) throws CoreException {
         return SearchEngine.createJavaSearchScope(new IJavaProject[] { javaProject }, IJavaSearchScope.SOURCES);
     }
-    
+
     /**
      * isSuperType
      * This checks whether the given type is a super type.
+     *
      * @param type
      * @param superType
      * @return
@@ -127,5 +131,21 @@ public class TypeHierarchyUtils {
         }
         return type.getElementName().equals(superType);
 
+    }
+
+    /**
+     * @param type
+     * @param hierarchy
+     * @throws JavaModelException
+     * @description This method traverses back to collect the super classes of the respective class
+     */
+    public static void collectSuperTypes(IType type, Set<IType> hierarchy) throws JavaModelException {
+        if (type == null || hierarchy.contains(type))
+            return;
+        hierarchy.add(type);
+        if (type.getSuperclassName() != null) {
+            IType superType = ManagedBean.getChildITypeByName(type, type.getSuperclassName());
+            collectSuperTypes(superType, hierarchy);
+        }
     }
 }
