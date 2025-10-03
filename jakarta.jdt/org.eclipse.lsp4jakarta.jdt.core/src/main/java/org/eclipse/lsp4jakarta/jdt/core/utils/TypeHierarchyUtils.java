@@ -115,10 +115,11 @@ public class TypeHierarchyUtils {
     private static IJavaSearchScope createSearchScope(IJavaProject javaProject) throws CoreException {
         return SearchEngine.createJavaSearchScope(new IJavaProject[] { javaProject }, IJavaSearchScope.SOURCES);
     }
-    
+
     /**
      * isSuperType
      * This checks whether the given type is a super type.
+     *
      * @param type
      * @param superType
      * @return
@@ -131,7 +132,7 @@ public class TypeHierarchyUtils {
         return type.getElementName().equals(superType);
 
     }
-    
+
     /**
      * @param type
      * @param hierarchy
@@ -139,7 +140,7 @@ public class TypeHierarchyUtils {
      * @description This method traverses back to collect the super classes of the respective class
      */
     public static void collectSuperTypes(IType type, Set<IType> hierarchy) throws JavaModelException {
-        if (type == null && hierarchy.contains(type))
+        if (type == null || hierarchy.contains(type))
             return;
         hierarchy.add(type);
         if (type.getSuperclassName() != null) {

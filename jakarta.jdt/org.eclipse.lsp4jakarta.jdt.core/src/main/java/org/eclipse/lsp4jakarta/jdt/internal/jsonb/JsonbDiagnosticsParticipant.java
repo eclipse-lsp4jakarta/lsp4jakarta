@@ -90,7 +90,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                                                              ErrorCode.InvalidNumerOfJsonbCreatorAnnotationsInClass, DiagnosticSeverity.Error));
                 }
             }
-            //Changes to support lsp4jakarta issue #291 to add diagnostic for Property Name Uniqueness
+            //Changes to detect if Jsonb property names are not unique
             Set<String> propertyNames = new LinkedHashSet<String>();
             Set<String> uniquePropertyNames = new LinkedHashSet<String>();
             // fields
@@ -99,7 +99,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
                 // Get unique property name values from the fields into a list uniquePropertyNames
                 uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
-                        field);
+                                                                      field);
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
@@ -118,7 +118,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @description Method to collect JsonbProperty uniqueness diagnostics
      */
     private void collectJsonbPropertyUniquenessDiagnostics(ICompilationUnit unit, Set<String> uniquePropertyNames,
-            JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics, IType type) throws JavaModelException {
+                                                           JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics, IType type) throws JavaModelException {
         Set<IType> hierarchy = new LinkedHashSet<>();
         TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
         Map<String, List<IField>> jsonbMap = buildPropertyMap(uniquePropertyNames, hierarchy, unit);
@@ -140,8 +140,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @throws JavaModelException
      * @description This method collects the property name and fields using the same name if it's duplicated and builds it into a Map.
      */
-    private Map<String, List<IField>> buildPropertyMap(Set<String> uniquePropertyNames, Set<IType> hierarchy, ICompilationUnit unit)
-            throws JavaModelException {
+    private Map<String, List<IField>> buildPropertyMap(Set<String> uniquePropertyNames, Set<IType> hierarchy, ICompilationUnit unit) throws JavaModelException {
         Map<String, List<IField>> jsonbMap = new HashMap<>();
         for (IType finaltype : hierarchy) {
             for (IField field : finaltype.getFields()) { // Iterates through all fields in super and subclass
@@ -151,7 +150,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         if (propertyName != null) {
                             propertyName = JsonPropertyUtils.decodeUniCodeName(propertyName);
                             if (uniquePropertyNames.contains(propertyName)) {
-                                // Checks if the propertyName exists, if not, creates a new key for the property with List<IField> as value. 
+                                // Checks if the propertyName exists, if not, creates a new key for the property with List<IField> as value.
                                 // If it exists, add the field into the list.
                                 jsonbMap.computeIfAbsent(propertyName, k -> new ArrayList<>()).add(field);
                             }
@@ -175,8 +174,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @description Method collects distinct property name values to be referenced for finding duplicates
      */
     private Set<String> collectJsonbUniquePropertyNames(ICompilationUnit unit, JavaDiagnosticsContext context, String uri,
-            List<Diagnostic> diagnostics, IType type, Set<String> propertyNames, IField field)
-            throws JavaModelException {
+                                                        List<Diagnostic> diagnostics, IType type, Set<String> propertyNames, IField field) throws JavaModelException {
         for (IAnnotation annotation : field.getAnnotations()) {
             if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.JSONB_PROPERTY)) { // Checks whether annotation is JsonbProperty
                 String propertyName = JsonPropertyUtils.extractPropertyNameFromJsonField(annotation);
@@ -199,13 +197,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @description Method creates diagnostics with appropriate message and cursor context
      */
     private void createJsonbPropertyUniquenessDiagnostics(JavaDiagnosticsContext context, String uri,
-            List<Diagnostic> diagnostics, IField field, IType type) throws JavaModelException {
+                                                          List<Diagnostic> diagnostics, IField field, IType type) throws JavaModelException {
         String msg = Messages.getMessage("ErrorMessageJsonbPropertyUniquenessField");
         List<String> jsonbAnnotationsForField = getJsonbAnnotationNames(type, field);
         Range range = PositionUtils.toNameRange(field, context.getUtils());
         diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                (JsonArray) (new Gson().toJsonTree(jsonbAnnotationsForField)),
-                ErrorCode.InvalidPropertyNamesOnJsonbFields, DiagnosticSeverity.Error));
+                                                 (JsonArray) (new Gson().toJsonTree(jsonbAnnotationsForField)),
+                                                 ErrorCode.InvalidPropertyNamesOnJsonbFields, DiagnosticSeverity.Error));
     }
 
     private void collectJsonbTransientFieldDiagnostics(JavaDiagnosticsContext context, String uri,

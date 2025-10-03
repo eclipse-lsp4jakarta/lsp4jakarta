@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2025 BM Corporation and others.
+* Copyright (c) 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -25,36 +25,36 @@ import org.eclipse.lsp4jakarta.jdt.internal.jsonb.Constants;
  */
 public class JsonPropertyUtils {
 
-	/**
-	 * @param propertyName
-	 * @return String
-	 * @description Method decodes unicode property name value to string value
-	 */
-	public static String decodeUniCodeName(String propertyName) {
-		Pattern pattern = Pattern.compile(Constants.JSONB_PROPERTYNAME_UNICODE); // Pattern for detecting unicode sequence
-		Matcher matcher = pattern.matcher(propertyName);
-		StringBuffer decoded = new StringBuffer();
-		while (matcher.find()) {
-			String unicode = matcher.group(1);
-			char decodedChar = (char) Integer.parseInt(unicode, 16);
-			matcher.appendReplacement(decoded, Character.toString(decodedChar));
-		}
-		matcher.appendTail(decoded);
-		return decoded.toString();
-	}
-	
-	/**
-	 * @param annotation
-	 * @return String
-	 * @throws JavaModelException
-	 * @description Method extracts property name value from the annotation
-	 */
-	public static String extractPropertyNameFromJsonField(IAnnotation annotation) throws JavaModelException {
-		for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-			if (pair.getValue() instanceof String) {
-				return (String) pair.getValue();
-			}
-		}
-		return null;
-	}
+    /**
+     * @param propertyName
+     * @return String
+     * @description Method decodes unicode property name value to string value
+     */
+    public static String decodeUniCodeName(String propertyName) {
+        Pattern pattern = Pattern.compile(Constants.JSONB_PROPERTYNAME_UNICODE); // Pattern for detecting unicode sequence
+        Matcher matcher = pattern.matcher(propertyName);
+        StringBuffer decoded = new StringBuffer();
+        while (matcher.find()) {
+            String unicode = matcher.group(1);
+            char decodedChar = (char) Integer.parseInt(unicode, 16);
+            matcher.appendReplacement(decoded, Character.toString(decodedChar));
+        }
+        matcher.appendTail(decoded);
+        return decoded.toString();
+    }
+
+    /**
+     * @param annotation
+     * @return String
+     * @throws JavaModelException
+     * @description Method extracts property name value from the annotation
+     */
+    public static String extractPropertyNameFromJsonField(IAnnotation annotation) throws JavaModelException {
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if (pair.getValue() instanceof String) {
+                return (String) pair.getValue();
+            }
+        }
+        return null;
+    }
 }
