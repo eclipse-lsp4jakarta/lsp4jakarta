@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.jdt.core.Signature;
+
 /**
  * Bean validation constants.
  */
@@ -64,6 +66,8 @@ public class Constants {
     public static final String DATE = "java.util.Date";
     public static final String BOOLEAN_FQ = "java.lang.Boolean";
     public static final String CHAR_SEQUENCE_FQ = "java.lang.CharSequence";
+    public static final String COLLECTION_FQ = "java.util.Collection";
+    public static final String MAP_FQ = "java.util.Map";
     public static final String STRING_FQ = "java.lang.String";
     public static final String DOUBLE_FQ = "java.lang.Double";
     public static final String FLOAT_FQ = "java.lang.Float";
@@ -89,6 +93,9 @@ public class Constants {
 
     public static final String[] NUMERIC_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
                                                            INTEGER_FQ, LONG_FQ };
+
+    public static final Set<String> PRIMITIVE_TYPES = Set.of(Signature.SIG_SHORT, Signature.SIG_BYTE, Signature.SIG_CHAR, Signature.SIG_DOUBLE,
+                                                             Signature.SIG_FLOAT, Signature.SIG_INT, Signature.SIG_LONG, Signature.SIG_BOOLEAN);
 
     public final static String[] NUMERIC_AND_DECIMAL_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
                                                                        INTEGER_FQ, LONG_FQ, FLOAT_FQ, DOUBLE_FQ };
