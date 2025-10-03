@@ -160,4 +160,98 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3, ca4, ca5, ca6, ca7);
     }
+
+    @Test
+    public void RemoveDuplicateAttribute() throws Exception {
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 0, 41,
+                         "The @WebServlet annotation cannot have both 'value' and 'urlPatterns' attributes specified at once.",
+                         DiagnosticSeverity.Error, "jakarta-servlet", "WebServletAnnotationAttributeConflict");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        String newText = "@WebServlet(value = \"\")\n";
+        String newText1 = "@WebServlet(urlPatterns = \"\")\n";
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+
+        TextEdit te1 = te(5, 0, 6, 0, newText);
+        CodeAction ca1 = ca(uri, "Remove the `urlPatterns` attribute from @WebServlet", d, te1);
+
+        TextEdit te2 = te(5, 0, 6, 0, newText1);
+        CodeAction ca2 = ca(uri, "Remove the `value` attribute from @WebServlet", d, te2);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+    }
+
+    @Test
+    public void CompleteWebFilterAnnotation() throws Exception {
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/InvalidWebFilter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 0, 12,
+                         "The annotation @WebFilter must define the attribute 'urlPatterns', 'servletNames' or 'value'.",
+                         DiagnosticSeverity.Error, "jakarta-servlet", "WebFilterAnnotationMissingAttributes");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        String newText = "@WebFilter(servletNames = \"\")\n";
+        String newText1 = "@WebFilter(urlPatterns = \"\")\n";
+        String newText2 = "@WebFilter(value = \"\")\n";
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+
+        TextEdit te1 = te(5, 0, 6, 0, newText);
+        CodeAction ca1 = ca(uri, "Add the `servletNames` attribute to @WebFilter", d, te1);
+
+        TextEdit te2 = te(5, 0, 6, 0, newText1);
+        CodeAction ca2 = ca(uri, "Add the `urlPatterns` attribute to @WebFilter", d, te2);
+
+        TextEdit te3 = te(5, 0, 6, 0, newText2);
+        CodeAction ca3 = ca(uri, "Add the `value` attribute to @WebFilter", d, te3);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2, ca3);
+    }
+
+    @Test
+    public void RemoveDuplicateWebFilterAttributes() throws Exception {
+
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DuplicateAttributeWebFilter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 0, 40,
+                         "The annotation @WebFilter can not have both 'value' and 'urlPatterns' attributes specified at once.",
+                         DiagnosticSeverity.Error, "jakarta-servlet", "WebFilterAnnotationAttributeConflict");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        String newText1 = "@WebFilter(value = \"\")\n";
+        String newText2 = "@WebFilter(urlPatterns = \"\")\n";
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+
+        TextEdit te1 = te(5, 0, 6, 0, newText1);
+        CodeAction ca1 = ca(uri, "Remove the `urlPatterns` attribute from @WebFilter", d, te1);
+
+        TextEdit te2 = te(5, 0, 6, 0, newText2);
+        CodeAction ca2 = ca(uri, "Remove the `value` attribute from @WebFilter", d, te2);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+    }
 }
