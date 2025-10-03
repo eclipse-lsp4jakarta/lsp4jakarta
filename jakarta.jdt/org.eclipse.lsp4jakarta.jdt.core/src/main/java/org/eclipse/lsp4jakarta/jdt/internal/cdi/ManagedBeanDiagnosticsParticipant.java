@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -351,6 +352,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                     List<Diagnostic> diagnostics, IType type, String target) throws JavaModelException {
         // this method will be called to scan all methods looking for either @Produces annotations OR @Inject annotations. In either
         // scenario this method will then check for disallowed parameter annotations and add diagnostics to be displayed if detected.
+        Set<String> paramScopesSet;
+        boolean mutuallyExclusive = false;
         for (IMethod method : type.getMethods()) {
             IAnnotation targetAnnotation = null;
 
@@ -382,6 +385,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 for (String annotation : paramScopes) {
                     invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation));
                 }
+
+                paramScopesSet = new LinkedHashSet<>(paramScopes);
+                if (paramScopesSet.size() == Constants.INVALID_INITIALIZER_PARAMS_FQ.length && paramScopesSet.equals(Set.of(Constants.INVALID_INITIALIZER_PARAMS_FQ))) {
+                    mutuallyExclusive = true;
+                }
+
             }
 
             if (!invalidAnnotations.isEmpty()) {
@@ -392,10 +401,17 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidProducerMethodParamAnnotation, DiagnosticSeverity.Error));
                 } else {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             createInvalidInjectLabel(invalidAnnotations), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidInjectAnnotatedMethodParamAnnotation, DiagnosticSeverity.Error));
+                    if (mutuallyExclusive) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 createInvalidInjectLabel(invalidAnnotations), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidInjectAnnotationOnMultipleMethodParams, DiagnosticSeverity.Error));
+                    } else {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 createInvalidInjectLabel(invalidAnnotations), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidInjectAnnotatedMethodParamAnnotation, DiagnosticSeverity.Error));
+                    }
                 }
             }
         }
