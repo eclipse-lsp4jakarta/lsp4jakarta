@@ -146,6 +146,9 @@
                   targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonStringMethodOrField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonSizeMethodOrField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonStringMethodOrField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
    </extension>
