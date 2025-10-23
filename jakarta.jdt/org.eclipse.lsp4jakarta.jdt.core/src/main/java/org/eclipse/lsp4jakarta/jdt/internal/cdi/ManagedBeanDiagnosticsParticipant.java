@@ -353,10 +353,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         // this method will be called to scan all methods looking for either @Produces annotations OR @Inject annotations. In either
         // scenario this method will then check for disallowed parameter annotations and add diagnostics to be displayed if detected.
         Set<String> paramScopesSet;
-        boolean mutuallyExclusive = false;
+
         for (IMethod method : type.getMethods()) {
             IAnnotation targetAnnotation = null;
-
+            boolean mutuallyExclusive = false;
             for (IAnnotation annotation : method.getAnnotations()) {
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), target)) {
                     targetAnnotation = annotation;
