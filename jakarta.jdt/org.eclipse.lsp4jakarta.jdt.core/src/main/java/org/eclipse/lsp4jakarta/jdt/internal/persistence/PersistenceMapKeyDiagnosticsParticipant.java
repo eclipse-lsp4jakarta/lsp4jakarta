@@ -12,11 +12,13 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
+import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -293,25 +295,15 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
 
-    private boolean hasField(IMethod method, IType type) throws JavaModelException {
+	private boolean hasField(IMethod method, IType type) throws JavaModelException {
 
-        boolean isPropertyExist = false;
-        String methodName = method.getElementName();
-        String expectedFieldName = null;
+		String methodName = method.getElementName();
 
-        // Exclude 'get' from method name and decapitalize the first letter
-        if (methodName.startsWith("get") && methodName.length() > 3) {
-            String suffix = methodName.substring(3);
-            if (suffix.length() == 1) {
-                expectedFieldName = suffix.toLowerCase();
-            } else {
-                expectedFieldName = Character.toLowerCase(suffix.charAt(0)) + suffix.substring(1);
-            }
-        }
-
-        IField expectedfield = type.getField(expectedFieldName);
-        isPropertyExist = (expectedfield != null && expectedfield.exists()) ? true : false;
-
-        return isPropertyExist;
-    }
+		// Exclude 'get' from method name and decapitalize the first letter
+		String expectedFieldName = (methodName.startsWith("get") && methodName.length() > 3)
+				? Introspector.decapitalize(methodName.substring(3))
+				: null;
+		IField expectedfield = StringUtils.isNotBlank(expectedFieldName) ? type.getField(expectedFieldName) : null;
+		return expectedfield != null && expectedfield.exists();
+	}
 }

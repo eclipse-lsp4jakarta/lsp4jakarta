@@ -33,6 +33,7 @@ import org.eclipse.lsp4j.CodeActionKind;
 public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal {
 
     private final String VALUE_ATTRIBUTE = "value";
+    private final String FORWARD_SLASH = "/";  
     private final ASTNode annotationNode;
 
     public PrefixSlashAnnotationProposal(String label, ICompilationUnit cu, CompilationUnit invocationNode,
@@ -45,7 +46,8 @@ public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal 
      * {@inheritDoc}
      */
     @Override
-    protected ASTRewrite getRewrite() {
+    protected ASTRewrite getRewrite() {    	
+    	      
         AST ast = annotationNode.getAST();
         ASTRewrite rewrite = ASTRewrite.create(ast);
 
@@ -55,9 +57,9 @@ public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal 
             if (valueExpr instanceof StringLiteral oldLiteral) {
                 String oldValue = oldLiteral.getLiteralValue();
 
-                if (!oldValue.startsWith("/")) {
+                if (!oldValue.startsWith(FORWARD_SLASH)) {
                     StringLiteral newLiteral = ast.newStringLiteral();
-                    newLiteral.setLiteralValue("/" + oldValue);
+                    newLiteral.setLiteralValue(String.format(FORWARD_SLASH+ oldValue));
                     rewrite.set(single, SingleMemberAnnotation.VALUE_PROPERTY, newLiteral, null);
                 }
             }
@@ -73,9 +75,9 @@ public class PrefixSlashAnnotationProposal extends ASTRewriteCorrectionProposal 
                     if (valueExpr instanceof StringLiteral oldLiteral) {
                         String oldValue = oldLiteral.getLiteralValue();
 
-                        if (!oldValue.startsWith("/")) {
+                        if (!oldValue.startsWith(FORWARD_SLASH)) {
                             StringLiteral newLiteral = ast.newStringLiteral();
-                            newLiteral.setLiteralValue("/" + oldValue);
+                            newLiteral.setLiteralValue(String.format(FORWARD_SLASH+ oldValue));
                             rewrite.set(pair, MemberValuePair.VALUE_PROPERTY, newLiteral, null);
                         }
                     }
