@@ -186,12 +186,12 @@ public class BeanValidationTest extends BaseJakartaTest {
                            "jakarta.validation.constraints.Past");
 
         Diagnostic d21 = d(66, 20, 26,
-                           "This annotation can only be used on CharSequence, Collection, Array, Map type fields.",
+                           "This annotation can only be used on fields of type CharSequence, Collection, Array, or Map.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                            "jakarta.validation.constraints.Size");
 
         Diagnostic d22 = d(69, 29, 45,
-                           "This annotation can only be used on CharSequence, Collection, Array, Map type fields.",
+                           "This annotation can only be used on fields of type CharSequence, Collection, Array, or Map.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                            "jakarta.validation.constraints.NotEmpty");
 
@@ -363,7 +363,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                           "jakarta.validation.constraints.AssertFalse");
 
         Diagnostic d4 = d(36, 19, 28,
-                          "This annotation can only be used on CharSequence, Collection, Array, Map return type methods.",
+                          "This annotation can only be used on methods that have CharSequence, Collection, Array or Map as a return type.",
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                           "jakarta.validation.constraints.Size");
 
