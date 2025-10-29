@@ -138,9 +138,9 @@
                     <configuration>
                         <useUIHarness>false</useUIHarness>
                         <argLine>-Xmx512m</argLine>
-                        <!-- kill test JVM if tests take more than 1 minute (60 seconds) to
-                            finish -->
-                        <forkedProcessTimeoutInSeconds>60</forkedProcessTimeoutInSeconds>
+                        <!-- kill test JVM if tests take more than 10 minutes (600 seconds) to
+                            finish. This depends on speed of VM but current runs are 180s. -->
+                        <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                     </configuration>
                 </plugin>
             </plugins>
@@ -163,9 +163,9 @@
                         <configuration>
                             <useUIHarness>false</useUIHarness>
                             <argLine>-Xmx512m -XstartOnFirstThread</argLine>
-                            <!-- kill test JVM if tests take more than 1 minute (60 seconds) to
-                                finish -->
-                            <forkedProcessTimeoutInSeconds>60</forkedProcessTimeoutInSeconds>
+                            <!-- kill test JVM if tests take more than 10 minutes (600 seconds) to
+                                finish. This depends on speed of VM but current runs are 180s. -->
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
                 </plugins>
