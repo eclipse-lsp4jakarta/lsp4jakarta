@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.eclipse.lsp4jakarta</groupId>
             <artifactId>org.eclipse.lsp4jakarta.jdt.core</artifactId>
-            <version>0.2.5-SNAPSHOT</version>
+            <version>0.2.5</version>
         </dependency>
     </dependencies>
     <pluginRepositories>

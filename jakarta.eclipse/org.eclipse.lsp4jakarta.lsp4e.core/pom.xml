@@ -42,7 +42,7 @@
                                 <artifactItem>
                                     <groupId>org.eclipse.lsp4jakarta</groupId>
                                     <artifactId>org.eclipse.lsp4jakarta.ls</artifactId>
-                                    <version>0.2.5-SNAPSHOT</version>
+                                    <version>0.2.5</version>
                                     <classifier>jar-with-dependencies</classifier>
                                 </artifactItem>
                             </artifactItems>
