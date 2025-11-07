@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse LSP4Jakarta Plugin Test Fragment (Incubation)
 Bundle-Vendor: Eclipse LSP4Jakarta
 Bundle-SymbolicName: org.eclipse.lsp4jakarta.lsp4e.test
-Bundle-Version: 0.2.5.qualifier
+Bundle-Version: 0.2.5
 Fragment-Host: org.eclipse.lsp4jakarta.lsp4e.core;bundle-version="0.2.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: org.eclipse.jdt.junit4.runtime;bundle-version="1.1.0",

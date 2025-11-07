@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.lsp4jakarta</groupId>
     <artifactId>org.eclipse.lsp4jakarta.ls</artifactId>
-    <version>0.2.5-SNAPSHOT</version>
+    <version>0.2.5</version>
     <name>Eclipse LSP4Jakarta Language Server</name>
     <description>Eclipse LSP4Jakarta Language Server</description>
     <organization>
@@ -17,7 +17,7 @@
         <connection>scm:git:git@github.com:eclipse/lsp4jakarta.git</connection>
         <developerConnection>scm:git:git@github.com:eclipse/lsp4jakarta.git</developerConnection>
         <url>git@github.com:eclipse/lsp4jakarta.git</url>
-        <tag>0.2.5-SNAPSHOT</tag>
+        <tag>0.2.5</tag>
     </scm>
     <licenses>
         <license>
