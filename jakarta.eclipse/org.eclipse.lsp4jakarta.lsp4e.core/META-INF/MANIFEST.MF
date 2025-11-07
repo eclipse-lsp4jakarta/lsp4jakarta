@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse LSP4Jakarta Plugin (Incubation)
 Bundle-Vendor: Eclipse LSP4Jakarta
 Bundle-SymbolicName: org.eclipse.lsp4jakarta.lsp4e.core;singleton:=true
-Bundle-Version: 0.2.5
+Bundle-Version: 0.2.6.qualifier
 Bundle-Activator: org.eclipse.lsp4jakarta.lsp4e.Activator
 Require-Bundle: 
  com.google.gson,

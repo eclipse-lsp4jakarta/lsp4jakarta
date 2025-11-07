@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.lsp4jakarta.lsp4e.feature"
       label="org.eclipse.lsp4jakarta.lsp4e Feature"
-      version="0.2.5">
+      version="0.2.6.qualifier">
 
    <description url="http://www.example.com/description">
       [Enter Feature Description here.]

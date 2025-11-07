@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.lsp4jakarta</groupId>
     <artifactId>org.eclipse.lsp4jakarta.lsp4e</artifactId>
-    <version>0.2.5</version>
+    <version>0.2.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Eclipse LSP4Jakarta LSP4E Parent</name>
     <description>Eclipse LSP4Jakarta LSP4E Parent</description>
