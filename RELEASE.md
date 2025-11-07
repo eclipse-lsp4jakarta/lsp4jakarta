@@ -26,7 +26,7 @@
 1. In a browser open https://ci.eclipse.org/lsp4jakarta/, click on `log in` and authenticate using an Eclipse.org id. This brings you to the Dashboard.
 1. Click on the flow `LSP4Jakarta Release` 
 1. To check the git branch: Click on `Configure` and scroll down to find `Branch Specifier`. Type the name of the branch where you updated the poms e.g. `release-0.2.3` to build the latest LSP4Jakarta code.
-1. Click Back and then `Build with Parameters`.
+1. Click `Save` to return to the `LSP4Jakarta Release` page and then `Build with Parameters`.
 1. For parameter `VERSION` type the version number to use as the release number e.g. `0.2.3`
 1. For parameter `VERSION_SNAPSHOT` type the name of the next version snapshot e.g. `0.2.4-SNAPSHOT`
 1. Click `Build`. Jenkins will update the rest of the version numbers on the build machine but will *not* commit them to git. Jenkins will build and publish the JDT plugin and language server jars to the Eclipse repositories.
