@@ -107,5 +107,30 @@
             "type": "jakarta.servlet.Filter",
             "contentType": "class"
         }
-      }
+      },
+	  "Jakarta Servlet - WebListener": {
+	  		"prefix": "servlet_weblistener",
+	  		"body": [
+	  			"package ${1:packagename};",
+	  			"",
+	  			"import jakarta.servlet.annotation.WebListener;",
+	  			"import jakarta.servlet.ServletContextEvent;",
+	  			"import jakarta.servlet.ServletContextListener;",
+	  			"",
+	  			"@WebListener",
+	  			"public class ${TM_FILENAME_BASE} implements ServletContextListener {",
+	  			"\t@Override",
+	  			"\tpublic void contextInitialized(ServletContextEvent sce) {",
+	  			"\t}",
+	  			"\t@Override",
+	  			"\tpublic void contextDestroyed(ServletContextEvent sce) {",
+	  			"\t}",
+	  			"}"
+	  		],
+	  		"description": "Servlet WebListener",
+	  		"context": {
+	  			"type": "jakarta.servlet.ServletContextListener",
+	  			"contentType": "class"
+	  		}
+	  	}
 }
