@@ -107,5 +107,41 @@
             "type": "jakarta.servlet.Filter",
             "contentType": "class"
         }
-      }
+      },
+	"Jakarta Servlet - MultipartConfig": {
+		"prefix": "servlet_multipartconfig",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.servlet.ServletException;",
+			"import jakarta.servlet.annotation.MultipartConfig;",
+			"import jakarta.servlet.annotation.WebServlet;",
+			"import jakarta.servlet.http.HttpServlet;",
+			"import jakarta.servlet.http.HttpServletRequest;",
+			"import jakarta.servlet.http.HttpServletResponse;",
+			"import jakarta.servlet.http.Part;",
+			"",
+			"import java.io.IOException;",
+			"",
+			"@WebServlet(name = \"${2:servletName}\", urlPatterns = { \"/${3:upload}\" })",
+			"@MultipartConfig(",
+			"\tfileSizeThreshold = 1024 * 1024,",
+			"\tmaxFileSize = 1024 * 1024 * 5,",
+			"\tmaxRequestSize = 1024 * 1024 * 1",
+			")",
+			"public class ${TM_FILENAME_BASE} extends HttpServlet {",
+			"\t@Override",
+			"\tprotected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {",
+			"\t\tPart filePart = request.getPart(\"file\"); // Retrieves <input type=\"file\" name=\"file\">",
+			"\t\tString fileName = filePart.getSubmittedFileName();",
+			"\t\t// Process the file...",
+			"\t}",
+			"}"
+		],
+		"description": "Servlet MultipartConfig",
+		"context": {
+			"type": "jakarta.servlet.http.HttpServlet",
+			"contentType": "class"
+		}
+	}
 }
