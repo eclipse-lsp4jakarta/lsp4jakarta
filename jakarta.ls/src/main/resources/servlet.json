@@ -121,9 +121,11 @@
 			"public class ${TM_FILENAME_BASE} implements ServletContextListener {",
 			"\t@Override",
 			"\tpublic void contextInitialized(ServletContextEvent sce) {",
+			"\t\tSystem.out.println(\"Context initialized: \" + sce.getServletContext().getContextPath());",
 			"\t}",
 			"\t@Override",
 			"\tpublic void contextDestroyed(ServletContextEvent sce) {",
+			"\t\tSystem.out.println(\"Context destroyed: \" + sce.getServletContext().getContextPath());",
 			"\t}",
 			"}"
 		],
