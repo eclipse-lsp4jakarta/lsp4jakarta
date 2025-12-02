@@ -192,7 +192,7 @@ public class JakartaSnippetRegistryTest {
     }
     
     /**
-     * Jakarta Interceptor snippets - @Interceptor
+     * Jakarta Interceptor snippet test - @Interceptor
      */
     @Test
     public void InterceptorSnippetsTest() {
