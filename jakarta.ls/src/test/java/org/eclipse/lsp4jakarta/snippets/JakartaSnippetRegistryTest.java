@@ -190,6 +190,18 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_EMPTY_FILE);
 
     }
+    
+    /**
+     * Jakarta Interceptor snippets - @Interceptor
+     */
+    @Test
+    public void InterceptorSnippetsTest() {
+        Optional<Snippet> interceptorAnnotationSnippet = findByPrefix("interceptor_class", registry);
+        assertTrue("@Interceptor Java snippet is not present in SnippetRegistry", interceptorAnnotationSnippet.isPresent());
+
+        snippetsContextTest(interceptorAnnotationSnippet, "jakarta.interceptor.Interceptor",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
 
     // Verify whether the snippet is present in the registry.
     private static Optional<Snippet> findByPrefix(String prefix, JavaTextDocumentSnippetRegistry registry) {
