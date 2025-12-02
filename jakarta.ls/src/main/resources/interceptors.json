@@ -62,7 +62,7 @@
 		"\t}",
 		"}"
       ],
-      "description": "Interceptor class with constructor, fields and interceptor methods",
+      "description": "Interceptor class with constructor,  fields and interceptor methods",
       "context": {
         "type": "jakarta.interceptor.Interceptor",
         "contentType": "class"
