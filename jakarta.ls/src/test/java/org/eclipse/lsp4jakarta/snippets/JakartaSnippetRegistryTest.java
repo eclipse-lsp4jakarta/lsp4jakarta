@@ -197,7 +197,7 @@ public class JakartaSnippetRegistryTest {
     @Test
     public void JsonbSnippetsTest() {
         Optional<Snippet> jsonbQualifierAnnotationSnippet = findByPrefix("jsonb_qualifier", registry);
-        assertTrue("@Qualifier Java snippet is not present in SnippetRegistry", jsonbQualifierAnnotationSnippet.isPresent());
+        assertTrue("jsonb_qualifier Java snippet is not present in SnippetRegistry", jsonbQualifierAnnotationSnippet.isPresent());
 
         snippetsContextTest(jsonbQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
                             JavaCursorContextKind.IN_EMPTY_FILE);
