@@ -12,7 +12,7 @@
       }
 	},
 	"Jakarta Bean Validation - Custom Constraint Annotation": {
-		"prefix": "constraint_annotation",
+		"prefix": "validation_constraint_annotation",
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -45,7 +45,7 @@
 		}
 	},
 	"Jakarta Bean Validation - Custom Constraint Validator": {
-		"prefix": "constraint-validator",
+		"prefix": "validation_constraint_validator",
 		"body": [
 			"package ${1:packagename};",
 			"",

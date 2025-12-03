@@ -49,10 +49,10 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> beanValidationSnippet = findByPrefix("@Email", registry);
         assertTrue("@Email Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
 
-        Optional<Snippet> constraintAnnotation = findByPrefix("constraint_annotation", registry);
+        Optional<Snippet> constraintAnnotation = findByPrefix("validation_constraint_annotation", registry);
         assertTrue("constraint_annotation Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
 
-        Optional<Snippet> constraintValidator = findByPrefix("constraint-validator", registry);
+        Optional<Snippet> constraintValidator = findByPrefix("validation_constraint_validator", registry);
         assertTrue("constraint-validator Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
 
         snippetsContextTest(beanValidationSnippet, "jakarta.validation.constraints.Email",
