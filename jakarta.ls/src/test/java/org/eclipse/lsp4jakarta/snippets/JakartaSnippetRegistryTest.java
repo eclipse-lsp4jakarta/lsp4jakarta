@@ -191,6 +191,18 @@ public class JakartaSnippetRegistryTest {
 
     }
 
+    /**
+     * Jakarta binding snippets - @Qualifier
+     */
+    @Test
+    public void JsonbSnippetsTest() {
+        Optional<Snippet> jsonbQualifierAnnotationSnippet = findByPrefix("jsonb_qualifier", registry);
+        assertTrue("@Qualifier Java snippet is not present in SnippetRegistry", jsonbQualifierAnnotationSnippet.isPresent());
+
+        snippetsContextTest(jsonbQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
     // Verify whether the snippet is present in the registry.
     private static Optional<Snippet> findByPrefix(String prefix, JavaTextDocumentSnippetRegistry registry) {
         return registry.getSnippets().stream().filter(snippet -> snippet.getPrefixes().contains(prefix)).findFirst();
