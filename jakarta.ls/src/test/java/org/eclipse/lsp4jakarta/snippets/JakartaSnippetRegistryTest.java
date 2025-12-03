@@ -138,7 +138,7 @@ public class JakartaSnippetRegistryTest {
         assertTrue("servlet_webfilter Java snippet is not present in SnippetRegistry",
                    servletWebFilterSnippet.isPresent());
 
-        Optional<Snippet> servletServletSecuritySnippet = findByPrefix("servletsecurity", registry);
+        Optional<Snippet> servletServletSecuritySnippet = findByPrefix("servlet_security", registry);
         assertTrue("servletsecurity Java snippet is not present in SnippetRegistry",
                    servletServletSecuritySnippet.isPresent());
 
