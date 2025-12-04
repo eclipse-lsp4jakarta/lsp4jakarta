@@ -195,11 +195,11 @@ public class JakartaSnippetRegistryTest {
      * Jakarta binding snippets - @Qualifier
      */
     @Test
-    public void JsonbSnippetsTest() {
-        Optional<Snippet> jsonbQualifierAnnotationSnippet = findByPrefix("jsonb_qualifier", registry);
-        assertTrue("jsonb_qualifier Java snippet is not present in SnippetRegistry", jsonbQualifierAnnotationSnippet.isPresent());
+    public void DISnippetsTest() {
+        Optional<Snippet> diQualifierAnnotationSnippet = findByPrefix("jsonb_qualifier", registry);
+        assertTrue("jsonb_qualifier Java snippet is not present in SnippetRegistry", diQualifierAnnotationSnippet.isPresent());
 
-        snippetsContextTest(jsonbQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
+        snippetsContextTest(diQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
