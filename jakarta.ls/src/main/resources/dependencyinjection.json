@@ -1,6 +1,6 @@
 {
-    "Jakarta Jsonb - @Qualifier": {
-      "prefix": "jsonb_qualifier",
+    "Jakarta DI - @Qualifier": {
+      "prefix": "di_qualifier",
       "body": [
 		"package ${1:packagename};",
 		"",
