@@ -75,6 +75,9 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> persistEntitySnippet = findByPrefix("persist_entity", registry);
         assertTrue("persist_entity Java snippet is not present in SnippetRegistry", persistEntitySnippet.isPresent());
 
+        Optional<Snippet> persistNamedEntityGraphSnippet = findByPrefix("persist_namedEntityGraph", registry);
+        assertTrue("persist_namedEntityGraph Java snippet is not present in SnippetRegistry", persistNamedEntityGraphSnippet.isPresent());
+
         snippetsContextTest(persistContextSnippet, "jakarta.persistence.PersistenceContextType",
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistContextExtendedSnippet, "jakarta.persistence.PersistenceContextType",
@@ -82,6 +85,7 @@ public class JakartaSnippetRegistryTest {
         snippetsContextTest(persistContextExtendedunsyncSnippet, "jakarta.persistence.PersistenceContextType",
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistEntitySnippet, "jakarta.persistence.Entity", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(persistNamedEntityGraphSnippet, "jakarta.persistence.NamedEntityGraph", JavaCursorContextKind.BEFORE_CLASS);
 
     }
 
