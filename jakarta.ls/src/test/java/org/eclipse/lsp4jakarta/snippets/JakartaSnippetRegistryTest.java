@@ -121,7 +121,7 @@ public class JakartaSnippetRegistryTest {
 
     /**
      * Jakarta Servlet snippets - servlet_generic, servlet_doget
-     * servlet_dopost, servlet_webfilter, servletsecurity
+     * servlet_dopost, servlet_webfilter, servlet_security
      */
     @Test
     public void ServletSnippetsTest() {
