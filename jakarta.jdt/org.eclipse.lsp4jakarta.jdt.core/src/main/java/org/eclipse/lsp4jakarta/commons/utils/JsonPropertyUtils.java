@@ -105,7 +105,7 @@ public class JsonPropertyUtils {
      * @param type
      * @return
      * @throws JavaModelException
-     * @description Method returns true if no-arguments contructor is found
+     * @description Method returns true if noargs contructor is found
      */
     public static boolean hasPublicOrProtectedNoArgConstructor(IType type) throws JavaModelException {
         for (IMethod method : type.getMethods()) {
