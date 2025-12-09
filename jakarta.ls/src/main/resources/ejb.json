@@ -1,6 +1,6 @@
 {
-	"Jakarta EJB - Message-Driven Bean": {
-		"prefix": "ejb_messageDriven",
+	"Jakarta EJB - message-driven bean": {
+		"prefix": "ejb_messagedriven_bean",
 		"body": [
 			"package ${1:packagename};",
 			"",

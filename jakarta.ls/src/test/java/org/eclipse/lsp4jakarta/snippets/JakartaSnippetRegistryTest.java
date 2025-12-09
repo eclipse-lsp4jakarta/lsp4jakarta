@@ -59,8 +59,8 @@ public class JakartaSnippetRegistryTest {
      */
     @Test
     public void ejbSnippetsTest() {
-        Optional<Snippet> ejbSnippet = findByPrefix("ejb_messageDriven", registry);
-        assertTrue("ejb_messageDriven Java snippet is not present in SnippetRegistry", ejbSnippet.isPresent());
+        Optional<Snippet> ejbSnippet = findByPrefix("ejb_messagedriven_bean", registry);
+        assertTrue("ejb_messagedriven_bean Java snippet is not present in SnippetRegistry", ejbSnippet.isPresent());
 
         snippetsContextTest(ejbSnippet, "jakarta.jms.MessageListener",
                             JavaCursorContextKind.IN_EMPTY_FILE);
