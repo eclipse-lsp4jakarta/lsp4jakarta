@@ -87,8 +87,8 @@
 			"contentType": "class"
 	    }
 	},
-	"Jakarta Persistence - NamedEntityGraph Annotation": {
-	    "prefix": "persist_namedEntityGraph",
+	"Jakarta Persistence - named entitygraph annotation": {
+	    "prefix": "persist_named_entitygraph",
 	    "body": [
 			"// The @NamedEntityGraph annotation defines a reusable fetch plan, letting you declare which",
 			"// attributes to eagerly load instead of repeating JOIN FETCH in JPQL.",
