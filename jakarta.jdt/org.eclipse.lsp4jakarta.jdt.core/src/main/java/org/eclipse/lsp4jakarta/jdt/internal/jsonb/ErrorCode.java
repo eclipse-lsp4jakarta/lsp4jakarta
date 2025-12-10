@@ -21,7 +21,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidNumerOfJsonbCreatorAnnotationsInClass,
     InvalidJSonBindindAnnotationWithJsonbTransientOnField,
     InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor,
-    InvalidPropertyNamesOnJsonbFields;
+    InvalidPropertyNamesOnJsonbFields,
+    InvalidNoArgsConstructorMissing;
 
     /**
      * {@inheritDoc}
