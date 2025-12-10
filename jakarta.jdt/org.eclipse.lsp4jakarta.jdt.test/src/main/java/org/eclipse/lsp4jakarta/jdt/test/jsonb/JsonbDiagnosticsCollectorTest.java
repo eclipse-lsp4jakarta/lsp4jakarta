@@ -142,7 +142,11 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d10.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10);
+        Diagnostic d11 = d(19, 13, 37,
+                           "Missing NoArgsConstructor: Class JsonbTransientDiagnostic is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11);
 
         // Test code actions
         // Quick fix for the field "id"
@@ -205,7 +209,11 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+        Diagnostic d4 = d(4, 13, 45,
+                          "Missing NoArgsConstructor: Class JsonbTransientDiagnosticSubClass is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
     }
 
     @Test
@@ -233,6 +241,10 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+        Diagnostic d4 = d(4, 13, 48,
+                          "Missing NoArgsConstructor: Class JsonbTransientDiagnosticSubSubClass is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
     }
 }
