@@ -178,6 +178,20 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         TextEdit te8 = te(48, 4, 49, 4, "");
         CodeAction ca8 = ca(uri, "Remove @JsonbAnnotation", d6, te8);
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca8);
+
+        // Quick fix for the accessor "getFavoriteEditor"
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d7);
+        TextEdit te9 = te(66, 4, 67, 4, "");
+        CodeAction ca9 = ca(uri, "Remove @JsonbTransient", d7, te9);
+        assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca9);
+
+        // Quick fix for the accessor "setFavoriteEditor"
+        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d8);
+        TextEdit te10 = te(72, 4, 73, 4, "");
+        TextEdit te11 = te(73, 4, 74, 4, "");
+        CodeAction ca10 = ca(uri, "Remove @JsonbAnnotation", d8, te10);
+        CodeAction ca11 = ca(uri, "Remove @JsonbTransient", d8, te11);
+        assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca10, ca11);
     }
 
     @Test
