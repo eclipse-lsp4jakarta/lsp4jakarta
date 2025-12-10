@@ -69,6 +69,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IAnnotation[] allAnnotations;
 
         for (IType type : types) {
+            collectJsonbNoArgContructorDiagnostics(context, uri, unit, type, diagnostics);
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -105,6 +106,40 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
         }
         return diagnostics;
+    }
+
+    /**
+     * @param context
+     * @param uri
+     * @param unit
+     * @param type
+     * @param diagnostics
+     * @throws JavaModelException
+     * @description Method to collect Jsonb NoArgsConstructor diagnostics
+     */
+    private void collectJsonbNoArgContructorDiagnostics(JavaDiagnosticsContext context, String uri,
+                                                        ICompilationUnit unit, IType type, List<Diagnostic> diagnostics) throws JavaModelException {
+        if (JsonPropertyUtils.isJsonbCandidate(type)) {
+            if (!JsonPropertyUtils.hasPublicOrProtectedNoArgConstructor(type)) {
+                createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type);
+            }
+        }
+    }
+
+    /**
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param type
+     * @throws JavaModelException
+     * @description Method creates diagnostics with appropriate message and cursor context
+     */
+    private void createJsonbNoArgConstructorDiagnostics(JavaDiagnosticsContext context, String uri,
+                                                        List<Diagnostic> diagnostics, IType type) throws JavaModelException {
+        String msg = Messages.getMessage("ErrorMessageJsonbNoArgConstructorMissing", type.getElementName());
+        Range range = PositionUtils.toNameRange(type, context.getUtils());
+        diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                 ErrorCode.InvalidNoArgsConstructorMissing, DiagnosticSeverity.Error));
     }
 
     /**
