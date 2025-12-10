@@ -67,9 +67,16 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IType[] types = unit.getAllTypes();
         IMethod[] methods;
         IAnnotation[] allAnnotations;
+        boolean jsonbtype = false;
+        boolean hasNoArgsConstructor = false;
 
         for (IType type : types) {
-            collectJsonbNoArgContructorDiagnostics(context, uri, unit, type, diagnostics);
+            //Checks whether class is JSONB type
+            for (IAnnotation annotation : type.getAnnotations()) {
+                if (JsonPropertyUtils.isJsonbType(type, annotation))
+                    jsonbtype = true;
+                break;
+            }
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -89,6 +96,16 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidNumerOfJsonbCreatorAnnotationsInClass, DiagnosticSeverity.Error));
+
+                    //Check whether the class had public or protected no args constructor
+                    if (DiagnosticUtils.isConstructorMethod(method)) {
+                        String[] params = method.getParameterTypes();
+                        int flags = method.getFlags();
+                        if (params.length == 0 &&
+                            (Flags.isPublic(flags) || Flags.isProtected(flags))) {
+                            hasNoArgsConstructor = true;
+                        }
+                    }
                 }
             }
             //Changes to detect if Jsonb property names are not unique
@@ -101,29 +118,23 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 // Get unique property name values from the fields into a list uniquePropertyNames
                 uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
                                                                       field);
+                //Checks whether class fields have JSONB annotations
+                if (!jsonbtype) {
+                    for (IAnnotation annotation : field.getAnnotations()) {
+                        if (JsonPropertyUtils.isJsonbType(type, annotation))
+                            jsonbtype = true;
+                        break;
+                    }
+                }
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
-        }
-        return diagnostics;
-    }
-
-    /**
-     * @param context
-     * @param uri
-     * @param unit
-     * @param type
-     * @param diagnostics
-     * @throws JavaModelException
-     * @description Method to collect Jsonb NoArgsConstructor diagnostics
-     */
-    private void collectJsonbNoArgContructorDiagnostics(JavaDiagnosticsContext context, String uri,
-                                                        ICompilationUnit unit, IType type, List<Diagnostic> diagnostics) throws JavaModelException {
-        if (JsonPropertyUtils.isJsonbCandidate(type)) {
-            if (!JsonPropertyUtils.hasPublicOrProtectedNoArgConstructor(type)) {
+            //If class is JSONB type and doesn't have no args constructor diagnostic
+            if (jsonbtype && !hasNoArgsConstructor) {
                 createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type);
             }
         }
+        return diagnostics;
     }
 
     /**

@@ -16,11 +16,8 @@ package org.eclipse.lsp4jakarta.commons.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMemberValuePair;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -66,57 +63,16 @@ public class JsonPropertyUtils {
 
     /**
      * @param type
-     * @return
-     * @throws JavaModelException
-     * @description Method returns true if Class is a JSONB Candidate class
-     */
-    public static boolean isJsonbCandidate(IType type) throws JavaModelException {
-        Boolean isJsonbType = false;
-        for (IAnnotation annotation : type.getAnnotations()) {
-            isJsonbType = isJsonbType(type, annotation);
-            break;
-        }
-        for (IField field : type.getFields()) {
-            for (IAnnotation annotation : field.getAnnotations()) {
-                isJsonbType = isJsonbType(type, annotation);
-            }
-            break;
-        }
-        return isJsonbType;
-    }
-
-    /**
-     * @param type
      * @param annotation
      * @return
      * @throws JavaModelException
      * @description Method returns true if elements matches one of the JSONB annotations are present.
      */
-    private static boolean isJsonbType(IType type, IAnnotation annotation) throws JavaModelException {
+    public static boolean isJsonbType(IType type, IAnnotation annotation) throws JavaModelException {
         String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
                                                                              Constants.JSONB_ANNOTATIONS.toArray(String[]::new));
         if (matchedAnnotation != null) {
             return true;
-        }
-        return false;
-    }
-
-    /**
-     * @param type
-     * @return
-     * @throws JavaModelException
-     * @description Method returns true if no args contructor is found
-     */
-    public static boolean hasPublicOrProtectedNoArgConstructor(IType type) throws JavaModelException {
-        for (IMethod method : type.getMethods()) {
-            if (method.isConstructor()) {
-                String[] params = method.getParameterTypes();
-                int flags = method.getFlags();
-                if (params.length == 0 &&
-                    (Flags.isPublic(flags) || Flags.isProtected(flags))) {
-                    return true;
-                }
-            }
         }
         return false;
     }
