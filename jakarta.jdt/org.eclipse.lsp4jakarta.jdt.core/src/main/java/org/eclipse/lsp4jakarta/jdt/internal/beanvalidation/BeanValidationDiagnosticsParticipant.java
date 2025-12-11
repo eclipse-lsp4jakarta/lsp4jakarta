@@ -52,6 +52,8 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -122,27 +124,57 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         validAnnotation(context, uri, method, range, annotation, matchedAnnotation, diagnostics);
                     }
                 }
+                // parameter level annotations
+                for (ILocalVariable param : method.getParameters()) {
+                	param.getElementType();
+                	   for (IAnnotation annotation : param.getAnnotations()) {
+                		   String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                				   annotation.getElementName(),
+                                   SET_OF_ANNOTATIONS.toArray(new String[0]));
+
+                	        if (matchedAnnotation != null) {
+                	        	 Range range = PositionUtils.toNameRange(param, context.getUtils());
+                	        	 validAnnotation(context, uri, param, range, annotation, matchedAnnotation, diagnostics);
+                	        }
+                	    }
+                }
             }
         }
 
         return diagnostics;
     }
 
-    private void validAnnotation(JavaDiagnosticsContext context, String uri, IMember element, Range range,
+ 
+    
+    private void validAnnotation(JavaDiagnosticsContext context, String uri, IJavaElement element, Range range,
                                  IAnnotation annotation,
                                  String matchedAnnotation,
                                  List<Diagnostic> diagnostics) throws CoreException {
-        IType declaringType = element.getDeclaringType();
+    	
+    	String type = null;
+    	IType declaringType  = null;
+    	boolean isMethod = true;
+    	if (element instanceof IMethod) {
+    		type = ((IMethod) element).getReturnType();
+    		declaringType = ((IMember)element).getDeclaringType();
+        } else if (element instanceof IField) {
+        	type = ((IField) element).getTypeSignature();
+        	declaringType = ((IMember)element).getDeclaringType();
+        	isMethod = false;
+        } else if (element instanceof ILocalVariable) {
+        	type = ((ILocalVariable) element).getTypeSignature();
+        	declaringType = ((IMethod) ((ILocalVariable) element).getDeclaringMember()).getDeclaringType();
+        }
+    	
+    	
         if (declaringType != null) {
             String annotationName = annotation.getElementName();
-            boolean isMethod = element instanceof IMethod;
 
-            if (Flags.isStatic(element.getFlags())) {
+            if (!(element instanceof ILocalVariable) && Flags.isStatic(((IMember)element).getFlags())) {
                 String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
                 diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
                                                          ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField, DiagnosticSeverity.Error));
             } else {
-                String type = (isMethod) ? ((IMethod) element).getReturnType() : ((IField) element).getTypeSignature();
 
                 if (matchedAnnotation.equals(ASSERT_FALSE) || matchedAnnotation.equals(ASSERT_TRUE)) {
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),

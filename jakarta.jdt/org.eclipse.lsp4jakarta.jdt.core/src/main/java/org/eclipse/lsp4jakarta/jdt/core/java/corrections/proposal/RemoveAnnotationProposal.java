@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -86,10 +87,11 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
         boolean isField = declNode instanceof FieldDeclaration;
         boolean isMethod = declNode instanceof MethodDeclaration;
         boolean isType = declNode instanceof TypeDeclaration;
+        boolean isParam = declNode instanceof SingleVariableDeclaration;
 
         String[] annotations = getAnnotations();
 
-        if (isField || isMethod || isType) {
+        if (isField || isMethod || isType || isParam) {
             AST ast = declNode.getAST();
             ASTRewrite rewrite = ASTRewrite.create(ast);
 
@@ -102,6 +104,8 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                 children = (List<? extends ASTNode>) declNode.getStructuralProperty(MethodDeclaration.MODIFIERS2_PROPERTY);
             } else if (isType) {
                 children = (List<? extends ASTNode>) declNode.getStructuralProperty(TypeDeclaration.MODIFIERS2_PROPERTY);
+            } else if (isParam) {
+                children = (List<? extends ASTNode>) declNode.getStructuralProperty(SingleVariableDeclaration.MODIFIERS2_PROPERTY);
             } else {
                 children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
             }
