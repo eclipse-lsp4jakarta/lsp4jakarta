@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jsonb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -72,11 +73,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
         for (IType type : types) {
             //Checks whether class is JSONB type
-            for (IAnnotation annotation : type.getAnnotations()) {
-                if (JsonPropertyUtils.isJsonbType(type, annotation))
-                    jsonbtype = true;
-                break;
-            }
+            jsonbtype = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
+                try {
+                    return JsonPropertyUtils.isJsonbType(type, annotation);
+                } catch (JavaModelException e) {
+                    return false;
+                }
+            });
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -120,11 +123,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                                                                       field);
                 //Checks whether class fields have JSONB annotations
                 if (!jsonbtype) {
-                    for (IAnnotation annotation : field.getAnnotations()) {
-                        if (JsonPropertyUtils.isJsonbType(type, annotation))
-                            jsonbtype = true;
-                        break;
-                    }
+                    jsonbtype = Arrays.stream(field.getAnnotations()).anyMatch(annotation -> {
+                        try {
+                            return JsonPropertyUtils.isJsonbType(type, annotation);
+                        } catch (JavaModelException e) {
+                            return false;
+                        }
+                    });
                 }
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
