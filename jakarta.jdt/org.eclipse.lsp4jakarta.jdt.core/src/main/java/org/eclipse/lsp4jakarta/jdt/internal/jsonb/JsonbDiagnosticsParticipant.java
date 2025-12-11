@@ -92,6 +92,15 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             jonbMethods.add(method);
                     }
                 }
+                //Check whether the class had public or protected no args constructor
+                if (DiagnosticUtils.isConstructorMethod(method)) {
+                    String[] params = method.getParameterTypes();
+                    int flags = method.getFlags();
+                    if (params.length == 0 &&
+                        (Flags.isPublic(flags) || Flags.isProtected(flags))) {
+                        hasNoArgsConstructor = true;
+                    }
+                }
             }
             if (jonbMethods.size() > Constants.MAX_METHOD_WITH_JSONBCREATOR) {
                 for (IMethod method : methods) {
@@ -99,16 +108,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidNumerOfJsonbCreatorAnnotationsInClass, DiagnosticSeverity.Error));
-
-                    //Check whether the class had public or protected no args constructor
-                    if (DiagnosticUtils.isConstructorMethod(method)) {
-                        String[] params = method.getParameterTypes();
-                        int flags = method.getFlags();
-                        if (params.length == 0 &&
-                            (Flags.isPublic(flags) || Flags.isProtected(flags))) {
-                            hasNoArgsConstructor = true;
-                        }
-                    }
                 }
             }
             //Changes to detect if Jsonb property names are not unique
