@@ -263,20 +263,21 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             }
         }
     }
-    
-/**
- * getDiagnosticMessage
- * @param isMethod
- * @param isField
- * @param annotationName
- * @param messageKey
- * @return
- */
+
+    /**
+     * getDiagnosticMessage
+     *
+     * @param isMethod
+     * @param isField
+     * @param annotationName
+     * @param messageKey
+     * @return
+     */
     private String getDiagnosticMessage(boolean isMethod, boolean isField, String annotationName, String messageKey) {
-        String message = isMethod ? 
-        		Messages.getMessage(messageKey + "Methods", "@" + annotationName) : 
-        			isField ? Messages.getMessage(messageKey + "Fields", "@" + annotationName) : 
-        				Messages.getMessage(messageKey + "Params", "@" + annotationName);
+        String message = isMethod ? Messages.getMessage(messageKey + "Methods",
+                                                        "@" + annotationName) : isField ? Messages.getMessage(messageKey + "Fields",
+                                                                                                              "@" + annotationName) : Messages.getMessage(messageKey + "Params",
+                                                                                                                                                          "@" + annotationName);
         return message;
     }
 
