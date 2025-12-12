@@ -395,4 +395,78 @@ public class BeanValidationTest extends BaseJakartaTest {
         CodeAction ca4 = ca(uri, "Remove constraint annotation Size from element", d4, te4);
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
     }
+
+    @Test
+    public void methodParamConstraintValidation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/MethodParamConstraintValidation.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics
+        Diagnostic d1 = d(51, 42, 56,
+                          "The @Past annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          "jakarta.validation.constraints.Past");
+        Diagnostic d2 = d(51, 77, 81,
+                          "The @Positive annotation can only be used on \n- BigDecimal \n- BigInteger\n- byte, short, int, long, float, double (and their respective wrappers) \n type Parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                          "jakarta.validation.constraints.Positive");
+        Diagnostic d3 = d(52, 30, 46,
+                          "This annotation can only be used on Parameters that have CharSequence, Collection, Array or Map as a Parameter type.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
+                          "jakarta.validation.constraints.NotEmpty");
+
+        Diagnostic d4 = d(57, 39, 46,
+                          "The @Negative annotation can only be used on \n- BigDecimal \n- BigInteger\n- byte, short, int, long, float, double (and their respective wrappers) \n type Parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                          "jakarta.validation.constraints.Negative");
+
+        Diagnostic d5 = d(57, 66, 78,
+                          "The @NotBlank annotation can only be used on String and CharSequence type fields.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.NotBlank");
+
+        Diagnostic d6 = d(58, 34, 44,
+                          "The @Pattern annotation can only be used on String and CharSequence type fields.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.Pattern");
+
+        Diagnostic d7 = d(63, 68, 69,
+                          "The @Digits annotation can only be used on: \n- BigDecimal \n- BigInteger \n- CharSequence\n- byte, short, int, long (and their respective wrappers) \n type Parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField",
+                          "jakarta.validation.constraints.Digits");
+
+        Diagnostic d8 = d(63, 86, 98,
+                          "The @Email annotation can only be used on String and CharSequence type fields.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.Email");
+
+        Diagnostic d9 = d(64, 28, 42,
+                          "The @FutureOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          "jakarta.validation.constraints.FutureOrPresent");
+
+        Diagnostic d10 = d(69, 41, 42,
+                           "This annotation can only be used on Parameters that have CharSequence, Collection, Array or Map as a Parameter type.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
+                           "jakarta.validation.constraints.Size");
+
+        Diagnostic d11 = d(69, 63, 64,
+                           "The @AssertTrue annotation can only be used on boolean and Boolean type Parameters.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                           "jakarta.validation.constraints.AssertTrue");
+
+        Diagnostic d12 = d(69, 93, 103,
+                           "The @DecimalMax annotation can only be used on: \n- BigDecimal \n- BigInteger \n- CharSequence\n- byte, short, int, long (and their respective wrappers) \n type Parameters.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField",
+                           "jakarta.validation.constraints.DecimalMax");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12);
+
+    }
 }
