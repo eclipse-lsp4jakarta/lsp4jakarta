@@ -142,11 +142,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d10.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        Diagnostic d11 = d(19, 13, 37,
-                           "Missing NoArgsConstructor: Class JsonbTransientDiagnostic is used with JSONB, but does not declare a public or protected no-argument constructor.",
-                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10);
 
         // Test code actions
         // Quick fix for the field "id"
@@ -209,11 +205,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        Diagnostic d4 = d(4, 13, 45,
-                          "Missing NoArgsConstructor: Class JsonbTransientDiagnosticSubClass is used with JSONB, but does not declare a public or protected no-argument constructor.",
-                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
 
     @Test
@@ -241,10 +233,31 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
-        Diagnostic d4 = d(4, 13, 48,
-                          "Missing NoArgsConstructor: Class JsonbTransientDiagnosticSubSubClass is used with JSONB, but does not declare a public or protected no-argument constructor.",
-                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidNoArgsConstructorMissing");
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+    }
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
+    @Test
+    public void JsonbDeserialization() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbDeserialization.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(4, 13, 33,
+                          "Missing NoArgsConstructor: Class JsonbDeserialization is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d2 = d(56, 21, 31,
+                          "Missing NoArgsConstructor: Class Childclass is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d3 = d(83, 14, 22,
+                          "Class SubChild is used with JSONB & is non-static, class must be static for de-serialization.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
 }
