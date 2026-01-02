@@ -200,13 +200,13 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     }
                 } else if (matchedAnnotation.equals(EMAIL)) {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType);
+                                    type, matchedAnnotation, declaringType, isField);
                 } else if (matchedAnnotation.equals(NOT_BLANK)) {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType);
+                                    type, matchedAnnotation, declaringType, isField);
                 } else if (matchedAnnotation.equals(PATTERN)) {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType);
+                                    type, matchedAnnotation, declaringType, isField);
                 } else if (matchedAnnotation.equals(FUTURE) || matchedAnnotation.equals(FUTURE_OR_PRESENT)
                            || matchedAnnotation.equals(PAST) || matchedAnnotation.equals(PAST_OR_PRESENT)) {
                     String dataType = getDataTypeName(type);
@@ -312,11 +312,11 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
     private void checkStringOnly(JavaDiagnosticsContext context, String uri, Range range,
                                  List<Diagnostic> diagnostics,
-                                 String annotationName, boolean isMethod, String type, String matchedAnnotation, IType declaringType) throws JavaModelException {
+                                 String annotationName, boolean isMethod, String type, String matchedAnnotation, IType declaringType, boolean isField) throws JavaModelException {
         String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
                                                                           new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
         if (dataTypeFQName == null) {
-            String message = isMethod ? Messages.getMessage("AnnotationStringMethods", "@" + annotationName) : Messages.getMessage("AnnotationStringFields", "@" + annotationName);
+            String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationString");
             diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                      matchedAnnotation, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
                                                      DiagnosticSeverity.Error));
