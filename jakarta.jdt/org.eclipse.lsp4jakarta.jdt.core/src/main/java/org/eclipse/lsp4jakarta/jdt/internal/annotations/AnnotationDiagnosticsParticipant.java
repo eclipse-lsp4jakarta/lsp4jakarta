@@ -183,7 +183,12 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                          DiagnosticSeverity.Error));
                             }
                         }
+                    } else if (element instanceof IMethod) {
+                        IMethod method = (IMethod) element;
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        validateResourceSetterAndReport(method, uri, annotationRange, context, diagnostics);
                     }
+
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
                     if (element instanceof IType) {
                         for (IMemberValuePair internalAnnotation : annotation.getMemberValuePairs()) {
@@ -248,6 +253,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                 }
                             }
                         }
+                    } else if (element instanceof IMethod) {
+                        IMethod method = (IMethod) element;
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        validateResourceSetterAndReport(method, uri, annotationRange, context, diagnostics);
                     }
                 }
 
@@ -353,6 +362,46 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return false;
+    }
+
+    /**
+     * validateResourceSetterAndReport
+     *
+     * @param m
+     * @param uri
+     * @param annotationRange
+     * @param context
+     * @param diagnostics
+     * @throws JavaModelException
+     */
+    public static void validateResourceSetterAndReport(IMethod m, String uri, Range annotationRange,
+                                                       JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        String methodName = m.getElementName();
+        if (!m.getElementName().startsWith("set")) {
+
+            String diagnosticMessage = Messages.getMessage("AnnotationNameStartWithSet",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceNameStartWithSet,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (!"V".equals(m.getReturnType())) {
+            String diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceReturnTypeMustBeVoid,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (m.getParameterTypes().length > 1) {
+            String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceMustDeclareExactlyOneParam,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 
     /**
