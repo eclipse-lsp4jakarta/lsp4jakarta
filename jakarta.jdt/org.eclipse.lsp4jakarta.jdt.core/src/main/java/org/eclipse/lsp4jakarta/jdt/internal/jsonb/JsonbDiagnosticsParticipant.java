@@ -20,7 +20,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -55,6 +56,9 @@ import com.google.gson.JsonArray;
  */
 public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
+    private static final String NON_STATIC_DIAGNOSTIC = "Please declare the class as static";
+    private static final Logger LOGGER = Logger.getLogger(JsonbDiagnosticsParticipant.class.getName());
+
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         String uri = context.getUri();
@@ -69,24 +73,33 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IType[] types = unit.getAllTypes();
         IMethod[] methods;
         IAnnotation[] allAnnotations;
-        //Jsonb type for Parent
+        //Variable for checking parent class is JSONB type or not
         boolean jsonbtypeParent = false;
+        //Variable to check if inner class or not
         boolean isInnerClass = false;
-        //No-Args for Parent and Child
-        boolean parentHasNoArgsConstructor = false;
-        boolean parentHasParameterizedConrtuctor = false;
-        boolean childHasNoArgsConstructor = false;
-        boolean childHasParameterizedConrtuctor = false;
-        boolean missingParentNoArgs = false;
-        boolean missingChildNoArgs = false;
+        //Variables for determining parameterized constructor in parent and child classes
+        boolean parentHasNoArgsConstructor;
+        boolean parentHasParameterizedConrtuctor;
+        boolean childHasNoArgsConstructor;
+        boolean childHasParameterizedConrtuctor;
+        boolean missingParentNoArgsConstructor;
+        boolean missingChildNoArgsConstructor;
 
         for (IType type : types) {
-            //Checks whether class is JSONB type
-            if (type.getDeclaringType() == null) {
+            parentHasNoArgsConstructor = false;
+            parentHasParameterizedConrtuctor = false;
+            childHasNoArgsConstructor = false;
+            childHasParameterizedConrtuctor = false;
+            missingParentNoArgsConstructor = false;
+            missingChildNoArgsConstructor = false;
+            isInnerClass = type.getDeclaringType() != null;
+            //Checks whether parent class is JSONB type by checking class level annotations
+            if (!isInnerClass) {
                 jsonbtypeParent = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
                     try {
                         return JsonPropertyUtils.isJsonbType(type, annotation);
                     } catch (JavaModelException e) {
+                        LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
                         return false;
                     }
                 });
@@ -103,13 +116,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             jonbMethods.add(method);
                     }
                 }
-                //Check whether the class had public or protected no args constructor
+                //Check whether the class has public or protected no args constructor
                 if (DiagnosticUtils.isConstructorMethod(method)) {
                     String[] params = method.getParameterTypes();
                     int flags = method.getFlags();
                     if (params.length == 0 &&
                         (Flags.isPublic(flags) || Flags.isProtected(flags))) {
-                        if (type.getDeclaringType() == null)
+                        if (!isInnerClass)
                             parentHasNoArgsConstructor = true;
                         else
                             childHasNoArgsConstructor = true;
@@ -140,11 +153,12 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
                                                                       field);
                 //Checks whether class fields have JSONB annotations
-                if (type.getDeclaringType() == null && !jsonbtypeParent) {
+                if (!isInnerClass && !jsonbtypeParent) {
                     jsonbtypeParent = Arrays.stream(field.getAnnotations()).anyMatch(annotation -> {
                         try {
                             return JsonPropertyUtils.isJsonbType(type, annotation);
                         } catch (JavaModelException e) {
+                            LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
                             return false;
                         }
                     });
@@ -152,15 +166,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
-            //If class is JSONB type and doesn't have no args constructor diagnostic
-            isInnerClass = type.getDeclaringType() != null;
-            //Parent class conditions for no-args
-            missingParentNoArgs = jsonbtypeParent && !parentHasNoArgsConstructor && parentHasParameterizedConrtuctor;
-            //Child class conditions for no-args
-            missingChildNoArgs = jsonbtypeParent && !childHasNoArgsConstructor && childHasParameterizedConrtuctor;
-            //Jsonb deseriazation diagnostics
+            //Parent class conditions for checking missing no-args constructor
+            missingParentNoArgsConstructor = jsonbtypeParent && !parentHasNoArgsConstructor && parentHasParameterizedConrtuctor;
+            //Child class conditions for checking missing no-args constructor
+            missingChildNoArgsConstructor = jsonbtypeParent && !childHasNoArgsConstructor && childHasParameterizedConrtuctor;
+            //Generate Jsonb deseriazation diagnostics
             generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
-                                                 missingParentNoArgs, missingChildNoArgs, type);
+                                                 missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
         }
         return diagnostics;
     }
@@ -185,13 +197,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         String deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNoArgConstructorMissing", type.getElementName());
         IJavaErrorCode deserializeErrCode = ErrorCode.InvalidJsonBNoArgsConstructorMissing;
         boolean isStaticInner = false;
-        //Parent class diagnostics
+        //Parent class no args constructor missing diagnostics
         if (!isInnerClass) {
             if (missingParentNoArgs) {
                 createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
             }
         } else {
-            //Child class non-static and No-args diagnostics
+            //Inner class non-static diagnostics and no args constructor missing diagnostics
             isStaticInner = isInnerClass && Flags.isStatic(type.getFlags());
             if (!isStaticInner && jsonbtypeParent) {
                 deSerializeMsg = Messages.getMessage("ErrorMessageJsonbInnerNonStatic", type.getElementName());
@@ -214,8 +226,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private void createJsonbNoArgConstructorDiagnostics(JavaDiagnosticsContext context, String uri,
                                                         List<Diagnostic> diagnostics, IType type, String msg, IJavaErrorCode deserializeErrCode) throws JavaModelException {
         Range range = PositionUtils.toNameRange(type, context.getUtils());
-        diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                 deserializeErrCode, DiagnosticSeverity.Error));
+        if (msg.contains(NON_STATIC_DIAGNOSTIC)) {
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                     deserializeErrCode, DiagnosticSeverity.Warning));
+        } else {
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                     deserializeErrCode, DiagnosticSeverity.Error));
+        }
     }
 
     /**
