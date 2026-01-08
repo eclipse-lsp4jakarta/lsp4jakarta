@@ -70,9 +70,6 @@ public class JsonPropertyUtils {
     public static boolean isJsonbType(IType type, IAnnotation annotation) throws JavaModelException {
         String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
                                                                              Constants.JSONB_ANNOTATIONS.toArray(String[]::new));
-        if (matchedAnnotation != null) {
-            return true;
-        }
-        return false;
+        return matchedAnnotation != null;
     }
 }
