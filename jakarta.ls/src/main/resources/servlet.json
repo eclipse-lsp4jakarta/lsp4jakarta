@@ -132,6 +132,46 @@
 		"description": "Servlet WebListener",
 		"context": {
 			"type": "jakarta.servlet.ServletContextListener",
+            "contentType": "class"
+	},
+	"Jakarta Servlet - ServletSecurity": {
+		"prefix": "servlet_security",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.servlet.annotation.ServletSecurity;",
+			"import jakarta.servlet.annotation.WebServlet;",
+			"import jakarta.servlet.annotation.HttpConstraint;",
+			"import jakarta.servlet.annotation.HttpMethodConstraint;",
+			"import jakarta.servlet.http.HttpServlet;",
+			"import jakarta.servlet.http.HttpServletRequest;",
+			"import jakarta.servlet.http.HttpServletResponse;",
+			"import jakarta.servlet.ServletException;",
+			"",
+			"import java.io.IOException;",
+			"",
+			"@WebServlet(\"${2:servletName}\")",
+			"@ServletSecurity(",
+			"\tvalue = @HttpConstraint(rolesAllowed = {\"admin\"}),",
+			"\thttpMethodConstraints = {",
+			"\t\t@HttpMethodConstraint(value = \"GET\", rolesAllowed = {\"user\", \"admin\"}),",
+			"\t\t@HttpMethodConstraint(value = \"POST\", rolesAllowed = {\"admin\"})",
+			"\t}",
+			")",
+			"public class ${TM_FILENAME_BASE} extends HttpServlet {",
+			"\t@Override",
+			"\tprotected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException{",
+			"\t\tresponse.getWriter().write(\"GET access granted\");",
+			"\t}",
+			"\t@Override",
+			"\tprotected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException{",
+			"\t\tresponse.getWriter().write(\"POST access granted\");",
+			"\t}",
+			"}"
+		],
+		"description": "Enforce security constraints directly on servlets",
+		"context": {
+			"type": "jakarta.servlet.http.HttpServlet",
 			"contentType": "class"
 		}
 	}
