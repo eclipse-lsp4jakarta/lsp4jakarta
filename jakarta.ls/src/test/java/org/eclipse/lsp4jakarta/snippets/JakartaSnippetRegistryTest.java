@@ -55,6 +55,19 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
+     * Jakarta EJB snippets - @MessageDriven
+     */
+    @Test
+    public void ejbSnippetsTest() {
+        Optional<Snippet> ejbSnippet = findByPrefix("ejb_messagedriven_bean", registry);
+        assertTrue("ejb_messagedriven_bean Java snippet is not present in SnippetRegistry", ejbSnippet.isPresent());
+
+        snippetsContextTest(ejbSnippet, "jakarta.jms.MessageListener",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+
+    }
+
+    /**
      * Jakarta Persistence snippets. - persist_context, persist_context_extended,
      * persist_context_extended_unsync, persist_entity.
      */
