@@ -78,20 +78,24 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         //Variable to check if inner class or not
         boolean isInnerClass = false;
         //Variables for determining parameterized constructor in parent and child classes
-        boolean parentHasNoArgsConstructor;
-        boolean parentHasParameterizedConrtuctor;
-        boolean childHasNoArgsConstructor;
-        boolean childHasParameterizedConrtuctor;
+        boolean parentHasValidNoArgsConstructor;
+        boolean isNotPublicProtectedParentConstructor;
+        boolean childHasValidNoArgsConstructor;
+        boolean isNotPublicProtectedChildConstructor;
+        boolean parentHasParameterizedConstructor;
+        boolean childHasParameterizedConstructor;
         boolean missingParentNoArgsConstructor;
         boolean missingChildNoArgsConstructor;
 
         for (IType type : types) {
-            parentHasNoArgsConstructor = false;
-            parentHasParameterizedConrtuctor = false;
-            childHasNoArgsConstructor = false;
-            childHasParameterizedConrtuctor = false;
+            parentHasValidNoArgsConstructor = false;
+            isNotPublicProtectedParentConstructor = false;
+            childHasValidNoArgsConstructor = false;
+            isNotPublicProtectedChildConstructor = false;
             missingParentNoArgsConstructor = false;
             missingChildNoArgsConstructor = false;
+            parentHasParameterizedConstructor = false;
+            childHasParameterizedConstructor = false;
             isInnerClass = type.getDeclaringType() != null;
             //Checks whether parent class is JSONB type by checking class level annotations
             if (!isInnerClass) {
@@ -120,17 +124,23 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 if (DiagnosticUtils.isConstructorMethod(method)) {
                     String[] params = method.getParameterTypes();
                     int flags = method.getFlags();
-                    if (params.length == 0 &&
-                        (Flags.isPublic(flags) || Flags.isProtected(flags))) {
-                        if (!isInnerClass)
-                            parentHasNoArgsConstructor = true;
-                        else
-                            childHasNoArgsConstructor = true;
+                    if (Flags.isPublic(flags) || Flags.isProtected(flags)) {
+                        if (params.length == 0) {
+                            if (!isInnerClass)
+                                parentHasValidNoArgsConstructor = true;
+                            else
+                                childHasValidNoArgsConstructor = true;
+                        } else {
+                            if (!isInnerClass)
+                                parentHasParameterizedConstructor = true;
+                            else
+                                childHasParameterizedConstructor = true;
+                        }
                     } else {
                         if (!isInnerClass)
-                            parentHasParameterizedConrtuctor = true;
+                            isNotPublicProtectedParentConstructor = true; // Set to true if parent doesn't have public or protected no-args constructor
                         else
-                            childHasParameterizedConrtuctor = true;
+                            isNotPublicProtectedChildConstructor = true; // Set to true if child doesn't have public or protected no-args constructor
                     }
                 }
             }
@@ -167,9 +177,11 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
             //Parent class conditions for checking missing no-args constructor
-            missingParentNoArgsConstructor = jsonbtypeParent && !parentHasNoArgsConstructor && parentHasParameterizedConrtuctor;
+            missingParentNoArgsConstructor = jsonbtypeParent && (isNotPublicProtectedParentConstructor
+                                                                 || (!parentHasValidNoArgsConstructor && parentHasParameterizedConstructor));
             //Child class conditions for checking missing no-args constructor
-            missingChildNoArgsConstructor = jsonbtypeParent && !childHasNoArgsConstructor && childHasParameterizedConrtuctor;
+            missingChildNoArgsConstructor = jsonbtypeParent && (isNotPublicProtectedChildConstructor
+                                                                || (!childHasValidNoArgsConstructor && childHasParameterizedConstructor));
             //Generate Jsonb deseriazation diagnostics
             generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
                                                  missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
