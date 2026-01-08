@@ -133,6 +133,7 @@
 		"context": {
 			"type": "jakarta.servlet.ServletContextListener",
             "contentType": "class"
+			}
 	},
 	"Jakarta Servlet - ServletSecurity": {
 		"prefix": "servlet_security",
