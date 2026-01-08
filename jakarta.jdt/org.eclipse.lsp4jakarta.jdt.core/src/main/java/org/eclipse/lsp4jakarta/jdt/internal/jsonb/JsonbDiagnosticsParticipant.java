@@ -127,7 +127,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         else
                             childHasNoArgsConstructor = true;
                     } else {
-                        if (type.getDeclaringType() == null)
+                        if (!isInnerClass)
                             parentHasParameterizedConrtuctor = true;
                         else
                             childHasParameterizedConrtuctor = true;
