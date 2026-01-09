@@ -97,6 +97,8 @@ public class SnippetContextForJava implements ISnippetContext<JavaSnippetComplet
                                                    || kind == JavaCursorContextKind.IN_METHOD_ANNOTATIONS);
             case CLASS:
                 return kind == JavaCursorContextKind.IN_EMPTY_FILE;
+            case BEFORE_CLASS:
+                return kind == JavaCursorContextKind.BEFORE_CLASS;
             case METHOD:
                 return kind == JavaCursorContextKind.BEFORE_FIELD || kind == JavaCursorContextKind.BEFORE_METHOD
                        || kind == JavaCursorContextKind.IN_CLASS;
