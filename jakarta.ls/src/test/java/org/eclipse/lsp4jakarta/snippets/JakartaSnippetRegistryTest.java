@@ -241,6 +241,18 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
+    /**
+     * Jakarta binding snippets test case- @Qualifier
+     */
+    @Test
+    public void DISnippetsTest() {
+        Optional<Snippet> diQualifierAnnotationSnippet = findByPrefix("di_qualifier", registry);
+        assertTrue("di_qualifier Java snippet is not present in SnippetRegistry", diQualifierAnnotationSnippet.isPresent());
+
+        snippetsContextTest(diQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
     // Verify whether the snippet is present in the registry.
     private static Optional<Snippet> findByPrefix(String prefix, JavaTextDocumentSnippetRegistry registry) {
         return registry.getSnippets().stream().filter(snippet -> snippet.getPrefixes().contains(prefix)).findFirst();
