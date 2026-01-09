@@ -230,7 +230,7 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta binding snippets - @Qualifier
+     * Jakarta binding snippets test case- @Qualifier
      */
     @Test
     public void DISnippetsTest() {
