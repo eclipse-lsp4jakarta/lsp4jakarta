@@ -253,10 +253,6 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                 }
                             }
                         }
-                    } else if (element instanceof IMethod) {
-                        IMethod method = (IMethod) element;
-                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                        validateResourceSetterAndReport(method, uri, annotationRange, context, diagnostics);
                     }
                 }
 
@@ -394,7 +390,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                      ErrorCode.ResourceReturnTypeMustBeVoid,
                                                      DiagnosticSeverity.Error));
         }
-        if (m.getParameterTypes().length > 1) {
+        if (m.getParameterTypes().length != 1) {
             String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
                                                            "@Resource", methodName);
             diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
