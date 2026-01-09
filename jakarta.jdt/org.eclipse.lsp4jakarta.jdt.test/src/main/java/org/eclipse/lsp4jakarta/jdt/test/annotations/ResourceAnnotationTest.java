@@ -55,7 +55,16 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         Diagnostic d2 = d(39, 0, 30, "The @Resource annotation must define the attribute 'name'.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+        Diagnostic d3 = d(44, 4, 13, "@Resource method 'setStudentId' is invalid: must declare exactly one parameter.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceMustDeclareExactlyOneParam");
+
+        Diagnostic d4 = d(49, 4, 13, "@Resource method 'getStudentId' is invalid: method name must start with set.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceNameStartWithSet");
+
+        Diagnostic d5 = d(54, 4, 13, "@Resource method 'setStudentId1' is invalid: return type must be void.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceReturnTypeMustBeVoid");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
         TextEdit te = te(22, 0, 22, 22, "@Resource(name = \"aa\", type = Object.class)");
