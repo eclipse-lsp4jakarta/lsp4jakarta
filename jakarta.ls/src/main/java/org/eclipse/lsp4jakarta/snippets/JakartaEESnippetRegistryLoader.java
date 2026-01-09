@@ -50,6 +50,9 @@ public class JakartaEESnippetRegistryLoader implements ISnippetRegistryLoader {
         registry.registerSnippets(
                                   JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("dependencyinjection.json"),
                                   SnippetContextForJava.TYPE_ADAPTER);
+        registry.registerSnippets(
+                                  JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("ejb.json"),
+                                  SnippetContextForJava.TYPE_ADAPTER);
     }
 
     @Override
