@@ -26,7 +26,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidEndpointPathWithNoStartingSlash,
     InvalidEndpointPathWithRelativePaths,
     InvalidEndpointPathNotTempleateOrPartialURI,
-    InvalidEndpointPathDuplicateVariable;
+    InvalidEndpointPathDuplicateVariable,
+    missingPublicNoArgConstructor;
 
     /**
      * {@inheritDoc}
