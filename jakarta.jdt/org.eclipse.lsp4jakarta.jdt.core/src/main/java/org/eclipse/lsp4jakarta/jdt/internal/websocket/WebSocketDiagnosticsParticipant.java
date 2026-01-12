@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -93,6 +94,8 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
 
                 // ServerEndpoint annotation diagnostics
                 serverEndpointErrorCheck(context, uri, type, diagnostics, unit);
+
+                publicNoArgsConstructorCheck(context, uri, type, diagnostics);
             }
         }
 
@@ -361,6 +364,33 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 }
             }
         }
+    }
+
+    private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
+                                              List<Diagnostic> diagnostics) throws JavaModelException {
+
+        boolean hasConstructor = false, hasPublicNoArgConstructor = false;
+
+        for (IMethod method : type.getMethods()) {
+            if (DiagnosticUtils.isConstructorMethod(method)) {
+                hasConstructor = true;
+                String[] params = method.getParameterTypes();
+                int flags = method.getFlags();
+                if (params.length == 0 && Flags.isPublic(flags)) {
+                    hasPublicNoArgConstructor = true;
+                }
+            }
+        }
+
+        if (hasConstructor && !hasPublicNoArgConstructor) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("publicNoArgConstructorMissing", type.getElementName()), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.missingPublicNoArgConstructor,
+                                                     DiagnosticSeverity.Error));
+        }
+
     }
 
     /**
