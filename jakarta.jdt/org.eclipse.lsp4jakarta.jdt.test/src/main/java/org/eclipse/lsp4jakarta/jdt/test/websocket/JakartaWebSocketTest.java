@@ -219,4 +219,20 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
     }
+
+    @Test
+    public void testNoArgConstructor() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/websocket/MissingPublicNoArgConstructor.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 13, 42,
+                         "WebSocket endpoint class MissingPublicNoArgConstructor must declare a public no-argument constructor.",
+                         DiagnosticSeverity.Error, "jakarta-websocket", "missingPublicNoArgConstructor");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+    }
 }
