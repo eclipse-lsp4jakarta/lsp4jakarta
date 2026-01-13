@@ -105,4 +105,41 @@ public class DependencyInjectionTest extends BaseJakartaTest {
         ca1 = ca(uri, "Remove the 'static' modifier", d5, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca, ca1);
     }
+
+    @Test
+    public void InvalidInjectQualifierOnFieldOrParameter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidInjectQualifiers.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Create expected diagnostics.
+        Diagnostic d1 = d(15, 19, 28,
+                          "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
+
+        Diagnostic d2 = d(26, 19, 23,
+                          "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
+
+        Diagnostic d3 = d(43, 18, 25,
+                          "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
+
+        Diagnostic d4 = d(51, 18, 25,
+                          "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
+
+        Diagnostic d5 = d(18, 56, 65,
+                          "The parameter should define a constructor with no parameters or a constructor annotated with @Inject.",
+                          DiagnosticSeverity.Warning, "jakarta-di", "InjectionPointInvalidConstructorBean");
+
+        Diagnostic d6 = d(18, 8, 31,
+                          "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+    }
 }

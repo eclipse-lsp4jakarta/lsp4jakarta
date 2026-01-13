@@ -12,6 +12,9 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.di;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * Dependency injection diagnostic constants.
  */
@@ -22,4 +25,11 @@ public class Constants {
 
     /* Diagnostics fields constants */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-di";
+
+    public static final Set<String> CDI_ANNOTATIONS = Set.of("ApplicationScoped", "RequestScoped", "SessionScoped", "ConversationScoped", "Dependent");
+
+    public static final List<String> BUILT_IN_QUALIFIERS = List.of(
+                                                                   "jakarta.enterprise.inject.Default",
+                                                                   "jakarta.enterprise.inject.Any",
+                                                                   "jakarta.inject.Named");
 }
