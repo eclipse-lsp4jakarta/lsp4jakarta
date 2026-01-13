@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -232,6 +232,31 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           "Multiple fields or properties with @JsonbProperty must not have JSON members with duplicate names, the member names must be unique.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidPropertyNamesOnJsonbFields");
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+    }
+
+    @Test
+    public void JsonbDeserialization() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbDeserialization.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(4, 13, 33,
+                          "Missing Public or Protected NoArgsConstructor: Class JsonbDeserialization is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d2 = d(56, 21, 31,
+                          "Missing Public or Protected NoArgsConstructor: Class Childclass is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d3 = d(83, 14, 22,
+                          "Cannot de-serialize class SubChild because it is non-static. Please declare the class as static for JSONB de-serialization.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
