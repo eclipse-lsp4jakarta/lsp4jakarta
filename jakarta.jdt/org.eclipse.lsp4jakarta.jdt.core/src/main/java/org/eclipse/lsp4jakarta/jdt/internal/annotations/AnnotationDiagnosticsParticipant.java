@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -186,7 +186,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     } else if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                        validateResourceSetterAndReport(method, uri, annotationRange, context, diagnostics);
+                        validateResourceMethods(method, uri, annotationRange, context, diagnostics);
                     }
 
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
@@ -361,7 +361,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     }
 
     /**
-     * validateResourceSetterAndReport
+     * validateResourceMethods
+     * This method is responsible for finding diagnostics in methods annotated with @Resource.
      *
      * @param m
      * @param uri
@@ -370,10 +371,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @param diagnostics
      * @throws JavaModelException
      */
-    public static void validateResourceSetterAndReport(IMethod m, String uri, Range annotationRange,
-                                                       JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+    public static void validateResourceMethods(IMethod m, String uri, Range annotationRange,
+                                               JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
         String methodName = m.getElementName();
-        if (!m.getElementName().startsWith("set")) {
+        if (!methodName.startsWith("set")) {
 
             String diagnosticMessage = Messages.getMessage("AnnotationNameStartWithSet",
                                                            "@Resource", methodName);
@@ -382,7 +383,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                      ErrorCode.ResourceNameStartWithSet,
                                                      DiagnosticSeverity.Error));
         }
-        if (!"V".equals(m.getReturnType())) {
+        if (!"V".equalsIgnoreCase(m.getReturnType())) {
             String diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
                                                            "@Resource", methodName);
             diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
