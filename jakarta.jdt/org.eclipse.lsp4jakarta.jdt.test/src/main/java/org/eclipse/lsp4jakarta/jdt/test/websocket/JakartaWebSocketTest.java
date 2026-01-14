@@ -234,5 +234,12 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
                          DiagnosticSeverity.Error, "jakarta-websocket", "missingPublicNoArgConstructor");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        // Expected code actions
+        JakartaJavaCodeActionParams codeActionsParams = createCodeActionParams(uri, d);
+        String newText = "public MissingPublicNoArgConstructor() {\n\t}\n\n\t";
+        TextEdit te = te(7, 1, 7, 1, newText);
+        CodeAction ca = ca(uri, "Add a default 'public' constructor to this class", d, te);
+        assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
     }
 }
