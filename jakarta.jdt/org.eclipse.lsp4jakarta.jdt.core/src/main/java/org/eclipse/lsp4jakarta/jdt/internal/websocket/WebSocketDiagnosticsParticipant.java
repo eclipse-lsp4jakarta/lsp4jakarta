@@ -369,11 +369,11 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
                                               List<Diagnostic> diagnostics) throws JavaModelException {
 
-        boolean hasConstructor = false, hasPublicNoArgConstructor = false;
+        boolean hasUserDefinedConstructor = false, hasPublicNoArgConstructor = false;
 
         for (IMethod method : type.getMethods()) {
             if (DiagnosticUtils.isConstructorMethod(method)) {
-                hasConstructor = true;
+                hasUserDefinedConstructor = true;
                 String[] params = method.getParameterTypes();
                 int flags = method.getFlags();
                 if (params.length == 0 && Flags.isPublic(flags)) {
@@ -382,7 +382,7 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
             }
         }
 
-        if (hasConstructor && !hasPublicNoArgConstructor) {
+        if (hasUserDefinedConstructor && !hasPublicNoArgConstructor) {
             Range range = PositionUtils.toNameRange(type, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri,
                                                      Messages.getMessage("publicNoArgConstructorMissing", type.getElementName()), range,
