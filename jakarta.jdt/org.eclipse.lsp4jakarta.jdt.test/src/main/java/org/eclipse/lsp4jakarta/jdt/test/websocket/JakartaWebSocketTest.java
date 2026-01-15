@@ -242,4 +242,31 @@ public class JakartaWebSocketTest extends BaseJakartaTest {
         CodeAction ca = ca(uri, "Add a default 'public' constructor to this class", d, te);
         assertJavaCodeAction(codeActionsParams, IJDT_UTILS, ca);
     }
+
+    @Test
+    public void testDefaultConstructor() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/websocket/DefaultConstructorTest.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // should be no errors
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testUserDefinedNoArgConstructor() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/websocket/UserDefinedNoArgConstrctor.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // should be no errors
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
