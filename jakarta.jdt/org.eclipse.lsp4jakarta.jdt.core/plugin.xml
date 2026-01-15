@@ -244,6 +244,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-websocket#InvalidEndpointPathWithNoStartingSlash"
                   class="org.eclipse.lsp4jakarta.jdt.internal.websocket.PrefixSlashAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-websocket#missingPublicNoArgConstructor"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.InsertDefaultPublicConstructorQuickFix" />                 
    </extension>
 
    <!-- Servlet -->
