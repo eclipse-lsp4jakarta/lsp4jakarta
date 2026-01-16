@@ -19,6 +19,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.di.Constants.INJECT_FQ_NAME;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -223,11 +224,11 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
      * @throws JavaModelException
      */
     private boolean hasCdiScopeAnnotation(IType type) throws JavaModelException {
-        return Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
+        return Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
             try {
                 return isCdiAnnotation(annotation.getElementName());
             } catch (JavaModelException e) {
-                LOGGER.log(Level.INFO, "Unable to find matching CDI scope annotations", e.getMessage());
+                LOGGER.log(Level.WARNING, "Unable to find matching CDI scope annotations", e.getMessage());
                 return false;
             }
         });
@@ -241,11 +242,11 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
      * @throws JavaModelException
      */
     private List<IAnnotation> getQualifiers(IAnnotation[] annotations, ICompilationUnit unit, IType type) throws JavaModelException {
-        return Arrays.stream(annotations).filter(annotation -> {
+        return annotations == null ? List.of() : Arrays.stream(annotations).filter(Objects::nonNull).filter(annotation -> {
             try {
                 return CdiQualifierUtils.isQualifier(annotation, unit, type);
             } catch (JavaModelException e) {
-                LOGGER.log(Level.INFO, "Unable to fetch qualifier information", e.getMessage());
+                LOGGER.log(Level.WARNING, "Unable to fetch qualifier information", e.getMessage());
                 return false;
             }
         }).collect(Collectors.toList());
