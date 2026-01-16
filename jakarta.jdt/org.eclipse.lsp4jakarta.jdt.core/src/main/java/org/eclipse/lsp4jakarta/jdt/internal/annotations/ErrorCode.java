@@ -22,7 +22,7 @@ public enum ErrorCode implements IJavaErrorCode {
     MissingResourceAnnotation,
     MissingResourceNameAttribute,
     MissingResourceTypeAttribute,
-    ResourceNameStartWithSet,
+    ResourceNameMustStartWithSet,
     ResourceReturnTypeMustBeVoid,
     ResourceMustDeclareExactlyOneParam,
     PostConstructParams,

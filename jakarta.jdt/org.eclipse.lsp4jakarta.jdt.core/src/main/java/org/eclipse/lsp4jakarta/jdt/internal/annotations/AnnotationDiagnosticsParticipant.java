@@ -376,11 +376,11 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         String methodName = m.getElementName();
         if (!methodName.startsWith("set")) {
 
-            String diagnosticMessage = Messages.getMessage("AnnotationNameStartWithSet",
+            String diagnosticMessage = Messages.getMessage("AnnotationNameMustStartWithSet",
                                                            "@Resource", methodName);
             diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
                                                      Constants.DIAGNOSTIC_SOURCE,
-                                                     ErrorCode.ResourceNameStartWithSet,
+                                                     ErrorCode.ResourceNameMustStartWithSet,
                                                      DiagnosticSeverity.Error));
         }
         if (!"V".equalsIgnoreCase(m.getReturnType())) {

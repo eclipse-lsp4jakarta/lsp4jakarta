@@ -59,7 +59,7 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceMustDeclareExactlyOneParam");
 
         Diagnostic d4 = d(49, 4, 13, "@Resource method 'getStudentId' is invalid: method name must start with set.",
-                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceNameStartWithSet");
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceNameMustStartWithSet");
 
         Diagnostic d5 = d(54, 4, 13, "@Resource method 'setStudentId1' is invalid: return type must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceReturnTypeMustBeVoid");
