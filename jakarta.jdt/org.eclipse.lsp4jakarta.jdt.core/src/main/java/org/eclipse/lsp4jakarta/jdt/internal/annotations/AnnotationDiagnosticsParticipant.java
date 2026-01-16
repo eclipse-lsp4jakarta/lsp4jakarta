@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -183,7 +183,12 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                          DiagnosticSeverity.Error));
                             }
                         }
+                    } else if (element instanceof IMethod) {
+                        IMethod method = (IMethod) element;
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        validateResourceMethods(method, uri, annotationRange, context, diagnostics);
                     }
+
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
                     if (element instanceof IType) {
                         for (IMemberValuePair internalAnnotation : annotation.getMemberValuePairs()) {
@@ -353,6 +358,47 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return false;
+    }
+
+    /**
+     * validateResourceMethods
+     * This method is responsible for finding diagnostics in methods annotated with @Resource.
+     *
+     * @param m
+     * @param uri
+     * @param annotationRange
+     * @param context
+     * @param diagnostics
+     * @throws JavaModelException
+     */
+    public static void validateResourceMethods(IMethod m, String uri, Range annotationRange,
+                                               JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        String methodName = m.getElementName();
+        if (!methodName.startsWith("set")) {
+
+            String diagnosticMessage = Messages.getMessage("AnnotationNameMustStartWithSet",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceNameMustStartWithSet,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (!"V".equalsIgnoreCase(m.getReturnType())) {
+            String diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceReturnTypeMustBeVoid,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (m.getParameterTypes().length != 1) {
+            String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceMustDeclareExactlyOneParam,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 
     /**
