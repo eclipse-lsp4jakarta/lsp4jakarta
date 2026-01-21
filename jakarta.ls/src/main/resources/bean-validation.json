@@ -10,5 +10,66 @@
         "type": "jakarta.validation.constraints.Email",
         "contentType": "field"
       }
-    }
-  }
+	},
+	"Jakarta Bean Validation - Custom Constraint Annotation": {
+		"prefix": "validation_constraint_annotation",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.validation.Constraint;",
+			"import jakarta.validation.Payload;",
+			"import java.lang.annotation.Documented;",
+			"import java.lang.annotation.Retention;",
+			"import java.lang.annotation.Target;",
+			"",
+			"import static java.lang.annotation.ElementType.FIELD;",
+			"import static java.lang.annotation.ElementType.METHOD;",
+			"import static java.lang.annotation.ElementType.PARAMETER;",
+			"import static java.lang.annotation.ElementType.ANNOTATION_TYPE;",
+			"import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+			"",
+			"@Documented",
+			"@Constraint(validatedBy = ${2:{}})// Custom Validator class can be put here later",
+			"@Target({ FIELD, METHOD, PARAMETER, ANNOTATION_TYPE })",
+			"@Retention(RUNTIME)",
+			"public @interface ${TM_FILENAME_BASE} {",
+			"\tString message() default \"Value is not valid\";",
+			"\tClass<?>[] groups() default {};",
+			"\tClass<? extends Payload>[] payload() default {};",
+			"}"
+		],
+		"description": "Custom Constraint Annotation",
+		"context": {
+			"type": "jakarta.validation.Constraint",
+			"contentType": "class"
+		}
+	},
+	"Jakarta Bean Validation - Custom Constraint Validator": {
+		"prefix": "validation_constraint_validator",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.validation.ConstraintValidator;",
+			"import jakarta.validation.ConstraintValidatorContext;",
+			"",
+			"public class ${TM_FILENAME_BASE} implements ConstraintValidator<${2:jakarta.validation.constraints.NotNull}, String> {",
+			"\t@Override",
+			"\tpublic void initialize(${2:jakarta.validation.constraints.NotNull} constraintAnnotation) {",
+			"\t}",
+			"",
+			"\t@Override",
+			"\tpublic boolean isValid(String value, ConstraintValidatorContext context) {",
+			"\t\tif (value != null) {",
+			"\t\t\treturn true;",
+			"\t\t}",
+			"\t\treturn false;",
+			"\t}",
+			"}"
+		],
+		"description": "Custom Constraint Validator",
+		"context": {
+			"type": "jakarta.validation.ConstraintValidator",
+			"contentType": "class"
+		}
+	}
+}

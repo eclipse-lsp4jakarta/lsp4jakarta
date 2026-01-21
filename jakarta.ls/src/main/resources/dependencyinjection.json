@@ -1,0 +1,31 @@
+{
+    "Jakarta DI - @Qualifier": {
+      "prefix": "di_qualifier",
+      "body": [
+		"package ${1:packagename};",
+		"",
+		"import jakarta.inject.Qualifier;",
+		"import java.lang.annotation.Retention;",
+		"import java.lang.annotation.Documented;",
+		"import java.lang.annotation.Target;",
+	    "import static java.lang.annotation.ElementType.FIELD;",
+		"import static java.lang.annotation.ElementType.METHOD;",
+		"import static java.lang.annotation.ElementType.PARAMETER;",
+		"import static java.lang.annotation.ElementType.TYPE;",
+		"import static java.lang.annotation.RetentionPolicy.RUNTIME;",
+		"",
+		"@Qualifier",
+		"@Retention(RUNTIME)",
+		"@Documented",
+		"@Target({FIELD, METHOD, PARAMETER, TYPE})",
+		"public @interface ${TM_FILENAME_BASE}{",
+		"\tString value() default \"\";",
+		"}"
+      ],
+      "description": "Qualifier class with required annotations and attributes",
+      "context": {
+        "type": "jakarta.inject.Qualifier",
+        "contentType": "class"
+      }
+    }
+  }

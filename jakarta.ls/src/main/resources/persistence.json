@@ -86,5 +86,23 @@
 	        "type": "jakarta.persistence.Entity",
 			"contentType": "class"
 	    }
+	},
+	"Jakarta Persistence - named entitygraph annotation": {
+	    "prefix": "persist_named_entitygraph",
+	    "body": [
+			"// The @NamedEntityGraph annotation defines a reusable fetch plan, letting you declare which",
+			"// attributes to eagerly load instead of repeating JOIN FETCH in JPQL.",
+	        "@NamedEntityGraph(",
+	        "\tname = \"${TM_FILENAME_BASE}.Graph\",",
+			"\tattributeNodes = {",
+			"\t\t@NamedAttributeNode(\"${1:field1}\")",
+			"\t}",
+			")"
+	    ],
+	    "description": "NamedEntityGraph Annotation",
+	    "context": {
+	        "type": "jakarta.persistence.NamedEntityGraph",
+			"contentType": "before-class"
+	    }
 	}
 }
