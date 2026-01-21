@@ -26,7 +26,11 @@ public class Constants {
     /* Diagnostics fields constants */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-di";
 
-    public static final Set<String> CDI_ANNOTATIONS = Set.of("ApplicationScoped", "RequestScoped", "SessionScoped", "ConversationScoped", "Dependent");
+    public static final Set<String> CDI_ANNOTATIONS_FQ = Set.of("jakarta.enterprise.context.ApplicationScoped",
+                                                                "jakarta.enterprise.context.ConversationScoped", "jakarta.enterprise.context.RequestScoped",
+                                                                "jakarta.enterprise.context.SessionScoped", "jakarta.enterprise.context.NormalScope",
+                                                                "jakarta.Interceptor", "jakarta.Decorator", "jakarta.enterprise.inject.Stereotype",
+                                                                "jakarta.enterprise.context.Dependent");
 
     public static final List<String> BUILT_IN_QUALIFIERS = List.of(
                                                                    "jakarta.enterprise.inject.Default",

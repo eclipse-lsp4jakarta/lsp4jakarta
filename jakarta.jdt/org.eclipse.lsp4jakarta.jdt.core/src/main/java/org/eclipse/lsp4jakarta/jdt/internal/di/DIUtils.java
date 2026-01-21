@@ -16,19 +16,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 
 /**
  * CdiQualifierUtils
  */
-public class CdiQualifierUtils {
+public class DIUtils {
 
     private static final String QUALIFIER_META = "jakarta.inject.Qualifier";
-    private static final Logger LOGGER = Logger.getLogger(CdiQualifierUtils.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DIUtils.class.getName());
 
     /**
      * @param annotation
@@ -39,7 +39,6 @@ public class CdiQualifierUtils {
      * @description Method is used to check if the passed annotation is a built in or custom Qualifier
      */
     public static boolean isQualifier(IAnnotation annotation, ICompilationUnit unit, IType type) throws JavaModelException {
-        String annotationFQ = annotation.getElementName();
         boolean hasBuiltInQualifier = Constants.BUILT_IN_QUALIFIERS.stream().anyMatch(qualifier -> {
             try {
                 return DiagnosticUtils.isMatchedAnnotation(unit, annotation, qualifier);
@@ -49,13 +48,7 @@ public class CdiQualifierUtils {
             }
         });
         if (!hasBuiltInQualifier) {
-            //Checks if meta annotation is a qualifier or not
-            ICompilationUnit cu = (ICompilationUnit) annotation.getAncestor(IJavaElement.COMPILATION_UNIT);
-            IType annotationType = cu.findPrimaryType();
-            String[][] resolved = annotationType.resolveType(annotation.getElementName());
-            if (resolved != null && resolved.length > 0) {
-                annotationFQ = resolved[0][0] + "." + resolved[0][1];
-            }
+            String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
             IJavaProject project = annotation.getJavaProject();
             IType customAnnType = project.findType(annotationFQ);
             ICompilationUnit customCu = customAnnType.getCompilationUnit();
