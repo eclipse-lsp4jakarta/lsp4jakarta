@@ -417,7 +417,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
                           "jakarta.validation.constraints.Positive");
         Diagnostic d3 = d(52, 30, 46,
-                          "This annotation can only be used on Parameters that have CharSequence, Collection, Array or Map as a parameter type.",
+                          "This annotation can only be used on parameters that have CharSequence, Collection, Array or Map as a parameter type.",
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                           "jakarta.validation.constraints.NotEmpty");
 
@@ -452,7 +452,7 @@ public class BeanValidationTest extends BaseJakartaTest {
                           "jakarta.validation.constraints.FutureOrPresent");
 
         Diagnostic d10 = d(69, 41, 42,
-                           "This annotation can only be used on Parameters that have CharSequence, Collection, Array or Map as a parameter type.",
+                           "This annotation can only be used on parameters that have CharSequence, Collection, Array or Map as a parameter type.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                            "jakarta.validation.constraints.Size");
 
