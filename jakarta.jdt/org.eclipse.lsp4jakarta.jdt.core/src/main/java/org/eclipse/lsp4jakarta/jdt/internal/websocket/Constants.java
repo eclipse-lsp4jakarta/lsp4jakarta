@@ -76,6 +76,7 @@ public class Constants {
     /* Annotations */
     public static final String ON_OPEN = "jakarta.websocket.OnOpen";
     public static final String ON_CLOSE = "jakarta.websocket.OnClose";
+    public static final String ON_ERROR = "jakarta.websocket.OnError";
     public static final String ON_MESSAGE = "jakarta.websocket.OnMessage";
 
     public static final String IS_ANNOTATION = "isAnnotation";

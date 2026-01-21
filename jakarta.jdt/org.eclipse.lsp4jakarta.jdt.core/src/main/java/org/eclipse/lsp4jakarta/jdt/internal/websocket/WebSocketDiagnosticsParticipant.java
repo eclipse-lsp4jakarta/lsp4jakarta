@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -96,10 +97,43 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 serverEndpointErrorCheck(context, uri, type, diagnostics, unit);
 
                 publicNoArgsConstructorCheck(context, uri, type, diagnostics);
+
+                duplicateLifeCycleAnnotationCheck(context, uri, type, diagnostics);
             }
         }
 
         return diagnostics;
+    }
+
+    private void duplicateLifeCycleAnnotationCheck(JavaDiagnosticsContext context, String uri, IType type,
+                                                   List<Diagnostic> diagnostics) throws JavaModelException {
+
+        Set<String> visitedAnnotations = new HashSet<>();
+
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                String annotationName = annotation.getElementName();
+
+                if (isLifecycleAnnotation(type, annotationName)) {
+                    if (visitedAnnotations.contains(annotationName)) {
+                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), annotationName),
+                                                                 range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
+                    } else {
+                        visitedAnnotations.add(annotationName);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isLifecycleAnnotation(IType type, String annotationName) throws JavaModelException {
+        return DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)
+               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)
+               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_ERROR);
     }
 
     private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, IType type, ICompilationUnit unit,
