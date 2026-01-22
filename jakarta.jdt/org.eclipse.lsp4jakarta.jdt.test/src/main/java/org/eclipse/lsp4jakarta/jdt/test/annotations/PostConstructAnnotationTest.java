@@ -35,6 +35,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 public class PostConstructAnnotationTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
@@ -59,12 +61,15 @@ public class PostConstructAnnotationTest extends BaseJakartaTest {
 
         Diagnostic d3 = d(29, 13, 25, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
+        d3.setData(new Gson().toJsonTree(Arrays.asList("java.lang.Exception")));
 
         Diagnostic d4 = d(44, 13, 29, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
+        d4.setData(new Gson().toJsonTree(Arrays.asList("java.io.IOException")));
 
-        Diagnostic d5 = d(49, 13, 40, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
+        Diagnostic d5 = d(49, 13, 28, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
+        d5.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.annotations.CustomCheckedException", "java.io.IOException")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
 
@@ -79,6 +84,13 @@ public class PostConstructAnnotationTest extends BaseJakartaTest {
         TextEdit te3 = te(19, 8, 19, 15, "void");
         CodeAction ca3 = ca(uri, "Change return type to void", d1, te3);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3);
+
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te51 = te(48, 1, 49, 1, "");
+        TextEdit te52 = te(49, 38, 49, 99, "CustomUncheckedException");
+        CodeAction ca51 = ca(uri, "Remove @PostConstruct", d5, te51);
+        CodeAction ca52 = ca(uri, "Remove all checked exceptions.", d5, te52);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca51, ca52);
     }
 
 }

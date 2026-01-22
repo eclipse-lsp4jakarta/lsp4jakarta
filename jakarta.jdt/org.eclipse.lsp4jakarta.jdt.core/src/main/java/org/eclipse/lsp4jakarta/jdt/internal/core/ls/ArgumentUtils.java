@@ -118,7 +118,7 @@ public class ArgumentUtils {
             diagnostic.setSource(getString(diagnosticObj, SOURCE_PROPERTY));
             // In Eclipse IDE (LSP client), the data is JsonObject, and in JDT-LS (ex :
             // vscode as LSP client) the data is a Map.
-            
+
             // In Vscode we are sending data in two different formats either as a string or
             // as an array of strings. eg: data = “AssertTrue” or  data =[“ApplicationScoped", "RequestScoped”]
             // if it is a string -> set data as an Object.
@@ -146,20 +146,20 @@ public class ArgumentUtils {
     }
 
     /**
-     * Returns the child as a JSON array if the data parameter contains an array of strings; otherwise, 
+     * Returns the child as a JSON array if the data parameter contains an array of strings; otherwise,
      * returns it as an object if present, or null if not.
      *
      *
      * @param data the object to get the child of
      * @param key the key of the child
-     * @return Returns the child as a JSON array if the data parameter contains an array of strings; otherwise, 
-     * returns null.
+     * @return Returns the child as a JSON array if the data parameter contains an array of strings; otherwise,
+     *         returns null.
      */
     public static Object getValueFromDataParameter(Map<String, Object> data, String key) {
 
         Object child = data.get(key);
         if (child instanceof String) {
-            // if the value in the 'data' is a string, we string the object. 
+            // if the value in the 'data' is a string, we string the object.
             // eg: data = “AssertTrue”
             return child;
         } else if (child instanceof List<?>) {

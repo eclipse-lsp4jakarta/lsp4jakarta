@@ -228,7 +228,7 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_EMPTY_FILE);
 
     }
-    
+
     /**
      * Jakarta Interceptor snippet test - interceptor_class
      */

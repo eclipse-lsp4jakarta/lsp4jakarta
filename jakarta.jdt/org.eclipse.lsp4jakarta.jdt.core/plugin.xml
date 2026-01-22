@@ -77,6 +77,12 @@
                   targetDiagnostic="jakarta-annotations#PostConstructParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PostConstructException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PostConstructException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePostConstructAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyStatic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
       <codeAction kind="quickfix"
@@ -87,7 +93,13 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyParams"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />   
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PreDestroyException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PreDestroyException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           
    </extension>
    
    <!-- Bean Validation -->
@@ -193,7 +205,13 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />  
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />                
    </extension>  
    
    <!-- JSON-P -->
