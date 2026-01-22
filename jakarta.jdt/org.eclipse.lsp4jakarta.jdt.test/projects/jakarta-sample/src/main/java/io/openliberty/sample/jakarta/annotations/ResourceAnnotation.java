@@ -41,5 +41,25 @@ class PostDoctoralStudent {
 class MasterStudent {
 
     private Integer studentId;
+    
+    @Resource
+	public void setStudentId() {
+		this.studentId = studentId;
+	}
+    
+    @Resource
+	public void getStudentId(Integer studentId) {
+    	this.studentId = studentId;
+	}
+
+    @Resource
+	public Integer setStudentId1(Integer studentId) {
+		return studentId;
+	}
+   
+    @Resource
+	public void setStudentId(Integer studentId) {
+		this.studentId = studentId;
+	}
 
 } 

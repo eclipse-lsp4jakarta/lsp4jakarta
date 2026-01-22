@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -45,6 +45,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 
 /**
  *
@@ -183,7 +186,12 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                          DiagnosticSeverity.Error));
                             }
                         }
+                    } else if (element instanceof IMethod) {
+                        IMethod method = (IMethod) element;
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        validateResourceMethods(method, uri, annotationRange, context, diagnostics);
                     }
+
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
                     if (element instanceof IType) {
                         for (IMemberValuePair internalAnnotation : annotation.getMemberValuePairs()) {
@@ -256,12 +264,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PostConstruct");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PostConstructException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -291,12 +301,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PreDestroy");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PreDestroyException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -326,7 +338,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     }
 
     /**
-     * isCheckedExceptionPresent
+     * getCheckedExceptionsDeclared
      * This method scans the exception signatures to identify if any checked exceptions are declared.
      *
      * @param method
@@ -334,9 +346,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @throws JavaModelException
      * @throws CoreException
      */
-    private boolean isCheckedExceptionPresent(IMethod method) throws JavaModelException, CoreException {
+    private List<String> getCheckedExceptionsDeclared(IMethod method) throws JavaModelException, CoreException {
 
         IType parentType = method.getDeclaringType();
+        List<String> checkedExceptions = new ArrayList<String>();
         String[] exceptionSignatures = method.getExceptionTypes();
         for (String sig : exceptionSignatures) {
             IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
@@ -348,11 +361,52 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
              */
             if (extendsException(exceptionType)) {
                 if (notExtendsRunTimeException(exceptionType)) {
-                    return true;
+                    checkedExceptions.add(exceptionType.getFullyQualifiedName());
                 }
             }
         }
-        return false;
+        return checkedExceptions;
+    }
+
+    /**
+     * validateResourceMethods
+     * This method is responsible for finding diagnostics in methods annotated with @Resource.
+     *
+     * @param m
+     * @param uri
+     * @param annotationRange
+     * @param context
+     * @param diagnostics
+     * @throws JavaModelException
+     */
+    public static void validateResourceMethods(IMethod m, String uri, Range annotationRange,
+                                               JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        String methodName = m.getElementName();
+        if (!methodName.startsWith("set")) {
+
+            String diagnosticMessage = Messages.getMessage("AnnotationNameMustStartWithSet",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceNameMustStartWithSet,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (!"V".equalsIgnoreCase(m.getReturnType())) {
+            String diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceReturnTypeMustBeVoid,
+                                                     DiagnosticSeverity.Error));
+        }
+        if (m.getParameterTypes().length != 1) {
+            String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
+                                                           "@Resource", methodName);
+            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceMustDeclareExactlyOneParam,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 
     /**

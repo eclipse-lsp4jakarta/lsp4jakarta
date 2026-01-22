@@ -77,6 +77,12 @@
                   targetDiagnostic="jakarta-annotations#PostConstructParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PostConstructException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PostConstructException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePostConstructAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyStatic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
       <codeAction kind="quickfix"
@@ -87,7 +93,13 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyParams"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />   
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PreDestroyException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#PreDestroyException"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           
    </extension>
    
    <!-- Bean Validation -->
@@ -250,6 +262,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-websocket#InvalidEndpointPathWithNoStartingSlash"
                   class="org.eclipse.lsp4jakarta.jdt.internal.websocket.PrefixSlashAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-websocket#missingPublicNoArgConstructor"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.InsertDefaultPublicConstructorQuickFix" />                 
    </extension>
 
    <!-- Servlet -->

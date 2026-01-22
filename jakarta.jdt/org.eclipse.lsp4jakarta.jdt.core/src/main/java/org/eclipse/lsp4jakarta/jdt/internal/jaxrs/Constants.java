@@ -14,7 +14,6 @@
 
 package org.eclipse.lsp4jakarta.jdt.internal.jaxrs;
 
-
 /**
  * JAX-RS diagnostics constants.
  */
