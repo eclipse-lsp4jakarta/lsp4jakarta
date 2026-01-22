@@ -372,4 +372,29 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         CodeAction ca15 = ca(uri, "Remove @JsonbTypeDeserializer, @JsonbTypeSerializer", d10, te15);
         assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca14, ca15);
     }
+  
+    @Test
+    public void JsonbDeserialization() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbDeserialization.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(4, 13, 33,
+                          "Missing Public or Protected NoArgsConstructor: Class JsonbDeserialization uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d2 = d(56, 21, 31,
+                          "Missing Public or Protected NoArgsConstructor: Class Childclass uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d3 = d(83, 14, 22,
+                          "Cannot deserialize class SubChild because it is not static. Please declare the class as static for JSONB deserialization.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+    }
 }
