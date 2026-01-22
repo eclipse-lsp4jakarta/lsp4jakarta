@@ -247,15 +247,15 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic d1 = d(4, 13, 33,
-                          "Missing Public or Protected NoArgsConstructor: Class JsonbDeserialization is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          "Missing Public or Protected NoArgsConstructor: Class JsonbDeserialization uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
 
         Diagnostic d2 = d(56, 21, 31,
-                          "Missing Public or Protected NoArgsConstructor: Class Childclass is used with JSONB, but does not declare a public or protected no-argument constructor.",
+                          "Missing Public or Protected NoArgsConstructor: Class Childclass uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
 
         Diagnostic d3 = d(83, 14, 22,
-                          "Cannot de-serialize class SubChild because it is non-static. Please declare the class as static for JSONB de-serialization.",
+                          "Cannot deserialize class SubChild because it is not static. Please declare the class as static for JSONB deserialization.",
                           DiagnosticSeverity.Warning, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);

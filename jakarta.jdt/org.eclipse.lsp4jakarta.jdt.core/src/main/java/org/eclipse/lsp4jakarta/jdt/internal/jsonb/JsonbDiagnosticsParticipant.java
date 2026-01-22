@@ -81,25 +81,12 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         boolean missingParentNoArgsConstructor;
         boolean missingChildNoArgsConstructor;
         boolean hasConstructor; //To check for existence of explicit constructors
-
         for (IType type : types) {
             parentHasValidNoArgsConstructor = false;
             childHasValidNoArgsConstructor = false;
             missingParentNoArgsConstructor = false;
             missingChildNoArgsConstructor = false;
             hasConstructor = false;
-            isInnerClass = type.getDeclaringType() != null;
-            //Checks whether parent class is JSONB type by checking class level annotations
-            if (!isInnerClass) {
-                jsonbtypeParent = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
-                    try {
-                        return JsonPropertyUtils.isJsonbType(type, annotation);
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
-                        return false;
-                    }
-                });
-            }
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -136,13 +123,20 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             //Changes to detect if Jsonb property names are not unique
             Set<String> propertyNames = new LinkedHashSet<String>();
             Set<String> uniquePropertyNames = new LinkedHashSet<String>();
+            isInnerClass = type.getDeclaringType() != null;
+            //Checks whether parent class is JSONB type by checking class level annotations
+            if (!isInnerClass) {
+                jsonbtypeParent = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
+                    try {
+                        return JsonPropertyUtils.isJsonbType(type, annotation);
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
+                        return false;
+                    }
+                });
+            }
             // fields
             for (IField field : type.getFields()) {
-                collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
-                collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
-                // Get unique property name values from the fields into a list uniquePropertyNames
-                uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
-                                                                      field);
                 //Checks whether class fields have JSONB annotations
                 if (!isInnerClass && !jsonbtypeParent) {
                     jsonbtypeParent = Arrays.stream(field.getAnnotations()).anyMatch(annotation -> {
@@ -154,6 +148,11 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         }
                     });
                 }
+                collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
+                collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
+                // Get unique property name values from the fields into a list uniquePropertyNames
+                uniquePropertyNames = collectJsonbUniquePropertyNames(unit, context, uri, diagnostics, type, propertyNames,
+                                                                      field);
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
