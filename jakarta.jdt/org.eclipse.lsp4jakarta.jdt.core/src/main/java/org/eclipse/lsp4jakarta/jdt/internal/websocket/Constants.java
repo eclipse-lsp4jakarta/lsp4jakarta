@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2022, 2023 IBM Corporation and others.
+* Copyright (c) 2022, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,6 +17,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.websocket;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,7 +79,13 @@ public class Constants {
     public static final String ON_CLOSE = "jakarta.websocket.OnClose";
     public static final String ON_ERROR = "jakarta.websocket.OnError";
     public static final String ON_MESSAGE = "jakarta.websocket.OnMessage";
-
+ 
+	public static final Map<String, String> WEBSOCKETANNOATATIONFQN = Map.of(
+			"OnOpen", ON_OPEN,
+			"OnClose", ON_CLOSE,
+			"OnError", ON_ERROR);
+    
+    
     public static final String IS_ANNOTATION = "isAnnotation";
 
     /* Types */
@@ -99,6 +106,7 @@ public class Constants {
         TEXT, BINARY, PONG
     };
 
+    
     /* Regex */
     // Check for any URI strings that contain //, /./, or /../
     public static final String REGEX_RELATIVE_PATHS = ".*\\/\\.{0,2}\\/.*";

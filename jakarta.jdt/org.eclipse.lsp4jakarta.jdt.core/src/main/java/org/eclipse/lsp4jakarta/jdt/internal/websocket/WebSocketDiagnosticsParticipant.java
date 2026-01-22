@@ -49,6 +49,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
+import com.google.gson.JsonArray;
+
 /**
  * WebSocket Diagnostic participant.
  */
@@ -106,35 +108,38 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     }
 
     private void duplicateLifeCycleAnnotationCheck(JavaDiagnosticsContext context, String uri, IType type,
-                                                   List<Diagnostic> diagnostics) throws JavaModelException {
+			List<Diagnostic> diagnostics) throws JavaModelException {
 
-        Set<String> visitedAnnotations = new HashSet<>();
+		Set<String> visitedAnnotations = new HashSet<>();
 
-        for (IMethod method : type.getMethods()) {
-            for (IAnnotation annotation : method.getAnnotations()) {
-                String annotationName = annotation.getElementName();
+		for (IMethod method : type.getMethods()) {
+			for (IAnnotation annotation : method.getAnnotations()) {
+				String annotationName = annotation.getElementName();
 
-                if (isLifecycleAnnotation(type, annotationName)) {
-                    if (visitedAnnotations.contains(annotationName)) {
-                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), annotationName),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, null,
-                                                                 ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
-                    } else {
-                        visitedAnnotations.add(annotationName);
-                    }
-                }
-            }
-        }
-    }
+				if (isLifecycleAnnotation(type, annotationName)) {
+					if (visitedAnnotations.contains(annotationName)) {
+						JsonArray diagnosticsData = new JsonArray();
+						diagnosticsData.add(Constants.WEBSOCKETANNOATATIONFQN.get(annotationName));
+						Range range = PositionUtils.toNameRange(annotation, context.getUtils());
 
-    private boolean isLifecycleAnnotation(IType type, String annotationName) throws JavaModelException {
-        return DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)
-               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)
-               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_ERROR);
-    }
+						diagnostics.add(context.createDiagnostic(uri,
+								Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), annotationName),
+								range,
+								Constants.DIAGNOSTIC_SOURCE, diagnosticsData,
+								ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
+					} else {
+						visitedAnnotations.add(annotationName);
+					}
+				}
+			}
+		}
+	}
+
+	private boolean isLifecycleAnnotation(IType type, String annotationName) throws JavaModelException {
+		return DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)
+				|| DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)
+				|| DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_ERROR);
+	}
 
     private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, IType type, ICompilationUnit unit,
                                     List<Diagnostic> diagnostics) throws JavaModelException {

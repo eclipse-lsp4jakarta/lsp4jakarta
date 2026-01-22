@@ -246,7 +246,10 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.websocket.PrefixSlashAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-websocket#missingPublicNoArgConstructor"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.InsertDefaultPublicConstructorQuickFix" />                 
+                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.InsertDefaultPublicConstructorQuickFix" />    
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-websocket#DuplicateLifeCycleAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.websocket.RemoveWebsocketAnnotationsQuickFix" />                         
    </extension>
 
    <!-- Servlet -->
