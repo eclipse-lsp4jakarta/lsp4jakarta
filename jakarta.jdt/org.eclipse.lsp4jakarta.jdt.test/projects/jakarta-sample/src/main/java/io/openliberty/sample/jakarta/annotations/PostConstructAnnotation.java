@@ -47,8 +47,8 @@ public class PostConstructAnnotation {
 	}
 
 	@PostConstruct
-	public void throwCustomCheckedException() throws CustomCheckedException {
-		System.out.println("CustomCheckedException");
+	public void throwExceptions() throws CustomCheckedException, CustomUncheckedException, IOException {
+		System.out.println("throwExceptions");
 	}
 
 	@PostConstruct
