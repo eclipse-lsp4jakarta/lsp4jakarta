@@ -56,6 +56,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertProtectedCtrtToClass,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
+    WBRemoveAnnotation,
     // Servlet
     ServletCompleteWebFilterAnnotation,
     ServletCompleteServletAnnotation,

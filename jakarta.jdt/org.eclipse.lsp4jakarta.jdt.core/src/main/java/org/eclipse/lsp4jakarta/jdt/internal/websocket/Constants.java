@@ -79,13 +79,12 @@ public class Constants {
     public static final String ON_CLOSE = "jakarta.websocket.OnClose";
     public static final String ON_ERROR = "jakarta.websocket.OnError";
     public static final String ON_MESSAGE = "jakarta.websocket.OnMessage";
- 
-	public static final Map<String, String> WEBSOCKETANNOATATIONFQN = Map.of(
-			"OnOpen", ON_OPEN,
-			"OnClose", ON_CLOSE,
-			"OnError", ON_ERROR);
-    
-    
+
+    public static final Map<String, String> WEBSOCKETANNOATATIONFQN = Map.of(
+                                                                             "OnOpen", ON_OPEN,
+                                                                             "OnClose", ON_CLOSE,
+                                                                             "OnError", ON_ERROR);
+
     public static final String IS_ANNOTATION = "isAnnotation";
 
     /* Types */
@@ -106,7 +105,6 @@ public class Constants {
         TEXT, BINARY, PONG
     };
 
-    
     /* Regex */
     // Check for any URI strings that contain //, /./, or /../
     public static final String REGEX_RELATIVE_PATHS = ".*\\/\\.{0,2}\\/.*";

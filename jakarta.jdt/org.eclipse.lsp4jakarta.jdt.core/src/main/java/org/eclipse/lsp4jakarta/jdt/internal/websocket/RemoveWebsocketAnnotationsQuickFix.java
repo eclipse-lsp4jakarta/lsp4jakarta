@@ -31,43 +31,41 @@ import com.google.gson.JsonArray;
 
 public class RemoveWebsocketAnnotationsQuickFix extends RemoveAnnotationConflictQuickFix {
 
-	private String[] annotations = null;
+    private String[] annotations = null;
 
-	public RemoveWebsocketAnnotationsQuickFix() {
-		super("");
-	}
+    public RemoveWebsocketAnnotationsQuickFix() {
+        super("");
+    }
 
-	@Override
-	public String getParticipantId() {
-		return RemoveWebsocketAnnotationsQuickFix.class.getName();
-	}
+    @Override
+    public String getParticipantId() {
+        return RemoveWebsocketAnnotationsQuickFix.class.getName();
+    }
 
-	@Override
-	protected ICodeActionId getCodeActionId() {
-		return JakartaCodeActionId.WBRemoveAnnotation;
-	}
+    @Override
+    protected ICodeActionId getCodeActionId() {
+        return JakartaCodeActionId.WBRemoveAnnotation;
+    }
 
-	@Override
-	public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
-			IProgressMonitor monitor) throws CoreException {
-		List<CodeAction> codeActions = new ArrayList<>();
-		ASTNode node = context.getCoveredNode();
-		IBinding parentType = getBinding(node);
+    @Override
+    public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
+                                                     IProgressMonitor monitor) throws CoreException {
+        List<CodeAction> codeActions = new ArrayList<>();
+        ASTNode node = context.getCoveredNode();
+        IBinding parentType = getBinding(node);
 
-		// Receive diagnostic data, set from WebSocketDiagnosticsParticipant
-		JsonArray diagnosticData = (JsonArray) diagnostic.getData();
-		annotations = StreamSupport.stream(diagnosticData.spliterator(), false)
-				.map(e -> e.getAsString())
-				.toArray(String[]::new);
+        // Receive diagnostic data, set from WebSocketDiagnosticsParticipant
+        JsonArray diagnosticData = (JsonArray) diagnostic.getData();
+        annotations = StreamSupport.stream(diagnosticData.spliterator(), false).map(e -> e.getAsString()).toArray(String[]::new);
 
-		if (parentType != null) {
-			createCodeAction(diagnostic, context, parentType, codeActions, annotations);
-		}
-		return codeActions;
-	}
+        if (parentType != null) {
+            createCodeAction(diagnostic, context, parentType, codeActions, annotations);
+        }
+        return codeActions;
+    }
 
-	@Override
-	public String[] getAnnotations() {
-		return annotations;
-	}
+    @Override
+    public String[] getAnnotations() {
+        return annotations;
+    }
 }
