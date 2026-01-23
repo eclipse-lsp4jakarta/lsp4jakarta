@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020, 2025 IBM Corporation and others.
+* Copyright (c) 2020, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,14 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jsonb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -36,6 +38,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.commons.utils.JsonPropertyUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
@@ -53,6 +56,9 @@ import com.google.gson.JsonArray;
  */
 public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
+    private static final String NON_STATIC_DIAGNOSTIC = "Please declare the class as static";
+    private static final Logger LOGGER = Logger.getLogger(JsonbDiagnosticsParticipant.class.getName());
+
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         String uri = context.getUri();
@@ -67,8 +73,20 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IType[] types = unit.getAllTypes();
         IMethod[] methods;
         IAnnotation[] allAnnotations;
-
+        boolean jsonbtypeParent = false; //Variable for checking parent class is JSONB type or not
+        boolean isInnerClass = false; //Variable to check if inner class or not
+        //Variables for determining invalid constructor in parent and child classes
+        boolean parentHasValidNoArgsConstructor;
+        boolean childHasValidNoArgsConstructor;
+        boolean missingParentNoArgsConstructor;
+        boolean missingChildNoArgsConstructor;
+        boolean hasConstructor; //To check for existence of explicit constructors
         for (IType type : types) {
+            parentHasValidNoArgsConstructor = false;
+            childHasValidNoArgsConstructor = false;
+            missingParentNoArgsConstructor = false;
+            missingChildNoArgsConstructor = false;
+            hasConstructor = false;
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -79,6 +97,18 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
                                                                  Constants.JSONB_CREATOR))
                             jonbMethods.add(method);
+                    }
+                }
+                //Check whether the class has public or protected no args constructor
+                if (DiagnosticUtils.isConstructorMethod(method)) {
+                    hasConstructor = true;
+                    String[] params = method.getParameterTypes();
+                    int flags = method.getFlags();
+                    if (params.length == 0 && (Flags.isPublic(flags) || Flags.isProtected(flags))) { //Checks manually declared no-args constructor
+                        if (!isInnerClass)
+                            parentHasValidNoArgsConstructor = true;
+                        else
+                            childHasValidNoArgsConstructor = true;
                     }
                 }
             }
@@ -93,8 +123,31 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             //Changes to detect if Jsonb property names are not unique
             Set<String> propertyNames = new LinkedHashSet<String>();
             Set<String> uniquePropertyNames = new LinkedHashSet<String>();
+            isInnerClass = type.getDeclaringType() != null;
+            //Checks whether parent class is JSONB type by checking class level annotations
+            if (!isInnerClass) {
+                jsonbtypeParent = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
+                    try {
+                        return JsonPropertyUtils.isJsonbType(type, annotation);
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
+                        return false;
+                    }
+                });
+            }
             // fields
             for (IField field : type.getFields()) {
+                //Checks whether class fields have JSONB annotations
+                if (!isInnerClass && !jsonbtypeParent) {
+                    jsonbtypeParent = Arrays.stream(field.getAnnotations()).anyMatch(annotation -> {
+                        try {
+                            return JsonPropertyUtils.isJsonbType(type, annotation);
+                        } catch (JavaModelException e) {
+                            LOGGER.log(Level.INFO, "Unable to find matching JSONB annotations", e.getMessage());
+                            return false;
+                        }
+                    });
+                }
                 collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
                 collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
                 // Get unique property name values from the fields into a list uniquePropertyNames
@@ -103,8 +156,73 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             }
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
+            //Parent class conditions for checking missing no-args constructor
+            missingParentNoArgsConstructor = jsonbtypeParent && !parentHasValidNoArgsConstructor && hasConstructor;
+            //Child class conditions for checking missing no-args constructor
+            missingChildNoArgsConstructor = jsonbtypeParent && !childHasValidNoArgsConstructor && hasConstructor;
+            //Generate Jsonb deseriazation diagnostics
+            generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
+                                                 missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
         }
         return diagnostics;
+    }
+
+    /**
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param jsonbtypeParent
+     * @param isInnerClass
+     * @param missingParentNoArgs
+     * @param missingChildNoArgs
+     * @param type
+     * @throws JavaModelException
+     * @description This method generates diagnostics which deals with deserialization
+     */
+    private void generateJsonbDeserializerDiagnostics(JavaDiagnosticsContext context, String uri,
+                                                      List<Diagnostic> diagnostics, boolean jsonbtypeParent, boolean isInnerClass, boolean missingParentNoArgs,
+                                                      boolean missingChildNoArgs, IType type) throws JavaModelException {
+
+        //Setting diagnostic message
+        String deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNoArgConstructorMissing", type.getElementName());
+        IJavaErrorCode deserializeErrCode = ErrorCode.InvalidJsonBNoArgsConstructorMissing;
+        boolean isStaticInner = false;
+        //Parent class no args constructor missing diagnostics
+        if (!isInnerClass) {
+            if (missingParentNoArgs) {
+                createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
+            }
+        } else {
+            //Inner class non-static diagnostics and no args constructor missing diagnostics
+            isStaticInner = isInnerClass && Flags.isStatic(type.getFlags());
+            if (!isStaticInner && jsonbtypeParent) {
+                deSerializeMsg = Messages.getMessage("ErrorMessageJsonbInnerNonStatic", type.getElementName());
+                deserializeErrCode = ErrorCode.InvalidJsonBNonStaticInnerClass;
+                createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
+            }
+            if (isStaticInner && missingChildNoArgs)
+                createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
+        }
+    }
+
+    /**
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param type
+     * @throws JavaModelException
+     * @description Method creates diagnostics with appropriate message and cursor context
+     */
+    private void createJsonbNoArgConstructorDiagnostics(JavaDiagnosticsContext context, String uri,
+                                                        List<Diagnostic> diagnostics, IType type, String msg, IJavaErrorCode deserializeErrCode) throws JavaModelException {
+        Range range = PositionUtils.toNameRange(type, context.getUtils());
+        if (msg.contains(NON_STATIC_DIAGNOSTIC)) {
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                     deserializeErrCode, DiagnosticSeverity.Warning));
+        } else {
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                     deserializeErrCode, DiagnosticSeverity.Error));
+        }
     }
 
     /**

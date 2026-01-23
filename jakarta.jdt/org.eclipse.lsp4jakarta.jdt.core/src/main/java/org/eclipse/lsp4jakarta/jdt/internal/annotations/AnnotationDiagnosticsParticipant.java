@@ -47,6 +47,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+
 /**
  *
  * Annotations diagnostic participant that manages the use of annotations.
@@ -291,12 +294,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PostConstruct");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PostConstructException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -326,12 +331,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PreDestroy");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PreDestroyException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -361,7 +368,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     }
 
     /**
-     * isCheckedExceptionPresent
+     * getCheckedExceptionsDeclared
      * This method scans the exception signatures to identify if any checked exceptions are declared.
      *
      * @param method
@@ -369,9 +376,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @throws JavaModelException
      * @throws CoreException
      */
-    private boolean isCheckedExceptionPresent(IMethod method) throws JavaModelException, CoreException {
+    private List<String> getCheckedExceptionsDeclared(IMethod method) throws JavaModelException, CoreException {
 
         IType parentType = method.getDeclaringType();
+        List<String> checkedExceptions = new ArrayList<String>();
         String[] exceptionSignatures = method.getExceptionTypes();
         for (String sig : exceptionSignatures) {
             IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
@@ -383,11 +391,11 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
              */
             if (extendsException(exceptionType)) {
                 if (notExtendsRunTimeException(exceptionType)) {
-                    return true;
+                    checkedExceptions.add(exceptionType.getFullyQualifiedName());
                 }
             }
         }
-        return false;
+        return checkedExceptions;
     }
 
     /**
