@@ -341,4 +341,19 @@ public class DiagnosticUtils {
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
     }
+
+    /**
+     * getDataTypeName
+     * Converts signature type name into its type name.
+     *
+     * @param type
+     * @return
+     */
+    public static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
+    }
 }
