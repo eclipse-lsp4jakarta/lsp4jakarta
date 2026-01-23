@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -340,5 +340,20 @@ public class DiagnosticUtils {
      */
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
+    }
+
+    /**
+     * getDataTypeName
+     * Converts signature type name into its type name.
+     *
+     * @param type
+     * @return
+     */
+    public static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
     }
 }
