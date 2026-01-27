@@ -35,7 +35,7 @@
         <tycho.version>3.0.3</tycho.version>
         <tycho.scmUrl>scm:git:https://github.com/eclipse/lsp4jakarta</tycho.scmUrl>
         <tycho.generateSourceReferences>true</tycho.generateSourceReferences>
-        <jdt.ls.version>1.21.0.20230316144047</jdt.ls.version>
+        <jdt.ls.version>1.51.0.20251002224213</jdt.ls.version>
         <releases.repo.id>repo.eclipse.org</releases.repo.id>
         <releases.repo.url>https://repo.eclipse.org/content/repositories/lsp4jakarta-releases/</releases.repo.url>
         <snapshots.repo.id>repo.eclipse.org</snapshots.repo.id>
@@ -50,7 +50,7 @@
         <repository>
             <id>jdt.ls.p2</id>
             <layout>p2</layout>
-            <url>https://download.eclipse.org/jdtls/milestones/1.21.0/repository/</url>
+            <url>https://download.eclipse.org/jdtls/milestones/1.51.0/repository/</url>
         </repository>
         <repository>
             <id>jdt.ls.maven.snapshots</id>
