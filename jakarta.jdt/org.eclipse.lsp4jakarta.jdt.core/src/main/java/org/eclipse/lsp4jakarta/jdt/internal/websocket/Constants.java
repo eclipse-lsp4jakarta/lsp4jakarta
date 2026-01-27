@@ -80,10 +80,10 @@ public class Constants {
     public static final String ON_ERROR = "jakarta.websocket.OnError";
     public static final String ON_MESSAGE = "jakarta.websocket.OnMessage";
 
-    public static final Map<String, String> WEBSOCKETANNOATATIONFQN = Map.of(
-                                                                             "OnOpen", ON_OPEN,
-                                                                             "OnClose", ON_CLOSE,
-                                                                             "OnError", ON_ERROR);
+    public static final Map<String, String> WEBSOCKET_ANNOTATION_FQN = Map.of(
+                                                                              "OnOpen", ON_OPEN,
+                                                                              "OnClose", ON_CLOSE,
+                                                                              "OnError", ON_ERROR);
 
     public static final String IS_ANNOTATION = "isAnnotation";
 

@@ -119,7 +119,7 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 if (isLifecycleAnnotation(type, annotationName)) {
                     if (visitedAnnotations.contains(annotationName)) {
                         JsonArray diagnosticsData = new JsonArray();
-                        diagnosticsData.add(Constants.WEBSOCKETANNOATATIONFQN.get(annotationName));
+                        diagnosticsData.add(Constants.WEBSOCKET_ANNOTATION_FQN.get(annotationName));
                         Range range = PositionUtils.toNameRange(annotation, context.getUtils());
 
                         diagnostics.add(context.createDiagnostic(uri,
