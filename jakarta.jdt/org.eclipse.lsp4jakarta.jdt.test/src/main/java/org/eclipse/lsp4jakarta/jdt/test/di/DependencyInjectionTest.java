@@ -140,6 +140,14 @@ public class DependencyInjectionTest extends BaseJakartaTest {
                           "Injector independent classes must not declare more than one qualifier on an @Inject field or parameter.",
                           DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectQualifierOnFieldOrParameter");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+        Diagnostic d7 = d(59, 41, 48,
+                          "The parameter should not contain the abstract modifier. If it contains the abstract modifier, the class should be annotated with @Decorator.",
+                          DiagnosticSeverity.Warning, "jakarta-di", "InjectionPointInvalidAbstractClassBean");
+
+        Diagnostic d8 = d(59, 41, 48,
+                          "The parameter should define a constructor with no parameters or a constructor annotated with @Inject.",
+                          DiagnosticSeverity.Warning, "jakarta-di", "InjectionPointInvalidConstructorBean");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8);
     }
 }

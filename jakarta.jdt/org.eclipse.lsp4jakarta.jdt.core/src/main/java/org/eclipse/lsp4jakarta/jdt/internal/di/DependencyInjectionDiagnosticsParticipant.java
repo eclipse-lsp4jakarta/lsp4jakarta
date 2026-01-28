@@ -18,8 +18,11 @@ import static org.eclipse.lsp4jakarta.jdt.internal.di.Constants.INJECT_FQ_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -74,28 +77,36 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
         IType[] alltypes;
         alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
-            boolean isCdiScoped = false;
             String invalidInjectMsg = Messages.getMessage("InjectInvalidQualifiersOnField");
             IField[] allFields = type.getFields();
             IType parent = type.getDeclaringType();
-            isCdiScoped = hasCdiScopeAnnotation(type);
+            boolean isCdiScoped = hasCdiScopeAnnotation(type);
             for (IField field : allFields) {
                 Range range = PositionUtils.toNameRange(field,
                                                         context.getUtils());
-                if (parent != null && hasCdiScopeAnnotation(parent))
+                Set<String> fqNames = new HashSet<>();
+                boolean hasInject = false;
+                for (IAnnotation annotation : field.getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, INJECT_FQ_NAME)) {
+                        hasInject = true;
+                    } else {
+                        fqNames.add(ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName()));
+                    }
+                }
+                if (fqNames.equals(Constants.IMPLICIT_QUALIFIERS)) {
                     continue;
-                else {
-                    for (IAnnotation annotation : field.getAnnotations()) {
-                        if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, INJECT_FQ_NAME)) {
-                            List<IAnnotation> qualifiers = getQualifiers(field.getAnnotations(), unit, type);
-                            if (qualifiers.size() > 1 && !isCdiScoped) {
-                                diagnostics.add(
-                                                context.createDiagnostic(uri, invalidInjectMsg, range,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.InvalidInjectQualifierOnFieldOrParameter,
-                                                                         DiagnosticSeverity.Error));
-                            }
-                        }
+                } else {
+                    List<IAnnotation> qualifiers = getQualifiers(field.getAnnotations(), unit, type);
+                    if (hasInject && qualifiers.size() > 1 && !isCdiScoped) {
+                        // To check if inner class's parent is CDI scope annotated, then do not throw the diagnostics for invalid qualifier
+                        if (parent != null && hasCdiScopeAnnotation(parent))
+                            continue;
+                        else
+                            diagnostics.add(
+                                            context.createDiagnostic(uri, invalidInjectMsg, range,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     ErrorCode.InvalidInjectQualifierOnFieldOrParameter,
+                                                                     DiagnosticSeverity.Error));
                     }
                 }
                 if (containsAnnotation(type, field.getAnnotations(), INJECT_FQ_NAME)) {
@@ -126,17 +137,30 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 int methodFlag = method.getFlags();
                 if (containsAnnotation(type, method.getAnnotations(), INJECT_FQ_NAME)) {
-                    if (parent != null && hasCdiScopeAnnotation(parent))
-                        continue;
-                    else {
-                        for (ILocalVariable param : method.getParameters()) {
+                    for (ILocalVariable param : method.getParameters()) {
+                        IAnnotation[] paramAnnotations = param.getAnnotations();
+                        Set<String> paramAnnfqNames = Arrays.stream(paramAnnotations).filter(Objects::nonNull).map(ann -> {
+                            try {
+                                return ManagedBean.getFullyQualifiedClassName(type, ann.getElementName());
+                            } catch (JavaModelException e) {
+                                LOGGER.log(Level.WARNING, "Unable to fetch fully classified name", e.getMessage());
+                                return null;
+                            }
+                        }).collect(Collectors.toSet());
+                        if (paramAnnfqNames.equals(Constants.IMPLICIT_QUALIFIERS)) {
+                            continue;
+                        } else {
                             List<IAnnotation> qualifiers = getQualifiers(param.getAnnotations(), unit, type);
                             if (qualifiers.size() > 1 && !isCdiScoped) {
-                                diagnostics.add(
-                                                context.createDiagnostic(uri, invalidInjectMsg, range,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.InvalidInjectQualifierOnFieldOrParameter,
-                                                                         DiagnosticSeverity.Error));
+                                // To check if inner class's parent is CDI scope annotated, then do not throw the diagnostics for invalid qualifier
+                                if (parent != null && hasCdiScopeAnnotation(parent))
+                                    continue;
+                                else
+                                    diagnostics.add(
+                                                    context.createDiagnostic(uri, invalidInjectMsg, range,
+                                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                                             ErrorCode.InvalidInjectQualifierOnFieldOrParameter,
+                                                                             DiagnosticSeverity.Error));
                             }
                         }
                     }
