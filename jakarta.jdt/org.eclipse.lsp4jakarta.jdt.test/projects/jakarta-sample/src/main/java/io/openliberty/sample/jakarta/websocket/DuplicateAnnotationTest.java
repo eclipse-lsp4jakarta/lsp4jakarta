@@ -15,36 +15,36 @@ public class DuplicateAnnotationTest {
 
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
-		// TODO
+
 	}
 
 	@OnMessage
 	public void onMessage(Session session, String message) throws IOException {
-		// TODO
+
 	}
 
 	@OnClose
 	public void onClose(Session session) throws IOException {
-		// TODO
+
 	}
 
 	@OnError
 	public void onError(Session session, Throwable throwable) {
-		// TODO
+
 	}
-	
+
 	@OnOpen
 	public void onOpen2(Session session) throws IOException {
-		// TODO
+
 	}
-	
+
 	@OnClose
 	public void onClose2(Session session) throws IOException {
-		// TODO
+
 	}
-	
+
 	@OnError
 	public void onError2(Session session, Throwable throwable) {
-		// TODO
+
 	}
 }
