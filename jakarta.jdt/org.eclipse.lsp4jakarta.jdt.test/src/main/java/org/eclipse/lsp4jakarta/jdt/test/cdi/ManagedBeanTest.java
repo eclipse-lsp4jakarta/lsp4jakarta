@@ -282,10 +282,14 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
         Diagnostic d8 = d(51, 18, 53,
+                          "A CDI method must not have parameter(s): name annotated with @Observes and @ObservesAsync.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
+
+        Diagnostic d9 = d(51, 18, 53,
                           "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Disposes, @Observes, @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotationOnMultipleMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
@@ -427,12 +431,16 @@ public class ManagedBeanTest extends BaseJakartaTest {
         Diagnostic d11 = d(48, 18, 52,
                            "A disposer method cannot have parameter(s) annotated with @Observes, @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
-
+        
         Diagnostic d12 = d(54, 18, 53,
+                "A CDI method must not have parameter(s): name annotated with @Observes and @ObservesAsync.",
+                DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
+
+        Diagnostic d13 = d(54, 18, 53,
                            "A disposer method cannot have parameter(s) annotated with @Observes, @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
