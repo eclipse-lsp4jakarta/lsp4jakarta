@@ -55,4 +55,8 @@ public class ProducesAndDisposesObservesObservesAsync {
     public String greetDisposesObservesObservesAsync2(@Disposes @Observes @ObservesAsync String name) {
         return "Hi " + name + "!";
     }
+    
+    public String greetObservesObservesAsyncConflict(@Observes @ObservesAsync String name, @Observes @ObservesAsync String name1) {
+        return "Hi " + name + " and " + name1 + "!";
+    }
 }
