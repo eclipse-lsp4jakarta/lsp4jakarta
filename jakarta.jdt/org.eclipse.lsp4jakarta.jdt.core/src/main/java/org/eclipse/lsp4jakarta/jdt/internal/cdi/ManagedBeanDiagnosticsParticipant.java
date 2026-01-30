@@ -14,6 +14,8 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -204,6 +206,24 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("ManagedBeanProducesAndInjectMethod"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
+                }
+                //Generate diagnostics for mutually exclusive observes and observesAsync annotations
+                Set<String> conflictParams = new HashSet<>();
+                for (ILocalVariable param : method.getParameters()) {
+                    List<String> observesObservesAsync;
+                    observesObservesAsync = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                       Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
+                                                                                       Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS);
+                    if (new HashSet<>(observesObservesAsync).equals(new HashSet<String>(Arrays.asList(Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS)))) {
+                        conflictParams.add(param.getElementName());
+                    }
+                }
+                if (!conflictParams.isEmpty()) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ManagedBeanObservesAndObservesAsyncParam", String.join(", ", conflictParams)), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidObservesObservesAsyncMethodParams, DiagnosticSeverity.Error));
                 }
 
             }

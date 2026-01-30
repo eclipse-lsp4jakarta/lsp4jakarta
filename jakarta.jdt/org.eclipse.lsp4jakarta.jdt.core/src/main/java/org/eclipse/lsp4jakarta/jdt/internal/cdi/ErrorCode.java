@@ -30,7 +30,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidDisposerMethodParamAnnotation,
     InvalidProducerMethodParamAnnotation,
     InvalidInjectAnnotatedMethodParamAnnotation,
-    InvalidInjectAnnotationOnMultipleMethodParams;
+    InvalidInjectAnnotationOnMultipleMethodParams,
+    InvalidObservesObservesAsyncMethodParams;
 
     /**
      * {@inheritDoc}
