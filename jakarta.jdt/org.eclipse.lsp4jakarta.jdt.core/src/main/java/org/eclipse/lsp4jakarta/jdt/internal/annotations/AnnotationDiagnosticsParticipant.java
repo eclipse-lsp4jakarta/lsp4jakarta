@@ -485,7 +485,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
 
     /**
      * isResourceTypeNotCompatible
-     *
+     * It checks whether the resource annotation type is compatible with its field type or method parameter type.
      *
      * @param annotation
      * @param signatureType
