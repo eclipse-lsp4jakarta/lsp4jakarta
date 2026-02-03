@@ -51,11 +51,11 @@ public class DIUtils {
             String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
             IJavaProject project = annotation.getJavaProject();
             if (project != null && annotationFQ != null) {
-                IType customAnnType = project.findType(annotationFQ);
-                ICompilationUnit customCu = customAnnType.getCompilationUnit();
-                if (customAnnType != null) {
-                    for (IAnnotation meta : customAnnType.getAnnotations()) {
-                        return DiagnosticUtils.isMatchedAnnotation(customCu, meta, QUALIFIER_META);
+                IType customAnnotationType = project.findType(annotationFQ);
+                ICompilationUnit customClassCompilerUnit = customAnnotationType.getCompilationUnit();
+                if (customAnnotationType != null) {
+                    for (IAnnotation meta : customAnnotationType.getAnnotations()) {
+                        return DiagnosticUtils.isMatchedAnnotation(customClassCompilerUnit, meta, QUALIFIER_META);
                     }
                 }
             }

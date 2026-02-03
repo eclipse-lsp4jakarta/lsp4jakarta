@@ -139,15 +139,15 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
                 if (containsAnnotation(type, method.getAnnotations(), INJECT_FQ_NAME)) {
                     for (ILocalVariable param : method.getParameters()) {
                         IAnnotation[] paramAnnotations = param.getAnnotations();
-                        Set<String> paramAnnfqNames = Arrays.stream(paramAnnotations).filter(Objects::nonNull).map(ann -> {
+                        Set<String> paramAnnotationsFQNames = Arrays.stream(paramAnnotations).filter(Objects::nonNull).map(ann -> {
                             try {
                                 return ManagedBean.getFullyQualifiedClassName(type, ann.getElementName());
                             } catch (JavaModelException e) {
-                                LOGGER.log(Level.WARNING, "Unable to fetch fully classified name", e.getMessage());
+                                LOGGER.log(Level.WARNING, "Unable to fetch fully qualified name", e.getMessage());
                                 return null;
                             }
                         }).collect(Collectors.toSet());
-                        if (paramAnnfqNames.equals(Constants.IMPLICIT_QUALIFIERS)) {
+                        if (paramAnnotationsFQNames.equals(Constants.IMPLICIT_QUALIFIERS)) {
                             continue;
                         } else {
                             List<IAnnotation> qualifiers = getQualifiers(param.getAnnotations(), unit, type);
