@@ -210,9 +210,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 //Generate diagnostics for mutually exclusive observes and observesAsync annotations
                 Set<String> conflictParams = new HashSet<>();
                 for (ILocalVariable param : method.getParameters()) {
-                    Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                                                 Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
-                                                                                                                 Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS.toArray(String[]::new)));
+                    String[] annotationSimpleNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+                    String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
+                    Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type, annotationSimpleNames, conflictedParamAnnotations));
                     if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS)) {
                         conflictParams.add(param.getElementName());
                     }
