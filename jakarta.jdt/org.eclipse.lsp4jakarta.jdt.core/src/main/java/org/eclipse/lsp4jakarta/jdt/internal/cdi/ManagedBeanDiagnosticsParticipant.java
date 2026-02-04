@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation.
+ * Copyright (c) 2021, 2026 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -210,11 +210,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 //Generate diagnostics for mutually exclusive observes and observesAsync annotations
                 Set<String> conflictParams = new HashSet<>();
                 for (ILocalVariable param : method.getParameters()) {
-                    List<String> observesObservesAsync;
-                    observesObservesAsync = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                       Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
-                                                                                       Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS);
-                    if (new HashSet<>(observesObservesAsync).equals(new HashSet<String>(Arrays.asList(Constants.INVALID_DISPOSER_FQ_CONFLICTED_PARAMS)))) {
+                    Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                                                 Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
+                                                                                                                 Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS.toArray(String[]::new)));
+                    if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS)) {
                         conflictParams.add(param.getElementName());
                     }
                 }
