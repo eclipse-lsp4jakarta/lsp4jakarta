@@ -36,7 +36,7 @@ public class DIUtils {
      * @param type
      * @return
      * @throws JavaModelException
-     * @description Method is used to check if the passed annotation is a built in or custom Qualifier
+     * @description Method is used to check if the passed annotation is a built in or custom Qualifier type
      */
     public static boolean isQualifier(IAnnotation annotation, ICompilationUnit unit, IType type) throws JavaModelException {
         boolean hasBuiltInQualifier = Constants.BUILT_IN_QUALIFIERS.stream().anyMatch(qualifier -> {
