@@ -1,7 +1,7 @@
 package io.openliberty.sample.jakarta.di;
 
-import io.openliberty.sample.jakarta.di.CustomQualifiers.Fast;
-import io.openliberty.sample.jakarta.di.CustomQualifiers.Secure;
+
+import io.openliberty.sample.jakarta.di.CustomQualifiers.*;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
