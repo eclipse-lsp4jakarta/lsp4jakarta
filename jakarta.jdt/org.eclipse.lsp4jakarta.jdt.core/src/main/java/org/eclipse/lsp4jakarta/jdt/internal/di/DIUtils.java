@@ -12,6 +12,7 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.di;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jdt.core.IAnnotation;
@@ -36,7 +37,7 @@ public class DIUtils {
      * @param type
      * @return
      * @throws JavaModelException
-     * @description Method is used to check if the passed annotation is a built in or custom Qualifier type
+     * @description Method is used to check if the passed annotation is a built in or custom Qualifier
      */
     public static boolean isQualifier(IAnnotation annotation, ICompilationUnit unit, IType type) throws JavaModelException {
         boolean hasBuiltInQualifier = Constants.BUILT_IN_QUALIFIERS.stream().anyMatch(qualifier -> {
@@ -54,9 +55,14 @@ public class DIUtils {
                 IType customAnnotationType = project.findType(annotationFQ);
                 ICompilationUnit customClassCompilerUnit = customAnnotationType.getCompilationUnit();
                 if (customAnnotationType != null) {
-                    for (IAnnotation meta : customAnnotationType.getAnnotations()) {
-                        return DiagnosticUtils.isMatchedAnnotation(customClassCompilerUnit, meta, QUALIFIER_META);
-                    }
+                    return Arrays.stream(customAnnotationType.getAnnotations()).anyMatch(customQualifier -> {
+                        try {
+                            return DiagnosticUtils.isMatchedAnnotation(customClassCompilerUnit, customQualifier, QUALIFIER_META);
+                        } catch (JavaModelException e) {
+                            LOGGER.log(Level.INFO, "Unable to fetch qualifier information", e.getMessage());
+                            return false;
+                        }
+                    });
                 }
             }
         }

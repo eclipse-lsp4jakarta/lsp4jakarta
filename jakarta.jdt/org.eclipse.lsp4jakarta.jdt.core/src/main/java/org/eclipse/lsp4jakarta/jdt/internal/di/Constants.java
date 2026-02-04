@@ -32,10 +32,10 @@ public class Constants {
                                                                 "jakarta.Interceptor", "jakarta.Decorator", "jakarta.enterprise.inject.Stereotype",
                                                                 "jakarta.enterprise.context.Dependent");
 
-    public static final List<String> BUILT_IN_QUALIFIERS = List.of(
-                                                                   "jakarta.enterprise.inject.Default",
-                                                                   "jakarta.enterprise.inject.Any",
-                                                                   "jakarta.inject.Named");
+    public static final Set<String> BUILT_IN_QUALIFIERS = Set.of(
+                                                                 "jakarta.enterprise.inject.Default",
+                                                                 "jakarta.enterprise.inject.Any",
+                                                                 "jakarta.inject.Named");
 
     public static final Set<String> IMPLICIT_QUALIFIERS = Set.of(
                                                                  "jakarta.enterprise.inject.Default",
