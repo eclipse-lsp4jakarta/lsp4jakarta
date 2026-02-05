@@ -207,7 +207,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
-                //Generate diagnostics for mutually exclusive observes and observesAsync annotations
+                // Generate diagnostics for mutually exclusive observes and observesAsync annotations
+                //
+                // see: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#
+                // observer_methods
                 Set<String> conflictParams = new HashSet<>();
                 for (ILocalVariable param : method.getParameters()) {
                     String[] annotationSimpleNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
