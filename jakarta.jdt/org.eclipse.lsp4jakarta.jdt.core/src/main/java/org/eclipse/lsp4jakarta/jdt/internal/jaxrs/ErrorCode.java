@@ -22,7 +22,8 @@ public enum ErrorCode implements IJavaErrorCode {
     ResourceMethodMultipleEntityParams,
     UnusedConstructor,
     AmbiguousConstructors,
-    NoPublicConstructors;
+    NoPublicConstructors,
+    InvalidConstraintTarget;
 
     /**
      * {@inheritDoc}
