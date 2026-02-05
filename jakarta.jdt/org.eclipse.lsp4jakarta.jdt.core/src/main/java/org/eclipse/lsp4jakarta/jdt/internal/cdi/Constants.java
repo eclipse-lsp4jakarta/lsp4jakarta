@@ -58,5 +58,5 @@ public class Constants {
                                                                                        "jakarta.enterprise.context.SessionScoped", "jakarta.enterprise.context.NormalScope",
                                                                                        "jakarta.Interceptor", "jakarta.Decorator", "jakarta.enterprise.inject.Stereotype"));
 
-    public static final Set<String> INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS = Set.of(OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME);
+    public static final Set<String> INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS = Set.of(OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME);
 }

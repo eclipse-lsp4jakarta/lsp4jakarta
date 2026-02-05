@@ -211,9 +211,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 Set<String> conflictParams = new HashSet<>();
                 for (ILocalVariable param : method.getParameters()) {
                     String[] annotationSimpleNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-                    String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
+                    String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
                     Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type, annotationSimpleNames, conflictedParamAnnotations));
-                    if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVESASYNC_CONFLICTED_PARAMS)) {
+                    if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS)) {
                         conflictParams.add(param.getElementName());
                     }
                 }
