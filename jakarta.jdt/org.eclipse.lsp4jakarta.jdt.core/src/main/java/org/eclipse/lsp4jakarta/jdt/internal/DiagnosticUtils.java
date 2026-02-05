@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -41,6 +41,11 @@ import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 public class DiagnosticUtils {
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
+
+    public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
+    public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
+    public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
+    public static final String VALID_SETTER_METHOD = "ValidSetterMethod";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -340,5 +345,39 @@ public class DiagnosticUtils {
      */
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
+    }
+
+    /**
+     * getDataTypeName
+     * Converts signature type name into its type name.
+     *
+     * @param type
+     * @return
+     */
+    public static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
+    }
+
+    /**
+     * validateSetterMethod
+     * This is to check whether a method is a valid setter.
+     *
+     * @param method
+     * @return
+     * @throws JavaModelException
+     */
+    public static String validateSetterMethod(IMethod method) throws JavaModelException {
+        if (!method.getElementName().startsWith("set")) {
+            return NAME_MUST_START_WITH_SET;
+        } else if (!"V".equalsIgnoreCase(method.getReturnType())) {
+            return RETURN_TYPE_MUST_BE_VOID;
+        } else if (method.getParameterTypes().length != 1) {
+            return MUST_DECLARE_EXACTLY_ONE_PARAM;
+        }
+        return VALID_SETTER_METHOD;
     }
 }
