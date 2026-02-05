@@ -1,27 +1,23 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jaxrs;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
@@ -29,7 +25,6 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
-import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTSearchUtil;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
@@ -66,68 +61,33 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 			if (isJaxrsClass) {
 				methods = type.getMethods();
 				for (IMethod method : methods) {
-
-					if (DiagnosticUtils.isConstructorMethod(method) || isSetter(method)) {
+					if (DiagnosticUtils.isConstructorMethod(method) || validateSetterMethod(method)) {
 						for (ILocalVariable param : method.getParameters()) {
-							for (IAnnotation paramAnnotation : param.getAnnotations()) {
-								if (isConstraintAnnotation(paramAnnotation, type, unit)) {
-									Range annotationRange = PositionUtils.toNameRange(paramAnnotation, context.getUtils());
-									diagnostics.add(context.createDiagnostic(uri,
-											Messages.getMessage("InvalidConstraintTarget"),
-											annotationRange, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidConstraintTarget,
-											DiagnosticSeverity.Error));
+							Stream.of(param.getAnnotations())
+						    .filter(paramAnnotation -> {
+								try {
+									return isConstraintAnnotation(paramAnnotation, type, unit);
+								} catch (JavaModelException e) {			
+									return false;
 								}
-							}
+							})
+						    .map(paramAnnotation -> {
+								try {
+									return PositionUtils.toNameRange(paramAnnotation, context.getUtils());
+								} catch (JavaModelException e) {
+									return null;
+								}
+							})
+						    .map(annotationRange -> context.createDiagnostic(uri,
+						        Messages.getMessage("InvalidConstraintTarget"),
+						        annotationRange, 
+						        Constants.DIAGNOSTIC_SOURCE, 
+						        ErrorCode.InvalidConstraintTarget,
+						        DiagnosticSeverity.Error))
+						    .forEach(diagnostics::add);
 						}
 					}
 				}
-			}else {
-				List<IJavaElement> references = JDTSearchUtil.getAllProjectReference(type);
-				boolean isUsewithBeanParam=false;
-				for(IJavaElement element:references) {
-					if (element instanceof IMethod) {
-						
-						IMethod method = (IMethod) element;
-                        IType declaringType = method.getDeclaringType();
-                        
-                        System.out.println("  Class: " + declaringType.getFullyQualifiedName());
-                        System.out.println("  Method: " + method.getElementName());
-                        
-                        for (ILocalVariable param : method.getParameters()) {
-                        	String paramType = Signature.toString(param.getTypeSignature());
-                        	if(type.getElementName().equals(paramType)) {
-                        		for (IAnnotation paramAnnotation : param.getAnnotations()) {
-                        			String annotationFQ = ManagedBean.getFullyQualifiedClassName(declaringType, paramAnnotation.getElementName());
-                            		if(DiagnosticUtils.isMatchedJavaElement(type,annotationFQ,"jakarta.ws.rs.BeanParam")) {
-                            			isUsewithBeanParam=true;
-                            		}
-                            	}
-                        	}
-                        	
-                        }                       
-					}
-				}
-				
-				if(isUsewithBeanParam) {
-					methods = type.getMethods();
-					for (IMethod method : methods) {
-
-						if (DiagnosticUtils.isConstructorMethod(method) || isSetter(method)) {
-							for (ILocalVariable param : method.getParameters()) {
-								for (IAnnotation paramAnnotation : param.getAnnotations()) {
-									if (isConstraintAnnotation(paramAnnotation, type, unit)) {
-										Range annotationRange = PositionUtils.toNameRange(paramAnnotation, context.getUtils());
-										diagnostics.add(context.createDiagnostic(uri,
-												Messages.getMessage("InvalidConstraintTarget"),
-												annotationRange, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidConstraintTarget,
-												DiagnosticSeverity.Error));
-									}
-								}
-							}
-						}
-					}
-				}
-				
 			}
 		}
 
@@ -147,7 +107,7 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 				isConstraint = Arrays.stream(annotationType.getAnnotations()).anyMatch(constraintAnnotation -> {
 					try {
 						return DiagnosticUtils.isMatchedAnnotation(cu, constraintAnnotation,
-								"jakarta.validation.Constraint");
+								Constants.CONSTRAINT_ANNOTATION);
 					} catch (JavaModelException e) {
 						LOGGER.log(Level.INFO, "Unable to fetch constraint information", e.getMessage());
 						return false;
@@ -159,8 +119,11 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 		return isConstraint;
 	}
 
-	private boolean isSetter(IMethod method) {
-		return method.getElementName().startsWith("set");
+	private boolean validateSetterMethod(IMethod method) throws JavaModelException {
+		if (!method.getElementName().startsWith("set") || !"V".equalsIgnoreCase(method.getReturnType()) || method.getParameterTypes().length != 1) {
+			return false;
+		}
+		return true;
 	}
 
 }
