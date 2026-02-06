@@ -155,15 +155,15 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         }
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCE_FQ_NAME)) {
-                    Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
                     if (element instanceof IType) {
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
                         validateResourceClass(context, uri, diagnostics, annotation, element, annotationRange);
                     } else if (element instanceof IMethod) {
-                        validateResourceMethod(element, uri, annotationRange, context,
+                        validateResourceMethod(element, uri, context,
                                                diagnostics, annotation);
 
                     } else if (element instanceof IField) {
-                        validateResourceField(context, uri, diagnostics, annotation, element, annotationRange);
+                        validateResourceField(context, uri, diagnostics, annotation, element);
                     }
 
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
@@ -395,15 +395,15 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      *
      * @param element
      * @param uri
-     * @param annotationRange
      * @param context
      * @param diagnostics
      * @param annotation
      * @throws JavaModelException
      */
-    public void validateResourceMethod(IAnnotatable element, String uri, Range annotationRange,
+    public void validateResourceMethod(IAnnotatable element, String uri,
                                        JavaDiagnosticsContext context, List<Diagnostic> diagnostics, IAnnotation annotation) throws JavaModelException {
         IMethod method = (IMethod) element;
+        Range annotationRange = PositionUtils.toNameRange(method, context.getUtils());
         String errorCode = DiagnosticUtils.validateSetterMethod(method);
         String methodName = method.getElementName();
 
@@ -460,13 +460,13 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @param diagnostics
      * @param annotation
      * @param element
-     * @param annotationRange
      * @throws JavaModelException
      */
     private void validateResourceField(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
-                                       IAnnotation annotation, IAnnotatable element, Range annotationRange) throws JavaModelException {
+                                       IAnnotation annotation, IAnnotatable element) throws JavaModelException {
         String diagnosticMessage;
         IField field = (IField) element;
+        Range annotationRange = PositionUtils.toNameRange(field, context.getUtils());
         String signatureType = ((IField) element).getTypeSignature();
         IType parentType = field.getDeclaringType();
         if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
