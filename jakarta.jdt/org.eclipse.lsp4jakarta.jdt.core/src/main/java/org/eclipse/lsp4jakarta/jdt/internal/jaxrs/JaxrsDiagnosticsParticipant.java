@@ -126,8 +126,7 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     }
 
     private boolean validateSetterMethod(IMethod method) throws JavaModelException {
-    	return (!method.getElementName().startsWith("set") || !"V".equalsIgnoreCase(method.getReturnType()) || method.getParameterTypes().length != 1) ;
-           
+        return method.getElementName().startsWith("set") && "V".equalsIgnoreCase(method.getReturnType()) && method.getParameterTypes().length == 1;
     }
 
 }
