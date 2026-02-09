@@ -71,12 +71,17 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Bean validation diagnostics participant that manages the use of validation
  * element constraints.
  */
 public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(BeanValidationDiagnosticsParticipant.class.getName());
 
     /**
      * {@inheritDoc}
@@ -264,9 +269,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 }
-                default -> {
-                    System.out.println("Unexpected value of annotation");
-                }
+                default -> LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
             }
             //Throws invalid static diagnostics if element is static and has constraint annotations
             if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
