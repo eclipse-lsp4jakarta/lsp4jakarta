@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.annotations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
@@ -58,6 +60,9 @@ import com.google.gson.JsonArray;
  *
  */
 public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(AnnotationDiagnosticsParticipant.class.getName());
 
     /**
      * {@inheritDoc}
@@ -358,7 +363,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                        IAnnotation annotation, IAnnotatable element, Range annotationRange) throws JavaModelException {
         String diagnosticMessage;
         IType type = (IType) element;
-        if (type.getElementType() == IJavaElement.TYPE && ((IType) type).isClass()) {
+        if (type.isClass()) {
             Boolean nameEmpty = true;
             Boolean typeEmpty = true;
             for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
@@ -433,21 +438,38 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                          DiagnosticSeverity.Error));
             }
             case DiagnosticUtils.VALID_SETTER_METHOD -> {
-                ILocalVariable parameter = method.getParameters()[0];
-                String signatureType = ((ILocalVariable) parameter).getTypeSignature();
-                IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
-                if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
-                    String diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "parameter");
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             diagnosticMessage,
-                                                             annotationRange,
-                                                             Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.ResourceTypeMismatch,
-                                                             DiagnosticSeverity.Error));
-                }
+                validateResourceTypeForMethod(uri, annotationRange, context, diagnostics, annotation, method);
 
             }
-            default -> System.out.println("Unexpected value");
+            default -> LOGGER.log(Level.SEVERE, "Unexpected value");
+        }
+    }
+
+    /**
+     * validateResourceTypeForMethod
+     * validate ResourceType Compatibility check For Method
+     *
+     * @param uri
+     * @param annotationRange
+     * @param context
+     * @param diagnostics
+     * @param annotation
+     * @param method
+     * @throws JavaModelException
+     */
+    private void validateResourceTypeForMethod(String uri, Range annotationRange, JavaDiagnosticsContext context,
+                                               List<Diagnostic> diagnostics, IAnnotation annotation, IMethod method) throws JavaModelException {
+        ILocalVariable parameter = method.getParameters()[0];
+        String signatureType = ((ILocalVariable) parameter).getTypeSignature();
+        IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
+        if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+            String diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "parameter");
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     diagnosticMessage,
+                                                     annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceTypeMismatch,
+                                                     DiagnosticSeverity.Error));
         }
     }
 
@@ -467,7 +489,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                        IAnnotation annotation, IAnnotatable element, Range annotationRange) throws JavaModelException {
         String diagnosticMessage;
         IField field = (IField) element;
-        String signatureType = ((IField) element).getTypeSignature();
+        String signatureType = field.getTypeSignature();
         IType parentType = field.getDeclaringType();
         if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
             diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "field");
