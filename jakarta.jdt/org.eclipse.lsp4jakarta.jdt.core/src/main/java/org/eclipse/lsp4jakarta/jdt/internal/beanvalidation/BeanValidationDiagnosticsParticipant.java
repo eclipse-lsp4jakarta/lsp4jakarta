@@ -271,7 +271,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 default -> LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
             }
-            //Throws invalid static diagnostics if element is static and has constraint annotations
+            //Throws invalid static element diagnostics if the element is static and has constraint annotations
             if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
                 String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
                 diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
