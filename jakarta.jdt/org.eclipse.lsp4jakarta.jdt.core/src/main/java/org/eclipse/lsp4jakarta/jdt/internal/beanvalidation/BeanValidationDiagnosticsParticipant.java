@@ -168,14 +168,11 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         if (declaringType != null) {
             String annotationName = annotation.getElementName();
 
-            if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
-                String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
-                diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
-                                                         ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField, DiagnosticSeverity.Error));
-            } else {
-
-                if (matchedAnnotation.equals(ASSERT_FALSE) || matchedAnnotation.equals(ASSERT_TRUE)) {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+            //The below block throws diagnostics if invalid field and annotation type combination are present.
+            switch (matchedAnnotation) {
+                case ASSERT_FALSE, ASSERT_TRUE -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
                                                                                       new String[] { BOOLEAN_FQ });
                     String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
 
@@ -184,31 +181,36 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (matchedAnnotation.equals(DECIMAL_MAX) || matchedAnnotation.equals(DECIMAL_MIN)
-                           || matchedAnnotation.equals(DIGITS)) {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                }
+                case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
                                                                                       NUMERIC_AND_CHAR_WRAPPER_TYPES);
 
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
                         && !type.equals(Signature.SIG_LONG)) {
-                        String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBigDecimal");
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
+                                                              "AnnotationBigDecimal");
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation,
                                                                  ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (matchedAnnotation.equals(EMAIL)) {
+                }
+                case EMAIL -> {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation, declaringType, isField);
-                } else if (matchedAnnotation.equals(NOT_BLANK)) {
+                }
+                case NOT_BLANK -> {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation, declaringType, isField);
-                } else if (matchedAnnotation.equals(PATTERN)) {
+                }
+                case PATTERN -> {
                     checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
                                     type, matchedAnnotation, declaringType, isField);
-                } else if (matchedAnnotation.equals(FUTURE) || matchedAnnotation.equals(FUTURE_OR_PRESENT)
-                           || matchedAnnotation.equals(PAST) || matchedAnnotation.equals(PAST_OR_PRESENT)) {
+                }
+                case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> {
                     String dataType = getDataTypeName(type);
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, dataType,
                                                                                       SET_OF_DATE_TYPES.toArray(new String[0]));
@@ -218,8 +220,10 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (matchedAnnotation.equals(MIN) || matchedAnnotation.equals(MAX)) {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                }
+                case MIN, MAX -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
                                                                                       NUMERIC_WRAPPER_TYPES);
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
@@ -229,9 +233,10 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (matchedAnnotation.equals(NEGATIVE) || matchedAnnotation.equals(NEGATIVE_OR_ZERO)
-                           || matchedAnnotation.equals(POSITIVE) || matchedAnnotation.equals(POSITIVE_OR_ZERO)) {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                }
+                case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
                                                                                       NUMERIC_AND_DECIMAL_WRAPPER_TYPES);
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
@@ -243,7 +248,6 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 }
-
                 // These ones contains check on all collection types which requires resolving
                 // the String of the type somehow
                 // This will also require us to check if the field type was a custom collection
@@ -251,15 +255,24 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 // have to resolve it and get the super interfaces and check to see if
                 // Collection, Map or Array was implemented
                 // for that custom type (which could as well be a user made subtype)
-
-                else if (matchedAnnotation.equals(NOT_EMPTY) || matchedAnnotation.equals(SIZE)) {
+                case NOT_EMPTY, SIZE -> {
                     if (!(isSizeOrNonEmptyAllowed(declaringType, type))) {
-                        String message = getDiagnosticMessage(isMethod, isField, annotationName, "SizeOrNonEmptyAnnotations");
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
+                                                              "SizeOrNonEmptyAnnotations");
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
                                                                  DiagnosticSeverity.Error));
                     }
                 }
+                default -> {
+                    System.out.println("Unexpected value of annotation");
+                }
+            }
+            //Throws invalid static diagnostics if element is static and has constraint annotations
+            if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
+                String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
+                diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
+                                                         ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField, DiagnosticSeverity.Error));
             }
         }
     }
