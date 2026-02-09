@@ -168,7 +168,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         if (declaringType != null) {
             String annotationName = annotation.getElementName();
 
-            //The below block throws diagnostics if invalid field and annotation type combination are present.
+            //The below block throws diagnostics if invalid element type is used with constraint annotations
             switch (matchedAnnotation) {
                 case ASSERT_FALSE, ASSERT_TRUE -> {
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
