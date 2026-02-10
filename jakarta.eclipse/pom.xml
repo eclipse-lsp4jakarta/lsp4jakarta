@@ -26,15 +26,15 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <tycho.version>3.0.3</tycho.version>
+        <tycho.version>4.0.4</tycho.version>
         <tycho.test.platformArgs />
         <tycho.test.jvmArgs>-Xmx512m ${tycho.test.platformArgs}</tycho.test.jvmArgs>
     </properties>
     <repositories>
         <repository>
-            <id>2023-06</id>
+            <id>2023-12</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/releases/2023-06</url>
+            <url>http://download.eclipse.org/releases/2023-12</url>
         </repository>
     </repositories>
     <pluginRepositories>
