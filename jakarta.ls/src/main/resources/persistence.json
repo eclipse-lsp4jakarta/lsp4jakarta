@@ -104,5 +104,63 @@
 	        "type": "jakarta.persistence.NamedEntityGraph",
 			"contentType": "before-class"
 	    }
+	},
+	"Jakarta Persistence - entity listener": {
+	    "prefix": "persist_entity_listener",
+	    "body": [
+			"package ${1:packagename};",
+		    "",
+			import jakarta.persistence.PostLoad;
+			import jakarta.persistence.PostPersist;
+			import jakarta.persistence.PostRemove;
+			import jakarta.persistence.PostUpdate;
+			import jakarta.persistence.PrePersist;
+			import jakarta.persistence.PreRemove;
+			import jakarta.persistence.PreUpdate;
+
+			public class EntityAuditListener {
+
+			    @PrePersist
+			    public void prePersist(Object entity) {
+			        // TODO
+			    }
+
+			    @PostPersist
+			    public void postPersist(Object entity) {
+			        // TODO
+			    }
+
+			    @PreUpdate
+			    public void preUpdate(Object entity) {
+			        // TODO
+			    }
+
+			    @PostUpdate
+			    public void postUpdate(Object entity) {
+			        // TODO
+			    }
+
+			    @PreRemove
+			    public void preRemove(Object entity) {
+			        // TODO
+			    }
+
+			    @PostRemove
+			    public void postRemove(Object entity) {
+			        // TODO
+			    }
+
+			    @PostLoad
+			    public void postLoad(Object entity) {
+			        // TODO
+			    }
+			}
+	    ],
+	    "description": "Persistence entity listener",
+	    "context": {
+	        "type": "jakarta.persistence.Entity",
+			"contentType": "class"
+	    }
 	}
+	
 }
