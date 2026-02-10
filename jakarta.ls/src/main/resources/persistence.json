@@ -110,51 +110,51 @@
 	    "body": [
 			"package ${1:packagename};",
 		    "",
-			import jakarta.persistence.PostLoad;
-			import jakarta.persistence.PostPersist;
-			import jakarta.persistence.PostRemove;
-			import jakarta.persistence.PostUpdate;
-			import jakarta.persistence.PrePersist;
-			import jakarta.persistence.PreRemove;
-			import jakarta.persistence.PreUpdate;
-
-			public class EntityAuditListener {
-
-			    @PrePersist
-			    public void prePersist(Object entity) {
-			        // TODO
-			    }
-
-			    @PostPersist
-			    public void postPersist(Object entity) {
-			        // TODO
-			    }
-
-			    @PreUpdate
-			    public void preUpdate(Object entity) {
-			        // TODO
-			    }
-
-			    @PostUpdate
-			    public void postUpdate(Object entity) {
-			        // TODO
-			    }
-
-			    @PreRemove
-			    public void preRemove(Object entity) {
-			        // TODO
-			    }
-
-			    @PostRemove
-			    public void postRemove(Object entity) {
-			        // TODO
-			    }
-
-			    @PostLoad
-			    public void postLoad(Object entity) {
-			        // TODO
-			    }
-			}
+			"import jakarta.persistence.PostLoad;",
+			"import jakarta.persistence.PostPersist;",
+			"import jakarta.persistence.PostRemove;",
+			"import jakarta.persistence.PostUpdate;",
+			"import jakarta.persistence.PrePersist;",
+			"import jakarta.persistence.PreRemove;",
+			"import jakarta.persistence.PreUpdate;",
+			"",
+			"public class EntityAuditListener {",
+			"",
+			"\t@PrePersist",
+			"\tpublic void prePersist(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostPersist",
+			"\tpublic void postPersist(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PreUpdate",
+			"\tpublic void preUpdate(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostUpdate",
+			"\tpublic void postUpdate(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PreRemove",
+			"\tpublic void preRemove(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostRemove",
+			"\tpublic void postRemove(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostLoad",
+			"\tpublic void postLoad(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"}"
 	    ],
 	    "description": "Persistence entity listener",
 	    "context": {
