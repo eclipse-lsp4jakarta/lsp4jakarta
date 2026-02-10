@@ -43,7 +43,7 @@ public class JakartaJaxrsTest extends BaseJakartaTest {
 
         // test expected diagnostics
         Diagnostic d1 = d(10, 32, 40,
-                          "Constraint annotations not allowed for constructors and setters in jax-rs context.",
+                          "Constraint annotations are not allowed for constructors and setters in jax-rs context.",
                           DiagnosticSeverity.Error, "jakarta-jaxrs", "InvalidConstraintTarget");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
@@ -61,7 +61,7 @@ public class JakartaJaxrsTest extends BaseJakartaTest {
 
         // test expected diagnostics
         Diagnostic d1 = d(14, 21, 29,
-                          "Constraint annotations not allowed for constructors and setters in jax-rs context.",
+                          "Constraint annotations are not allowed for constructors and setters in jax-rs context.",
                           DiagnosticSeverity.Error, "jakarta-jaxrs", "InvalidConstraintTarget");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);

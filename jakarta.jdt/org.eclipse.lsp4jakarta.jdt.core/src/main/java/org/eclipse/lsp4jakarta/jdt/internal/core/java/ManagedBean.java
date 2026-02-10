@@ -13,6 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jdt.core.Flags;
@@ -28,6 +29,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  * Provides Managed Bean related utilities.
@@ -338,4 +340,40 @@ public class ManagedBean {
 
         return resolvedClassName;
     }
+    
+	/**
+	 * Checks if the given annotation is marked with a specific meta-annotation.
+	 *
+	 * @param annotation        the annotation to check
+	 * @param type              the type context for resolving the annotation
+	 * @param cu                the compilation unit
+	 * @param metaAnnotationFQN the fully qualified name of the meta-annotation to
+	 *                          look for
+	 * @return true if the annotation has the specified meta-annotation, false
+	 *         otherwise
+	 * @throws JavaModelException if there's an error accessing the Java model
+	 */
+	public static boolean hasMetaAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu,
+			String metaAnnotationFQN) throws JavaModelException {
+		String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
+		IJavaProject project = annotation.getJavaProject();
+
+		if (project == null || annotationFQ == null) {
+			return false;
+		}
+
+		IType annotationType = project.findType(annotationFQ);
+		if (annotationType == null) {
+			return false;
+		}
+
+		return Arrays.stream(annotationType.getAnnotations())
+				.anyMatch(metaAnnotation -> {
+					try {
+						return DiagnosticUtils.isMatchedAnnotation(cu, metaAnnotation, metaAnnotationFQN);
+					} catch (JavaModelException e) {	
+						return false;
+					}
+				});
+	}
 }

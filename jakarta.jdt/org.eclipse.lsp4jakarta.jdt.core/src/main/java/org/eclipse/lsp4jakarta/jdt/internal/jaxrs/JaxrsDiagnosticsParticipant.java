@@ -13,9 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jaxrs;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -23,7 +21,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -76,7 +73,7 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         for (ILocalVariable param : method.getParameters()) {
                             Stream.of(param.getAnnotations()).filter(paramAnnotation -> {
                                 try {
-                                    return isConstraintAnnotation(paramAnnotation, type, unit);
+                                    return ManagedBean.hasMetaAnnotation(paramAnnotation, type, unit,Constants.CONSTRAINT_ANNOTATION);
                                 } catch (JavaModelException e) {
                                     return false;
                                 }
@@ -100,29 +97,6 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
         return diagnostics;
 
-    }
-
-    private boolean isConstraintAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu) throws JavaModelException {
-        boolean isConstraint = false;
-        String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-        IJavaProject project = annotation.getJavaProject();
-
-        if (project != null && annotationFQ != null) {
-            IType annotationType = project.findType(annotationFQ);
-            if (annotationType != null) {
-                isConstraint = Arrays.stream(annotationType.getAnnotations()).anyMatch(constraintAnnotation -> {
-                    try {
-                        return DiagnosticUtils.isMatchedAnnotation(cu, constraintAnnotation,
-                                                                   Constants.CONSTRAINT_ANNOTATION);
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.INFO, "Unable to fetch constraint information", e.getMessage());
-                        return false;
-                    }
-                });
-
-            }
-        }
-        return isConstraint;
     }
 
     private boolean validateSetterMethod(IMethod method) throws JavaModelException {
