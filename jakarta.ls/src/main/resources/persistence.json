@@ -118,7 +118,7 @@
 			"import jakarta.persistence.PreRemove;",
 			"import jakarta.persistence.PreUpdate;",
 			"",
-			"public class EntityAuditListener {",
+			"public class ${TM_FILENAME_BASE} {",
 			"",
 			"\t@PrePersist",
 			"\tpublic void prePersist(Object entity) {",
