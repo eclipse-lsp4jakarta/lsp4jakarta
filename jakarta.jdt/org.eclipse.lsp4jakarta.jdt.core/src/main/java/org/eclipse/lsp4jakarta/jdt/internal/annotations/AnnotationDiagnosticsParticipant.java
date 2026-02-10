@@ -162,13 +162,16 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCE_FQ_NAME)) {
                     Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
                     if (element instanceof IType) {
-                        validateResourceClass(context, uri, diagnostics, annotation, element, annotationRange);
+                    	 IType type = (IType) element;
+                        validateResourceClass(context, uri, diagnostics, annotation, type, annotationRange);
                     } else if (element instanceof IMethod) {
-                        validateResourceMethod(element, uri, annotationRange, context,
+                    	 IMethod method = (IMethod) element;
+                        validateResourceMethod(method, uri, annotationRange, context,
                                                diagnostics, annotation);
 
                     } else if (element instanceof IField) {
-                        validateResourceField(context, uri, diagnostics, annotation, element, annotationRange);
+                    	IField field = (IField) element;
+                        validateResourceField(context, uri, diagnostics, annotation, field, annotationRange);
                     }
 
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
@@ -355,14 +358,13 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @param uri
      * @param diagnostics
      * @param annotation
-     * @param element
+     * @param type
      * @param annotationRange
      * @throws JavaModelException
      */
     private void validateResourceClass(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
-                                       IAnnotation annotation, IAnnotatable element, Range annotationRange) throws JavaModelException {
+                                       IAnnotation annotation, IType type, Range annotationRange) throws JavaModelException {
         String diagnosticMessage;
-        IType type = (IType) element;
         if (type.isClass()) {
             Boolean nameEmpty = true;
             Boolean typeEmpty = true;
@@ -398,7 +400,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * validateResourceMethod
      * This method is responsible for finding diagnostics in methods annotated with @Resource.
      *
-     * @param element
+     * @param method
      * @param uri
      * @param annotationRange
      * @param context
@@ -406,9 +408,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @param annotation
      * @throws JavaModelException
      */
-    public void validateResourceMethod(IAnnotatable element, String uri, Range annotationRange,
+    public void validateResourceMethod(IMethod method, String uri, Range annotationRange,
                                        JavaDiagnosticsContext context, List<Diagnostic> diagnostics, IAnnotation annotation) throws JavaModelException {
-        IMethod method = (IMethod) element;
         String errorCode = DiagnosticUtils.validateSetterMethod(method);
         String methodName = method.getElementName();
 
@@ -486,9 +487,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @throws JavaModelException
      */
     private void validateResourceField(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
-                                       IAnnotation annotation, IAnnotatable element, Range annotationRange) throws JavaModelException {
+                                       IAnnotation annotation, IField field, Range annotationRange) throws JavaModelException {
         String diagnosticMessage;
-        IField field = (IField) element;
         String signatureType = field.getTypeSignature();
         IType parentType = field.getDeclaringType();
         if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
