@@ -203,18 +203,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 }
-                case EMAIL -> {
-                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType, isField);
-                }
-                case NOT_BLANK -> {
-                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType, isField);
-                }
-                case PATTERN -> {
-                    checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod,
-                                    type, matchedAnnotation, declaringType, isField);
-                }
+                case EMAIL, NOT_BLANK, PATTERN -> checkStringOnly(context, uri, range, diagnostics, annotationName, isMethod, type, matchedAnnotation, declaringType, isField);
                 case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> {
                     String dataType = getDataTypeName(type);
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, dataType,
