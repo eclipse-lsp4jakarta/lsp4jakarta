@@ -73,7 +73,7 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         for (ILocalVariable param : method.getParameters()) {
                             Stream.of(param.getAnnotations()).filter(paramAnnotation -> {
                                 try {
-                                    return ManagedBean.hasMetaAnnotation(paramAnnotation, type, unit,Constants.CONSTRAINT_ANNOTATION);
+                                    return ManagedBean.hasMetaAnnotation(paramAnnotation, type, unit, Constants.CONSTRAINT_ANNOTATION);
                                 } catch (JavaModelException e) {
                                     return false;
                                 }
