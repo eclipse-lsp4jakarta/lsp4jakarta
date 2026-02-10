@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -30,6 +30,9 @@ public class Constants {
 
     /* @Resources */
     public static final String RESOURCES_FQ_NAME = "jakarta.annotation.Resources";
+
+    /* @Priority */
+    public static final String PRIORITY_FQ_NAME = "jakarta.annotation.Priority";
 
     /* @PostConstruct */
     public static final String POST_CONSTRUCT_FQ_NAME = "jakarta.annotation.PostConstruct";
