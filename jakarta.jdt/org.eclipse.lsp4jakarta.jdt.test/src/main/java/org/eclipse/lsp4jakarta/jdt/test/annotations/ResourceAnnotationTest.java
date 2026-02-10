@@ -49,31 +49,39 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // expected annotations
-        Diagnostic d1 = d(22, 0, 22, "The @Resource annotation must define the attribute 'type'.",
+        Diagnostic d1 = d(23, 0, 22, "The @Resource annotation must define the attribute 'type'.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceTypeAttribute");
 
-        Diagnostic d2 = d(39, 0, 30, "The @Resource annotation must define the attribute 'name'.",
-                          DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
+        Diagnostic d2 = d(42, 0, 13,
+                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
+                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
 
-        Diagnostic d3 = d(44, 4, 13, "@Resource method 'setStudentId' is invalid: must declare exactly one parameter.",
+        Diagnostic d3 = d(47, 4, 13, "@Resource method 'setStudentId' is invalid: must declare exactly one parameter.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceMustDeclareExactlyOneParam");
 
-        Diagnostic d4 = d(49, 4, 13, "@Resource method 'getStudentId' is invalid: method name must start with set.",
+        Diagnostic d4 = d(52, 4, 13, "@Resource method 'getStudentId' is invalid: method name must start with set.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceNameMustStartWithSet");
 
-        Diagnostic d5 = d(54, 4, 13, "@Resource method 'setStudentId1' is invalid: return type must be void.",
+        Diagnostic d5 = d(57, 4, 13, "@Resource method 'setStudentId1' is invalid: return type must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceReturnTypeMustBeVoid");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
+        Diagnostic d6 = d(63, 26, 39,
+                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
+                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
+        Diagnostic d7 = d(41, 0, 30,
+                          "The @Resource annotation must define the attribute 'name'.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-        TextEdit te = te(22, 0, 22, 22, "@Resource(name = \"aa\", type = Object.class)");
+        TextEdit te = te(23, 0, 24, 0, "@Resource(name = \"aa\", type = Object.class)\n");
         CodeAction ca = ca(uri, "Insert 'type' attribute to @Resource", d1, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
-        TextEdit te1 = te(39, 0, 39, 30, "@Resource(type = Object.class, name = \"\")");
-        CodeAction ca1 = ca(uri, "Insert 'name' attribute to @Resource", d2, te1);
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d7);
+        TextEdit te1 = te(41, 0, 42, 0, "@Resource(type = Object.class, name = \"\")\n");
+        CodeAction ca1 = ca(uri, "Insert 'name' attribute to @Resource", d7, te1);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
     }
