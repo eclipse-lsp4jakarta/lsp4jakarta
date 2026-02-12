@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -52,7 +53,6 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         }
 
         IType[] alltypes = unit.getAllTypes();
-        IMethod[] methods;
 
         for (IType type : alltypes) {
             if (!type.isClass()) {
@@ -67,31 +67,7 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             }
 
             if (isJaxrsClass) {
-                methods = type.getMethods();
-                for (IMethod method : methods) {
-                    if (DiagnosticUtils.isConstructorMethod(method) || validateSetterMethod(method)) {
-                        for (ILocalVariable param : method.getParameters()) {
-                            Stream.of(param.getAnnotations()).filter(paramAnnotation -> {
-                                try {
-                                    return ManagedBean.hasMetaAnnotation(paramAnnotation, type, unit, Constants.CONSTRAINT_ANNOTATION);
-                                } catch (JavaModelException e) {
-                                    return false;
-                                }
-                            }).map(paramAnnotation -> {
-                                try {
-                                    return PositionUtils.toNameRange(paramAnnotation, context.getUtils());
-                                } catch (JavaModelException e) {
-                                    return null;
-                                }
-                            }).map(annotationRange -> context.createDiagnostic(uri,
-                                                                               Messages.getMessage("InvalidConstraintTarget"),
-                                                                               annotationRange,
-                                                                               Constants.DIAGNOSTIC_SOURCE,
-                                                                               ErrorCode.InvalidConstraintTarget,
-                                                                               DiagnosticSeverity.Error)).forEach(diagnostics::add);
-                        }
-                    }
-                }
+                checkInvalidConstraintTarget(context, unit, uri, type, diagnostics);
             }
         }
 
@@ -100,7 +76,38 @@ public class JaxrsDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     }
 
     private boolean validateSetterMethod(IMethod method) throws JavaModelException {
-        return method.getElementName().startsWith("set") && "V".equalsIgnoreCase(method.getReturnType()) && method.getParameterTypes().length == 1;
+        return method.getElementName().startsWith("set") && "V".equalsIgnoreCase(method.getReturnType())
+               && method.getParameterTypes().length == 1 && Flags.isPublic(method.getFlags());
+    }
+
+    private void checkInvalidConstraintTarget(JavaDiagnosticsContext context,
+                                              ICompilationUnit unit, String uri, IType type, List<Diagnostic> diagnostics) throws JavaModelException {
+        IMethod[] methods = type.getMethods();
+        for (IMethod method : methods) {
+            if (DiagnosticUtils.isConstructorMethod(method) || validateSetterMethod(method)) {
+                for (ILocalVariable param : method.getParameters()) {
+                    Stream.of(param.getAnnotations()).filter(paramAnnotation -> {
+                        try {
+                            return ManagedBean.hasMetaAnnotation(paramAnnotation, type, unit,
+                                                                 Constants.CONSTRAINT_ANNOTATION);
+                        } catch (JavaModelException e) {
+                            return false;
+                        }
+                    }).map(paramAnnotation -> {
+                        try {
+                            return PositionUtils.toNameRange(paramAnnotation, context.getUtils());
+                        } catch (JavaModelException e) {
+                            return null;
+                        }
+                    }).map(annotationRange -> context.createDiagnostic(uri,
+                                                                       Messages.getMessage("InvalidConstraintTarget"),
+                                                                       annotationRange,
+                                                                       Constants.DIAGNOSTIC_SOURCE,
+                                                                       ErrorCode.InvalidConstraintTarget,
+                                                                       DiagnosticSeverity.Error)).forEach(diagnostics::add);
+                }
+            }
+        }
     }
 
 }
