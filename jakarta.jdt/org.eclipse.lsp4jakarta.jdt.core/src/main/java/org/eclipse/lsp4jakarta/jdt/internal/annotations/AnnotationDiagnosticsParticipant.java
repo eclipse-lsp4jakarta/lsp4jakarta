@@ -414,17 +414,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         List<CommonErrorCode> errorCodes = DiagnosticUtils.validateSetterMethod(method, method.getDeclaringType());
         String methodName = method.getElementName();
         String diagnosticMessage = null;
-        if (!errorCodes.isEmpty()) {
-            for (CommonErrorCode errorCode : errorCodes) {
-                diagnosticMessage = Messages.getMessage(errorCode.getCode(),
-                                                        "@Resource", methodName);
-                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
-                                                         annotationRange,
-                                                         Constants.DIAGNOSTIC_SOURCE, errorCode,
-                                                         DiagnosticSeverity.Error));
-            }
-
-        } else {
+        if (errorCodes.isEmpty()) {
             ILocalVariable parameter = method.getParameters()[0];
             String signatureType = ((ILocalVariable) parameter).getTypeSignature();
             IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
@@ -434,6 +424,16 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                          annotationRange,
                                                          Constants.DIAGNOSTIC_SOURCE,
                                                          ErrorCode.ResourceTypeMismatch,
+                                                         DiagnosticSeverity.Error));
+            }
+
+        } else {
+            for (CommonErrorCode errorCode : errorCodes) {
+                diagnosticMessage = Messages.getMessage(errorCode.getCode(),
+                                                        "@Resource", methodName);
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE, errorCode,
                                                          DiagnosticSeverity.Error));
             }
         }
