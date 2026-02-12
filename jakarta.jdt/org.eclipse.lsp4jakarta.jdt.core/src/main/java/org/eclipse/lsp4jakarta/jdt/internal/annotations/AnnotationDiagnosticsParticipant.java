@@ -14,7 +14,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.annotations;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -44,6 +43,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.CommonErrorCode;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -410,45 +410,32 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      */
     public void validateResourceMethod(IMethod method, String uri, Range annotationRange,
                                        JavaDiagnosticsContext context, List<Diagnostic> diagnostics, IAnnotation annotation) throws JavaModelException {
-        String errorCode = DiagnosticUtils.validateSetterMethod(method);
+
+        List<CommonErrorCode> errorCodes = DiagnosticUtils.validateSetterMethod(method, method.getDeclaringType());
         String methodName = method.getElementName();
         String diagnosticMessage = null;
-        ErrorCode messageKey = null;
+        if (!errorCodes.isEmpty()) {
+            for (CommonErrorCode errorCode : errorCodes) {
+                diagnosticMessage = Messages.getMessage(errorCode.getCode(),
+                                                        "@Resource", methodName);
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE, errorCode,
+                                                         DiagnosticSeverity.Error));
+            }
 
-        switch (errorCode) {
-            case DiagnosticUtils.NAME_MUST_START_WITH_SET -> {
-                diagnosticMessage = Messages.getMessage("AnnotationNameMustStartWithSet",
-                                                        "@Resource", methodName);
-                messageKey = ErrorCode.ResourceNameMustStartWithSet;
+        } else {
+            ILocalVariable parameter = method.getParameters()[0];
+            String signatureType = ((ILocalVariable) parameter).getTypeSignature();
+            IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
+            if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+                diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "parameter");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.ResourceTypeMismatch,
+                                                         DiagnosticSeverity.Error));
             }
-            case DiagnosticUtils.RETURN_TYPE_MUST_BE_VOID -> {
-                diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
-                                                        "@Resource", methodName);
-                messageKey = ErrorCode.ResourceReturnTypeMustBeVoid;
-            }
-            case DiagnosticUtils.MUST_DECLARE_EXACTLY_ONE_PARAM -> {
-                diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
-                                                        "@Resource", methodName);
-                messageKey = ErrorCode.ResourceMustDeclareExactlyOneParam;
-            }
-            case DiagnosticUtils.VALID_SETTER_METHOD -> {
-                ILocalVariable parameter = method.getParameters()[0];
-                String signatureType = ((ILocalVariable) parameter).getTypeSignature();
-                IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
-                if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
-                    diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "parameter");
-                    messageKey = ErrorCode.ResourceTypeMismatch;
-                }
-            }
-            default -> LOGGER.log(Level.SEVERE, "Unexpected value");
-        }
-        if (null != messageKey) {
-            diagnostics.add(context.createDiagnostic(uri,
-                                                     diagnosticMessage,
-                                                     annotationRange,
-                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                     messageKey,
-                                                     DiagnosticSeverity.Error));
         }
     }
 

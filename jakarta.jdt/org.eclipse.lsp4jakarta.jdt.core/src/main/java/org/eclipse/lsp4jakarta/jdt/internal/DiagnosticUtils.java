@@ -12,12 +12,14 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal;
 
+import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -45,7 +47,8 @@ public class DiagnosticUtils {
     public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
     public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
     public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
-    public static final String VALID_SETTER_METHOD = "ValidSetterMethod";
+    public static final String METHOD_MUST_BE_PUBLIC = "MethodMustBePublic";
+    public static final String FIELD_MUST_EXIST_IN_SETTER = "FieldMustExistInSetter";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -363,21 +366,67 @@ public class DiagnosticUtils {
     }
 
     /**
-     * validateSetterMethod
-     * This is to check whether a method is a valid setter.
+     * isPublic
+     * Check if the given method is public or not
      *
      * @param method
      * @return
      * @throws JavaModelException
      */
-    public static String validateSetterMethod(IMethod method) throws JavaModelException {
-        if (!method.getElementName().startsWith("set")) {
-            return NAME_MUST_START_WITH_SET;
-        } else if (!"V".equalsIgnoreCase(method.getReturnType())) {
-            return RETURN_TYPE_MUST_BE_VOID;
-        } else if (method.getParameterTypes().length != 1) {
-            return MUST_DECLARE_EXACTLY_ONE_PARAM;
+    public static boolean isPublic(IMethod method) throws JavaModelException {
+        int flags = method.getFlags();
+        return Flags.isPublic(flags);
+    }
+
+    /**
+     * hasField
+     * Checks if the given type has a field matching the method name.
+     *
+     * @param methodName
+     * @param type
+     * @return
+     * @throws JavaModelException
+     */
+    private static boolean hasField(String methodName, IType type) throws JavaModelException {
+        if (methodName == null || methodName.length() <= 3) {
+            return false;
         }
-        return VALID_SETTER_METHOD;
+        String expectedFieldName = Introspector.decapitalize(methodName.substring(3));
+        if (expectedFieldName.isEmpty()) {
+            return false;
+        }
+        IField field = type.getField(expectedFieldName);
+        return field.exists();
+    }
+
+    /**
+     * validateSetterMethod
+     * This is to check whether a method is a valid setter.
+     *
+     * @param method
+     * @param iType
+     * @return
+     * @throws JavaModelException
+     */
+    public static List<CommonErrorCode> validateSetterMethod(IMethod method, IType parentType) throws JavaModelException {
+
+        List<CommonErrorCode> errorCodes = new ArrayList<CommonErrorCode>();
+        String methodName = method.getElementName();
+        if (!methodName.startsWith("set")) {
+            errorCodes.add(CommonErrorCode.NameMustStartWithSet);
+        }
+        if (!hasField(methodName, parentType)) {
+            errorCodes.add(CommonErrorCode.FieldMustExistInSetter);
+        }
+        if (!"V".equalsIgnoreCase(method.getReturnType())) {
+            errorCodes.add(CommonErrorCode.ReturnTypeMustBeVoid);
+        }
+        if (method.getParameterTypes().length != 1) {
+            errorCodes.add(CommonErrorCode.MustDeclareExactlyOneParam);
+        }
+        if (!isPublic(method)) {
+            errorCodes.add(CommonErrorCode.MethodMustBePublic);
+        }
+        return errorCodes;
     }
 }
