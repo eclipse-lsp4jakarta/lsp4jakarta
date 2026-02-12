@@ -53,13 +53,27 @@ class MasterStudent {
 	}
 
     @Resource
-	public Integer setStudentId1(Integer studentId) {
-		return studentId;
+	public boolean setIsHappy(boolean isHappy) {
+		return isHappy;
 	}
    
     @Resource
-	public void setStudentId(Integer studentId) {
+	private void setStudentId(Integer studentId) {
 		this.studentId = studentId;
 	}
+    
+    @Resource
+ 	public void setIsHappy1(boolean isHappy) {
+
+ 	}
+    
+    @Resource
+    public void setIsSad(boolean isSad) {
+		this.isSad = isSad;
+	}
+    
+    private boolean isSad;
+    
+    private boolean isHappy;
 
 } 
