@@ -1,6 +1,6 @@
 # This script is used for syncing up jakarta-sample and demo-servlet-no-diagnostics project automatically. 
-# It should be run at the root directory of lsp4jakarta before code check-in.
-# This can also be called first in buildAll.sh which will be run anyway before check-in.
+# It should run at the root directory of lsp4jakarta before code check-in.
+# This can also be called first in buildAll.sh which will be ran anyway before check-in.
 #!/bin/bash
 set -e
 
@@ -30,8 +30,8 @@ find "$SRC_DIR" -type f -name "*.java" | while IFS= read -r srcFile; do
   sed -E 's/import[[:space:]]+jakarta\.[^.]+\./import jakarta./g' "$srcFile" > "$tmpSrc"
 
   # Normalize destination file by stripping fake, for comparison
-   if [ -f "$destFile" ]; then
-  sed -E 's/import[[:space:]]+jakarta\.fake\./import jakarta./g' "$destFile" > "$tmpDest"
+  if [ -f "$destFile" ]; then
+    sed -E 's/import[[:space:]]+jakarta\.fake\./import jakarta./g' "$destFile" > "$tmpDest"
   fi
 
   # Compare normalized files
