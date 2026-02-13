@@ -9,8 +9,11 @@ SRC_PRJ="jakarta-sample"
 DEST_PRJ="demo-servlet-no-diagnostics"
 PRJ_DIR="src/main/java/io/openliberty/sample/jakarta"
 
-SRC_DIR="$BASE_DIR/$SRC_PRJ/$PRJ_DIR"
-DEST_DIR="$BASE_DIR/$DEST_PRJ/$PRJ_DIR"
+DEFAULT_SRC_DIR="$BASE_DIR/$SRC_PRJ/$PRJ_DIR"
+DEFAULT_DEST_DIR="$BASE_DIR/$DEST_PRJ/$PRJ_DIR"
+
+SRC_DIR="${1:-$DEFAULT_SRC_DIR}"
+DEST_DIR="${2:-$DEFAULT_DEST_DIR}"
 
 echo "Syncing files from $SRC_DIR to $DEST_DIR with fake imports..."
 
