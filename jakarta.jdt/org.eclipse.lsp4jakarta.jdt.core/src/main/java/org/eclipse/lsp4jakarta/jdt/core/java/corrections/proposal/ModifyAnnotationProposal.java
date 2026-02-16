@@ -19,9 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -31,13 +29,13 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -325,7 +323,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             if (annotationToProcess == null) {
                 // We are adding a new required default @Resource annotation to an empty
                 // @Resources annotation.
-                addNewAttributes(ast, values);
+                addNewAttributes(ast, values, annotationToProcess);
             } else {
                 // get the existing name/value pairs from the existing NormalAnnotation that was
                 // passed into this method above
@@ -380,7 +378,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                 }
 
                 // now add the attribute for this quickfix action to the new NormalAnnotation
-                values = addNewAttributes(ast, values);
+                values = addNewAttributes(ast, values, annotationToProcess);
             }
         }
         return newNormalAnnotation;
@@ -394,31 +392,33 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
         marker.setTypeName(ast.newName(imports.addImport(annotation, importRWCtx)));
         List<MemberValuePair> values = marker.values();
 
-        values = addNewAttributes(ast, values);
+        values = addNewAttributes(ast, values, marker);
 
         return marker;
 
     }
 
-    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values) {
-        // Add new attributes of type String or Class.
-        // For initial values, we use empty strings for String types and Object.class for Class types,
-        // since the user's intended values are unknown at this stage,
-        // These placeholders (e.g., name = "", type = Object.class) must be updated by the user as needed.
-        // when an annotation in Jakarta EE declares an attribute named type, it’s always of the form of Class<?>
+    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values, NormalAnnotation annotationToProcess) {
 
+        ITypeBinding annotationBinding = annotationToProcess.resolveTypeBinding();
+        ModifyAnnotationProposalHelper helper = new ModifyAnnotationProposalHelper();
         for (String newAttr : this.attributesToAdd) {
+
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-                if ("type".equals(newAttr)) {
-                    TypeLiteral typeLiteral = ast.newTypeLiteral();
-                    typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
-                    newMemberValuePair.setValue(typeLiteral);
-                } else {
-                    StringLiteral stringValue = ast.newStringLiteral();
-                    stringValue.setLiteralValue("");
-                    newMemberValuePair.setValue(stringValue);
+
+                IMethodBinding attributeMethod = helper.findAttributeMethod(annotationBinding, newAttr);
+                if (attributeMethod != null) {
+                    Object defaultVal = attributeMethod.getDefaultValue();
+                    Expression valueExpr;
+                    if (defaultVal != null) {
+                        valueExpr = helper.convertObjectToExpression(ast, defaultVal);
+                    } else {
+                        ITypeBinding returnType = attributeMethod.getReturnType();
+                        valueExpr = helper.createDefaultValue(ast, returnType);
+                    }
+                    newMemberValuePair.setValue(valueExpr);
                 }
                 values.add(newMemberValuePair);
             }
