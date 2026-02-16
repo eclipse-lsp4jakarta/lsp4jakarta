@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation and others.
+ * Copyright (c) 2021, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -104,5 +104,30 @@ public class DependencyInjectionTest extends BaseJakartaTest {
         te1 = te(48, 10, 48, 17, "");
         ca1 = ca(uri, "Remove the 'static' modifier", d5, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca, ca1);
+    }
+
+    @Test
+    public void InvalidScopeAttributesOnType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidScopeAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Create expected diagnostics.
+        Diagnostic d1 = d(7, 25, 31,
+                          "A scope annotated class should not have attributes.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
+
+        Diagnostic d2 = d(9, 8, 13,
+                          "A scope annotated class should not have attributes.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
+
+        Diagnostic d3 = d(11, 5, 10,
+                          "A scope annotated class should not have attributes.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
 }
