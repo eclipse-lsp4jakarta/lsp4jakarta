@@ -397,13 +397,16 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
     private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values, String annotationFqn, NormalAnnotation annotationToProcess) {
 
-        ModifyAnnotationProposalHelper helper = new ModifyAnnotationProposalHelper();
         for (String newAttr : this.attributesToAdd) {
 
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-                Expression valueExpr = helper.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(), annotationFqn);
+                // Returns the default AST {@link Expression} for an annotation attribute.
+                // If the attribute has a declared default, that is used. Otherwise, a
+                // custom default is created based on the attribute type.
+                Expression valueExpr = ModifyAnnotationProposalHelper.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(),
+                                                                                                annotationFqn);
                 if (valueExpr != null) {
                     newMemberValuePair.setValue(valueExpr);
                 }

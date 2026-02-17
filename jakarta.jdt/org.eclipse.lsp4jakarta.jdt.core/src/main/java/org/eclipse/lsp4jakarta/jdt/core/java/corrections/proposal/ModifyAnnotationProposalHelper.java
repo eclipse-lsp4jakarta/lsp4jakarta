@@ -52,11 +52,11 @@ public class ModifyAnnotationProposalHelper {
      * @param annotationFqn
      * @return
      */
-    public Expression findDefaultAttributeValue(NormalAnnotation annotationToProcess,
-                                                String attrName,
-                                                AST ast,
-                                                IJavaProject iJavaProject,
-                                                String annotationFqn) {
+    public static Expression findDefaultAttributeValue(NormalAnnotation annotationToProcess,
+                                                       String attrName,
+                                                       AST ast,
+                                                       IJavaProject iJavaProject,
+                                                       String annotationFqn) {
         ITypeBinding annotationBinding = null;
         if (null != annotationToProcess) {
             annotationBinding = annotationToProcess.resolveTypeBinding();
@@ -98,9 +98,9 @@ public class ModifyAnnotationProposalHelper {
      * @return
      * @throws Exception
      */
-    private Expression createCustomDefaultValue(IType annotationType,
-                                                String attributeName,
-                                                AST ast) throws Exception {
+    private static Expression createCustomDefaultValue(IType annotationType,
+                                                       String attributeName,
+                                                       AST ast) throws Exception {
         for (IMethod method : annotationType.getMethods()) {
             if (method.getElementName().equals(attributeName)) {
                 String sig = method.getReturnType();
@@ -119,7 +119,7 @@ public class ModifyAnnotationProposalHelper {
      * @param defaultVal
      * @return
      */
-    private Expression convertObjectToExpression(AST ast, Object defaultVal) {
+    private static Expression convertObjectToExpression(AST ast, Object defaultVal) {
         if (defaultVal instanceof Boolean) {
             return ast.newBooleanLiteral((Boolean) defaultVal);
         }
@@ -166,7 +166,7 @@ public class ModifyAnnotationProposalHelper {
      * @param typeBinding
      * @return
      */
-    private Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
+    private static Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
         if (typeBinding == null)
             return ast.newNullLiteral();
         if (typeBinding.isArray())
