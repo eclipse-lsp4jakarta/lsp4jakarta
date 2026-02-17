@@ -12,6 +12,13 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
@@ -20,106 +27,103 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 
 /**
  * ModifyAnnotationProposalHelper
- * Helper class for handling utility methods of the ModifyAnnotationProposal
  */
 public class ModifyAnnotationProposalHelper {
 
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(ModifyAnnotationProposalHelper.class.getName());
 
-
-	
     /**
-     * findAttributeMethod
-     * Returns the annotation attribute method matching the given name
+     * findDefaultAttributeValue
+     * Returns the default AST {@link Expression} for an annotation attribute.
+     * If the attribute has a declared default, that is used. Otherwise, a
+     * custom default is created based on the attribute type.
      *
-     * @param annotationBinding
+     * @param annotationToProcess
      * @param attrName
+     * @param ast
+     * @param iJavaProject
+     * @param annotationFqn
      * @return
      */
-    public IMethodBinding findAttributeMethod(ITypeBinding annotationBinding, String attrName) {
-        if (annotationBinding == null) {
-            return null;
+    public Expression findDefaultAttributeValue(NormalAnnotation annotationToProcess,
+                                                String attrName,
+                                                AST ast,
+                                                IJavaProject iJavaProject,
+                                                String annotationFqn) {
+        ITypeBinding annotationBinding = null;
+        if (null != annotationToProcess) {
+            annotationBinding = annotationToProcess.resolveTypeBinding();
         }
-        for (IMethodBinding method : annotationBinding.getDeclaredMethods()) {
-            if (method.getName().equals(attrName)) {
-                return method;
+
+        // Case 1: new annotation (binding not yet available)
+        if (annotationBinding == null) {
+            try {
+                IType annotationType = iJavaProject.findType(annotationFqn);
+                return createCustomDefaultValue(annotationType, attrName, ast);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Unable to create Default Attribute Value", e);
+                return ast.newNullLiteral();
             }
         }
-        return null;
+
+        // Case 2: existing annotation with binding
+        for (IMethodBinding method : annotationBinding.getDeclaredMethods()) {
+            if (method.getName().equals(attrName)) {
+                Object defaultVal = method.getDefaultValue();
+                if (defaultVal != null) {
+                    return convertObjectToExpression(ast, defaultVal);
+                } else {
+                    return createCustomDefaultValue(ast, method.getReturnType());
+                }
+            }
+        }
+        return ast.newNullLiteral();
     }
 
     /**
-     * createDefaultValue
-     * Creates a default AST {@link Expression} for the given {@link ITypeBinding}.
+     * createCustomDefaultValue
+     * Finds an annotation attribute by name and returns a custom default
+     * value expression based on its return type.
      *
+     * @param annotationType
+     * @param attributeName
      * @param ast
-     * @param typeBinding
      * @return
+     * @throws Exception
      */
-    public Expression createDefaultValue(AST ast,
-                                         ITypeBinding typeBinding) {
-        if (typeBinding == null) {
-            return ast.newNullLiteral();
-
-        }
-        if (typeBinding.isArray()) {
-            ArrayInitializer initializer = ast.newArrayInitializer();
-            return initializer;
-        }
-
-        if (typeBinding.isPrimitive()) {
-            String name = typeBinding.getName();
-            switch (name) {
-                case "boolean":
-                    return ast.newBooleanLiteral(false);
-                case "long":
-                    return ast.newNumberLiteral("0L");
-                case "float":
-                    return ast.newNumberLiteral("0f");
-                case "double":
-                    return ast.newNumberLiteral("0d");
-                case "char":
-                    CharacterLiteral ch = ast.newCharacterLiteral();
-                    ch.setCharValue('\0');
-                    return ch;
-                default:
-                    return ast.newNumberLiteral("0");
+    private Expression createCustomDefaultValue(IType annotationType,
+                                                String attributeName,
+                                                AST ast) throws Exception {
+        for (IMethod method : annotationType.getMethods()) {
+            if (method.getElementName().equals(attributeName)) {
+                String sig = method.getReturnType();
+                String readableType = Signature.toString(sig);
+                return createDefaultValueForType(readableType, ast);
             }
         }
-        String qualifiedName = typeBinding.getQualifiedName();
-        if ("java.lang.String".equals(qualifiedName)) {
-            StringLiteral literal = ast.newStringLiteral();
-            literal.setLiteralValue("");
-            return literal;
-        }
-        if ("java.lang.Class".equals(typeBinding.getErasure().getQualifiedName())) {
-            TypeLiteral typeLiteral = ast.newTypeLiteral();
-            typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
-            return typeLiteral;
-        }
         return ast.newNullLiteral();
-
     }
 
     /**
      * convertObjectToExpression
-     * Converts a plain object into an AST {@link Expression} based on its associated type.
+     * Converts a plain object into an AST {@link Expression}.
      *
      * @param ast
      * @param defaultVal
      * @return
      */
-    public Expression convertObjectToExpression(AST ast, Object defaultVal) {
-
+    private Expression convertObjectToExpression(AST ast, Object defaultVal) {
         if (defaultVal instanceof Boolean) {
             return ast.newBooleanLiteral((Boolean) defaultVal);
         }
-        if (defaultVal instanceof Byte || defaultVal instanceof Short || defaultVal instanceof Integer
-            || defaultVal instanceof Long || defaultVal instanceof Float || defaultVal instanceof Double) {
+        if (defaultVal instanceof Number) {
             return ast.newNumberLiteral(defaultVal.toString());
         }
         if (defaultVal instanceof Character) {
@@ -142,19 +146,73 @@ public class ModifyAnnotationProposalHelper {
         if (defaultVal instanceof IVariableBinding) {
             IVariableBinding var = (IVariableBinding) defaultVal;
             if (var.isEnumConstant()) {
-                ITypeBinding declaringClass = var.getDeclaringClass();
-                Name enumTypeName = ast.newName(declaringClass.getName());
+                Name enumTypeName = ast.newName(var.getDeclaringClass().getName());
                 return ast.newQualifiedName(enumTypeName, ast.newSimpleName(var.getName()));
             }
         }
         if (defaultVal instanceof ITypeBinding) {
-            ITypeBinding typeBinding = (ITypeBinding) defaultVal;
             TypeLiteral typeLiteral = ast.newTypeLiteral();
-            typeLiteral.setType(ast.newSimpleType(ast.newSimpleName(typeBinding.getName())));
+            typeLiteral.setType(ast.newSimpleType(ast.newSimpleName(((ITypeBinding) defaultVal).getName())));
             return typeLiteral;
         }
-
-        // Fallback
         return ast.newNullLiteral();
+    }
+
+    /**
+     * createCustomDefaultValue
+     * Creates a custom default value expression for a given type binding.
+     *
+     * @param ast
+     * @param typeBinding
+     * @return
+     */
+    private Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
+        if (typeBinding == null)
+            return ast.newNullLiteral();
+        if (typeBinding.isArray())
+            return ast.newArrayInitializer();
+        return createDefaultValueForType(typeBinding.getQualifiedName(), ast);
+    }
+
+    /**
+     * createDefaultValueForType
+     * Creates a synthetic default value expression based on a type name string.
+     *
+     * @param typeName
+     * @param ast
+     * @return
+     */
+    private static Expression createDefaultValueForType(String typeName, AST ast) {
+        switch (typeName) {
+            case "byte":
+            case "short":
+            case "int":
+                return ast.newNumberLiteral("0");
+            case "long":
+                return ast.newNumberLiteral("0L");
+            case "float":
+                return ast.newNumberLiteral("0f");
+            case "double":
+                return ast.newNumberLiteral("0d");
+            case "boolean":
+                return ast.newBooleanLiteral(false);
+            case "char":
+                CharacterLiteral ch = ast.newCharacterLiteral();
+                ch.setCharValue('\0');
+                return ch;
+            case "java.lang.String":
+                StringLiteral str = ast.newStringLiteral();
+                str.setLiteralValue("");
+                return str;
+            case "java.lang.Class<?>":
+                TypeLiteral typeLiteral = ast.newTypeLiteral();
+                typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
+                return typeLiteral;
+            default:
+                if (typeName.endsWith("[]")) {
+                    return ast.newArrayInitializer();
+                }
+                return ast.newNullLiteral();
+        }
     }
 }

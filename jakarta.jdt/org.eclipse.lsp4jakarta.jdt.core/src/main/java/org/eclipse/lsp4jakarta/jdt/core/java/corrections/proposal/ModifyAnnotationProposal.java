@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation and others.
+ * Copyright (c) 2021, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,8 +29,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
@@ -323,7 +321,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             if (annotationToProcess == null) {
                 // We are adding a new required default @Resource annotation to an empty
                 // @Resources annotation.
-                addNewAttributes(ast, values, annotationToProcess);
+                addNewAttributes(ast, values, annotation, annotationToProcess);
             } else {
                 // get the existing name/value pairs from the existing NormalAnnotation that was
                 // passed into this method above
@@ -378,7 +376,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                 }
 
                 // now add the attribute for this quickfix action to the new NormalAnnotation
-                values = addNewAttributes(ast, values, annotationToProcess);
+                values = addNewAttributes(ast, values, annotation, annotationToProcess);
             }
         }
         return newNormalAnnotation;
@@ -391,33 +389,22 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         marker.setTypeName(ast.newName(imports.addImport(annotation, importRWCtx)));
         List<MemberValuePair> values = marker.values();
-
-        values = addNewAttributes(ast, values, marker);
+        values = addNewAttributes(ast, values, annotation, marker);
 
         return marker;
 
     }
 
-    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values, NormalAnnotation annotationToProcess) {
+    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values, String annotationFqn, NormalAnnotation annotationToProcess) {
 
-        ITypeBinding annotationBinding = annotationToProcess.resolveTypeBinding();
         ModifyAnnotationProposalHelper helper = new ModifyAnnotationProposalHelper();
         for (String newAttr : this.attributesToAdd) {
 
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-
-                IMethodBinding attributeMethod = helper.findAttributeMethod(annotationBinding, newAttr);
-                if (attributeMethod != null) {
-                    Object defaultVal = attributeMethod.getDefaultValue();
-                    Expression valueExpr;
-                    if (defaultVal != null) {
-                        valueExpr = helper.convertObjectToExpression(ast, defaultVal);
-                    } else {
-                        ITypeBinding returnType = attributeMethod.getReturnType();
-                        valueExpr = helper.createDefaultValue(ast, returnType);
-                    }
+                Expression valueExpr = helper.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(), annotationFqn);
+                if (valueExpr != null) {
                     newMemberValuePair.setValue(valueExpr);
                 }
                 values.add(newMemberValuePair);
