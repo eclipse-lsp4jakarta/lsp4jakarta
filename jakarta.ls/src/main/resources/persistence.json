@@ -158,7 +158,7 @@
 	    ],
 	    "description": "Persistence entity listener",
 	    "context": {
-	        "type": "jakarta.persistence.Entity",
+	        "type": "jakarta.persistence.EntityListeners",
 			"contentType": "class"
 	    }
 	}
