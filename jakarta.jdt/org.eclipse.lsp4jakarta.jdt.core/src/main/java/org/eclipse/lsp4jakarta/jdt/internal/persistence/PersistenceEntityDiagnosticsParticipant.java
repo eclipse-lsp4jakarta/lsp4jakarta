@@ -124,48 +124,48 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
 
-					IAnnotation[] fieldAnnotations = field.getAnnotations();
-					IAnnotation id = null, temporal = null;
+                    IAnnotation[] fieldAnnotations = field.getAnnotations();
+                    IAnnotation id = null, temporal = null;
 
-					for (IAnnotation fieldAnnotation : fieldAnnotations) {
-						String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
-								fieldAnnotation.getElementName(),
-								Constants.SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS);
-						if (matchedAnnotation != null) {
-							if (matchedAnnotation.equals(Constants.ID)) {
-								id = fieldAnnotation;
-							} else if (matchedAnnotation.equals(Constants.TEMPORAL)) {
-								temporal = fieldAnnotation;
-							}
-						}
-					}
+                    for (IAnnotation fieldAnnotation : fieldAnnotations) {
+                        String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                             fieldAnnotation.getElementName(),
+                                                                                             Constants.SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS);
+                        if (matchedAnnotation != null) {
+                            if (matchedAnnotation.equals(Constants.ID)) {
+                                id = fieldAnnotation;
+                            } else if (matchedAnnotation.equals(Constants.TEMPORAL)) {
+                                temporal = fieldAnnotation;
+                            }
+                        }
+                    }
 
-					if (id != null) {
-						String fieldTypeFQ = JDTTypeUtils.getResolvedTypeName(field);
-						if (fieldTypeFQ.equals(Constants.UTIL_DATE)) {
-							if (temporal != null) {
-								// Check value
-								IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
-								for (IMemberValuePair pair : memberValuePairs) {
-									if (!isValidTemporalDateValue(pair)) {
-										// Add diagnostics for invalid type
-										Range range = PositionUtils.toNameRange(temporal, context.getUtils());
-										diagnostics.add(context.createDiagnostic(uri,
-												Messages.getMessage("InvalidValueInTemporalAnnotation"), range,
-												Constants.DIAGNOSTIC_SOURCE, null,
-												ErrorCode.InvalidValueInTemporalAnnotation, DiagnosticSeverity.Error));
-									}
-								}
-							} else {
-								// Add diagnostics for missing annotation
-								Range range = PositionUtils.toNameRange(field, context.getUtils());
-								diagnostics.add(context.createDiagnostic(uri,
-										Messages.getMessage("MissingTemporalAnnotation"), range,
-										Constants.DIAGNOSTIC_SOURCE, null,
-										ErrorCode.MissingTemporalAnnotation, DiagnosticSeverity.Error));
-							}
-						}
-					}
+                    if (id != null) {
+                        String fieldTypeFQ = JDTTypeUtils.getResolvedTypeName(field);
+                        if (fieldTypeFQ.equals(Constants.UTIL_DATE)) {
+                            if (temporal != null) {
+                                // Check value
+                                IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
+                                for (IMemberValuePair pair : memberValuePairs) {
+                                    if (!isValidTemporalDateValue(pair)) {
+                                        // Add diagnostics for invalid type
+                                        Range range = PositionUtils.toNameRange(temporal, context.getUtils());
+                                        diagnostics.add(context.createDiagnostic(uri,
+                                                                                 Messages.getMessage("InvalidValueInTemporalAnnotation"), range,
+                                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                                 ErrorCode.InvalidValueInTemporalAnnotation, DiagnosticSeverity.Error));
+                                    }
+                                }
+                            } else {
+                                // Add diagnostics for missing annotation
+                                Range range = PositionUtils.toNameRange(field, context.getUtils());
+                                diagnostics.add(context.createDiagnostic(uri,
+                                                                         Messages.getMessage("MissingTemporalAnnotation"), range,
+                                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                                         ErrorCode.MissingTemporalAnnotation, DiagnosticSeverity.Error));
+                            }
+                        }
+                    }
                 }
 
                 // Ensure that the Entity class is not given a final modifier
@@ -195,16 +195,15 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         return diagnostics;
     }
 
-    
     private boolean isValidTemporalDateValue(IMemberValuePair pair) {
-    	String memberName = pair.getMemberName();
+        String memberName = pair.getMemberName();
         Object value = pair.getValue();
         int valueKind = pair.getValueKind();
-        
-        return "value".equals(memberName) && valueKind == IMemberValuePair.K_QUALIFIED_NAME 
-        		&& ((String)value).equals(Constants.TEMPORAL_TYPE_DATE);
+
+        return "value".equals(memberName) && valueKind == IMemberValuePair.K_QUALIFIED_NAME
+               && ((String) value).equals(Constants.TEMPORAL_TYPE_DATE);
     }
-    
+
     /**
      * check if the modifier provided is static
      *
