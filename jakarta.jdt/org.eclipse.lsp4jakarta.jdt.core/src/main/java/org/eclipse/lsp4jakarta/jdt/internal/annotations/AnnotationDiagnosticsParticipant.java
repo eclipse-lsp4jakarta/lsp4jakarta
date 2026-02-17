@@ -14,7 +14,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.annotations;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
@@ -60,9 +59,6 @@ import com.google.gson.JsonArray;
  *
  */
 public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
-
-    /** Logger object to record events for this class. */
-    private static final Logger LOGGER = Logger.getLogger(AnnotationDiagnosticsParticipant.class.getName());
 
     /**
      * {@inheritDoc}

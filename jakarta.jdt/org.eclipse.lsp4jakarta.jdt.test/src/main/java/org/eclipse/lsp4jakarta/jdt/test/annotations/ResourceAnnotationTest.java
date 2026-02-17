@@ -55,19 +55,19 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         Diagnostic d2 = d(39, 0, 30, "The @Resource annotation must define the attribute 'name'.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
 
-        Diagnostic d3 = d(44, 4, 13, "The @Resource method 'setStudentId' MUST follow the standard JavaBeans convention: must declare exactly one parameter.",
+        Diagnostic d3 = d(44, 4, 13, "The @Resource method 'setStudentId' must follow the standard JavaBeans convention: must declare exactly one parameter.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MustDeclareExactlyOneParam");
 
-        Diagnostic d4 = d(49, 4, 13, "The @Resource method 'getStudentId' MUST follow the standard JavaBeans convention: method name must start with set.",
+        Diagnostic d4 = d(49, 4, 13, "The @Resource method 'getStudentId' must follow the standard JavaBeans convention: method name must start with set.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "NameMustStartWithSet");
 
-        Diagnostic d5 = d(54, 4, 13, "The @Resource method 'setIsHappy' MUST follow the standard JavaBeans convention: return type must be void.",
+        Diagnostic d5 = d(54, 4, 13, "The @Resource method 'setIsHappy' must follow the standard JavaBeans convention: return type must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ReturnTypeMustBeVoid");
 
-        Diagnostic d6 = d(59, 4, 13, "The @Resource method 'setStudentId' MUST follow the standard JavaBeans convention: must be public.",
+        Diagnostic d6 = d(59, 4, 13, "The @Resource method 'setStudentId' must follow the standard JavaBeans convention: must be public.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MethodMustBePublic");
 
-        Diagnostic d7 = d(64, 4, 13, "The @Resource method 'setIsHappy1' MUST follow the standard JavaBeans convention: method must contain property name.",
+        Diagnostic d7 = d(64, 4, 13, "The @Resource method 'setIsHappy1' must follow the standard JavaBeans convention: method must contain property name.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "FieldMustExistInSetter");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d5, d4, d6, d7);
@@ -94,22 +94,22 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // expected annotations
-        Diagnostic d1 = d(8, 1, 51, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d1 = d(8, 1, 51, "Type of the field must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
-        Diagnostic d2 = d(17, 1, 33, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d2 = d(17, 1, 33, "Type of the field must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
-        Diagnostic d3 = d(23, 1, 33, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d3 = d(23, 1, 33, "Type of the field must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
-        Diagnostic d4 = d(26, 1, 32, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d4 = d(26, 1, 32, "Type of the field must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
-        Diagnostic d5 = d(44, 4, 34, "Type of the parameter MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d5 = d(44, 4, 34, "Type of the parameter must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
-        Diagnostic d6 = d(49, 4, 35, "Type of the parameter MUST be compatible with the type element of the Resource annotation, if specified.",
+        Diagnostic d6 = d(49, 4, 35, "Type of the parameter must be compatible with the type element of the Resource annotation, if specified.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
