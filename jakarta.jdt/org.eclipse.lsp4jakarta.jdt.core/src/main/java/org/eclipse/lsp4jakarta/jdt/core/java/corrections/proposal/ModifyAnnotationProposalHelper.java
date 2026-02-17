@@ -77,7 +77,7 @@ public class ModifyAnnotationProposalHelper {
         for (IMethodBinding method : annotationBinding.getDeclaredMethods()) {
             if (method.getName().equals(attrName)) {
                 Object defaultVal = method.getDefaultValue();
-                if (defaultVal == null) {
+                if (defaultVal != null) {
                     return convertObjectToExpression(ast, defaultVal);
                 } else {
                     return createCustomDefaultValue(ast, method.getReturnType());
