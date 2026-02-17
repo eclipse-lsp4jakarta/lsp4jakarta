@@ -77,7 +77,7 @@ public class ModifyAnnotationProposalHelper {
         for (IMethodBinding method : annotationBinding.getDeclaredMethods()) {
             if (method.getName().equals(attrName)) {
                 Object defaultVal = method.getDefaultValue();
-                if (defaultVal != null) {
+                if (defaultVal == null) {
                     return convertObjectToExpression(ast, defaultVal);
                 } else {
                     return createCustomDefaultValue(ast, method.getReturnType());
@@ -167,10 +167,23 @@ public class ModifyAnnotationProposalHelper {
      * @return
      */
     private static Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
-        if (typeBinding == null)
+        if (typeBinding == null) {
             return ast.newNullLiteral();
-        if (typeBinding.isArray())
+        }
+        if (typeBinding.isArray()) {
             return ast.newArrayInitializer();
+        }
+        if (typeBinding.isEnum()) {
+            for (IVariableBinding field : typeBinding.getDeclaredFields()) {
+                if (field.isEnumConstant()) {
+                    // Use the first enum constant as a default value
+                    return ast.newQualifiedName(
+                                                ast.newSimpleName(typeBinding.getName()),
+                                                ast.newSimpleName(field.getName()));
+                }
+            }
+        }
+
         return createDefaultValueForType(typeBinding.getQualifiedName(), ast);
     }
 
