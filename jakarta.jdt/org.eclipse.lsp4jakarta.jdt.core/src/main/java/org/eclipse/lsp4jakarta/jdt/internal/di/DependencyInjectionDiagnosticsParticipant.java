@@ -82,9 +82,9 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
             for (IField field : allFields) {
                 Range range = PositionUtils.toNameRange(field,
                                                         context.getUtils());
-                //Generates error message whenever it encounters a field written in @Scope type class.
+                //Generates error message whenever it encounters a field written inside Scope annotation.
                 if (containsScope) {
-                    String msg = Messages.getMessage("InvalidScopeAttributesOnType");
+                    String msg = Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName());
                     diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidScopeAttributes,
                                                              DiagnosticSeverity.Error));
@@ -116,9 +116,9 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
 
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 int methodFlag = method.getFlags();
-                //Generates error message whenever it encounters a method written in @Scope type class.
+                //Generates error message whenever it encounters a method written inside Scope annotation.
                 if (containsScope) {
-                    String msg = Messages.getMessage("InvalidScopeAttributesOnType");
+                    String msg = Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName());
                     diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidScopeAttributes,
                                                              DiagnosticSeverity.Error));
