@@ -1,6 +1,6 @@
 # This script is used for syncing up jakarta-sample and demo-servlet-no-diagnostics project automatically. 
 # It should run at the root directory of lsp4jakarta before code check-in.
-# This can also be called first in buildAll.sh which will be ran anyway before check-in.
+# Recommended to be ran before buildAll.sh.
 #!/bin/bash
 set -e
 
