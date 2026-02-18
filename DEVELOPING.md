@@ -67,7 +67,7 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 
         <img src="/docs/images/building_lsp4e_4.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
 
-## Commit process
+## Autogenerate No diagnostics test cases
 
 1. Add your code changes and dataset addition/modification used for testing in jakarta-sample project.
 
@@ -78,16 +78,6 @@ The following instructions explain how to set up your Eclipse IDE workspace.
     2. Don't pass any arguments: bash syncTestDatasets.sh - Takes the latest changes for all the java files inside jakarta-sample project and syncs it with demo-servlet-no-diagnostics project with fake imports.
 
 3. bash buildAll.sh - Checks if project builds fine.
-
-4. Stage the changes and put an appropriate commit message.
-
-5. Do a signed commit for the verified commit to appear in github.
-
-6. Merge and raise PR.
-
-7. Once the reviewers have resolved comment(s) if any and approved PR, it will be merged by the committers.
-
-8. Close the associated issue in the repository.
 
 ## Common Errors 
 
