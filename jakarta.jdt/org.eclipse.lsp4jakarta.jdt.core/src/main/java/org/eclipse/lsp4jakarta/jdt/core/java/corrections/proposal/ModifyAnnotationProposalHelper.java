@@ -68,7 +68,7 @@ public class ModifyAnnotationProposalHelper {
                 IType annotationType = iJavaProject.findType(annotationFqn);
                 return createCustomDefaultValue(annotationType, attrName, ast);
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unable to create Default Attribute Value", e);
+                logUnableToCreateDefaultValue();
                 return ast.newNullLiteral();
             }
         }
@@ -84,7 +84,7 @@ public class ModifyAnnotationProposalHelper {
                 }
             }
         }
-        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
+        logUnableToCreateDefaultValue();
         return ast.newNullLiteral();
     }
 
@@ -109,7 +109,7 @@ public class ModifyAnnotationProposalHelper {
                 return createDefaultValueForType(readableType, ast);
             }
         }
-        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
+        logUnableToCreateDefaultValue();
         return ast.newNullLiteral();
     }
 
@@ -186,7 +186,7 @@ public class ModifyAnnotationProposalHelper {
             typeLiteral.setType(ast.newSimpleType(ast.newSimpleName(((ITypeBinding) defaultVal).getName())));
             return typeLiteral;
         }
-        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
+        logUnableToCreateDefaultValue();
         return ast.newNullLiteral();
     }
 
@@ -231,8 +231,15 @@ public class ModifyAnnotationProposalHelper {
                 if (typeName.endsWith("[]")) {
                     return ast.newArrayInitializer();
                 }
-                LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
+                logUnableToCreateDefaultValue();
                 return ast.newNullLiteral();
         }
+    }
+
+    /**
+     * log if Unable To Create DefaultValue
+     */
+    private static void logUnableToCreateDefaultValue() {
+        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
     }
 }
