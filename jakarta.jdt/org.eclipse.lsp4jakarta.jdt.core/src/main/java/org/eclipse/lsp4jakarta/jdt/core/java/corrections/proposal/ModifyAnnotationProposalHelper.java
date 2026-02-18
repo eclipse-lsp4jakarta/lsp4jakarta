@@ -84,6 +84,7 @@ public class ModifyAnnotationProposalHelper {
                 }
             }
         }
+        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
         return ast.newNullLiteral();
     }
 
@@ -108,7 +109,37 @@ public class ModifyAnnotationProposalHelper {
                 return createDefaultValueForType(readableType, ast);
             }
         }
+        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
         return ast.newNullLiteral();
+    }
+
+    /**
+     * createCustomDefaultValue
+     * Creates a custom default value expression for a given type binding.
+     *
+     * @param ast
+     * @param typeBinding
+     * @return
+     */
+    private static Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
+        if (typeBinding == null) {
+            return ast.newNullLiteral();
+        }
+        if (typeBinding.isArray()) {
+            return ast.newArrayInitializer();
+        }
+        if (typeBinding.isEnum()) {
+            for (IVariableBinding field : typeBinding.getDeclaredFields()) {
+                if (field.isEnumConstant()) {
+                    // Use the first enum constant as a default value
+                    return ast.newQualifiedName(
+                                                ast.newSimpleName(typeBinding.getName()),
+                                                ast.newSimpleName(field.getName()));
+                }
+            }
+        }
+
+        return createDefaultValueForType(typeBinding.getQualifiedName(), ast);
     }
 
     /**
@@ -155,36 +186,8 @@ public class ModifyAnnotationProposalHelper {
             typeLiteral.setType(ast.newSimpleType(ast.newSimpleName(((ITypeBinding) defaultVal).getName())));
             return typeLiteral;
         }
+        LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
         return ast.newNullLiteral();
-    }
-
-    /**
-     * createCustomDefaultValue
-     * Creates a custom default value expression for a given type binding.
-     *
-     * @param ast
-     * @param typeBinding
-     * @return
-     */
-    private static Expression createCustomDefaultValue(AST ast, ITypeBinding typeBinding) {
-        if (typeBinding == null) {
-            return ast.newNullLiteral();
-        }
-        if (typeBinding.isArray()) {
-            return ast.newArrayInitializer();
-        }
-        if (typeBinding.isEnum()) {
-            for (IVariableBinding field : typeBinding.getDeclaredFields()) {
-                if (field.isEnumConstant()) {
-                    // Use the first enum constant as a default value
-                    return ast.newQualifiedName(
-                                                ast.newSimpleName(typeBinding.getName()),
-                                                ast.newSimpleName(field.getName()));
-                }
-            }
-        }
-
-        return createDefaultValueForType(typeBinding.getQualifiedName(), ast);
     }
 
     /**
@@ -217,14 +220,18 @@ public class ModifyAnnotationProposalHelper {
                 StringLiteral str = ast.newStringLiteral();
                 str.setLiteralValue("");
                 return str;
-            case "java.lang.Class<?>":
-                TypeLiteral typeLiteral = ast.newTypeLiteral();
-                typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
-                return typeLiteral;
             default:
+                // Handle Class types (java.lang.Class, Class<?>, Class<? extends Foo>)
+                if (typeName.startsWith("java.lang.Class") || typeName.startsWith("Class")) {
+                    TypeLiteral typeLiteral = ast.newTypeLiteral();
+                    typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
+                    return typeLiteral;
+                }
+                // Handle arrays (including multi-dimensional and generic arrays)
                 if (typeName.endsWith("[]")) {
                     return ast.newArrayInitializer();
                 }
+                LOGGER.log(Level.WARNING, "Unable to create Default Attribute Value");
                 return ast.newNullLiteral();
         }
     }
