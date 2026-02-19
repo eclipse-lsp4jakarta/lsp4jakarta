@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020, 2023 IBM Corporation, Ankush Sharma and others.
+* Copyright (c) 2020, 2026 IBM Corporation, Ankush Sharma and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.lsp4j.Diagnostic;
@@ -37,6 +38,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -121,6 +123,49 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
                                                                  ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
+
+                    IAnnotation[] fieldAnnotations = field.getAnnotations();
+                    IAnnotation id = null, temporal = null;
+
+                    for (IAnnotation fieldAnnotation : fieldAnnotations) {
+                        String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                             fieldAnnotation.getElementName(),
+                                                                                             Constants.SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS);
+                        if (matchedAnnotation != null) {
+                            if (matchedAnnotation.equals(Constants.ID)) {
+                                id = fieldAnnotation;
+                            } else if (matchedAnnotation.equals(Constants.TEMPORAL)) {
+                                temporal = fieldAnnotation;
+                            }
+                        }
+                    }
+
+                    if (id != null) {
+                        String fieldTypeFQ = JDTTypeUtils.getResolvedTypeName(field);
+                        if (fieldTypeFQ.equals(Constants.UTIL_DATE)) {
+                            if (temporal != null) {
+                                // Check value
+                                IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
+                                for (IMemberValuePair pair : memberValuePairs) {
+                                    if (!isValidTemporalDateValue(pair)) {
+                                        // Add diagnostics for invalid type
+                                        Range range = PositionUtils.toNameRange(temporal, context.getUtils());
+                                        diagnostics.add(context.createDiagnostic(uri,
+                                                                                 Messages.getMessage("InvalidValueInTemporalAnnotation"), range,
+                                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                                 ErrorCode.InvalidValueInTemporalAnnotation, DiagnosticSeverity.Error));
+                                    }
+                                }
+                            } else {
+                                // Add diagnostics for missing annotation
+                                Range range = PositionUtils.toNameRange(field, context.getUtils());
+                                diagnostics.add(context.createDiagnostic(uri,
+                                                                         Messages.getMessage("MissingTemporalAnnotation"), range,
+                                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                                         ErrorCode.MissingTemporalAnnotation, DiagnosticSeverity.Error));
+                            }
+                        }
+                    }
                 }
 
                 // Ensure that the Entity class is not given a final modifier
@@ -148,6 +193,15 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         return diagnostics;
+    }
+
+    private boolean isValidTemporalDateValue(IMemberValuePair pair) {
+        String memberName = pair.getMemberName();
+        Object value = pair.getValue();
+        int valueKind = pair.getValueKind();
+
+        return "value".equals(memberName) && valueKind == IMemberValuePair.K_QUALIFIED_NAME
+               && ((String) value).equals(Constants.TEMPORAL_TYPE_DATE);
     }
 
     /**
