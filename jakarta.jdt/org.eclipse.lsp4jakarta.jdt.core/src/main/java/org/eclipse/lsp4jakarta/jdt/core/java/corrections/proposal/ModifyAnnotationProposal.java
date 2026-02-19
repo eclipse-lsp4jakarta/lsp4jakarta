@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation and others.
+ * Copyright (c) 2021, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,25 +19,21 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -114,7 +110,6 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         boolean isField = declNode instanceof VariableDeclarationFragment;
         boolean isSingleVarDecl = declNode instanceof SingleVariableDeclaration;
-        boolean isSingleMemberAnnotation = declNode instanceof SingleMemberAnnotation;
 
         if (isField) {
             declNode = declNode.getParent();
@@ -130,27 +125,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
             List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
 
-            // for all existing annotations (that are the annotation we want)
-            for (ASTNode child : children) {
-                if (child instanceof Annotation) {
-                    Annotation annotation = (Annotation) child;
-                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::contains);
-
-                    // check if current child annotation has all attributes to add already or any to
-                    // remove
-                    if (containsAnnotation && child instanceof NormalAnnotation) {
-                        List<String> existingValues = (List<String>) ((NormalAnnotation) child).values().stream().map(mvp -> ((MemberValuePair) mvp).getName().toString()).collect(toList());
-
-                        boolean containsAllToAdd = this.attributesToAdd.stream().allMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
-                        boolean containsAnyToRemove = this.attributesToRemove.stream().anyMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
-
-                        if (!containsAllToAdd || containsAnyToRemove) {
-                            existingAnnotations.add(annotation);
-                            rewrite.remove(child, null);
-                        }
-                    }
-                }
-            }
+            removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
 
             // add new annotations to proposal (restoring those that were removed)
             for (Annotation a : existingAnnotations) {
@@ -165,6 +140,31 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             }
 
             return rewrite;
+        } else if (declNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
+            AST ast = declNode.getAST();
+            ASTRewrite rewrite = ASTRewrite.create(ast);
+
+            ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
+            List<Annotation> existingAnnotations = new ArrayList<Annotation>();
+
+            List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(MethodDeclaration.MODIFIERS2_PROPERTY);
+
+            // for all existing annotations (that are the annotation we want)
+            removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
+
+            // add new annotations to proposal (restoring those that were removed)
+            for (Annotation a : existingAnnotations) {
+                if (a instanceof NormalAnnotation) {
+                    NormalAnnotation marker = null;
+                    marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
+
+                    // add new annotation proposal to the rewrite text edit
+                    rewrite.getListRewrite(declNode, MethodDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
+                }
+            }
+
+            return rewrite;
+
         } else if (declNode instanceof TypeDeclaration || isField || isSingleVarDecl) {
             // Annotation in question is set on a class declaration or is a method parameter declaration
             AST ast = declNode.getAST();
@@ -227,6 +227,39 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             return rewrite;
         }
         return null;
+    }
+
+    /**
+     * removeAttributes
+     * Remove attributes from existing annotation
+     *
+     * @param annotationShortNames
+     * @param rewrite
+     * @param existingAnnotations
+     * @param children
+     */
+    private void removeAttributes(String[] annotationShortNames, ASTRewrite rewrite, List<Annotation> existingAnnotations,
+                                  List<? extends ASTNode> children) {
+        for (ASTNode child : children) {
+            if (child instanceof Annotation) {
+                Annotation annotation = (Annotation) child;
+                boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::contains);
+
+                // check if current child annotation has all attributes to add already or any to
+                // remove
+                if (containsAnnotation && child instanceof NormalAnnotation) {
+                    List<String> existingValues = (List<String>) ((NormalAnnotation) child).values().stream().map(mvp -> ((MemberValuePair) mvp).getName().toString()).collect(toList());
+
+                    boolean containsAllToAdd = this.attributesToAdd.stream().allMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
+                    boolean containsAnyToRemove = this.attributesToRemove.stream().anyMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
+
+                    if (!containsAllToAdd || containsAnyToRemove) {
+                        existingAnnotations.add(annotation);
+                        rewrite.remove(child, null);
+                    }
+                }
+            }
+        }
     }
 
     private SingleMemberAnnotation processSingleMemberAnnotation(AST ast, ImportRewrite imports,
