@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation.
+ * Copyright (c) 2021, 2026 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,6 +14,8 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -204,6 +206,26 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("ManagedBeanProducesAndInjectMethod"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
+                }
+                // Generate diagnostics for mutually exclusive observes and observesAsync annotations
+                //
+                // see: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#
+                // observer_methods
+                Set<String> conflictParams = new HashSet<>();
+                for (ILocalVariable param : method.getParameters()) {
+                    String[] annotationQualifiedNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+                    String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
+                    Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type, annotationQualifiedNames, conflictedParamAnnotations));
+                    if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS)) {
+                        conflictParams.add(param.getElementName());
+                    }
+                }
+                if (!conflictParams.isEmpty()) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ManagedBeanObservesAndObservesAsyncParam", String.join(", ", conflictParams)), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidObservesObservesAsyncMethodParams, DiagnosticSeverity.Error));
                 }
 
             }
