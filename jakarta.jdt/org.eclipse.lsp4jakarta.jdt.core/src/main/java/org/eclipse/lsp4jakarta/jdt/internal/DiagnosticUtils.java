@@ -13,11 +13,15 @@
 package org.eclipse.lsp4jakarta.jdt.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -340,5 +344,30 @@ public class DiagnosticUtils {
      */
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
+    }
+
+    /**
+     * Checks if the given method is a constructor and has valid no-args constructor.
+     *
+     * @param m
+     * @param constructorInfo
+     * @return Map<String, Boolean>
+     * @throws JavaModelException
+     */
+    public static Map<String, Boolean> hasValidNoArgsConstructor(IMethod m, Map<String, Boolean> constructorInfo) throws JavaModelException {
+        if (isConstructorMethod(m)) {
+            constructorInfo.put("hasConstructor", true); // Check explicit constructor declaration
+            String[] params = m.getParameterTypes();
+            int flags = m.getFlags();
+            if (params.length == 0) { // Checks manually declared no-args constructor
+                if (Flags.isPublic(flags)) {
+                    constructorInfo.put("hasValidPublicNoArgsConstructor", true);
+                }
+                if (Flags.isProtected(flags)) {
+                    constructorInfo.put("hasValidProtectedNoArgsConstructor", true);
+                }
+            }
+        }
+        return constructorInfo;
     }
 }
