@@ -73,10 +73,15 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             String[] validAnnotations = { Constants.GENERATED_FQ_NAME };
             String[] validTypeAnnotations = { Constants.GENERATED_FQ_NAME,
                                               Constants.RESOURCE_FQ_NAME,
-                                              Constants.RESOURCES_FQ_NAME };
+                                              Constants.RESOURCES_FQ_NAME,
+                                              Constants.PRIORITY_FQ_NAME };
+            String[] validFieldAnnotations = { Constants.GENERATED_FQ_NAME,
+                                               Constants.RESOURCE_FQ_NAME,
+                                               Constants.RESOURCES_FQ_NAME };
             String[] validMethodAnnotations = { Constants.GENERATED_FQ_NAME,
                                                 Constants.POST_CONSTRUCT_FQ_NAME, Constants.PRE_DESTROY_FQ_NAME,
                                                 Constants.RESOURCE_FQ_NAME };
+            String[] validMethodParamAnnotations = { Constants.GENERATED_FQ_NAME, Constants.PRIORITY_FQ_NAME };
 
             IPackageDeclaration[] packages = unit.getPackageDeclarations();
             for (IPackageDeclaration p : packages) {
@@ -108,7 +113,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     for (ILocalVariable parameter : parameters) {
                         annotations = parameter.getAnnotations();
                         for (IAnnotation annotation : annotations) {
-                            if (isValidAnnotation(annotation.getElementName(), validAnnotations))
+                            if (isValidAnnotation(annotation.getElementName(), validMethodParamAnnotations))
                                 annotatables.add(new Tuple.Two<>(annotation, parameter));
                         }
                     }
@@ -118,7 +123,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 for (IField field : fields) {
                     annotations = field.getAnnotations();
                     for (IAnnotation annotation : annotations) {
-                        if (isValidAnnotation(annotation.getElementName(), validTypeAnnotations))
+                        if (isValidAnnotation(annotation.getElementName(), validFieldAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, field));
                     }
                 }
@@ -257,6 +262,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                             }
                         }
                     }
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PRIORITY_FQ_NAME)) {
+                    validatePriority(context, uri, diagnostics, annotation, element);
                 }
 
                 // process methods now?
@@ -335,6 +342,40 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         }
 
         return diagnostics;
+    }
+
+    /**
+     * validatePriority
+     * This method validates priority values to check whether any negative values have been applied.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param element
+     * @throws JavaModelException
+     */
+    private void validatePriority(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                  IAnnotation annotation, IAnnotatable element) throws JavaModelException {
+
+        // Priority is valid only for elements that are either classes or method parameters.
+        if (element instanceof IType || element instanceof ILocalVariable) {
+            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                if ("value".equals(pair.getMemberName()) && pair.getValue() instanceof Integer) {
+                    int priority = (Integer) pair.getValue();
+                    if (priority < 0) {
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        String diagnosticMessage = Messages.getMessage(
+                                                                       "PriorityShouldBeNonNegative");
+                        diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                                 annotationRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.PriorityShouldBeNonNegative,
+                                                                 DiagnosticSeverity.Warning));
+                    }
+                }
+            }
+        }
     }
 
     /**
