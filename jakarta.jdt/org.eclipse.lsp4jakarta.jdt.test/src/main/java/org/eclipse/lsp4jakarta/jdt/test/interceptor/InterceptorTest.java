@@ -45,10 +45,10 @@ public class InterceptorTest extends BaseJakartaTest {
                           "The class InvalidInterceptor should not contain the abstract modifier. If it contains the abstract modifier, the class should not be annotated with @Interceptor.",
                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorAnnotationOnAbstractClass");
         Diagnostic d2 = d(5, 22, 40,
-                          "Missing Public NoArgsConstructor: Class InvalidInterceptor is off Interceptor type, but does not declare a public no-argument constructor.",
+                          "Missing Public NoArgsConstructor: Class InvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
         Diagnostic d3 = d(22, 14, 37,
-                          "Missing Public NoArgsConstructor: Class InnerInvalidInterceptor is off Interceptor type, but does not declare a public no-argument constructor.",
+                          "Missing Public NoArgsConstructor: Class InnerInvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
