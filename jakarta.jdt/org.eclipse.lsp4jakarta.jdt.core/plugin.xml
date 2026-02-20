@@ -355,4 +355,9 @@
                   targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
    </extension>
+   
+   <!-- Interceptor -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.InterceptorDiagnosticsParticipant" />
+   </extension>
 </plugin>
