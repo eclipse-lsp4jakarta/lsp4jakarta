@@ -131,6 +131,9 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 // process Types? (class declarations)
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.GENERATED_FQ_NAME)) {
                     for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+						if ("value".equals(pair.getMemberName())) {
+							validateGeneratedName(annotation, pair, context, diagnostics);
+						}
                         // If date element exists and is non-empty, it must follow ISO 8601 format.
                         if (pair.getMemberName().equals("date")) {
                             if (pair.getValue() instanceof String) {
@@ -447,5 +450,44 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         }
         return false;
     }
+    
+	private void validateGeneratedName(IAnnotation annotation, IMemberValuePair pair, JavaDiagnosticsContext context,
+			List<Diagnostic> diagnostics) throws JavaModelException {
+		Object val = pair.getValue();
+		if (val instanceof String) {
+			isValidGeneratedName((String) val, annotation, context, diagnostics);
+		} else if (val instanceof String[]) {
+			for (String strVal : (String[]) val) {
+				if (!isValidGeneratedName((String) strVal, annotation, context, diagnostics)) {
+					break;
+				}
+			}
+		}
+	}
 
+	private static boolean isValidGeneratedName(String name, IAnnotation annotation, JavaDiagnosticsContext context,
+			List<Diagnostic> diagnostics) throws JavaModelException {
+		Range annotationRange = PositionUtils.toNameRange(annotation,
+				context.getUtils());
+		if (name == null || name.isEmpty()) {
+			String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam");
+			diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+					Constants.DIAGNOSTIC_SOURCE,
+					ErrorCode.ResourceMustDeclareExactlyOneParam,
+					DiagnosticSeverity.Error));
+			return false;
+		}
+		
+		// Regex: one or more identifiers separated by dots
+		String regex = "^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)+$";
+		if (!name.matches(regex)) {
+			String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam");
+			diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+					Constants.DIAGNOSTIC_SOURCE,
+					ErrorCode.ResourceMustDeclareExactlyOneParam,
+					DiagnosticSeverity.Warning));
+			return false;
+		}
+		return true;
+	}
 }
