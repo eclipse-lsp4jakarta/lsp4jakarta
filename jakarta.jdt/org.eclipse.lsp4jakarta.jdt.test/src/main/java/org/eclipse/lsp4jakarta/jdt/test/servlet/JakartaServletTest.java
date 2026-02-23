@@ -81,10 +81,10 @@ public class JakartaServletTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
-        TextEdit te1 = te(9, 0, 10, 0, "@WebServlet(value = \"\")\n");
+        TextEdit te1 = te(9, 0, 10, 0, "@WebServlet(value = {})\n");
         CodeAction ca1 = ca(uri, "Add the `value` attribute to @WebServlet", d, te1);
 
-        TextEdit te2 = te(9, 0, 10, 0, "@WebServlet(urlPatterns = \"\")\n");
+        TextEdit te2 = te(9, 0, 10, 0, "@WebServlet(urlPatterns = {})\n");
         CodeAction ca2 = ca(uri, "Add the `urlPatterns` attribute to @WebServlet", d, te2);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca2, ca1);
     }
@@ -207,9 +207,9 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
 
-        String newText = "@WebFilter(servletNames = \"\")\n";
-        String newText1 = "@WebFilter(urlPatterns = \"\")\n";
-        String newText2 = "@WebFilter(value = \"\")\n";
+        String newText = "@WebFilter(servletNames = {})\n";
+        String newText1 = "@WebFilter(urlPatterns = {})\n";
+        String newText2 = "@WebFilter(value = {})\n";
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
 
