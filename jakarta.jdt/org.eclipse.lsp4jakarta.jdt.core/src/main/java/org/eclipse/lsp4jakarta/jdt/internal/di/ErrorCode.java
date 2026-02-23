@@ -30,7 +30,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InjectionPointInvalidAbstractClassBean,
     InjectionPointInvalidExtensionProviderBean,
     InjectionPointInvalidVetoedClassBean,
-    InjectionPointInvalidConstructorBean;
+    InjectionPointInvalidConstructorBean,
+    InvalidInjectQualifierOnFieldOrParameter;
 
     /**
      * {@inheritDoc}
