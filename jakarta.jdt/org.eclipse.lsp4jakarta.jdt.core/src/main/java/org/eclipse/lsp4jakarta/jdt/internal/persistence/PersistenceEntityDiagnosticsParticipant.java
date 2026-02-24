@@ -158,6 +158,12 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         return diagnostics;
     }
 
+    /**
+     * Check the annotation value is TemporalType.DATE Enum
+     * 
+     * @param pair
+     * @return
+     */
     private boolean isValidTemporalDateValue(IMemberValuePair pair) {
         String memberName = pair.getMemberName();
         Object value = pair.getValue();
@@ -167,6 +173,16 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                && ((String) value).equals(Constants.TEMPORAL_TYPE_DATE);
     }
 
+    /**
+     * Check @Temporal annotation exist for primary key field/property with @Id annotation
+     * Specification: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a132
+     * 
+     * @param type
+     * @param member
+     * @param diagnostics
+     * @param context
+     * @throws JavaModelException
+     */
     private void validatePKDateTemporal(IType type, IMember member, List<Diagnostic> diagnostics,
                                         JavaDiagnosticsContext context) throws JavaModelException {
         IAnnotation[] allAnnotations = null;
