@@ -55,13 +55,13 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         Diagnostic d2 = d(39, 0, 30, "The @Resource annotation must define the attribute 'name'.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
 
-        Diagnostic d3 = d(44, 4, 13, "@Resource method 'setStudentId' is invalid: must declare exactly one parameter.",
+        Diagnostic d3 = d(45, 13, 25, "@Resource method 'setStudentId' is invalid: must declare exactly one parameter.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceMustDeclareExactlyOneParam");
 
-        Diagnostic d4 = d(49, 4, 13, "@Resource method 'getStudentId' is invalid: method name must start with set.",
+        Diagnostic d4 = d(50, 13, 25, "@Resource method 'getStudentId' is invalid: method name must start with set.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceNameMustStartWithSet");
 
-        Diagnostic d5 = d(54, 4, 13, "@Resource method 'setStudentId1' is invalid: return type must be void.",
+        Diagnostic d5 = d(55, 16, 29, "@Resource method 'setStudentId1' is invalid: return type must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "ResourceReturnTypeMustBeVoid");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
@@ -76,6 +76,51 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         CodeAction ca1 = ca(uri, "Insert 'name' attribute to @Resource", d2, te1);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
+    }
+
+    @Test
+    public void ResourceAnnotationTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/annotations/ResourceAnnotationTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // expected annotations
+        Diagnostic d1 = d(9, 20, 29, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        Diagnostic d2 = d(18, 20, 32, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        Diagnostic d3 = d(24, 16, 32, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        Diagnostic d4 = d(27, 20, 36, "Type of the field MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        Diagnostic d5 = d(45, 13, 29, "Type of the parameter MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        Diagnostic d6 = d(50, 13, 29, "Type of the parameter MUST be compatible with the type element of the Resource annotation, if specified.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "ResourceTypeMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit te11 = te(8, 1, 9, 4, "");
+        CodeAction ca11 = ca(uri, "Remove @Resource", d1, te11);
+        TextEdit te12 = te(8, 1, 9, 4, "@Resource(name = \"studentId\")\n\t");
+        CodeAction ca12 = ca(uri, "Remove redundant 'type' attribute from @Resource", d1, te12);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca11, ca12);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d6);
+        TextEdit te21 = te(49, 4, 50, 1, "");
+        CodeAction ca21 = ca(uri, "Remove @Resource", d6, te21);
+        TextEdit te22 = te(49, 4, 50, 1, "@Resource()\n\t");
+        CodeAction ca22 = ca(uri, "Remove redundant 'type' attribute from @Resource", d6, te22);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca21, ca22);
     }
 
 }
