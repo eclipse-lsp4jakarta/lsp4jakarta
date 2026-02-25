@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -55,4 +55,26 @@ public class JakartaJsonpTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
+
+    @Test
+    public void invalidJsonObjectBuilder() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonp/CreateInvalidJsonObjectBuilder.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(22, 58, 62,
+                          "The JsonObjectBuilder class does not allow null to be used as a name while building the JSON object.",
+                          DiagnosticSeverity.Error, "jakarta-jsonp", "InvalidJsonObjectBuilderKey");
+
+        Diagnostic d2 = d(29, 59, 63,
+                          "The JsonObjectBuilder class does not allow null to be used as a name while building the JSON object.",
+                          DiagnosticSeverity.Error, "jakarta-jsonp", "InvalidJsonObjectBuilderKey");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+    }
+
 }
