@@ -70,25 +70,26 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
         alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
             IField[] allFields = type.getFields();
-            boolean containsScope = false;
             //https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/
             //Under Scope
             //A scope annotation should not have attributes.
             //Checks if type is @interface annotated
             if (type.isAnnotation()) {
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
                 //Checks if type annotation contains @Scope
-                containsScope = containsAnnotation(type, type.getAnnotations(), Constants.SCOPE_FQ_NAME);
+                boolean containsScope = containsAnnotation(type, type.getAnnotations(), Constants.SCOPE_FQ_NAME);
+                //Checks if there are any attributes inside the type
+                boolean hasAttributes = type.getMethods().length > 0 || type.getFields().length > 0;
+                if (containsScope && hasAttributes) {
+                    diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName()),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidScopeAttributes,
+                                                             DiagnosticSeverity.Error));
+                }
             }
             for (IField field : allFields) {
                 Range range = PositionUtils.toNameRange(field,
                                                         context.getUtils());
-                //Generates error message whenever it encounters a field written inside Scope annotation.
-                if (containsScope) {
-                    String msg = Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName());
-                    diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidScopeAttributes,
-                                                             DiagnosticSeverity.Error));
-                }
                 if (containsAnnotation(type, field.getAnnotations(), INJECT_FQ_NAME)) {
 
                     if (Flags.isFinal(field.getFlags())) {
@@ -116,13 +117,6 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
 
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 int methodFlag = method.getFlags();
-                //Generates error message whenever it encounters a method written inside Scope annotation.
-                if (containsScope) {
-                    String msg = Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName());
-                    diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidScopeAttributes,
-                                                             DiagnosticSeverity.Error));
-                }
                 if (containsAnnotation(type, method.getAnnotations(), INJECT_FQ_NAME)) {
                     if (DiagnosticUtils.isConstructorMethod(method))
                         injectedConstructors.add(method);
