@@ -131,6 +131,9 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 // process Types? (class declarations)
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.GENERATED_FQ_NAME)) {
                     for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                        if ("value".equals(pair.getMemberName())) {
+                            validateGeneratedName(annotation, pair, context, diagnostics);
+                        }
                         // If date element exists and is non-empty, it must follow ISO 8601 format.
                         if (pair.getMemberName().equals("date")) {
                             if (pair.getValue() instanceof String) {
@@ -448,4 +451,60 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         return false;
     }
 
+    /**
+     * Validates the 'value' attribute of the @Generated annotation.
+     *
+     * @param annotation
+     * @param pair
+     * @param context
+     * @param diagnostics
+     * @throws JavaModelException
+     */
+    private void validateGeneratedName(IAnnotation annotation, IMemberValuePair pair, JavaDiagnosticsContext context,
+                                       List<Diagnostic> diagnostics) throws JavaModelException {
+        Object val = pair.getValue();
+        if (val instanceof String) {
+            isValidGeneratedName((String) val, annotation, context, diagnostics);
+        } else if (val instanceof String[]) {
+            for (String strVal : (String[]) val) {
+                isValidGeneratedName(strVal, annotation, context, diagnostics);
+            }
+        }
+    }
+
+    /**
+     * Validates a single generator name value from the @Generated annotation.
+     *
+     * @param name
+     * @param annotation
+     * @param context
+     * @param diagnostics
+     * @return true if the name is valid, false otherwise
+     * @throws JavaModelException
+     */
+    private static boolean isValidGeneratedName(String name, IAnnotation annotation, JavaDiagnosticsContext context,
+                                                List<Diagnostic> diagnostics) throws JavaModelException {
+        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+
+        // Check for null or empty (including whitespace-only strings)
+        if (name == null || name.trim().isEmpty()) {
+            String diagnosticMessage = Messages.getMessage("GeneratedValueCannotBeEmpty", "@Generated", "value");
+            diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.GeneratedValueEmpty,
+                                                     DiagnosticSeverity.Error));
+            return false;
+        }
+
+        if (!name.matches(Constants.GENERATED_NAME_REGEX)) {
+            String diagnosticMessage = Messages.getMessage("GeneratedValueMustBeValidIdentifier", "@Generated", "value");
+            diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.GeneratedValueInvalidFormat,
+                                                     DiagnosticSeverity.Warning));
+            return false;
+        }
+
+        return true;
+    }
 }

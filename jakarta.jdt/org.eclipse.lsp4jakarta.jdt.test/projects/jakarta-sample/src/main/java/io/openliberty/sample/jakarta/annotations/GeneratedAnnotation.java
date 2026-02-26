@@ -2,16 +2,16 @@ package io.openliberty.sample.jakarta.annotations;
 
 import jakarta.annotation.Generated;
 
-@Generated(value = "demoServlet", date="")
+@Generated(value = "", date="")
 public class GeneratedAnnotation {
 
-    @Generated(value = "demoServlet", date="not_ISO_compliant")
+    @Generated(value = "com.demoServlet", date="not_ISO_compliant")
     private Integer studentId;
 
     @Generated(value = "demoServlet", date="2001-07-04T12:08:56.235-0700")
     private boolean isHappy;
 
-    @Generated(value = "demoServletijiojioj", date="NOTISOCOMPLIANT2")
+    @Generated(value = "com.demoServlet", date="NOTISOCOMPLIANT2")
     private boolean isSad;
 
     @Generated("com.sun.xml.rpc.AProcessor")
