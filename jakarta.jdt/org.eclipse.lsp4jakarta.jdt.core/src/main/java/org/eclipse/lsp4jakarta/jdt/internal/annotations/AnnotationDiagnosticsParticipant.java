@@ -451,6 +451,17 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         return false;
     }
     
+	/**
+	 * Validates the 'value' attribute of the @Generated annotation.
+	 * The value must be a non-empty string representing a valid Java identifier
+	 * or fully qualified name (e.g., "MyGenerator" or "com.example.MyGenerator").
+	 *
+	 * @param annotation The @Generated annotation being validated
+	 * @param pair The member value pair containing the 'value' attribute
+	 * @param context The diagnostics context
+	 * @param diagnostics The list to add diagnostics to
+	 * @throws JavaModelException if there's an error accessing the Java model
+	 */
 	private void validateGeneratedName(IAnnotation annotation, IMemberValuePair pair, JavaDiagnosticsContext context,
 			List<Diagnostic> diagnostics) throws JavaModelException {
 		Object val = pair.getValue();
@@ -458,36 +469,51 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
 			isValidGeneratedName((String) val, annotation, context, diagnostics);
 		} else if (val instanceof String[]) {
 			for (String strVal : (String[]) val) {
-				if (!isValidGeneratedName((String) strVal, annotation, context, diagnostics)) {
-					break;
-				}
+				isValidGeneratedName(strVal, annotation, context, diagnostics);
 			}
 		}
 	}
 
+	/**
+	 * Validates a single generator name value from the @Generated annotation.
+	 * Accepts both simple identifiers (e.g., "MyGenerator") and fully qualified names
+	 * (e.g., "com.example.MyGenerator").
+	 *
+	 * @param name The generator name to validate
+	 * @param annotation The @Generated annotation
+	 * @param context The diagnostics context
+	 * @param diagnostics The list to add diagnostics to
+	 * @return true if the name is valid, false otherwise
+	 * @throws JavaModelException if there's an error accessing the Java model
+	 */
 	private static boolean isValidGeneratedName(String name, IAnnotation annotation, JavaDiagnosticsContext context,
 			List<Diagnostic> diagnostics) throws JavaModelException {
-		Range annotationRange = PositionUtils.toNameRange(annotation,
-				context.getUtils());
-		if (name == null || name.isEmpty()) {
-			String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam");
+		Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+		
+		// Check for null or empty (including whitespace-only strings)
+		if (name == null || name.trim().isEmpty()) {
+			String diagnosticMessage = Messages.getMessage("GeneratedValueCannotBeEmpty", "@Generated", "value");
 			diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
 					Constants.DIAGNOSTIC_SOURCE,
-					ErrorCode.ResourceMustDeclareExactlyOneParam,
+					ErrorCode.GeneratedValueEmpty,
 					DiagnosticSeverity.Error));
 			return false;
 		}
 		
-		// Regex: one or more identifiers separated by dots
-		String regex = "^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)+$";
-		if (!name.matches(regex)) {
-			String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam");
+		// Validate format: single identifier OR fully qualified name
+		// Allows: "MyGenerator" or "com.example.MyGenerator"
+		// Java identifiers can start with letter, underscore, or dollar sign
+		// and can contain letters, digits, underscores, or dollar signs
+		String identifierRegex = "^[a-zA-Z_$][a-zA-Z0-9_$]*(\\.[a-zA-Z_$][a-zA-Z0-9_$]*)*$";
+		if (!name.matches(identifierRegex)) {
+			String diagnosticMessage = Messages.getMessage("GeneratedValueMustBeValidIdentifier", "@Generated", "value");
 			diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
 					Constants.DIAGNOSTIC_SOURCE,
-					ErrorCode.ResourceMustDeclareExactlyOneParam,
+					ErrorCode.GeneratedValueInvalidFormat,
 					DiagnosticSeverity.Warning));
 			return false;
 		}
+		
 		return true;
 	}
 }
