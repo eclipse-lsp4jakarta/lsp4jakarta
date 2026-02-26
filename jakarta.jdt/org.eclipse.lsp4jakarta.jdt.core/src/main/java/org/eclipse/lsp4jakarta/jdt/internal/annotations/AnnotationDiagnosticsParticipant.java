@@ -415,7 +415,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             String signatureType = ((ILocalVariable) parameter).getTypeSignature();
             IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
             if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
-                diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "parameter");
+                diagnosticMessage = Messages.getMessage("ResourceTypeMismatchParameter");
                 diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
                                                          annotationRange,
                                                          Constants.DIAGNOSTIC_SOURCE,
@@ -453,7 +453,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         String signatureType = field.getTypeSignature();
         IType parentType = field.getDeclaringType();
         if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
-            diagnosticMessage = Messages.getMessage("ResourceTypeMismatch", "field");
+            diagnosticMessage = Messages.getMessage("ResourceTypeMismatchField");
             diagnostics.add(context.createDiagnostic(uri,
                                                      diagnosticMessage,
                                                      annotationRange,
