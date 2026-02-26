@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,12 +12,14 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal;
 
+import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -41,6 +43,12 @@ import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 public class DiagnosticUtils {
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
+
+    public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
+    public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
+    public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
+    public static final String METHOD_MUST_BE_PUBLIC = "MethodMustBePublic";
+    public static final String FIELD_MUST_EXIST_IN_SETTER = "FieldMustExistInSetter";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -341,4 +349,85 @@ public class DiagnosticUtils {
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
     }
+
+    /**
+     * getDataTypeName
+     * Converts signature type name into its type name.
+     *
+     * @param type
+     * @return
+     */
+    public static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
+    }
+
+    /**
+     * isPublic
+     * Check if the given method is public or not
+     *
+     * @param method
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isPublic(IMethod method) throws JavaModelException {
+        int flags = method.getFlags();
+        return Flags.isPublic(flags);
+    }
+
+    /**
+     * hasField
+     * Checks if the given type has a field matching the method name.
+     *
+     * @param methodName
+     * @param type
+     * @return
+     * @throws JavaModelException
+     */
+    private static boolean hasField(String methodName, IType type) throws JavaModelException {
+        if (methodName == null || methodName.length() <= 3) {
+            return false;
+        }
+        String expectedFieldName = Introspector.decapitalize(methodName.substring(3));
+        if (expectedFieldName.isEmpty()) {
+            return false;
+        }
+        IField field = type.getField(expectedFieldName);
+        return field.exists();
+    }
+
+    /**
+     * validateSetterMethod
+     * This is to check whether a method is a valid setter.
+     *
+     * @param method
+     * @param iType
+     * @return
+     * @throws JavaModelException
+     */
+    public static List<CommonErrorCode> validateSetterMethod(IMethod method, IType parentType) throws JavaModelException {
+
+        List<CommonErrorCode> errorCodes = new ArrayList<CommonErrorCode>();
+        String methodName = method.getElementName();
+        if (!methodName.startsWith("set")) {
+            errorCodes.add(CommonErrorCode.NameMustStartWithSet);
+        }
+        if (!hasField(methodName, parentType)) {
+            errorCodes.add(CommonErrorCode.FieldMustExistInSetter);
+        }
+        if (!"V".equalsIgnoreCase(method.getReturnType())) {
+            errorCodes.add(CommonErrorCode.ReturnTypeMustBeVoid);
+        }
+        if (method.getParameterTypes().length != 1) {
+            errorCodes.add(CommonErrorCode.MustDeclareExactlyOneParam);
+        }
+        if (!isPublic(method)) {
+            errorCodes.add(CommonErrorCode.MethodMustBePublic);
+        }
+        return errorCodes;
+    }
+
 }

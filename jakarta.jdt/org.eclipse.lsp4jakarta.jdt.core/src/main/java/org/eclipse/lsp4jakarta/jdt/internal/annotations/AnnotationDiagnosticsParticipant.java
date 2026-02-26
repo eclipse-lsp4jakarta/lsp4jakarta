@@ -36,11 +36,13 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.messages.Tuple;
 import org.eclipse.lsp4j.jsonrpc.messages.Tuple.Two;
+import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.CommonErrorCode;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -65,6 +67,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         String uri = context.getUri();
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
+
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
         List<Diagnostic> diagnostics = new ArrayList<>();
 
@@ -153,43 +156,18 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         }
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCE_FQ_NAME)) {
+                    Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
                     if (element instanceof IType) {
                         IType type = (IType) element;
-                        if (type.getElementType() == IJavaElement.TYPE && ((IType) type).isClass()) {
-                            Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                            Boolean nameEmpty = true;
-                            Boolean typeEmpty = true;
-                            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-                                if (pair.getMemberName().equals("name")) {
-                                    nameEmpty = false;
-                                }
-                                if (pair.getMemberName().equals("type")) {
-                                    typeEmpty = false;
-                                }
-                            }
-                            String diagnosticMessage;
-                            if (nameEmpty) {
-                                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
-                                                                        "@Resource", "name");
-                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.MissingResourceNameAttribute,
-                                                                         DiagnosticSeverity.Error));
-                            }
-
-                            if (typeEmpty) {
-                                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
-                                                                        "@Resource", "type");
-                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.MissingResourceTypeAttribute,
-                                                                         DiagnosticSeverity.Error));
-                            }
-                        }
+                        validateResourceClass(context, uri, diagnostics, annotation, type, annotationRange);
                     } else if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                        validateResourceMethods(method, uri, annotationRange, context, diagnostics);
+                        validateResourceMethod(method, uri, annotationRange, context,
+                                               diagnostics, annotation);
+
+                    } else if (element instanceof IField) {
+                        IField field = (IField) element;
+                        validateResourceField(context, uri, diagnostics, annotation, field, annotationRange);
                     }
 
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
@@ -369,42 +347,118 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     }
 
     /**
-     * validateResourceMethods
+     * validateResourceClass
+     * This method is responsible for finding diagnostics in classes annotated with @Resource.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param type
+     * @param annotationRange
+     * @throws JavaModelException
+     */
+    private void validateResourceClass(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                       IAnnotation annotation, IType type, Range annotationRange) throws JavaModelException {
+        String diagnosticMessage;
+        if (type.isClass()) {
+            Boolean nameEmpty = true;
+            Boolean typeEmpty = true;
+            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                if (pair.getMemberName().equals("name")) {
+                    nameEmpty = false;
+                }
+                if (pair.getMemberName().equals("type")) {
+                    typeEmpty = false;
+                }
+            }
+            if (nameEmpty) {
+                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
+                                                        "@Resource", "name");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.MissingResourceNameAttribute,
+                                                         DiagnosticSeverity.Error));
+            }
+
+            if (typeEmpty) {
+                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
+                                                        "@Resource", "type");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.MissingResourceTypeAttribute,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * validateResourceMethod
      * This method is responsible for finding diagnostics in methods annotated with @Resource.
      *
-     * @param m
+     * @param method
      * @param uri
      * @param annotationRange
      * @param context
      * @param diagnostics
+     * @param annotation
      * @throws JavaModelException
      */
-    public static void validateResourceMethods(IMethod m, String uri, Range annotationRange,
-                                               JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
-        String methodName = m.getElementName();
-        if (!methodName.startsWith("set")) {
+    public void validateResourceMethod(IMethod method, String uri, Range annotationRange,
+                                       JavaDiagnosticsContext context, List<Diagnostic> diagnostics, IAnnotation annotation) throws JavaModelException {
 
-            String diagnosticMessage = Messages.getMessage("AnnotationNameMustStartWithSet",
-                                                           "@Resource", methodName);
-            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                     ErrorCode.ResourceNameMustStartWithSet,
-                                                     DiagnosticSeverity.Error));
+        List<CommonErrorCode> errorCodes = DiagnosticUtils.validateSetterMethod(method, method.getDeclaringType());
+        String methodName = method.getElementName();
+        String diagnosticMessage = null;
+        if (errorCodes.isEmpty()) {
+            ILocalVariable parameter = method.getParameters()[0];
+            String signatureType = ((ILocalVariable) parameter).getTypeSignature();
+            IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
+            if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+                diagnosticMessage = Messages.getMessage("ResourceTypeMismatchParameter");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.ResourceTypeMismatch,
+                                                         DiagnosticSeverity.Error));
+            }
+
+        } else {
+            for (CommonErrorCode errorCode : errorCodes) {
+                diagnosticMessage = Messages.getMessage(errorCode.getCode(),
+                                                        "@Resource", methodName);
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE, errorCode,
+                                                         DiagnosticSeverity.Error));
+            }
         }
-        if (!"V".equalsIgnoreCase(m.getReturnType())) {
-            String diagnosticMessage = Messages.getMessage("AnnotationReturnTypeMustBeVoid",
-                                                           "@Resource", methodName);
-            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+    }
+
+    /**
+     * validateResourceField
+     * This method is responsible for finding diagnostics in fields annotated with @Resource.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param element
+     * @param annotationRange
+     * @throws JavaModelException
+     */
+    private void validateResourceField(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                       IAnnotation annotation, IField field, Range annotationRange) throws JavaModelException {
+        String diagnosticMessage;
+        String signatureType = field.getTypeSignature();
+        IType parentType = field.getDeclaringType();
+        if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+            diagnosticMessage = Messages.getMessage("ResourceTypeMismatchField");
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     diagnosticMessage,
+                                                     annotationRange,
                                                      Constants.DIAGNOSTIC_SOURCE,
-                                                     ErrorCode.ResourceReturnTypeMustBeVoid,
-                                                     DiagnosticSeverity.Error));
-        }
-        if (m.getParameterTypes().length != 1) {
-            String diagnosticMessage = Messages.getMessage("AnnotationMustDeclareExactlyOneParam",
-                                                           "@Resource", methodName);
-            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                     ErrorCode.ResourceMustDeclareExactlyOneParam,
+                                                     ErrorCode.ResourceTypeMismatch,
                                                      DiagnosticSeverity.Error));
         }
     }
@@ -446,6 +500,51 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return false;
+    }
+
+    /**
+     * isResourceTypeNotCompatible
+     * It checks whether the resource annotation type is compatible with its field type or method parameter type.
+     *
+     * @param annotation
+     * @param signatureType
+     * @param parentType
+     * @return
+     * @throws JavaModelException
+     */
+    private static boolean isResourceTypeNotCompatible(IAnnotation annotation, String signatureType, IType parentType) throws JavaModelException {
+        try {
+            IType resourceType = getResourceType(annotation, parentType);
+            if (null != resourceType) {
+                int isSuperType = TypeHierarchyUtils.doesITypeHaveSuperType(resourceType,
+                                                                            DiagnosticUtils.getDataTypeName(signatureType));
+                if (isSuperType == -1) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            JakartaCorePlugin.logException("Cannot calculate Annotation diagnostics", e);
+        }
+        return false;
+    }
+
+    /**
+     * getResourceType
+     * Returns the IType corresponding to the Resource type specified in the @Resource annotation.
+     *
+     * @param annotation
+     * @param parentType
+     * @return
+     * @throws JavaModelException
+     */
+    public static IType getResourceType(IAnnotation annotation, IType parentType) throws JavaModelException {
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if ("type".equals(pair.getMemberName())) {
+                String resourceTypeString = (String) pair.getValue();
+                return ManagedBean.getChildITypeByName(parentType, resourceTypeString);
+            }
+        }
+        return null;
     }
 
 }
