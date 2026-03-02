@@ -160,7 +160,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
     /**
      * Check the annotation value is TemporalType.DATE Enum
-     * 
+     *
      * @param pair
      * @return
      */
@@ -176,7 +176,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     /**
      * Check @Temporal annotation exist for primary key field/property with @Id annotation
      * Specification: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a132
-     * 
+     *
      * @param type
      * @param member
      * @param diagnostics
