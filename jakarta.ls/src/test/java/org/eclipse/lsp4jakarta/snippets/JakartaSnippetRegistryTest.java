@@ -251,10 +251,10 @@ public class JakartaSnippetRegistryTest {
     @Test
     public void DISnippetsTest() {
         Optional<Snippet> diQualifierAnnotationSnippet = findByPrefix("di_qualifier", registry);
-        Optional<Snippet> diScopeAnnotationSnippet = findByPrefix("di_scope", registry);
+        Optional<Snippet> diScopeAnnotationSnippet = findByPrefix("di_scope_annotation", registry);
 
         assertTrue("di_qualifier Java snippet is not present in SnippetRegistry", diQualifierAnnotationSnippet.isPresent());
-        assertTrue("di_scope Java snippet is not present in SnippetRegistry", diScopeAnnotationSnippet.isPresent());
+        assertTrue("di_scope_annotation Java snippet is not present in SnippetRegistry", diScopeAnnotationSnippet.isPresent());
 
         snippetsContextTest(diQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
                             JavaCursorContextKind.IN_EMPTY_FILE);

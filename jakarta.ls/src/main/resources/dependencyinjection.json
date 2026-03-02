@@ -29,7 +29,7 @@
       }
     },
 	"Jakarta DI - @Scope": {
-      "prefix": "di_scope",
+      "prefix": "di_scope_annotation",
       "body": [
 		"package ${1:packagename};",
 		"",
