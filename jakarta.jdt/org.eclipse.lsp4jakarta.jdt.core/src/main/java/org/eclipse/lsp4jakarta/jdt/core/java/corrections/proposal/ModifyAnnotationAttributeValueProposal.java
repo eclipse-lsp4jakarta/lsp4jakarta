@@ -33,8 +33,11 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4jakarta.commons.utils.AnnotationValueExpressionUtil;
+import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 
 /**
  * Code action proposal for modifying an existing annotation's attribute value.
@@ -88,7 +91,7 @@ public class ModifyAnnotationAttributeValueProposal extends ASTRewriteCorrection
             AST ast = fAnnotationNode.getAST();
             ASTRewrite rewrite = ASTRewrite.create(ast);
             ImportRewrite imports = createImportRewrite(fInvocationNode);
-            ImportRewrite.ImportRewriteContext importRewriteContext = new org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext(fAnnotationNode, imports);
+            ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(fAnnotationNode, imports);
 
             return modifyAnnotationValue(fAnnotationNode, ast, rewrite, imports, importRewriteContext);
         }
@@ -115,7 +118,7 @@ public class ModifyAnnotationAttributeValueProposal extends ASTRewriteCorrection
         AST ast = declNode.getAST();
         ASTRewrite rewrite = ASTRewrite.create(ast);
 
-        ImportRewrite.ImportRewriteContext importRewriteContext = new org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext(declNode, imports);
+        ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
 
         // Get the annotation short name for comparison
         String annotationShortName = annotation.substring(annotation.lastIndexOf('.') + 1);
@@ -163,7 +166,7 @@ public class ModifyAnnotationAttributeValueProposal extends ASTRewriteCorrection
     private ASTRewrite modifyAnnotationValue(Annotation targetAnnotation, AST ast, ASTRewrite rewrite,
                                              ImportRewrite imports, ImportRewrite.ImportRewriteContext importRewriteContext) {
         // Create the new value expression
-        Expression newValueExpression = AnnotationValueExpressionFactory.createValueExpression(ast, newValue, annotation, imports, importRewriteContext);
+        Expression newValueExpression = AnnotationValueExpressionUtil.createValueExpression(ast, newValue, annotation, imports, importRewriteContext);
 
         if (targetAnnotation instanceof NormalAnnotation) {
             // Handle NormalAnnotation: @Temporal(value = TemporalType.TIME)

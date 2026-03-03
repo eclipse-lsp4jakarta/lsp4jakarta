@@ -10,7 +10,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
+package org.eclipse.lsp4jakarta.commons.utils;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.BooleanLiteral;
@@ -32,7 +32,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
  * <li>Simple names: pass a {@link String}, e.g., {@code "DATE"}</li>
  * </ul>
  */
-public class AnnotationValueExpressionFactory {
+public class AnnotationValueExpressionUtil {
 
     /**
      * Creates an expression for the annotation attribute value.
@@ -76,7 +76,7 @@ public class AnnotationValueExpressionFactory {
             return stringLiteral;
         }
 
-        // Check if it's a qualified name (e.g., enum constant like TemporalType.DATE)
+        // Check if it's a qualified enum name (e.g., enum constant like TemporalType.DATE)
         if (strValue.contains(".")) {
             String[] parts = strValue.split("\\.");
             String typeName = parts[0]; // e.g., "TemporalType"

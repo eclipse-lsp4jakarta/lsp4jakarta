@@ -26,6 +26,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
@@ -108,6 +110,7 @@ public abstract class InsertAnnotationWithAttributesQuickFix implements IJavaCod
         CodeAction toResolve = context.getUnresolved();
         CodeActionResolveData data = (CodeActionResolveData) toResolve.getData();
         String resolveAnnotation = (String) data.getExtendedDataEntry(ANNOTATION_KEY);
+
         @SuppressWarnings("unchecked")
         Map<String, String> resolveAttributes = (Map<String, String>) data.getExtendedDataEntry(ATTRIBUTES_KEY);
 
@@ -137,11 +140,11 @@ public abstract class InsertAnnotationWithAttributesQuickFix implements IJavaCod
         // Walk up the AST to find the method or field declaration
         ASTNode current = node;
         while (current != null) {
-            if (current instanceof org.eclipse.jdt.core.dom.MethodDeclaration) {
-                return ((org.eclipse.jdt.core.dom.MethodDeclaration) current).resolveBinding();
-            } else if (current instanceof org.eclipse.jdt.core.dom.FieldDeclaration) {
+            if (current instanceof MethodDeclaration) {
+                return ((MethodDeclaration) current).resolveBinding();
+            } else if (current instanceof FieldDeclaration) {
                 // For field declarations, we need to get the variable binding
-                org.eclipse.jdt.core.dom.FieldDeclaration fieldDecl = (org.eclipse.jdt.core.dom.FieldDeclaration) current;
+                FieldDeclaration fieldDecl = (FieldDeclaration) current;
                 if (!fieldDecl.fragments().isEmpty()) {
                     return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
                 }

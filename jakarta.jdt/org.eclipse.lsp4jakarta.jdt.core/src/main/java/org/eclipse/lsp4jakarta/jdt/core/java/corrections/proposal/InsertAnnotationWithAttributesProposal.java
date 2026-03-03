@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4jakarta.commons.utils.AnnotationValueExpressionUtil;
 
 /**
  * Code action proposal for inserting an annotation with multiple attribute values.
@@ -120,8 +121,8 @@ public class InsertAnnotationWithAttributesProposal extends ASTRewriteCorrection
             MemberValuePair mvp = ast.newMemberValuePair();
             mvp.setName(ast.newSimpleName(entry.getKey()));
 
-            Expression valueExpression = AnnotationValueExpressionFactory.createValueExpression(
-                                                                                                ast, entry.getValue(), annotation, imports, importRewriteContext);
+            Expression valueExpression = AnnotationValueExpressionUtil.createValueExpression(
+                                                                                             ast, entry.getValue(), annotation, imports, importRewriteContext);
             mvp.setValue(valueExpression);
 
             marker.values().add(mvp);
