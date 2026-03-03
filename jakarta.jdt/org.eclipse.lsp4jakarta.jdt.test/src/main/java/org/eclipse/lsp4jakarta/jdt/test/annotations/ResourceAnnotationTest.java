@@ -49,11 +49,12 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // expected annotations
-        Diagnostic d1 = d(22, 0, 22, "The @Resource annotation must define the attribute 'type'.",
+        Diagnostic d1 = d(23, 0, 22, "The @Resource annotation must define the attribute 'type'.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceTypeAttribute");
 
-        Diagnostic d2 = d(39, 0, 30, "The @Resource annotation must define the attribute 'name'.",
-                          DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
+        Diagnostic d2 = d(42, 0, 13,
+                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
+                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
 
         Diagnostic d3 = d(44, 4, 13, "The @Resource method 'setStudentId' must follow the standard JavaBeans convention: must declare exactly one parameter.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "MustDeclareExactlyOneParam");
@@ -70,16 +71,23 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
         Diagnostic d7 = d(64, 4, 13, "The @Resource method 'setIsHappy1' must follow the standard JavaBeans convention: method must contain property name.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "FieldMustExistInSetter");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d5, d4, d6, d7);
+        Diagnostic d8 = d(63, 26, 39,
+                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
+                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
+        Diagnostic d9 = d(41, 0, 30,
+                          "The @Resource annotation must define the attribute 'name'.",
+                          DiagnosticSeverity.Error, "jakarta-annotations", "MissingResourceNameAttribute");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-        TextEdit te = te(22, 0, 22, 22, "@Resource(name = \"aa\", type = Object.class)");
+        TextEdit te = te(23, 0, 24, 0, "@Resource(name = \"aa\", type = Object.class)\n");
         CodeAction ca = ca(uri, "Insert 'type' attribute to @Resource", d1, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
-        TextEdit te1 = te(39, 0, 39, 30, "@Resource(type = Object.class, name = \"\")");
-        CodeAction ca1 = ca(uri, "Insert 'name' attribute to @Resource", d2, te1);
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d7);
+        TextEdit te1 = te(41, 0, 42, 0, "@Resource(type = Object.class, name = \"\")\n");
+        CodeAction ca1 = ca(uri, "Insert 'name' attribute to @Resource", d7, te1);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
     }
