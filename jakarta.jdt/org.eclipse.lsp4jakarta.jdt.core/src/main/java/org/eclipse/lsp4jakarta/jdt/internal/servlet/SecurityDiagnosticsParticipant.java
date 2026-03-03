@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 IBM Corporation and others.
+ * Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -28,6 +28,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -48,11 +49,9 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
         List<Diagnostic> diagnostics = new ArrayList<>();
-
         if (unit == null) {
             return diagnostics;
         }
-
         IType[] alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
             IAnnotation[] allAnnotations = type.getAnnotations();
@@ -65,10 +64,7 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
                     break;
                 }
             }
-
-            String[] interfaces = { Constants.SERVLET_FQ_NAME };
-            boolean isServletImplemented = DiagnosticUtils.doesImplementInterfaces(type, interfaces);
-
+            boolean isServletImplemented = doesITypeHaveSuperType(type, Constants.SERVLET_FQ_NAME);
             if (declareRolesAnnotation != null && !isServletImplemented) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
@@ -77,10 +73,19 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
                                                          ErrorCode.DeclareRolesAnnotatedClassDoesNotImplementServlet, DiagnosticSeverity.Error));
             }
         }
-
         return diagnostics;
     }
 
+    /**
+     * doesITypeHaveSuperType
+     * Check if specified superType is present or not in the type hierarchy
+     *
+     * @param fieldType
+     * @param superType
+     * @return
+     * @throws CoreException
+     */
+    private boolean doesITypeHaveSuperType(IType fieldType, String superType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
+    }
 }
-
-// Made with Bob
