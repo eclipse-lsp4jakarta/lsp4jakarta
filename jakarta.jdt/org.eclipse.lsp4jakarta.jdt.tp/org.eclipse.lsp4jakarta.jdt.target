@@ -19,15 +19,15 @@
       <unit id="org.eclipse.osgi" version="0.0.0"/>
       <unit id="org.eclipse.osgi.services" version="0.0.0"/>
       <unit id="org.eclipse.jdt.launching" version="0.0.0"/>
-   <unit id="org.eclipse.jdt.launching.macosx" version="0.0.0"/>
-      <repository location="https://download.eclipse.org/eclipse/updates/4.34/"/>
+   	  <unit id="org.eclipse.jdt.launching.macosx" version="0.0.0"/>
+   	  <repository location="http://download.eclipse.org/releases/2024-12/"/>
   </location>
-        <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
-            <unit id="org.eclipse.jdt.ls.core" version="0.0.0"/>
-            <unit id="org.eclipse.m2e.core" version="0.0.0"/>
-            <unit id="org.eclipse.m2e.jdt" version="0.0.0"/>
-            <unit id="org.eclipse.m2e.maven.runtime" version="0.0.0"/>
-            <unit id="org.eclipse.buildship.core" version="0.0.0"/>
+   	    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+   	        <unit id="org.eclipse.jdt.ls.core" version="0.0.0"/>
+   	        <unit id="org.eclipse.m2e.core" version="0.0.0"/>
+   	        <unit id="org.eclipse.m2e.jdt" version="0.0.0"/>
+   	        <unit id="org.eclipse.m2e.maven.runtime" version="0.0.0"/>
+   	        <unit id="org.eclipse.buildship.core" version="0.0.0"/>
             <unit id="org.apache.commons.commons-io" version="0.0.0"/>
             <unit id="org.eclipse.lsp4j" version="0.0.0"/>
             <unit id="org.eclipse.lsp4j.jsonrpc" version="0.0.0"/>
