@@ -141,7 +141,6 @@
                         <!-- kill test JVM if tests take more than 10 minutes (600 seconds) to
                             finish. This depends on speed of VM but current runs are 180s. -->
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
-                        
                     </configuration>
                 </plugin>
             </plugins>

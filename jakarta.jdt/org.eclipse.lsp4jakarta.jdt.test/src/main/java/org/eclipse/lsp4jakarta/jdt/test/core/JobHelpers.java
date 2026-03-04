@@ -39,6 +39,9 @@ public final class JobHelpers {
 
     private static final Logger LOGGER = Logger.getLogger(JobHelpers.class.getName());
 
+    // Lock to synchronize job waiting operations across multiple test threads
+    private static final Object JOB_WAIT_LOCK = new Object();
+
     private JobHelpers() {
         //no instantiation
     }
@@ -55,53 +58,56 @@ public final class JobHelpers {
     }
 
     public static void waitForJobsToComplete(IProgressMonitor monitor) throws InterruptedException, CoreException {
-        waitForBuildJobs();
+        // Synchronize to prevent multiple threads from suspending/resuming job manager concurrently
+        synchronized (JOB_WAIT_LOCK) {
+            waitForBuildJobs();
 
-        /*
-         * First, make sure refresh job gets all resource change events
-         *
-         * Resource change events are delivered after WorkspaceJob#runInWorkspace returns
-         * and during IWorkspace#run. Each change notification is delivered by
-         * only one thread/job, so we make sure no other workspaceJob is running then
-         * call IWorkspace#run from this thread.
-         *
-         * Unfortunately, this does not catch other jobs and threads that call IWorkspace#run
-         * so we have to hard-code workarounds
-         *
-         * See http://www.eclipse.org/articles/Article-Resource-deltas/resource-deltas.html
-         */
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IJobManager jobManager = Job.getJobManager();
-        jobManager.suspend();
-        try {
-            Job[] jobs = jobManager.find(null);
-            for (int i = 0; i < jobs.length; i++) {
-                if (jobs[i] instanceof WorkspaceJob || jobs[i].getClass().getName().endsWith("JREUpdateJob")) {
-                    jobs[i].join();
+            /*
+             * First, make sure refresh job gets all resource change events
+             *
+             * Resource change events are delivered after WorkspaceJob#runInWorkspace returns
+             * and during IWorkspace#run. Each change notification is delivered by
+             * only one thread/job, so we make sure no other workspaceJob is running then
+             * call IWorkspace#run from this thread.
+             *
+             * Unfortunately, this does not catch other jobs and threads that call IWorkspace#run
+             * so we have to hard-code workarounds
+             *
+             * See http://www.eclipse.org/articles/Article-Resource-deltas/resource-deltas.html
+             */
+            IWorkspace workspace = ResourcesPlugin.getWorkspace();
+            IJobManager jobManager = Job.getJobManager();
+            jobManager.suspend();
+            try {
+                Job[] jobs = jobManager.find(null);
+                for (int i = 0; i < jobs.length; i++) {
+                    if (jobs[i] instanceof WorkspaceJob || jobs[i].getClass().getName().endsWith("JREUpdateJob")) {
+                        jobs[i].join();
+                    }
                 }
-            }
-            workspace.run(new IWorkspaceRunnable() {
-                @Override
-                public void run(IProgressMonitor monitor) {}
-            }, workspace.getRoot(), 0, monitor);
+                workspace.run(new IWorkspaceRunnable() {
+                    @Override
+                    public void run(IProgressMonitor monitor) {}
+                }, workspace.getRoot(), 0, monitor);
 
-            // Now we flush all background processing queues
-            boolean processed = flushProcessingQueues(jobManager, monitor);
-            for (int i = 0; i < 10 && processed; i++) {
-                processed = flushProcessingQueues(jobManager, monitor);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
+                // Now we flush all background processing queues
+                boolean processed = flushProcessingQueues(jobManager, monitor);
+                for (int i = 0; i < 10 && processed; i++) {
+                    processed = flushProcessingQueues(jobManager, monitor);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                    }
                 }
+                if (processed) {
+                    LOGGER.warning("Could not flush background processing queues: " + getProcessingQueues(jobManager));
+                }
+            } finally {
+                jobManager.resume();
             }
-            if (processed) {
-                LOGGER.warning("Could not flush background processing queues: " + getProcessingQueues(jobManager));
-            }
-        } finally {
-            jobManager.resume();
+
+            waitForBuildJobs();
         }
-
-        waitForBuildJobs();
     }
 
     private static boolean flushProcessingQueues(IJobManager jobManager, IProgressMonitor monitor) throws InterruptedException, CoreException {
