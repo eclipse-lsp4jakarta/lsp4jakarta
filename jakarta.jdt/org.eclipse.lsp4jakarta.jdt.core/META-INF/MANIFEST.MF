@@ -26,10 +26,27 @@ Require-Bundle:
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
-Export-Package: 
- org.eclipse.lsp4jakarta.commons,
+Export-Package: org.eclipse.lsp4jakarta.commons,
  org.eclipse.lsp4jakarta.commons.codeaction,
  org.eclipse.lsp4jakarta.commons.utils,
  org.eclipse.lsp4jakarta.jdt.core,
  org.eclipse.lsp4jakarta.jdt.core.utils,
- org.eclipse.lsp4jakarta.jdt.internal.core.ls
+ org.eclipse.lsp4jakarta.jdt.internal;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.ls;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.java;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.java.codeaction;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.java.completion;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.java.corrections;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.java.diagnostics;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.core.providers;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.annotations;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.cdi;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.di;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.jaxrs;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.jsonb;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.jsonp;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.persistence;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.servlet;x-friends:="org.eclipse.lsp4jakarta.jdt.test",
+ org.eclipse.lsp4jakarta.jdt.internal.websocket;x-friends:="org.eclipse.lsp4jakarta.jdt.test"

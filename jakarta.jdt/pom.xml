@@ -32,7 +32,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <tycho.version>3.0.3</tycho.version>
+        <tycho.version>4.0.10</tycho.version>
         <tycho.scmUrl>scm:git:https://github.com/eclipse/lsp4jakarta</tycho.scmUrl>
         <tycho.generateSourceReferences>true</tycho.generateSourceReferences>
         <jdt.ls.version>1.21.0.20230316144047</jdt.ls.version>
@@ -43,14 +43,14 @@
     </properties>
     <repositories>
         <repository>
-            <id>2023-06</id>
+            <id>2024-12</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/releases/2023-06</url>
+            <url>http://download.eclipse.org/releases/2024-12</url>
         </repository>
         <repository>
             <id>jdt.ls.p2</id>
             <layout>p2</layout>
-            <url>https://download.eclipse.org/jdtls/milestones/1.21.0/repository/</url>
+            <url>https://download.eclipse.org/jdtls/milestones/1.43.0/repository/</url>
         </repository>
         <repository>
             <id>jdt.ls.maven.snapshots</id>
@@ -95,9 +95,9 @@
                     <resolver>p2</resolver>
                     <target>
                         <artifact>
-                            <groupId>org.eclipse.jdt.ls</groupId>
-                            <artifactId>org.eclipse.jdt.ls.tp</artifactId>
-                            <version>${jdt.ls.version}</version>
+                            <groupId>org.eclipse.lsp4jakarta</groupId>
+                            <artifactId>org.eclipse.lsp4jakarta.jdt.tp</artifactId>
+                            <version>${project.version}</version>
                         </artifact>
                     </target>
                     <pomDependencies>consider</pomDependencies>
@@ -141,6 +141,7 @@
                         <!-- kill test JVM if tests take more than 10 minutes (600 seconds) to
                             finish. This depends on speed of VM but current runs are 180s. -->
                         <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
+                        
                     </configuration>
                 </plugin>
             </plugins>
@@ -198,6 +199,7 @@
         </profile>
     </profiles>
     <modules>
+        <module>org.eclipse.lsp4jakarta.jdt.tp</module>
         <module>org.eclipse.lsp4jakarta.jdt.core</module>
         <module>org.eclipse.lsp4jakarta.jdt.site</module>
         <module>org.eclipse.lsp4jakarta.jdt.test</module>
