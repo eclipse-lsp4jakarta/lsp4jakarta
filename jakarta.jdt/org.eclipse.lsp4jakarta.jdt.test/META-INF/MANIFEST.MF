@@ -21,3 +21,16 @@ Require-Bundle: org.junit,
  org.eclipse.jdt.launching
 Bundle-ClassPath: .
 Import-Package: com.google.gson
+Export-Package: 
+ org.eclipse.lsp4jakarta.jdt.test.annotations,
+ org.eclipse.lsp4jakarta.jdt.test.beanvalidation,
+ org.eclipse.lsp4jakarta.jdt.test.cdi,
+ org.eclipse.lsp4jakarta.jdt.test.core,
+ org.eclipse.lsp4jakarta.jdt.test.di,
+ org.eclipse.lsp4jakarta.jdt.test.jaxrs,
+ org.eclipse.lsp4jakarta.jdt.test.jsonb,
+ org.eclipse.lsp4jakarta.jdt.test.jsonp,
+ org.eclipse.lsp4jakarta.jdt.test.nodiagnostics,
+ org.eclipse.lsp4jakarta.jdt.test.persistence,
+ org.eclipse.lsp4jakarta.jdt.test.servlet,
+ org.eclipse.lsp4jakarta.jdt.test.websocket
