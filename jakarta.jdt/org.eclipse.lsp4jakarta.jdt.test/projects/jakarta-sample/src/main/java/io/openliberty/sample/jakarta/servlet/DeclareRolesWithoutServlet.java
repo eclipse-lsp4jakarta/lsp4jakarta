@@ -7,4 +7,4 @@ public class DeclareRolesWithoutServlet {
     
 }
 
-// Made with Bob
+// Made with IBM Bob
