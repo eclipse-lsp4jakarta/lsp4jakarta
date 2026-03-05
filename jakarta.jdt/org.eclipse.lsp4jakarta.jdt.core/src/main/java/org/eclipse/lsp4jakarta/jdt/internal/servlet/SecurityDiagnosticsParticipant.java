@@ -89,3 +89,5 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
     }
 }
+
+//Made with IBM Bob
