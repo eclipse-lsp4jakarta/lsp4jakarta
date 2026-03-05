@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 IBM Corporation and others.
+ * Copyright (c) 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 public class ASTUtils {
 
@@ -68,5 +69,35 @@ public class ASTUtils {
         public List<MethodInvocation> getMethodInvocations() {
             return Collections.unmodifiableList(invocations);
         }
+    }
+
+    /**
+     * This visitor visits an ASTNode and records all the method declarations during its visit.
+     */
+    public class MethodDeclarationVisitor extends ASTVisitor {
+        private final List<MethodDeclaration> declarations = new ArrayList<>();
+
+        @Override
+        public boolean visit(final MethodDeclaration m) {
+            declarations.add(m);
+            return super.visit(m);
+        }
+
+        public List<MethodDeclaration> getMethodDeclarations() {
+            return Collections.unmodifiableList(declarations);
+        }
+    }
+
+    /**
+     * Given a compilation unit returns a list of all method declarations.
+     *
+     * @param unit
+     * @return list of method declarations
+     */
+    public static List<MethodDeclaration> getMethodDeclarations(ICompilationUnit unit) {
+        ASTNode node = getASTNode(unit);
+        MethodDeclarationVisitor visitor = new ASTUtils().new MethodDeclarationVisitor();
+        node.accept(visitor);
+        return visitor.getMethodDeclarations();
     }
 }
