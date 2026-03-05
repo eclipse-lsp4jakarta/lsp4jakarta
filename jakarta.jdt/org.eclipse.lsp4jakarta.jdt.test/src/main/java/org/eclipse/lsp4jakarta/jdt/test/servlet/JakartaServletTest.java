@@ -277,5 +277,7 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         CodeAction ca = ca(uri, "Let 'DeclareRolesWithoutServlet' extend 'HttpServlet'", d, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+        
+     // Made with IBM Bob
     }
 }
