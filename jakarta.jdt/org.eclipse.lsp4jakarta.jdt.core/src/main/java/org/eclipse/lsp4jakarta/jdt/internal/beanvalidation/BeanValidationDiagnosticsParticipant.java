@@ -45,6 +45,8 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRI
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -71,8 +73,6 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Bean validation diagnostics participant that manages the use of validation
@@ -107,12 +107,15 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             allFields = type.getFields();
             for (IField field : allFields) {
                 annotations = field.getAnnotations();
+                Range range = PositionUtils.toNameRange(field, context.getUtils());
+                // Check for conflicting constraints on fields
+                checkConflictingConstraints(context, uri, field, annotations, diagnostics, range);
+
                 for (IAnnotation annotation : annotations) {
                     String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
                                                                                          annotation.getElementName(),
                                                                                          SET_OF_ANNOTATIONS.toArray(new String[0]));
                     if (matchedAnnotation != null) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
                         validAnnotation(context, uri, field, range, annotation, matchedAnnotation, diagnostics);
                     }
                 }
@@ -120,25 +123,32 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             allMethods = type.getMethods();
             for (IMethod method : allMethods) {
                 annotations = method.getAnnotations();
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                // Check for conflicting constraints on methods
+                checkConflictingConstraints(context, uri, method, annotations, diagnostics, range);
+
                 for (IAnnotation annotation : annotations) {
                     String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
                                                                                          annotation.getElementName(),
                                                                                          SET_OF_ANNOTATIONS.toArray(new String[0]));
                     if (matchedAnnotation != null) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
                         validAnnotation(context, uri, method, range, annotation, matchedAnnotation, diagnostics);
                     }
                 }
                 // parameter level annotations
                 for (ILocalVariable param : method.getParameters()) {
-                    for (IAnnotation annotation : param.getAnnotations()) {
+                    IAnnotation[] paramAnnotations = param.getAnnotations();
+                    Range paramRange = PositionUtils.toNameRange(param, context.getUtils());
+                    // Check for conflicting constraints on parameters
+                    checkConflictingConstraints(context, uri, param, paramAnnotations, diagnostics, paramRange);
+
+                    for (IAnnotation annotation : paramAnnotations) {
                         String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
                                                                                              annotation.getElementName(),
                                                                                              SET_OF_ANNOTATIONS.toArray(new String[0]));
 
                         if (matchedAnnotation != null) {
-                            Range range = PositionUtils.toNameRange(param, context.getUtils());
-                            validAnnotation(context, uri, param, range, annotation, matchedAnnotation, diagnostics);
+                            validAnnotation(context, uri, param, paramRange, annotation, matchedAnnotation, diagnostics);
                         }
                     }
                 }
@@ -357,5 +367,73 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      */
     public static boolean isArrayType(String childTypeString) {
         return null != childTypeString && childTypeString.startsWith("[");
+    }
+
+    /**
+     * Check for conflicting constraint annotations (e.g., @Min > @Max, @DecimalMin > @DecimalMax, @Size min > max).
+     *
+     * @param range
+     */
+    private void checkConflictingConstraints(JavaDiagnosticsContext context, String uri, IJavaElement element,
+                                             IAnnotation[] annotations, List<Diagnostic> diagnostics, Range range) throws JavaModelException {
+        IType declaringType = element instanceof IMember ? ((IMember) element).getDeclaringType() : element instanceof ILocalVariable ? ((IMethod) ((ILocalVariable) element).getDeclaringMember()).getDeclaringType() : null;
+        if (declaringType == null)
+            return;
+
+        IAnnotation minAnn = null, maxAnn = null, decMinAnn = null, decMaxAnn = null, sizeAnn = null;
+
+        for (IAnnotation ann : annotations) {
+            String matched = DiagnosticUtils.getMatchedJavaElementName(declaringType, ann.getElementName(),
+                                                                       new String[] { MIN, MAX, DECIMAL_MIN, DECIMAL_MAX, SIZE });
+            if (matched != null) {
+                switch (matched) {
+                    case MIN -> minAnn = ann;
+                    case MAX -> maxAnn = ann;
+                    case DECIMAL_MIN -> decMinAnn = ann;
+                    case DECIMAL_MAX -> decMaxAnn = ann;
+                    case SIZE -> sizeAnn = ann;
+                }
+            }
+        }
+
+        // Check @Min/@Max conflict
+        if (minAnn != null && maxAnn != null) {
+            Long min = DiagnosticUtils.getAnnotationMemberValue(minAnn, "value", Long.class);
+            Long max = DiagnosticUtils.getAnnotationMemberValue(maxAnn, "value", Long.class);
+            if (min != null && max != null && min > max) {
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("ConflictingConstraintAnnotationsMinMax", min.toString(), max.toString()),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
+            }
+        }
+
+        // Check @DecimalMin/@DecimalMax conflict
+        if (decMinAnn != null && decMaxAnn != null) {
+            String min = DiagnosticUtils.getAnnotationMemberValue(decMinAnn, "value", String.class);
+            String max = DiagnosticUtils.getAnnotationMemberValue(decMaxAnn, "value", String.class);
+            if (min != null && max != null) {
+                try {
+                    if (Double.parseDouble(min) > Double.parseDouble(max)) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("ConflictingConstraintAnnotationsDecimalMinMax", min, max),
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
+                    }
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
+
+        // Check @Size min/max conflict
+        if (sizeAnn != null) {
+            Integer min = DiagnosticUtils.getAnnotationMemberValue(sizeAnn, "min", Integer.class);
+            Integer max = DiagnosticUtils.getAnnotationMemberValue(sizeAnn, "max", Integer.class);
+            if (min != null && max != null && min > max) {
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("ConflictingConstraintAnnotationsSize", min.toString(), max.toString()),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
+            }
+        }
+        
+     // Made with IBM Bob
     }
 }
