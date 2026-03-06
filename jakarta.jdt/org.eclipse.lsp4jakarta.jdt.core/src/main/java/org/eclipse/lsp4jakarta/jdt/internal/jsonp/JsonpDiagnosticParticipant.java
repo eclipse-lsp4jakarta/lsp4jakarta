@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2022, 2023 IBM Corporation and others.
+* Copyright (c) 2022, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.jsonp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
@@ -21,8 +23,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.lsp4j.Diagnostic;
@@ -41,6 +45,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * Json Processing (JSON-P) diagnostic participant.
  */
 public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(JsonpDiagnosticParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -79,7 +85,53 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
             }
         }
 
+        //Used to get the list of method invocations for JsonObjectBuilder add methods
+        List<MethodInvocation> createObjectBuilderMethodInvocations = allMethodInvocations.stream().filter(mi -> {
+            try {
+                return isMatchedJsonObjectBuilder(unit, mi);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        }).collect(Collectors.toList());
+        for (MethodInvocation m : createObjectBuilderMethodInvocations) {
+            if (!m.arguments().isEmpty()) {
+                Expression arg = (Expression) m.arguments().get(0);
+                if (arg instanceof NullLiteral) {
+                    //https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
+                    //Does not allow key to be null for JsonObjectBuilder.add() method
+                    try {
+                        Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
+                        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidJsonObjectBuilderKey, DiagnosticSeverity.Error));
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
+                    }
+                }
+            }
+        }
         return diagnostics;
+    }
+
+    /**
+     * Method used to identify jakarta.json.JsonObjectBuilder.add type method invocations
+     *
+     * @param unit
+     * @param mi
+     * @return boolean
+     * @throws JavaModelException
+     */
+    private boolean isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (binding != null) {
+            ITypeBinding declaringClass = binding.getDeclaringClass();
+            if (declaringClass != null) {
+                String fqName = declaringClass.getQualifiedName() + "." + binding.getName();
+                if (Constants.JAKARTA_JSON_OBJECT_BUILDER_ADD.equals(fqName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean isInvalidArgument(Expression arg) {
