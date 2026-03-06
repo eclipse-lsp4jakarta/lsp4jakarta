@@ -276,14 +276,19 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteServletAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-servlet#WebServletAnnotationAttributeConflict"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteServletAnnotationQuickFix" />  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.CompleteServletAnnotationQuickFix" />
 
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-servlet#WebServletAnnotatedClassDoesNotExtendHttpServlet"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-servlet#WebServletAnnotatedClassUnknownSuperTypeDoesNotExtendHttpServlet"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />                            
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />
+
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.servlet.SecurityDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-servlet#DeclareRolesAnnotatedClassDoesNotImplementServlet"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />
    </extension>
    
    <!-- CDI -->

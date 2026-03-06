@@ -49,6 +49,11 @@ public class Constants {
     public static final String VALUE = "value";
     public static final String SERVLET_NAMES = "servletNames";
 
+    /* @DeclareRoles */
+    public static final String DECLARE_ROLES_FQ_NAME = "jakarta.annotation.security.DeclareRoles";
+    public static final String SERVLET = "Servlet";
+    public static final String SERVLET_FQ_NAME = "jakarta.servlet.Servlet";
+
     /* Diagnostics fields constants */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-servlet";
 }
