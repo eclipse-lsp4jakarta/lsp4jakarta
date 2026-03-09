@@ -26,7 +26,6 @@ public enum ErrorCode implements IJavaErrorCode {
     PriorityShouldBeNonNegative,
     ResourceNameMustStartWithSet,
     ResourceReturnTypeMustBeVoid,
-    ResourceTypeMismatch,
     ResourceMustDeclareExactlyOneParam,
     PostConstructParams,
     PostConstructReturnType,
