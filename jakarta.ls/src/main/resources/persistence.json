@@ -104,5 +104,63 @@
 	        "type": "jakarta.persistence.NamedEntityGraph",
 			"contentType": "before-class"
 	    }
+	},
+	"Jakarta Persistence - entity listener": {
+	    "prefix": "persist_entity_listener",
+	    "body": [
+			"package ${1:packagename};",
+		    "",
+			"import jakarta.persistence.PostLoad;",
+			"import jakarta.persistence.PostPersist;",
+			"import jakarta.persistence.PostRemove;",
+			"import jakarta.persistence.PostUpdate;",
+			"import jakarta.persistence.PrePersist;",
+			"import jakarta.persistence.PreRemove;",
+			"import jakarta.persistence.PreUpdate;",
+			"",
+			"public class ${TM_FILENAME_BASE} {",
+			"",
+			"\t@PrePersist",
+			"\tpublic void prePersist(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostPersist",
+			"\tpublic void postPersist(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PreUpdate",
+			"\tpublic void preUpdate(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostUpdate",
+			"\tpublic void postUpdate(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PreRemove",
+			"\tpublic void preRemove(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostRemove",
+			"\tpublic void postRemove(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"",
+			"\t@PostLoad",
+			"\tpublic void postLoad(Object entity) {",
+			"\t\t// TODO",
+			"\t}",
+			"}"
+	    ],
+	    "description": "Persistence entity listener",
+	    "context": {
+	        "type": "jakarta.persistence.EntityListeners",
+			"contentType": "class"
+	    }
 	}
+	
 }

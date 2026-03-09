@@ -33,8 +33,8 @@ class ResourceAnnotationTypeMismatch {
 	}
 
     @Resource(type = Integer.class)
-	public void setMatchsStudentId(Integer studentId) {
-		this.studentId = studentId;
+	public void setStudentId1(Integer studentId) {
+		this.studentId1 = studentId;
 	}
     
     @Resource(type = Integer.class)
@@ -48,7 +48,9 @@ class ResourceAnnotationTypeMismatch {
 	}
     
     @Resource(type = Boolean.class)
-	public void setChemStudentId(boolean frenchhStudentId) {
+	public void setFrenchhStudentId(boolean frenchhStudentId) {
 		this.frenchhStudentId = frenchhStudentId;
 	}
+    
+    private Integer studentId1;
 } 
