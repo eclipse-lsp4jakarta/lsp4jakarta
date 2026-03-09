@@ -598,6 +598,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                      DiagnosticSeverity.Warning));
         }
     }
+
     /**
      * isResourceTypeNotCompatible
      * It checks whether the resource annotation type is compatible with its field type or method parameter type.
