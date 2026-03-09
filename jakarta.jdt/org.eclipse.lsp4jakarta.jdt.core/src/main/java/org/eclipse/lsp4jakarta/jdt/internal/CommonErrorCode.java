@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2026 IBM Corporation and others.
+* Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,20 +10,20 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.jaxrs;
+package org.eclipse.lsp4jakarta.jdt.internal;
 
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 
 /**
- * JAX-RS error code.
+ * Common error codes.
  */
-public enum ErrorCode implements IJavaErrorCode {
-    NonPublicResourceMethod,
-    ResourceMethodMultipleEntityParams,
-    UnusedConstructor,
-    AmbiguousConstructors,
-    NoPublicConstructors,
-    InvalidConstraintTarget;
+public enum CommonErrorCode implements IJavaErrorCode {
+
+    NameMustStartWithSet,
+    MustDeclareExactlyOneParam,
+    ReturnTypeMustBeVoid,
+    MethodMustBePublic,
+    FieldMustExistInSetter;
 
     /**
      * {@inheritDoc}
@@ -32,5 +32,4 @@ public enum ErrorCode implements IJavaErrorCode {
     public String getCode() {
         return name();
     }
-
 }

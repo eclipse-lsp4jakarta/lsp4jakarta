@@ -33,6 +33,9 @@ public class Constants {
     /* @Resources */
     public static final String RESOURCES_FQ_NAME = "jakarta.annotation.Resources";
 
+    /* @Priority */
+    public static final String PRIORITY_FQ_NAME = "jakarta.annotation.Priority";
+
     /* @PostConstruct */
     public static final String POST_CONSTRUCT_FQ_NAME = "jakarta.annotation.PostConstruct";
 
