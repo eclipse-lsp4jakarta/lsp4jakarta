@@ -20,7 +20,8 @@ Require-Bundle: org.junit,
  org.eclipse.jdt.ls.core;resolution:=optional,
  org.eclipse.jdt.launching
 Bundle-ClassPath: .
-Import-Package: com.google.gson
+Import-Package: com.google.gson,
+ org.apache.commons.io
 Export-Package: 
  org.eclipse.lsp4jakarta.jdt.test.annotations,
  org.eclipse.lsp4jakarta.jdt.test.beanvalidation,
