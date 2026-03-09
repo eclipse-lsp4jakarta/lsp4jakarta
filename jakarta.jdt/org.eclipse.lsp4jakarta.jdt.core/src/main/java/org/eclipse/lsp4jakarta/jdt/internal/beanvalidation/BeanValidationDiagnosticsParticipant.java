@@ -398,8 +398,8 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         // Check @Min/@Max conflict
         if (minAnn != null && maxAnn != null) {
-            Long min = DiagnosticUtils.getAnnotationMemberValue(minAnn, "value", Long.class);
-            Long max = DiagnosticUtils.getAnnotationMemberValue(maxAnn, "value", Long.class);
+            Long min = getNumericValue(minAnn, "value", Long.class);
+            Long max = getNumericValue(maxAnn, "value", Long.class);
             if (min != null && max != null && min > max) {
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsMinMax", min.toString(), max.toString()),
@@ -425,15 +425,33 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         // Check @Size min/max conflict
         if (sizeAnn != null) {
-            Integer min = DiagnosticUtils.getAnnotationMemberValue(sizeAnn, "min", Integer.class);
-            Integer max = DiagnosticUtils.getAnnotationMemberValue(sizeAnn, "max", Integer.class);
+            Integer min = getNumericValue(sizeAnn, "min", Integer.class);
+            Integer max = getNumericValue(sizeAnn, "max", Integer.class);
             if (min != null && max != null && min > max) {
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsSize", min.toString(), max.toString()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
             }
         }
-        
-     // Made with IBM Bob
+
+    }
+
+    /**
+     * getNumericValue
+     * Helper method to get numeric annotation values with type conversion.
+     * Handles conversion from any Number type to the expected type.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends Number> T getNumericValue(IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
+        Object value = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Object.class);
+        if (value instanceof Number) {
+            Number num = (Number) value;
+            if (expectedType == Long.class) {
+                return (T) Long.valueOf(num.longValue());
+            } else if (expectedType == Integer.class) {
+                return (T) Integer.valueOf(num.intValue());
+            }
+        }
+        return null;
     }
 }

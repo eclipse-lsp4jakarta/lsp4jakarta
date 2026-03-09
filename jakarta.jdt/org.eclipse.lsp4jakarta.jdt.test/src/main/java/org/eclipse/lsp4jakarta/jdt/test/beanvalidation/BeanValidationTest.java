@@ -571,6 +571,5 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
 
-     // Made with IBM Bob
     }
 }

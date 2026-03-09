@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -343,6 +343,7 @@ public class DiagnosticUtils {
     }
 
     /**
+     * getAnnotationMemberValue
      * Get an annotation member value with type casting.
      *
      * @param annotation the annotation
@@ -350,20 +351,16 @@ public class DiagnosticUtils {
      * @param type the expected type class
      * @return the member value cast to the specified type, or null if not found or type mismatch
      * @throws JavaModelException if there's an error accessing the annotation
+     * 
      */
     @SuppressWarnings("unchecked")
     public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
         for (var pair : annotation.getMemberValuePairs()) {
             if (memberName.equals(pair.getMemberName())) {
                 Object value = pair.getValue();
-                if (type == Long.class && value instanceof Integer) {
-                    return (T) Long.valueOf(((Integer) value).longValue());
-                }
                 return type.isInstance(value) ? (T) value : null;
             }
         }
         return null;
     }
-    
- // Made with IBM Bob
 }
