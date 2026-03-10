@@ -32,9 +32,9 @@
     </properties>
     <repositories>
         <repository>
-            <id>2024-09</id>
+            <id>2024-06</id>
             <layout>p2</layout>
-            <url>http://download.eclipse.org/releases/2024-09</url>
+            <url>http://download.eclipse.org/releases/2024-06</url>
         </repository>
     </repositories>
     <pluginRepositories>
