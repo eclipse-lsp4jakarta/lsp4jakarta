@@ -351,14 +351,13 @@ public class DiagnosticUtils {
      *
      * @param m
      * @param constructorInfo
-     * @return Map<String, Boolean>
      * @throws JavaModelException
      */
-    public static Map<String, Boolean> hasValidNoArgsConstructor(IMethod m, Map<String, Boolean> constructorInfo) throws JavaModelException {
-        if (isConstructorMethod(m)) {
+    public static void checkValidNoArgsConstructor(IMethod method, Map<String, Boolean> constructorInfo) throws JavaModelException {
+        if (isConstructorMethod(method)) {
             constructorInfo.put("hasConstructor", true); // Check explicit constructor declaration
-            String[] params = m.getParameterTypes();
-            int flags = m.getFlags();
+            String[] params = method.getParameterTypes();
+            int flags = method.getFlags();
             if (params.length == 0) { // Checks for user defined no-args constructor
                 if (Flags.isPublic(flags)) {
                     constructorInfo.put("hasValidPublicNoArgsConstructor", true);
@@ -368,6 +367,5 @@ public class DiagnosticUtils {
                 }
             }
         }
-        return constructorInfo;
     }
 }

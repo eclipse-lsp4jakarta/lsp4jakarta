@@ -80,7 +80,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
                 for (IMethod method : type.getMethods()) {
                     //Checks if method is a constructor and has valid no-args constructor
-                    constructorInfo = DiagnosticUtils.hasValidNoArgsConstructor(method, constructorInfo);
+                    DiagnosticUtils.checkValidNoArgsConstructor(method, constructorInfo);
                 }
                 // Conditions for checking missing public no-args constructor
                 if (!constructorInfo.get("hasValidPublicNoArgsConstructor") && constructorInfo.get("hasConstructor")) {
