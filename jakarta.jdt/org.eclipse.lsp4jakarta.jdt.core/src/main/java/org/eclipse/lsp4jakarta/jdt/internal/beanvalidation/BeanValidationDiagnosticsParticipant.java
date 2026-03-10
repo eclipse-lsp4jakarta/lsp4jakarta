@@ -419,7 +419,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
                     }
                 } catch (NumberFormatException e) {
-                	LOGGER.log(Level.INFO, "Ignore invalid number format");
+                    LOGGER.log(Level.INFO, "Ignore invalid number format");
                 }
             }
         }
