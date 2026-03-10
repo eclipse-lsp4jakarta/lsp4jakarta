@@ -359,7 +359,7 @@ public class DiagnosticUtils {
             constructorInfo.put("hasConstructor", true); // Check explicit constructor declaration
             String[] params = m.getParameterTypes();
             int flags = m.getFlags();
-            if (params.length == 0) { // Checks manually declared no-args constructor
+            if (params.length == 0) { // Checks for user defined no-args constructor
                 if (Flags.isPublic(flags)) {
                     constructorInfo.put("hasValidPublicNoArgsConstructor", true);
                 }
