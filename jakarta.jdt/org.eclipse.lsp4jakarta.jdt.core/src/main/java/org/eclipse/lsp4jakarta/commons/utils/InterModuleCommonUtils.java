@@ -38,22 +38,29 @@ public class InterModuleCommonUtils {
      * @return
      * @throws JavaModelException
      */
-    public static boolean checkIsInterceptorType(IType type, ICompilationUnit unit) throws JavaModelException {
-        boolean isInterceptorType = false;
+    public static boolean isInterceptorReferencedType(IType type, ICompilationUnit unit) throws JavaModelException {
         if (type != null) {
-            isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
-                try {
-                    return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                                Constants.INTERCEPTOR_FQ_NAME);
-                } catch (JavaModelException e) {
-                    LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
-                    return false;
-                }
-            });
-            if (!isInterceptorType) {
+            if (!isInterceptorType(type)) {
                 return DiagnosticUtils.isImportReferencedJavaElement(unit, Constants.INTERCEPTOR_IMPORT);
             }
         }
-        return isInterceptorType;
+        return false;
+    }
+
+    /**
+     * @param type
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isInterceptorType(IType type) throws JavaModelException {
+        return Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                            Constants.INTERCEPTOR_FQ_NAME);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
+                return false;
+            }
+        });
     }
 }

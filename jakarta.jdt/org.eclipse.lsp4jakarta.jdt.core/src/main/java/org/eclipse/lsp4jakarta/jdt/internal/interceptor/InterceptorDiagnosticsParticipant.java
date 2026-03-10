@@ -76,14 +76,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             constructorInfo.put("hasConstructor", false);
             constructorInfo.put("hasValidPublicNoArgsConstructor", false);
             int typeFlag = type.getFlags();
-            boolean isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
-                try {
-                    return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.INTERCEPTOR_FQ_NAME);
-                } catch (JavaModelException e) {
-                    LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
-                    return false;
-                }
-            });
+            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 if (Flags.isAbstract(typeFlag)) {
@@ -142,17 +135,14 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
         }
-        if (InterModuleCommonUtils.checkIsInterceptorType(parentType, unit)) {
+        if (InterModuleCommonUtils.isInterceptorReferencedType(parentType, unit)) {
             for (Object modifier : mi.modifiers()) {
                 if (modifier instanceof Annotation) {
                     Annotation ann = (Annotation) modifier;
                     String annName = ann.getTypeName().getFullyQualifiedName();
-                    if (isInterceptorAnnotation(parentType, annName)) {
-                        ProceedVisitor proceedVisitor = new ProceedVisitor();
-                        mi.accept(proceedVisitor);
-                        if (!proceedVisitor.proceedCalled) {
-                            return true;
-                        }
+                    if (isInterceptorAnnotation(parentType, annName) && !ASTUtils.containsMethodInvocation(mi,
+                                                                                                           Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
+                        return true;
                     }
                 }
             }
@@ -173,32 +163,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             try {
                 return DiagnosticUtils.isMatchedJavaElement(type, annName, annotation);
             } catch (JavaModelException e) {
-                JakartaCorePlugin.logException("Cannot validate annotations", e);
+                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
                 return false;
             }
         });
-    }
-
-    /**
-     * ProceedVisitor static inner class is used to traverse through the method declaration of Interceptor methods
-     */
-    static class ProceedVisitor extends ASTVisitor {
-
-        boolean proceedCalled = false;
-
-        @Override
-        public boolean visit(MethodInvocation node) {
-            if (Constants.PROCEED.equals(node.getName().getIdentifier())) {
-                IMethodBinding binding = node.resolveMethodBinding();
-                if (binding != null) {
-                    ITypeBinding declaringClass = binding.getDeclaringClass();
-                    if (declaringClass != null &&
-                        Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT.equals(declaringClass.getQualifiedName())) {
-                        proceedCalled = true;
-                    }
-                }
-            }
-            return super.visit(node);
-        }
     }
 }

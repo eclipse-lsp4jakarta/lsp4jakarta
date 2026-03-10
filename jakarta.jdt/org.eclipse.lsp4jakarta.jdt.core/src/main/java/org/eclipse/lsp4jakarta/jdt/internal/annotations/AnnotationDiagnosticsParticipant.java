@@ -273,7 +273,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         //Checks if @PostConstruct is not used in Interceptor class
-                        if (!InterModuleCommonUtils.checkIsInterceptorType(method.getDeclaringType(), unit)) {
+                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
                             if (checkedExceptions.size() > 0) {
                                 String diagnosticMessage = Messages.getMessage(
                                                                                "MethodMustNotThrow", "@PostConstruct");
@@ -312,7 +312,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         //Checks if @PreDestroy is not used in Interceptor class
-                        if (!InterModuleCommonUtils.checkIsInterceptorType(method.getDeclaringType(), unit)) {
+                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
                             if (checkedExceptions.size() > 0) {
                                 String diagnosticMessage = Messages.getMessage(
                                                                                "MethodMustNotThrow", "@PreDestroy");

@@ -20,6 +20,9 @@ public class ValidInterceptorMethodsProceed {
     @AroundConstruct
     public Object aroundConstruct(InvocationContext ctx) throws Exception {
         System.out.println("Around construct");
+        ctx.getConstructor();
+        ctx.proceed();
+        ctx.getMethod();
         return ctx.proceed(); 
     }
 
