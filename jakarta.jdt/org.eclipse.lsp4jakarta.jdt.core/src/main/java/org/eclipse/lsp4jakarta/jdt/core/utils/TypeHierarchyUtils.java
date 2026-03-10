@@ -148,4 +148,17 @@ public class TypeHierarchyUtils {
             collectSuperTypes(superType, hierarchy);
         }
     }
+
+    /**
+     * inheritsFrom
+     * Check if specified superType is present or not in the type hierarchy
+     *
+     * @param fieldType
+     * @param superType
+     * @return
+     * @throws CoreException
+     */
+    public static boolean inheritsFrom(IType fieldType, String superType) throws CoreException {
+        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
+    }
 }

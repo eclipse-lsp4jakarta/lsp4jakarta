@@ -26,7 +26,7 @@ public enum ErrorCode implements IJavaErrorCode {
     WebServletAnnotatedClassUnknownSuperTypeDoesNotExtendHttpServlet,
     WebServletAnnotationMissingAttributes,
     WebServletAnnotationAttributeConflict,
-    DeclareRolesAnnotatedClassDoesNotImplementServlet;
+    DeclareRolesOnNonServletClass;
 
     /**
      * {@inheritDoc}

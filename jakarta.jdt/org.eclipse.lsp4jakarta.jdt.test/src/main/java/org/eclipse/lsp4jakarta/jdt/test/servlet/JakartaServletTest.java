@@ -266,7 +266,7 @@ public class JakartaServletTest extends BaseJakartaTest {
         // expected
         Diagnostic d = d(5, 13, 39, "Annotated classes with @DeclareRoles must implement the Servlet interface or its subclasses.",
                          DiagnosticSeverity.Error, "jakarta-servlet",
-                         "DeclareRolesAnnotatedClassDoesNotImplementServlet");
+                         "DeclareRolesOnNonServletClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
 
@@ -277,7 +277,7 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         CodeAction ca = ca(uri, "Let 'DeclareRolesWithoutServlet' extend 'HttpServlet'", d, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
-        
-     // Made with IBM Bob
+
+        // Made with IBM Bob
     }
 }

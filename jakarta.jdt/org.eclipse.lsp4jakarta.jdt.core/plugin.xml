@@ -287,7 +287,7 @@
 
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.servlet.SecurityDiagnosticsParticipant" />
       <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-servlet#DeclareRolesAnnotatedClassDoesNotImplementServlet"
+                  targetDiagnostic="jakarta-servlet#DeclareRolesOnNonServletClass"
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />
    </extension>
    

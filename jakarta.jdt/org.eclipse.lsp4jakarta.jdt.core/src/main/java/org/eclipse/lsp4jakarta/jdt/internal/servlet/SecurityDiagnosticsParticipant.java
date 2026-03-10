@@ -34,9 +34,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
- * Security diagnostic participant for @DeclareRoles annotation.
+ * Security diagnostic participant.
  *
- * @see https://jakarta.ee/specifications/platform/9/apidocs/jakarta/annotation/security/declareroles
+ * @see https://jakarta.ee/specifications/servlet/5.0/jakarta-servlet-spec-5.0#security
  */
 public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -64,29 +64,16 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
                     break;
                 }
             }
-            boolean isServletImplemented = doesITypeHaveSuperType(type, Constants.SERVLET_FQ_NAME);
-            if (declareRolesAnnotation != null && !isServletImplemented) {
+            boolean implementsServlet = TypeHierarchyUtils.inheritsFrom(type, Constants.SERVLET_FQ_NAME);
+            if (declareRolesAnnotation != null && !implementsServlet) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("DeclareRolesMustImplement"), range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.DeclareRolesAnnotatedClassDoesNotImplementServlet, DiagnosticSeverity.Error));
+                                                         ErrorCode.DeclareRolesOnNonServletClass, DiagnosticSeverity.Error));
             }
         }
         return diagnostics;
-    }
-
-    /**
-     * doesITypeHaveSuperType
-     * Check if specified superType is present or not in the type hierarchy
-     *
-     * @param fieldType
-     * @param superType
-     * @return
-     * @throws CoreException
-     */
-    private boolean doesITypeHaveSuperType(IType fieldType, String superType) throws CoreException {
-        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
     }
 }
 
