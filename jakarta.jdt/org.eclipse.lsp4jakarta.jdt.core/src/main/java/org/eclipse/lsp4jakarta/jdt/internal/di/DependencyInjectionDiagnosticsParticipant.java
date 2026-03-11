@@ -81,6 +81,23 @@ public class DependencyInjectionDiagnosticsParticipant implements IJavaDiagnosti
             IField[] allFields = type.getFields();
             IType parent = type.getDeclaringType();
             boolean isCdiScoped = hasCdiScopeAnnotation(type);
+            //https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/
+            //Under Scope
+            //A scope annotation should not have attributes.
+            //Checks if type is @interface annotated
+            if (type.isAnnotation()) {
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                //Checks if type annotation contains @Scope
+                boolean containsScope = containsAnnotation(type, type.getAnnotations(), Constants.SCOPE_FQ_NAME);
+                //Checks if there are any attributes inside the type
+                boolean hasAttributes = type.getMethods().length > 0 || type.getFields().length > 0;
+                if (containsScope && hasAttributes) {
+                    diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidScopeAttributesOnType", type.getElementName()),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidScopeAttributes,
+                                                             DiagnosticSeverity.Error));
+                }
+            }
             for (IField field : allFields) {
                 Range range = PositionUtils.toNameRange(field,
                                                         context.getUtils());

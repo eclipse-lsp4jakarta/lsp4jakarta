@@ -150,4 +150,21 @@ public class DependencyInjectionTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8);
     }
+  
+    @Test
+    public void InvalidScopeAttributesOnType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidScopeAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Create expected diagnostics.
+        Diagnostic d1 = d(5, 18, 40,
+                          "Scope annotated interface: InvalidScopeAttributes should not declare any attributes.",
+                          DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+    }
 }

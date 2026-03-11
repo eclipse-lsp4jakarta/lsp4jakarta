@@ -40,4 +40,5 @@ public class Constants {
     public static final Set<String> IMPLICIT_QUALIFIERS = Set.of(
                                                                  "jakarta.enterprise.inject.Default",
                                                                  "jakarta.enterprise.inject.Any");
+    public static final String SCOPE_FQ_NAME = "jakarta.inject.Scope";
 }

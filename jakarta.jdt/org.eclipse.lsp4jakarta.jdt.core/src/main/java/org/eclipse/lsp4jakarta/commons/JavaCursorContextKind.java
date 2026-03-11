@@ -194,7 +194,7 @@ public enum JavaCursorContextKind {
      * </code>
      */
     IN_CLASS(8),
-    
+
     /**
      * Added as part of syncing up ls4mp and lsp4jakarta as part of issue #520. This value could be used for future enhancements.
      * The cursor is before a type declaration body at the root of a file.

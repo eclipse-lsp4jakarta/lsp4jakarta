@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -36,15 +36,20 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.messages.Tuple;
 import org.eclipse.lsp4j.jsonrpc.messages.Tuple.Two;
+import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.CommonErrorCode;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 
 /**
  *
@@ -62,6 +67,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         String uri = context.getUri();
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
+
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
         List<Diagnostic> diagnostics = new ArrayList<>();
 
@@ -70,10 +76,15 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             String[] validAnnotations = { Constants.GENERATED_FQ_NAME };
             String[] validTypeAnnotations = { Constants.GENERATED_FQ_NAME,
                                               Constants.RESOURCE_FQ_NAME,
-                                              Constants.RESOURCES_FQ_NAME };
+                                              Constants.RESOURCES_FQ_NAME,
+                                              Constants.PRIORITY_FQ_NAME };
+            String[] validFieldAnnotations = { Constants.GENERATED_FQ_NAME,
+                                               Constants.RESOURCE_FQ_NAME,
+                                               Constants.RESOURCES_FQ_NAME };
             String[] validMethodAnnotations = { Constants.GENERATED_FQ_NAME,
                                                 Constants.POST_CONSTRUCT_FQ_NAME, Constants.PRE_DESTROY_FQ_NAME,
                                                 Constants.RESOURCE_FQ_NAME };
+            String[] validMethodParamAnnotations = { Constants.GENERATED_FQ_NAME, Constants.PRIORITY_FQ_NAME };
 
             IPackageDeclaration[] packages = unit.getPackageDeclarations();
             for (IPackageDeclaration p : packages) {
@@ -105,7 +116,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     for (ILocalVariable parameter : parameters) {
                         annotations = parameter.getAnnotations();
                         for (IAnnotation annotation : annotations) {
-                            if (isValidAnnotation(annotation.getElementName(), validAnnotations))
+                            if (isValidAnnotation(annotation.getElementName(), validMethodParamAnnotations))
                                 annotatables.add(new Tuple.Two<>(annotation, parameter));
                         }
                     }
@@ -115,7 +126,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 for (IField field : fields) {
                     annotations = field.getAnnotations();
                     for (IAnnotation annotation : annotations) {
-                        if (isValidAnnotation(annotation.getElementName(), validTypeAnnotations))
+                        if (isValidAnnotation(annotation.getElementName(), validFieldAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, field));
                     }
                 }
@@ -150,40 +161,20 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                         }
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCE_FQ_NAME)) {
+                    Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
                     if (element instanceof IType) {
                         IType type = (IType) element;
-                        if (type.getElementType() == IJavaElement.TYPE && ((IType) type).isClass()) {
-                            Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                            Boolean nameEmpty = true;
-                            Boolean typeEmpty = true;
-                            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-                                if (pair.getMemberName().equals("name")) {
-                                    nameEmpty = false;
-                                }
-                                if (pair.getMemberName().equals("type")) {
-                                    typeEmpty = false;
-                                }
-                            }
-                            String diagnosticMessage;
-                            if (nameEmpty) {
-                                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
-                                                                        "@Resource", "name");
-                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.MissingResourceNameAttribute,
-                                                                         DiagnosticSeverity.Error));
-                            }
+                        validateResourceClass(context, uri, diagnostics, annotation, type, annotationRange);
+                    } else if (element instanceof IMethod) {
+                        IMethod method = (IMethod) element;
+                        validateResourceMethod(method, uri, annotationRange, context,
+                                               diagnostics, annotation);
 
-                            if (typeEmpty) {
-                                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
-                                                                        "@Resource", "type");
-                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
-                                                                         Constants.DIAGNOSTIC_SOURCE,
-                                                                         ErrorCode.MissingResourceTypeAttribute,
-                                                                         DiagnosticSeverity.Error));
-                            }
-                        }
+                    } else if (element instanceof IField) {
+                        IField field = (IField) element;
+                        validateResourceField(context, uri, diagnostics, annotation, field, annotationRange);
                     }
+
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.RESOURCES_FQ_NAME)) {
                     if (element instanceof IType) {
                         for (IMemberValuePair internalAnnotation : annotation.getMemberValuePairs()) {
@@ -249,6 +240,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                             }
                         }
                     }
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PRIORITY_FQ_NAME)) {
+                    validatePriority(context, uri, diagnostics, annotation, element);
                 }
 
                 // process methods now?
@@ -256,12 +249,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PostConstruct");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PostConstructException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -291,12 +286,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        if (isCheckedExceptionPresent(method)) {
+                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                        if (checkedExceptions.size() > 0) {
                             String diagnosticMessage = Messages.getMessage(
                                                                            "MethodMustNotThrow", "@PreDestroy");
                             diagnostics.add(
                                             context.createDiagnostic(uri, diagnosticMessage, methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE,
+                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
                                                                      ErrorCode.PreDestroyException,
                                                                      DiagnosticSeverity.Error));
                         }
@@ -326,7 +323,41 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
     }
 
     /**
-     * isCheckedExceptionPresent
+     * validatePriority
+     * This method validates priority values to check whether any negative values have been applied.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param element
+     * @throws JavaModelException
+     */
+    private void validatePriority(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                  IAnnotation annotation, IAnnotatable element) throws JavaModelException {
+
+        // Priority is valid only for elements that are either classes or method parameters.
+        if (element instanceof IType || element instanceof ILocalVariable) {
+            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                if ("value".equals(pair.getMemberName()) && pair.getValue() instanceof Integer) {
+                    int priority = (Integer) pair.getValue();
+                    if (priority < 0) {
+                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                        String diagnosticMessage = Messages.getMessage(
+                                                                       "PriorityShouldBeNonNegative");
+                        diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                                 annotationRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.PriorityShouldBeNonNegative,
+                                                                 DiagnosticSeverity.Warning));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * getCheckedExceptionsDeclared
      * This method scans the exception signatures to identify if any checked exceptions are declared.
      *
      * @param method
@@ -334,9 +365,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
      * @throws JavaModelException
      * @throws CoreException
      */
-    private boolean isCheckedExceptionPresent(IMethod method) throws JavaModelException, CoreException {
+    private List<String> getCheckedExceptionsDeclared(IMethod method) throws JavaModelException, CoreException {
 
         IType parentType = method.getDeclaringType();
+        List<String> checkedExceptions = new ArrayList<String>();
         String[] exceptionSignatures = method.getExceptionTypes();
         for (String sig : exceptionSignatures) {
             IType exceptionType = ManagedBean.getChildITypeByName(parentType, Signature.toString(sig));
@@ -348,11 +380,128 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
              */
             if (extendsException(exceptionType)) {
                 if (notExtendsRunTimeException(exceptionType)) {
-                    return true;
+                    checkedExceptions.add(exceptionType.getFullyQualifiedName());
                 }
             }
         }
-        return false;
+        return checkedExceptions;
+    }
+
+    /**
+     * validateResourceClass
+     * This method is responsible for finding diagnostics in classes annotated with @Resource.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param type
+     * @param annotationRange
+     * @throws JavaModelException
+     */
+    private void validateResourceClass(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                       IAnnotation annotation, IType type, Range annotationRange) throws JavaModelException {
+        String diagnosticMessage;
+        if (type.isClass()) {
+            Boolean nameEmpty = true;
+            Boolean typeEmpty = true;
+            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                if (pair.getMemberName().equals("name")) {
+                    nameEmpty = false;
+                }
+                if (pair.getMemberName().equals("type")) {
+                    typeEmpty = false;
+                }
+            }
+            if (nameEmpty) {
+                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
+                                                        "@Resource", "name");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.MissingResourceNameAttribute,
+                                                         DiagnosticSeverity.Error));
+            }
+
+            if (typeEmpty) {
+                diagnosticMessage = Messages.getMessage("AnnotationMustDefineAttribute",
+                                                        "@Resource", "type");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.MissingResourceTypeAttribute,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * validateResourceMethod
+     * This method is responsible for finding diagnostics in methods annotated with @Resource.
+     *
+     * @param method
+     * @param uri
+     * @param annotationRange
+     * @param context
+     * @param diagnostics
+     * @param annotation
+     * @throws JavaModelException
+     */
+    public void validateResourceMethod(IMethod method, String uri, Range annotationRange,
+                                       JavaDiagnosticsContext context, List<Diagnostic> diagnostics, IAnnotation annotation) throws JavaModelException {
+
+        List<CommonErrorCode> errorCodes = DiagnosticUtils.validateSetterMethod(method, method.getDeclaringType());
+        String methodName = method.getElementName();
+        String diagnosticMessage = null;
+        if (errorCodes.isEmpty()) {
+            ILocalVariable parameter = method.getParameters()[0];
+            String signatureType = ((ILocalVariable) parameter).getTypeSignature();
+            IType parentType = ((IMethod) ((ILocalVariable) parameter).getDeclaringMember()).getDeclaringType();
+            if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+                diagnosticMessage = Messages.getMessage("ResourceTypeMismatchParameter");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.ResourceTypeMismatch,
+                                                         DiagnosticSeverity.Error));
+            }
+
+        } else {
+            for (CommonErrorCode errorCode : errorCodes) {
+                diagnosticMessage = Messages.getMessage(errorCode.getCode(),
+                                                        "@Resource", methodName);
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE, errorCode,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * validateResourceField
+     * This method is responsible for finding diagnostics in fields annotated with @Resource.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param annotation
+     * @param element
+     * @param annotationRange
+     * @throws JavaModelException
+     */
+    private void validateResourceField(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                       IAnnotation annotation, IField field, Range annotationRange) throws JavaModelException {
+        String diagnosticMessage;
+        String signatureType = field.getTypeSignature();
+        IType parentType = field.getDeclaringType();
+        if (isResourceTypeNotCompatible(annotation, signatureType, parentType)) {
+            diagnosticMessage = Messages.getMessage("ResourceTypeMismatchField");
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     diagnosticMessage,
+                                                     annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.ResourceTypeMismatch,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 
     /**
@@ -392,6 +541,51 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return false;
+    }
+
+    /**
+     * isResourceTypeNotCompatible
+     * It checks whether the resource annotation type is compatible with its field type or method parameter type.
+     *
+     * @param annotation
+     * @param signatureType
+     * @param parentType
+     * @return
+     * @throws JavaModelException
+     */
+    private static boolean isResourceTypeNotCompatible(IAnnotation annotation, String signatureType, IType parentType) throws JavaModelException {
+        try {
+            IType resourceType = getResourceType(annotation, parentType);
+            if (null != resourceType) {
+                int isSuperType = TypeHierarchyUtils.doesITypeHaveSuperType(resourceType,
+                                                                            DiagnosticUtils.getDataTypeName(signatureType));
+                if (isSuperType == -1) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            JakartaCorePlugin.logException("Cannot calculate Annotation diagnostics", e);
+        }
+        return false;
+    }
+
+    /**
+     * getResourceType
+     * Returns the IType corresponding to the Resource type specified in the @Resource annotation.
+     *
+     * @param annotation
+     * @param parentType
+     * @return
+     * @throws JavaModelException
+     */
+    public static IType getResourceType(IAnnotation annotation, IType parentType) throws JavaModelException {
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if ("type".equals(pair.getMemberName())) {
+                String resourceTypeString = (String) pair.getValue();
+                return ManagedBean.getChildITypeByName(parentType, resourceTypeString);
+            }
+        }
+        return null;
     }
 
 }

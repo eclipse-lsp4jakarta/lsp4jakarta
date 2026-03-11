@@ -48,8 +48,8 @@ public class JakartaEESnippetRegistryLoader implements ISnippetRegistryLoader {
                                   JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("websocket.json"),
                                   SnippetContextForJava.TYPE_ADAPTER);
         registry.registerSnippets(
-					                        JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("interceptors.json"),
-					                        SnippetContextForJava.TYPE_ADAPTER);
+                                  JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("interceptors.json"),
+                                  SnippetContextForJava.TYPE_ADAPTER);
         registry.registerSnippets(
                                   JakartaEESnippetRegistryLoader.class.getClassLoader().getResourceAsStream("dependencyinjection.json"),
                                   SnippetContextForJava.TYPE_ADAPTER);

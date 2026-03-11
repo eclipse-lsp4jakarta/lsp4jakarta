@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2025 IBM Corporation and others.
+* Copyright (c) 2025, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,7 +17,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IMemberValuePair;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.jsonb.Constants;
 
 /**
@@ -56,5 +58,18 @@ public class JsonPropertyUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * @param type
+     * @param annotation
+     * @return
+     * @throws JavaModelException
+     * @description Method returns true if elements matches one of the JSONB annotations are present.
+     */
+    public static boolean isJsonbType(IType type, IAnnotation annotation) throws JavaModelException {
+        String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                             Constants.JSONB_ANNOTATIONS.toArray(String[]::new));
+        return matchedAnnotation != null;
     }
 }

@@ -295,15 +295,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
 
-	private boolean hasField(IMethod method, IType type) throws JavaModelException {
+    private boolean hasField(IMethod method, IType type) throws JavaModelException {
 
-		String methodName = method.getElementName();
+        String methodName = method.getElementName();
 
-		// Exclude 'get' from method name and decapitalize the first letter
-		String expectedFieldName = (methodName.startsWith("get") && methodName.length() > 3)
-				? Introspector.decapitalize(methodName.substring(3))
-				: null;
-		IField expectedfield = StringUtils.isNotBlank(expectedFieldName) ? type.getField(expectedFieldName) : null;
-		return expectedfield != null && expectedfield.exists();
-	}
+        // Exclude 'get' from method name and decapitalize the first letter
+        String expectedFieldName = (methodName.startsWith("get") && methodName.length() > 3) ? Introspector.decapitalize(methodName.substring(3)) : null;
+        IField expectedfield = StringUtils.isNotBlank(expectedFieldName) ? type.getField(expectedFieldName) : null;
+        return expectedfield != null && expectedfield.exists();
+    }
 }

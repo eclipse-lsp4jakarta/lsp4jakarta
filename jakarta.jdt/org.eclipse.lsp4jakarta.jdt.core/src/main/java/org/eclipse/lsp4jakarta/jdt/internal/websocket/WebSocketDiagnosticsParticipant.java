@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2022, 2023 IBM Corporation and others.
+* Copyright (c) 2022, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,11 +19,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -46,6 +48,8 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+
+import com.google.gson.JsonArray;
 
 /**
  * WebSocket Diagnostic participant.
@@ -93,10 +97,48 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
 
                 // ServerEndpoint annotation diagnostics
                 serverEndpointErrorCheck(context, uri, type, diagnostics, unit);
+
+                publicNoArgsConstructorCheck(context, uri, type, diagnostics);
+
+                duplicateLifeCycleAnnotationCheck(context, uri, type, diagnostics);
             }
         }
 
         return diagnostics;
+    }
+
+    private void duplicateLifeCycleAnnotationCheck(JavaDiagnosticsContext context, String uri, IType type,
+                                                   List<Diagnostic> diagnostics) throws JavaModelException {
+
+        Set<String> visitedAnnotations = new HashSet<>();
+
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                String annotationName = annotation.getElementName();
+
+                if (isLifecycleAnnotation(type, annotationName)) {
+                    if (visitedAnnotations.contains(annotationName)) {
+                        JsonArray diagnosticsData = new JsonArray();
+                        diagnosticsData.add(Constants.WEBSOCKET_ANNOTATION_FQN.get(annotationName));
+                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), annotationName),
+                                                                 range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, diagnosticsData,
+                                                                 ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
+                    } else {
+                        visitedAnnotations.add(annotationName);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isLifecycleAnnotation(IType type, String annotationName) throws JavaModelException {
+        return DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)
+               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)
+               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_ERROR);
     }
 
     private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, IType type, ICompilationUnit unit,
@@ -361,6 +403,33 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 }
             }
         }
+    }
+
+    private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
+                                              List<Diagnostic> diagnostics) throws JavaModelException {
+
+        boolean hasUserDefinedConstructor = false, hasPublicNoArgConstructor = false;
+
+        for (IMethod method : type.getMethods()) {
+            if (DiagnosticUtils.isConstructorMethod(method)) {
+                hasUserDefinedConstructor = true;
+                String[] params = method.getParameterTypes();
+                int flags = method.getFlags();
+                if (params.length == 0 && Flags.isPublic(flags)) {
+                    hasPublicNoArgConstructor = true;
+                }
+            }
+        }
+
+        if (hasUserDefinedConstructor && !hasPublicNoArgConstructor) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("publicNoArgConstructorMissing", type.getElementName()), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.missingPublicNoArgConstructor,
+                                                     DiagnosticSeverity.Error));
+        }
+
     }
 
     /**

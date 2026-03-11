@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -181,22 +181,26 @@ public class BeanValidationTest extends BaseJakartaTest {
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                            "jakarta.validation.constraints.AssertTrue");
         Diagnostic d20 = d(63, 27, 36,
+                           "The @Past annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type fields.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                           "jakarta.validation.constraints.Past");
+        Diagnostic d21 = d(63, 27, 36,
                            "Constraint annotations are not allowed on static fields.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                            "jakarta.validation.constraints.Past");
 
-        Diagnostic d21 = d(66, 20, 26,
+        Diagnostic d22 = d(66, 20, 26,
                            "This annotation can only be used on fields of type CharSequence, Collection, Array, or Map.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                            "jakarta.validation.constraints.Size");
 
-        Diagnostic d22 = d(69, 29, 45,
+        Diagnostic d23 = d(69, 29, 45,
                            "This annotation can only be used on fields of type CharSequence, Collection, Array, or Map.",
                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                            "jakarta.validation.constraints.NotEmpty");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8,
-                              d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22);
+                              d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23);
 
         // Test quickfix codeActions - type (1-17), static, static+type (should only
         // display static)
@@ -310,11 +314,11 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca1, ca2);
 
-        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d20);
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d21);
         TextEdit te3 = te(62, 4, 63, 4, "");
         TextEdit te4 = te(63, 11, 63, 18, "");
-        CodeAction ca3 = ca(uri, "Remove constraint annotation Past from element", d20, te3);
-        CodeAction ca4 = ca(uri, "Remove the 'static' modifier", d20, te4);
+        CodeAction ca3 = ca(uri, "Remove constraint annotation Past from element", d21, te3);
+        CodeAction ca4 = ca(uri, "Remove the 'static' modifier", d21, te4);
 
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3, ca4);
 
@@ -324,15 +328,15 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca5);
 
-        JakartaJavaCodeActionParams codeActionParams21 = createCodeActionParams(uri, d21);
+        JakartaJavaCodeActionParams codeActionParams21 = createCodeActionParams(uri, d22);
         TextEdit te22 = te(65, 4, 66, 4, "");
-        CodeAction ca22 = ca(uri, "Remove constraint annotation Size from element", d21, te22);
+        CodeAction ca22 = ca(uri, "Remove constraint annotation Size from element", d22, te22);
 
         assertJavaCodeAction(codeActionParams21, IJDT_UTILS, ca22);
 
-        JakartaJavaCodeActionParams codeActionParams22 = createCodeActionParams(uri, d22);
+        JakartaJavaCodeActionParams codeActionParams22 = createCodeActionParams(uri, d23);
         TextEdit te23 = te(68, 4, 69, 4, "");
-        CodeAction ca23 = ca(uri, "Remove constraint annotation NotEmpty from element", d22, te23);
+        CodeAction ca23 = ca(uri, "Remove constraint annotation NotEmpty from element", d23, te23);
 
         assertJavaCodeAction(codeActionParams22, IJDT_UTILS, ca23);
     }
@@ -358,16 +362,20 @@ public class BeanValidationTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
                           "jakarta.validation.constraints.AssertTrue");
         Diagnostic d3 = d(31, 23, 33,
+                          "The @AssertFalse annotation can only be used on boolean and Boolean type methods.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                          "jakarta.validation.constraints.AssertFalse");
+        Diagnostic d4 = d(31, 23, 33,
                           "Constraint annotations are not allowed on static methods.",
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidConstrainAnnotationOnStaticMethodOrField",
                           "jakarta.validation.constraints.AssertFalse");
 
-        Diagnostic d4 = d(36, 19, 28,
+        Diagnostic d5 = d(36, 19, 28,
                           "This annotation can only be used on methods that have CharSequence, Collection, Array or Map as a return type.",
                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
                           "jakarta.validation.constraints.Size");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
 
         // Test quickfix codeActions
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
@@ -387,12 +395,146 @@ public class BeanValidationTest extends BaseJakartaTest {
         codeActionParams = createCodeActionParams(uri, d3);
         te = te(20, 4, 21, 4, "");
         te2 = te(21, 10, 21, 17, "");
-        ca = ca(uri, "Remove constraint annotation AssertFalse from element", d3, te);
-        ca2 = ca(uri, "Remove the 'static' modifier", d3, te2);
+        ca = ca(uri, "Remove constraint annotation AssertFalse from element", d4, te);
+        ca2 = ca(uri, "Remove the 'static' modifier", d4, te2);
+
+        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d5);
+        TextEdit te4 = te(35, 4, 36, 4, "");
+        CodeAction ca4 = ca(uri, "Remove constraint annotation Size from element", d5, te4);
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
+    }
+
+    @Test
+    public void methodParamConstraintValidation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/MethodParamConstraintValidation.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics
+        Diagnostic d1 = d(51, 42, 56,
+                          "The @Past annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          "jakarta.validation.constraints.Past");
+        Diagnostic d2 = d(51, 77, 81,
+                          "The @Positive annotation can only be used on \n- BigDecimal \n- BigInteger\n- byte, short, int, long, float, double (and their respective wrappers) \n type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                          "jakarta.validation.constraints.Positive");
+        Diagnostic d3 = d(52, 30, 46,
+                          "This annotation can only be used on parameters that have CharSequence, Collection, Array or Map as a parameter type.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
+                          "jakarta.validation.constraints.NotEmpty");
+
+        Diagnostic d4 = d(57, 39, 46,
+                          "The @Negative annotation can only be used on \n- BigDecimal \n- BigInteger\n- byte, short, int, long, float, double (and their respective wrappers) \n type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveMethodOrField",
+                          "jakarta.validation.constraints.Negative");
+
+        Diagnostic d5 = d(57, 66, 78,
+                          "The @NotBlank annotation can only be used on String and CharSequence type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.NotBlank");
+
+        Diagnostic d6 = d(58, 34, 44,
+                          "The @Pattern annotation can only be used on String and CharSequence type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.Pattern");
+
+        Diagnostic d7 = d(63, 68, 69,
+                          "The @Digits annotation can only be used on: \n- BigDecimal \n- BigInteger \n- CharSequence\n- byte, short, int, long (and their respective wrappers) \n type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField",
+                          "jakarta.validation.constraints.Digits");
+
+        Diagnostic d8 = d(63, 86, 98,
+                          "The @Email annotation can only be used on String and CharSequence type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringMethodOrField",
+                          "jakarta.validation.constraints.Email");
+
+        Diagnostic d9 = d(64, 28, 42,
+                          "The @FutureOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type parameters.",
+                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeMethodOrField",
+                          "jakarta.validation.constraints.FutureOrPresent");
+
+        Diagnostic d10 = d(69, 41, 42,
+                           "This annotation can only be used on parameters that have CharSequence, Collection, Array or Map as a parameter type.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeMethodOrField",
+                           "jakarta.validation.constraints.Size");
+
+        Diagnostic d11 = d(69, 63, 64,
+                           "The @AssertTrue annotation can only be used on boolean and Boolean type parameters.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanMethodOrField",
+                           "jakarta.validation.constraints.AssertTrue");
+
+        Diagnostic d12 = d(69, 93, 103,
+                           "The @DecimalMax annotation can only be used on: \n- BigDecimal \n- BigInteger \n- CharSequence\n- byte, short, int, long (and their respective wrappers) \n type parameters.",
+                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField",
+                           "jakarta.validation.constraints.DecimalMax");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(51, 29, 51, 35, "");
+        CodeAction ca1 = ca(uri, "Remove constraint annotation Past from element", d1, te1);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        TextEdit te2 = te(51, 58, 51, 68, "");
+        CodeAction ca2 = ca(uri, "Remove constraint annotation Positive from element", d2, te2);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
+
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
+        TextEdit te3 = te(52, 3, 52, 13, "");
+        CodeAction ca3 = ca(uri, "Remove constraint annotation NotEmpty from element", d3, te3);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3);
 
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d4);
-        TextEdit te4 = te(35, 4, 36, 4, "");
-        CodeAction ca4 = ca(uri, "Remove constraint annotation Size from element", d4, te4);
+        TextEdit te4 = te(57, 21, 57, 31, "");
+        CodeAction ca4 = ca(uri, "Remove constraint annotation Negative from element", d4, te4);
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
+
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te5 = te(57, 48, 57, 58, "");
+        CodeAction ca5 = ca(uri, "Remove constraint annotation NotBlank from element", d5, te5);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
+
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d6);
+        TextEdit te6 = te(58, 3, 58, 25, "");
+        CodeAction ca6 = ca(uri, "Remove constraint annotation Pattern from element", d6, te6);
+        assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca6);
+
+        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d7);
+        TextEdit te7 = te(63, 25, 63, 60, "");
+        CodeAction ca7 = ca(uri, "Remove constraint annotation Digits from element", d7, te7);
+        assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca7);
+
+        JakartaJavaCodeActionParams codeActionParams8 = createCodeActionParams(uri, d8);
+        TextEdit te8 = te(63, 71, 63, 78, "");
+        CodeAction ca8 = ca(uri, "Remove constraint annotation Email from element", d8, te8);
+        assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca8);
+
+        JakartaJavaCodeActionParams codeActionParams9 = createCodeActionParams(uri, d9);
+        TextEdit te9 = te(64, 3, 64, 20, "");
+        CodeAction ca9 = ca(uri, "Remove constraint annotation FutureOrPresent from element", d9, te9);
+        assertJavaCodeAction(codeActionParams9, IJDT_UTILS, ca9);
+
+        JakartaJavaCodeActionParams codeActionParams10 = createCodeActionParams(uri, d10);
+        TextEdit te10 = te(69, 28, 69, 34, "");
+        CodeAction ca10 = ca(uri, "Remove constraint annotation Size from element", d10, te10);
+        assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca10);
+
+        JakartaJavaCodeActionParams codeActionParams11 = createCodeActionParams(uri, d11);
+        TextEdit te11 = te(69, 44, 69, 56, "");
+        CodeAction ca11 = ca(uri, "Remove constraint annotation AssertTrue from element", d11, te11);
+        assertJavaCodeAction(codeActionParams11, IJDT_UTILS, ca11);
+
+        JakartaJavaCodeActionParams codeActionParams12 = createCodeActionParams(uri, d12);
+        TextEdit te12 = te(69, 66, 69, 86, "");
+        CodeAction ca12 = ca(uri, "Remove constraint annotation DecimalMax from element", d12, te12);
+        assertJavaCodeAction(codeActionParams12, IJDT_UTILS, ca12);
+
     }
 }
