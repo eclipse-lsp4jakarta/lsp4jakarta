@@ -98,41 +98,7 @@ public class BaseJakartaTest {
         }
 
         IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(description.getName());
-
-        // Add JRE system library to classpath to avoid "Missing system library" errors
-        // This is synchronized within addJRESystemLibrary to prevent concurrent modifications
-        addJRESystemLibrary(javaProject);
-
         return javaProject;
-    }
-
-    /**
-     * Adds the JRE system library to the project's classpath if not already present.
-     * This prevents "Missing system library" errors when using JDT ASTParser.
-     * Synchronized to prevent concurrent classpath modifications.
-     */
-    private static void addJRESystemLibrary(IJavaProject javaProject) throws CoreException {
-        // Synchronize on the project to prevent concurrent classpath modifications
-        synchronized (javaProject) {
-            IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
-
-            // Check if JRE system library is already in the classpath
-            for (IClasspathEntry entry : rawClasspath) {
-                if (entry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
-                    IPath entryPath = entry.getPath();
-                    if (entryPath.segment(0).equals(JavaRuntime.JRE_CONTAINER)) {
-                        // JRE system library already exists
-                        return;
-                    }
-                }
-            }
-
-            // Add default JRE system library
-            IClasspathEntry[] newClasspath = new IClasspathEntry[rawClasspath.length + 1];
-            System.arraycopy(rawClasspath, 0, newClasspath, 0, rawClasspath.length);
-            newClasspath[rawClasspath.length] = JavaRuntime.getDefaultJREContainerEntry();
-            javaProject.setRawClasspath(newClasspath, null);
-        }
     }
 
     private static File copyProjectToWorkingDirectory(String projectName, String parentDirName) throws IOException {
