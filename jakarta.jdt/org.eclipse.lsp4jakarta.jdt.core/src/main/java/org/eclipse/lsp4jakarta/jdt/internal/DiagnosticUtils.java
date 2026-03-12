@@ -354,29 +354,6 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Checks if the given method is a constructor and has valid no-args constructor.
-     *
-     * @param m
-     * @param constructorInfo
-     * @throws JavaModelException
-     */
-    public static void checkValidNoArgsConstructor(IMethod method, Map<String, Boolean> constructorInfo) throws JavaModelException {
-        if (isConstructorMethod(method)) {
-            constructorInfo.put("hasConstructor", true); // Check explicit constructor declaration
-            String[] params = method.getParameterTypes();
-            int flags = method.getFlags();
-            if (params.length == 0) { // Checks for user defined no-args constructor
-                if (Flags.isPublic(flags)) {
-                    constructorInfo.put("hasValidPublicNoArgsConstructor", true);
-                }
-                if (Flags.isProtected(flags)) {
-                    constructorInfo.put("hasValidProtectedNoArgsConstructor", true);
-                }
-            }
-        }
-    }
-  
-    /**
      * getDataTypeName
      * Converts signature type name into its type name.
      *

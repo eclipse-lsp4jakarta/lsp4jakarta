@@ -15,9 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +36,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.ConstructorInfoDiagnosticHelper;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
@@ -58,10 +57,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         IType[] types = unit.getAllTypes();
+        ConstructorInfoDiagnosticHelper constructorInfo = null;
         for (IType type : types) {
-            Map<String, Boolean> constructorInfo = new HashMap<>();
-            constructorInfo.put("hasConstructor", false);
-            constructorInfo.put("hasValidPublicNoArgsConstructor", false);
             int typeFlag = type.getFlags();
             boolean isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
                 try {
@@ -80,10 +77,10 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
                 for (IMethod method : type.getMethods()) {
                     //Checks if method is a constructor and has valid no-args constructor
-                    DiagnosticUtils.checkValidNoArgsConstructor(method, constructorInfo);
+                    constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(method);
                 }
                 // Conditions for checking missing public no-args constructor
-                if (!constructorInfo.get("hasValidPublicNoArgsConstructor") && constructorInfo.get("hasConstructor")) {
+                if (constructorInfo != null && !constructorInfo.hasValidPublicNoArgsConstructor() && constructorInfo.hasConstructor()) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ErrorMessageInterceptorNoArgConstructorMissing", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorNoArgsConstructorMissing, DiagnosticSeverity.Error));
