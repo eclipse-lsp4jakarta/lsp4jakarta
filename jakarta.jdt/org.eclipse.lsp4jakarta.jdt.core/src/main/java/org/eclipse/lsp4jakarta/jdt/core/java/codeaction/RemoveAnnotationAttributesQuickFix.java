@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -75,11 +76,21 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
     }
 
     protected IBinding getBinding(ASTNode node) {
-        if (node.getParent() instanceof VariableDeclarationFragment) {
-            return ((VariableDeclarationFragment) node.getParent()).resolveBinding();
-        } else if (node.getParent() instanceof MethodDeclaration) {
-            return ((MethodDeclaration) node.getParent()).resolveBinding();
+        ASTNode parent = node.getParent();
+
+        // Method annotation
+        if (parent instanceof MethodDeclaration) {
+            return ((MethodDeclaration) parent).resolveBinding();
         }
+
+        // Field annotation - get VariableDeclarationFragment from FieldDeclaration
+        if (parent instanceof FieldDeclaration) {
+        	FieldDeclaration fieldDecl = (FieldDeclaration) parent;
+            if (!fieldDecl.fragments().isEmpty()) {
+                return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
+            }
+        }
+
         return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
     }
 

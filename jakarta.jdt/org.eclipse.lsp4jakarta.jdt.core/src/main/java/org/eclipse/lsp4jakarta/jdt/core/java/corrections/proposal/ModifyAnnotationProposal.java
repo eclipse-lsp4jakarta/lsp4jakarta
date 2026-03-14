@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
@@ -130,12 +131,10 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             // add new annotations to proposal (restoring those that were removed)
             for (Annotation a : existingAnnotations) {
                 if (a instanceof NormalAnnotation) {
-                    NormalAnnotation marker = null;
-                    marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
+                    NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
 
                     // add new annotation proposal to the rewrite text edit
-                    rewrite.getListRewrite(declNode,
-                                           isField ? FieldDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
+                    rewrite.getListRewrite(declNode, FieldDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
                 }
             }
 
@@ -155,8 +154,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             // add new annotations to proposal (restoring those that were removed)
             for (Annotation a : existingAnnotations) {
                 if (a instanceof NormalAnnotation) {
-                    NormalAnnotation marker = null;
-                    marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
+                    NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
 
                     // add new annotation proposal to the rewrite text edit
                     rewrite.getListRewrite(declNode, MethodDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
@@ -165,7 +163,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
             return rewrite;
 
-        } else if (declNode instanceof TypeDeclaration || isField || isSingleVarDecl) {
+        } else if (declNode instanceof TypeDeclaration || isSingleVarDecl) {
             // Annotation in question is set on a class declaration or is a method parameter declaration
             AST ast = declNode.getAST();
             ASTRewrite rewrite = ASTRewrite.create(ast);
@@ -174,8 +172,6 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             List<Annotation> existingAnnotations = new ArrayList<Annotation>();
             ChildListPropertyDescriptor property = isSingleVarDecl ? SingleVariableDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY;
             List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(property);
-
-            boolean isCompositeAnnotation = false;
 
             // find and save existing annotation, then remove it from ast
             // this will cause the entire annotation to be deleted from the file
@@ -212,14 +208,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                     newAnnotationToWrite = createNewAnnotation(ast, imports, importRewriteContext, annotation);
                 }
 
-                ChildListPropertyDescriptor newRewrite;
-                if (isSingleVarDecl) {
-                    newRewrite = SingleVariableDeclaration.MODIFIERS2_PROPERTY;
-                } else if (isField) {
-                    newRewrite = FieldDeclaration.MODIFIERS2_PROPERTY;
-                } else {
-                    newRewrite = TypeDeclaration.MODIFIERS2_PROPERTY;
-                }
+                ChildListPropertyDescriptor newRewrite = isSingleVarDecl ? SingleVariableDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY;
 
                 // add new annotation proposal to the rewrite text edit
                 rewrite.getListRewrite(declNode, newRewrite).insertFirst(newAnnotationToWrite, null);
