@@ -85,7 +85,7 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
 
         // Field annotation - get VariableDeclarationFragment from FieldDeclaration
         if (parent instanceof FieldDeclaration) {
-        	FieldDeclaration fieldDecl = (FieldDeclaration) parent;
+            FieldDeclaration fieldDecl = (FieldDeclaration) parent;
             if (!fieldDecl.fragments().isEmpty()) {
                 return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
             }
