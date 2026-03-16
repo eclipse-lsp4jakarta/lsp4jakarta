@@ -11,7 +11,7 @@
 * Contributors:
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.core.java.diagnostics;
+package org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helper;
 
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
@@ -65,25 +65,25 @@ public final class ConstructorInfoDiagnosticHelper {
      * @throws JavaModelException
      */
     public static ConstructorInfoDiagnosticHelper getConstructorInfo(IMethod method) throws JavaModelException {
-        boolean hasConstructor = false;
-        boolean hasValidPublicNoArgs = false;
-        boolean hasValidProtectedNoArgs = false;
+        boolean isUserDefinedConstructor = false;
+        boolean isPublicNoArgsConstructor = false;
+        boolean isProtectedNoArgsConstructor = false;
 
         if (DiagnosticUtils.isConstructorMethod(method)) {
-            hasConstructor = true; // Check explicit constructor declaration
+            isUserDefinedConstructor = true; // Check explicit constructor declaration
             String[] params = method.getParameterTypes();
             int flags = method.getFlags();
 
             if (params.length == 0) { // User-defined no-args constructor
                 if (Flags.isPublic(flags)) {
-                    hasValidPublicNoArgs = true;
+                    isPublicNoArgsConstructor = true;
                 }
                 if (Flags.isProtected(flags)) {
-                    hasValidProtectedNoArgs = true;
+                    isProtectedNoArgsConstructor = true;
                 }
             }
         }
-        return new ConstructorInfoDiagnosticHelper(hasConstructor, hasValidPublicNoArgs, hasValidProtectedNoArgs); // This ensures that the values don't get changed
+        return new ConstructorInfoDiagnosticHelper(isUserDefinedConstructor, isPublicNoArgsConstructor, isProtectedNoArgsConstructor); // This ensures that the values don't get changed
     }
 
     /**
@@ -104,7 +104,7 @@ public final class ConstructorInfoDiagnosticHelper {
      *
      * @return
      */
-    public static ConstructorInfoDiagnosticHelper empty() {
+    public static ConstructorInfoDiagnosticHelper initialize() {
         return new ConstructorInfoDiagnosticHelper(false, false, false);
     }
 }

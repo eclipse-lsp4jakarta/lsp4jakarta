@@ -36,7 +36,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.ConstructorInfoDiagnosticHelper;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helper.ConstructorInfoDiagnosticHelper;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
@@ -59,7 +59,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             int typeFlag = type.getFlags();
-            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.empty();
+            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.initialize();
             boolean isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
                 try {
                     return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.INTERCEPTOR_FQ_NAME);
