@@ -57,7 +57,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         IType[] types = unit.getAllTypes();
-        ConstructorInfoDiagnosticHelper constructorInfo = null;
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.empty();
         for (IType type : types) {
             int typeFlag = type.getFlags();
             boolean isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
@@ -77,7 +77,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
                 for (IMethod method : type.getMethods()) {
                     //Checks if method is a constructor and has valid no-args constructor
-                    constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(method);
+                    constructorInfo = ConstructorInfoDiagnosticHelper.mergeConstructorInfo(constructorInfo, ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
                 }
                 // Conditions for checking missing public no-args constructor
                 if (constructorInfo != null && !constructorInfo.hasValidPublicNoArgsConstructor() && constructorInfo.hasConstructor()) {

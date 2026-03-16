@@ -68,6 +68,7 @@ public final class ConstructorInfoDiagnosticHelper {
         boolean hasConstructor = false;
         boolean hasValidPublicNoArgs = false;
         boolean hasValidProtectedNoArgs = false;
+
         if (DiagnosticUtils.isConstructorMethod(method)) {
             hasConstructor = true; // Check explicit constructor declaration
             String[] params = method.getParameterTypes();
@@ -83,5 +84,27 @@ public final class ConstructorInfoDiagnosticHelper {
             }
         }
         return new ConstructorInfoDiagnosticHelper(hasConstructor, hasValidPublicNoArgs, hasValidProtectedNoArgs); // This ensures that the values don't get changed
+    }
+
+    /**
+     * This method merges the constructor check info and retains the constructor information
+     *
+     * @param info
+     * @return
+     */
+    public static ConstructorInfoDiagnosticHelper mergeConstructorInfo(ConstructorInfoDiagnosticHelper initialValue, ConstructorInfoDiagnosticHelper calculatedValue) {
+        return new ConstructorInfoDiagnosticHelper(initialValue.hasConstructor()
+                                                   || calculatedValue.hasConstructor(), initialValue.hasValidPublicNoArgsConstructor()
+                                                                                        || calculatedValue.hasValidPublicNoArgsConstructor(), initialValue.hasValidProtectedNoArgsConstructor()
+                                                                                                                                              || calculatedValue.hasValidProtectedNoArgsConstructor());
+    }
+
+    /**
+     * This is to return default values for constructor information
+     *
+     * @return
+     */
+    public static ConstructorInfoDiagnosticHelper empty() {
+        return new ConstructorInfoDiagnosticHelper(false, false, false);
     }
 }

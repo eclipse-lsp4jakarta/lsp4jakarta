@@ -7,16 +7,16 @@ public abstract class InvalidInterceptor {
 	
 	String config;
 	
+	public InvalidInterceptor(String config) {
+		
+	}
+	
 	public String getConfig() {
 		return config;
 	}
-
+	
 	public void setConfig(String config) {
 		this.config = config;
-	}
-
-	public InvalidInterceptor(String config) {
-		
 	}
 	
 	@Interceptor
@@ -27,15 +27,15 @@ public abstract class InvalidInterceptor {
 		public String getInnerConfig() {
 			return innerConfig;
 		}
+		
+		public InnerInvalidInterceptor(String config) {
+				
+		}
 
 		public void setInnerConfig(String innerConfig) {
 			this.innerConfig = innerConfig;
 		}
 
-		public InnerInvalidInterceptor(String innerConfig) {
-			
-		}
-		
 	}
 
 }
