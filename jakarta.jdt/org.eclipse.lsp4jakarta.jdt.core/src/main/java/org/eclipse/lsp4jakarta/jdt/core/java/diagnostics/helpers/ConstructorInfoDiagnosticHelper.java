@@ -11,7 +11,7 @@
 * Contributors:
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helper;
+package org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers;
 
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IMethod;
