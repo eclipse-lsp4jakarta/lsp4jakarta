@@ -57,9 +57,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         IType[] types = unit.getAllTypes();
-        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.empty();
         for (IType type : types) {
             int typeFlag = type.getFlags();
+            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.empty();
             boolean isInterceptorType = Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
                 try {
                     return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.INTERCEPTOR_FQ_NAME);
