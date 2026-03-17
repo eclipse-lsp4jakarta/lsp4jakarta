@@ -67,6 +67,18 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 
         <img src="/docs/images/building_lsp4e_4.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
 
+## Autogenerate No diagnostics test cases
+
+1. Add your code changes and dataset addition/modification used for testing in jakarta-sample project.
+
+2. Run script syncTestDatasets.sh - script used for syncing up test datasets; jakarta-sample which comprises of diagnostic, quick fix etc test cases for testing lsp4jakarta features, and another automated test dataset demo-servlet-no-diagnostics which comprises of the exact same features from jakarta-sample replaced by fake import statements to test *No diagnostics* getting generated.
+
+    1. Pass SOURCE file and DESTINATION file directories as arguments: bash syncTestDatasets.sh *SOURCE directory* *DESTINATION directory* - Takes the latest changes from the java files inside source directory and syncs it with destination directory with fake imports.
+
+    2. Don't pass any arguments: bash syncTestDatasets.sh - Takes the latest changes for all the java files inside jakarta-sample project and syncs it with demo-servlet-no-diagnostics project with fake imports.
+
+3. bash buildAll.sh - Checks if project builds fine.
+
 ## Common Errors 
 
 1. When setting up the Eclipse workspace:  
