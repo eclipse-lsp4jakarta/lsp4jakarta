@@ -380,26 +380,26 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         if (declaringType == null)
             return;
 
-        IAnnotation minAnn = null, maxAnn = null, decMinAnn = null, decMaxAnn = null, sizeAnn = null;
+        IAnnotation minAnnotation = null, maxAnnotation = null, decMinAnnotation = null, decMaxAnnotation = null, sizeAnnotation = null;
 
-        for (IAnnotation ann : annotations) {
-            String matched = DiagnosticUtils.getMatchedJavaElementName(declaringType, ann.getElementName(),
+        for (IAnnotation annotation : annotations) {
+            String matched = DiagnosticUtils.getMatchedJavaElementName(declaringType, annotation.getElementName(),
                                                                        new String[] { MIN, MAX, DECIMAL_MIN, DECIMAL_MAX, SIZE });
             if (matched != null) {
                 switch (matched) {
-                    case MIN -> minAnn = ann;
-                    case MAX -> maxAnn = ann;
-                    case DECIMAL_MIN -> decMinAnn = ann;
-                    case DECIMAL_MAX -> decMaxAnn = ann;
-                    case SIZE -> sizeAnn = ann;
+                    case MIN -> minAnnotation = annotation;
+                    case MAX -> maxAnnotation = annotation;
+                    case DECIMAL_MIN -> decMinAnnotation = annotation;
+                    case DECIMAL_MAX -> decMaxAnnotation = annotation;
+                    case SIZE -> sizeAnnotation = annotation;
                 }
             }
         }
 
         // Check @Min/@Max conflict
-        if (minAnn != null && maxAnn != null) {
-            Long min = getNumericValue(minAnn, "value", Long.class);
-            Long max = getNumericValue(maxAnn, "value", Long.class);
+        if (minAnnotation != null && maxAnnotation != null) {
+            Long min = DiagnosticUtils.getAnnotationMemberNumericValue(minAnnotation, "value", Long.class);
+            Long max = DiagnosticUtils.getAnnotationMemberNumericValue(maxAnnotation, "value", Long.class);
             if (min != null && max != null && min > max) {
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsMinMax", min.toString(), max.toString()),
@@ -408,9 +408,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         // Check @DecimalMin/@DecimalMax conflict
-        if (decMinAnn != null && decMaxAnn != null) {
-            String min = DiagnosticUtils.getAnnotationMemberValue(decMinAnn, "value", String.class);
-            String max = DiagnosticUtils.getAnnotationMemberValue(decMaxAnn, "value", String.class);
+        if (decMinAnnotation != null && decMaxAnnotation != null) {
+            String min = DiagnosticUtils.getAnnotationMemberValue(decMinAnnotation, "value", String.class);
+            String max = DiagnosticUtils.getAnnotationMemberValue(decMaxAnnotation, "value", String.class);
             if (min != null && max != null) {
                 try {
                     if (Double.parseDouble(min) > Double.parseDouble(max)) {
@@ -425,9 +425,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         // Check @Size min/max conflict
-        if (sizeAnn != null) {
-            Integer min = getNumericValue(sizeAnn, "min", Integer.class);
-            Integer max = getNumericValue(sizeAnn, "max", Integer.class);
+        if (sizeAnnotation != null) {
+            Integer min = DiagnosticUtils.getAnnotationMemberNumericValue(sizeAnnotation, "min", Integer.class);
+            Integer max = DiagnosticUtils.getAnnotationMemberNumericValue(sizeAnnotation, "max", Integer.class);
             if (min != null && max != null && min > max) {
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsSize", min.toString(), max.toString()),
@@ -435,24 +435,5 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             }
         }
 
-    }
-
-    /**
-     * getNumericValue
-     * Helper method to get numeric annotation values with type conversion.
-     * Handles conversion from any Number type to the expected type.
-     */
-    @SuppressWarnings("unchecked")
-    private static <T extends Number> T getNumericValue(IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
-        Object value = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Object.class);
-        if (value instanceof Number) {
-            Number num = (Number) value;
-            if (expectedType == Long.class) {
-                return (T) Long.valueOf(num.longValue());
-            } else if (expectedType == Integer.class) {
-                return (T) Integer.valueOf(num.intValue());
-            }
-        }
-        return null;
     }
 }
