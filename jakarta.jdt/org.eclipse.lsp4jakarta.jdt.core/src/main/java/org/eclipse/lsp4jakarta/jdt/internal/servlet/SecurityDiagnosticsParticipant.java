@@ -76,5 +76,3 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         return diagnostics;
     }
 }
-
-//Made with IBM Bob

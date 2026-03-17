@@ -6,5 +6,3 @@ import jakarta.annotation.security.DeclareRoles;
 public class DeclareRolesWithoutServlet {
     
 }
-
-// Made with IBM Bob
