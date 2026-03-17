@@ -7,6 +7,16 @@ public abstract class InvalidInterceptor {
 	
 	String config;
 	
+	String config1;
+	
+	private InvalidInterceptor() {
+		
+	}
+	
+	private InvalidInterceptor(String config, String config1) {
+			
+	}
+	
 	public InvalidInterceptor(String config) {
 		
 	}
@@ -24,12 +34,22 @@ public abstract class InvalidInterceptor {
 		
 		String innerConfig;
 		
+		String innerConfig1;
+		
 		public String getInnerConfig() {
 			return innerConfig;
 		}
 		
-		public InnerInvalidInterceptor(String config) {
+		protected InnerInvalidInterceptor() {
+			
+		}
+		
+		public InnerInvalidInterceptor(String innerConfig) {
 				
+		}
+		
+		protected InnerInvalidInterceptor(String innerConfig, String innerConfig2) {
+			
 		}
 
 		public void setInnerConfig(String innerConfig) {

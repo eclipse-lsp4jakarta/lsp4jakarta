@@ -77,7 +77,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
                 for (IMethod method : type.getMethods()) {
                     //Checks if method is a constructor and has valid no-args constructor
-                    constructorInfo = ConstructorInfoDiagnosticHelper.mergeConstructorInfo(constructorInfo, ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
+                    constructorInfo.mergeConstructorInfo(ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
                 }
                 // Conditions for checking missing public no-args constructor
                 if (constructorInfo != null && !constructorInfo.hasValidPublicNoArgsConstructor() && constructorInfo.hasConstructor()) {

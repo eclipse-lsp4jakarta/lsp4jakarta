@@ -26,9 +26,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
  */
 public final class ConstructorInfoDiagnosticHelper {
 
-    private final boolean hasConstructor;
-    private final boolean hasValidPublicNoArgsConstructor;
-    private final boolean hasValidProtectedNoArgsConstructor;
+    private boolean hasConstructor;
+    private boolean hasValidPublicNoArgsConstructor;
+    private boolean hasValidProtectedNoArgsConstructor;
 
     private ConstructorInfoDiagnosticHelper(boolean hasConstructor,
                                             boolean hasValidPublicNoArgsConstructor,
@@ -92,11 +92,11 @@ public final class ConstructorInfoDiagnosticHelper {
      * @param info
      * @return
      */
-    public static ConstructorInfoDiagnosticHelper mergeConstructorInfo(ConstructorInfoDiagnosticHelper initialValue, ConstructorInfoDiagnosticHelper calculatedValue) {
-        return new ConstructorInfoDiagnosticHelper(initialValue.hasConstructor()
-                                                   || calculatedValue.hasConstructor(), initialValue.hasValidPublicNoArgsConstructor()
-                                                                                        || calculatedValue.hasValidPublicNoArgsConstructor(), initialValue.hasValidProtectedNoArgsConstructor()
-                                                                                                                                              || calculatedValue.hasValidProtectedNoArgsConstructor());
+    public ConstructorInfoDiagnosticHelper mergeConstructorInfo(ConstructorInfoDiagnosticHelper calculatedValue) {
+        this.hasConstructor = this.hasConstructor || calculatedValue.hasConstructor;
+        this.hasValidPublicNoArgsConstructor = this.hasValidPublicNoArgsConstructor || calculatedValue.hasValidPublicNoArgsConstructor;
+        this.hasValidProtectedNoArgsConstructor = this.hasValidProtectedNoArgsConstructor || calculatedValue.hasValidProtectedNoArgsConstructor;
+        return this;
     }
 
     /**
