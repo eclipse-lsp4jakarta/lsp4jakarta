@@ -270,26 +270,34 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
         Diagnostic d5 = d(34, 18, 44,
+                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
+
+        Diagnostic d6 = d(34, 18, 44,
                           "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Observes, @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
-        Diagnostic d6 = d(40, 18, 44,
+        Diagnostic d7 = d(40, 18, 44,
                           "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Disposes, @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
-        Diagnostic d7 = d(46, 18, 52,
+        Diagnostic d8 = d(46, 18, 52,
+                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
+
+        Diagnostic d9 = d(46, 18, 52,
                           "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Disposes, @Observes, @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
-        Diagnostic d8 = d(51, 18, 53,
-                          "A CDI method must not have parameter(s): name annotated with @Observes and @ObservesAsync.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
+        Diagnostic d10 = d(51, 18, 53,
+                           "A CDI method must not have parameter(s): name annotated with @Observes and @ObservesAsync.",
+                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
 
-        Diagnostic d9 = d(51, 18, 53,
-                          "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Disposes, @Observes, @ObservesAsync.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotationOnMultipleMethodParams");
+        Diagnostic d11 = d(51, 18, 53,
+                           "A bean constructor or a method annotated with @Inject cannot have parameter(s) annotated with @Disposes, @Observes, @ObservesAsync.",
+                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotationOnMultipleMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
@@ -329,51 +337,51 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca7, ca8, ca9);
 
-        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d6);
 
         TextEdit te10 = te(33, 4, 34, 4, "");
         TextEdit te11 = te(34, 45, 34, 55, "");
         TextEdit te12 = te(34, 69, 34, 109, "");
-        CodeAction ca10 = ca(uri, "Remove @Inject", d5, te10);
-        CodeAction ca11 = ca(uri, "Remove the '@Observes' modifier from parameter 'name1'", d5, te11);
-        CodeAction ca12 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d5, te12);
+        CodeAction ca10 = ca(uri, "Remove @Inject", d6, te10);
+        CodeAction ca11 = ca(uri, "Remove the '@Observes' modifier from parameter 'name1'", d6, te11);
+        CodeAction ca12 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d6, te12);
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca10, ca11, ca12);
 
-        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d6);
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d7);
 
         TextEdit te13 = te(39, 4, 40, 4, "");
         TextEdit te14 = te(40, 45, 40, 55, "");
         TextEdit te15 = te(40, 69, 40, 84, "");
-        CodeAction ca13 = ca(uri, "Remove @Inject", d6, te13);
-        CodeAction ca14 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name1'", d6, te14);
-        CodeAction ca15 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d6, te15);
+        CodeAction ca13 = ca(uri, "Remove @Inject", d7, te13);
+        CodeAction ca14 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name1'", d7, te14);
+        CodeAction ca15 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d7, te15);
 
         assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca13, ca14, ca15);
 
-        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d7);
+        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d9);
 
         TextEdit te16 = te(45, 4, 46, 4, "");
         TextEdit te17 = te(46, 53, 46, 63, "");
         TextEdit te18 = te(46, 77, 46, 87, "");
         TextEdit te19 = te(46, 101, 46, 116, "");
-        CodeAction ca16 = ca(uri, "Remove @Inject", d7, te16);
-        CodeAction ca17 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name1'", d7, te17);
-        CodeAction ca18 = ca(uri, "Remove the '@Observes' modifier from parameter 'name2'", d7, te18);
-        CodeAction ca19 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name3'", d7, te19);
+        CodeAction ca16 = ca(uri, "Remove @Inject", d9, te16);
+        CodeAction ca17 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name1'", d9, te17);
+        CodeAction ca18 = ca(uri, "Remove the '@Observes' modifier from parameter 'name2'", d9, te18);
+        CodeAction ca19 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name3'", d9, te19);
 
         assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca16, ca17, ca18, ca19);
 
-        JakartaJavaCodeActionParams codeActionParams8 = createCodeActionParams(uri, d9);
+        JakartaJavaCodeActionParams codeActionParams8 = createCodeActionParams(uri, d11);
 
         TextEdit te20 = te(50, 4, 51, 4, "");
         TextEdit te21 = te(51, 54, 51, 64, "");
         TextEdit te22 = te(51, 54, 51, 89, "");
         TextEdit te23 = te(51, 63, 51, 88, "");
-        CodeAction ca20 = ca(uri, "Remove @Inject", d9, te20);
-        CodeAction ca21 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name'", d9, te21);
-        CodeAction ca22 = ca(uri, "Remove the '@Disposes', '@Observes', '@ObservesAsync' modifier from parameter 'name'", d9, te22);
-        CodeAction ca23 = ca(uri, "Remove the '@Observes', '@ObservesAsync' modifier from parameter 'name'", d9, te23);
+        CodeAction ca20 = ca(uri, "Remove @Inject", d11, te20);
+        CodeAction ca21 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name'", d11, te21);
+        CodeAction ca22 = ca(uri, "Remove the '@Disposes', '@Observes', '@ObservesAsync' modifier from parameter 'name'", d11, te22);
+        CodeAction ca23 = ca(uri, "Remove the '@Observes', '@ObservesAsync' modifier from parameter 'name'", d11, te23);
 
         assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca20, ca21, ca22, ca23);
 
@@ -432,19 +440,31 @@ public class ManagedBeanTest extends BaseJakartaTest {
                            "A disposer method cannot have parameter(s) annotated with @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
 
-        Diagnostic d12 = d(48, 18, 52,
+        Diagnostic d12 = d(36, 18, 44,
+                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
+
+        Diagnostic d13 = d(48, 18, 52,
+                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
+
+        Diagnostic d14 = d(48, 18, 52,
                            "A disposer method cannot have parameter(s) annotated with @Observes, @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
 
-        Diagnostic d13 = d(54, 18, 53,
+        Diagnostic d15 = d(54, 18, 53,
                            "A disposer method cannot have parameter(s) annotated with @Observes, @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
 
-        Diagnostic d14 = d(58, 18, 52,
+        Diagnostic d16 = d(58, 18, 52,
                            "A CDI method must not have parameter(s): name, name1 annotated with @Observes and @ObservesAsync.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14);
+        Diagnostic d17 = d(58, 18, 52,
+                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d10, d12, d5, d6, d11, d13, d7, d14, d8, d9, d15, d16, d17);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
@@ -546,26 +566,6 @@ public class ManagedBeanTest extends BaseJakartaTest {
         CodeAction ca25 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name2'", d11, te25);
 
         assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca24, ca25);
-
-        JakartaJavaCodeActionParams codeActionParams11 = createCodeActionParams(uri, d12);
-
-        TextEdit te26 = te(48, 53, 48, 63, "");
-        TextEdit te27 = te(48, 77, 48, 87, "");
-        TextEdit te28 = te(48, 101, 48, 116, "");
-        CodeAction ca26 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name1'", d12, te26);
-        CodeAction ca27 = ca(uri, "Remove the '@Observes' modifier from parameter 'name2'", d12, te27);
-        CodeAction ca28 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'name3'", d12, te28);
-
-        assertJavaCodeAction(codeActionParams11, IJDT_UTILS, ca26, ca27, ca28);
-
-        JakartaJavaCodeActionParams codeActionParams12 = createCodeActionParams(uri, d13);
-
-        TextEdit te30 = te(54, 54, 54, 64, "");
-        TextEdit te31 = te(54, 63, 54, 88, "");
-        CodeAction ca30 = ca(uri, "Remove the '@Disposes' modifier from parameter 'name'", d13, te30);
-        CodeAction ca31 = ca(uri, "Remove the '@Observes', '@ObservesAsync' modifier from parameter 'name'", d13, te31);
-
-        assertJavaCodeAction(codeActionParams12, IJDT_UTILS, ca30, ca31);
     }
 
     @Test

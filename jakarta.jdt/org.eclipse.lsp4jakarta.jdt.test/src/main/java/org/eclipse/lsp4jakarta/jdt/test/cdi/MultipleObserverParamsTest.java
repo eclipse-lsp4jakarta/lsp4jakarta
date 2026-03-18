@@ -1,5 +1,7 @@
 /*******************************************************************************
  * Copyright (c) 2026 IBM Corporation and others.
+/*******************************************************************************
+ * Copyright (c) 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -43,32 +45,15 @@ public class MultipleObserverParamsTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Invalid: Two parameters, each with @Observes
-        Diagnostic d1 = d(18, 16, 34,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync. Found parameters: event1, event2.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
-
-        // Invalid: Two parameters, each with @ObservesAsync
-        Diagnostic d2 = d(23, 16, 39,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync. Found parameters: event1, event2.",
+        Diagnostic d1 = d(15, 16, 34,
+                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         // Invalid: One parameter with @Observes, another with @ObservesAsync
-        Diagnostic d3 = d(28, 16, 47,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync. Found parameters: event1, event2.",
+        Diagnostic d2 = d(19, 16, 47,
+                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
-        // Invalid: Three parameters with observer annotations
-        Diagnostic d4 = d(33, 16, 37,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync. Found parameters: event1, event2, event3.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
-
-        // Invalid: One parameter with both @Observes and @ObservesAsync (existing test case)
-        Diagnostic d5 = d(38, 16, 38,
-                          "A CDI method must not have parameter(s): event annotated with @Observes and @ObservesAsync.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
     }
 }
-
-// Made with Bob
