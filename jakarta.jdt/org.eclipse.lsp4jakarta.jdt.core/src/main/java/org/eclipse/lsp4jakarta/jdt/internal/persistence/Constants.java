@@ -19,6 +19,9 @@ package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 public class Constants {
     /* Annotation Constants */
     public static final String ENTITY = "jakarta.persistence.Entity";
+    public static final String ID = "jakarta.persistence.Id";
+    public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
+    public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
