@@ -93,9 +93,9 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                 return false;
             }
         }).collect(Collectors.toList());
-        for (MethodInvocation m : createObjectBuilderMethodInvocations) {
-            if (!m.arguments().isEmpty()) {
-                Expression arg = (Expression) m.arguments().get(0);
+        for (MethodInvocation methodIn : createObjectBuilderMethodInvocations) {
+            if (!methodIn.arguments().isEmpty()) {
+                Expression arg = (Expression) methodIn.arguments().get(0);
                 if (arg instanceof NullLiteral) {
                     //https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
                     //Does not allow key to be null for JsonObjectBuilder.add() method
