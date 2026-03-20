@@ -121,6 +121,19 @@ public class ResourceAnnotationTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
 
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit te11 = te(8, 1, 9, 4, "");
+        CodeAction ca11 = ca(uri, "Remove @Resource", d1, te11);
+        TextEdit te12 = te(8, 1, 9, 4, "@Resource(name = \"studentId\")\n\t");
+        CodeAction ca12 = ca(uri, "Remove redundant 'type' attribute from @Resource", d1, te12);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca11, ca12);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d6);
+        TextEdit te21 = te(49, 4, 50, 1, "");
+        CodeAction ca21 = ca(uri, "Remove @Resource", d6, te21);
+        TextEdit te22 = te(49, 4, 50, 1, "@Resource()\n\t");
+        CodeAction ca22 = ca(uri, "Remove redundant 'type' attribute from @Resource", d6, te22);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca21, ca22);
     }
 
 }
