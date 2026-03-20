@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,7 +18,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
  * JSON Processing (JSON-P) error code.
  */
 public enum ErrorCode implements IJavaErrorCode {
-    InvalidJsonCreatePointerTarget;
+    InvalidJsonCreatePointerTarget,
+    InvalidJsonObjectBuilderKey;
 
     /**
      * {@inheritDoc}
