@@ -462,10 +462,11 @@ public class DiagnosticUtils {
      * Handles conversion from any Number type to the expected type.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Number> T getAnnotationMemberNumericValue(IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
-        Object value = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Object.class);
-        if (value instanceof Number) {
-            Number num = (Number) value;
+    public static <T extends Number> T getAnnotationMemberNumericValue(
+                                                                       IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
+
+        Number num = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Number.class);
+        if (num != null) {
             if (expectedType == Long.class) {
                 return (T) Long.valueOf(num.longValue());
             } else if (expectedType == Integer.class) {
