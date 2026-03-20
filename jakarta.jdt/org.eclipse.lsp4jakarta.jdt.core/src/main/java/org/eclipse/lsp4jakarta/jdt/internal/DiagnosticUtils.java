@@ -26,13 +26,17 @@ import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 
 /**
  *
@@ -430,4 +434,70 @@ public class DiagnosticUtils {
         return errorCodes;
     }
 
+    /**
+     * getAnnotationMemberValue
+     * Get an annotation member value with type casting.
+     *
+     * @param annotation the annotation
+     * @param memberName the member/attribute name
+     * @param type the expected type class
+     * @return the member value cast to the specified type, or null if not found or type mismatch
+     * @throws JavaModelException if there's an error accessing the annotation
+     *
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
+        for (var pair : annotation.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object value = pair.getValue();
+                return type.isInstance(value) ? (T) value : null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * getAnnotationMemberNumericValue
+     * Helper method to get numeric annotation values with type conversion.
+     * Handles conversion from any Number type to the expected type.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Number> T getAnnotationMemberNumericValue(
+                                                                       IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
+
+        Number num = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Number.class);
+        if (num != null) {
+            if (expectedType == Long.class) {
+                return (T) Long.valueOf(num.longValue());
+            } else if (expectedType == Integer.class) {
+                return (T) Integer.valueOf(num.intValue());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * getRange
+     * Returns the LSP range for the given Java element name.
+     *
+     * @param element the Java element (must be one of: IField, IMethod, ILocalVariable, IType, IAnnotation)
+     * @param utils the JDT utilities
+     * @return the LSP range for the given element name
+     * @throws JavaModelException if there's an error accessing the element
+     * @throws IllegalArgumentException if the element type is not supported
+     */
+    public static Range getRange(IJavaElement element, IJDTUtils utils) throws JavaModelException {
+        if (element instanceof IField) {
+            return PositionUtils.toNameRange((IField) element, utils);
+        } else if (element instanceof IMethod) {
+            return PositionUtils.toNameRange((IMethod) element, utils);
+        } else if (element instanceof ILocalVariable) {
+            return PositionUtils.toNameRange((ILocalVariable) element, utils);
+        } else if (element instanceof IType) {
+            return PositionUtils.toNameRange((IType) element, utils);
+        } else if (element instanceof IAnnotation) {
+            return PositionUtils.toNameRange((IAnnotation) element, utils);
+        }
+        throw new IllegalArgumentException("Unsupported element type: " + element.getClass().getName());
+    }
 }
