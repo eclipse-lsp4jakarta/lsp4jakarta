@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
@@ -86,12 +87,17 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
         // Field annotation - get VariableDeclarationFragment from FieldDeclaration
         if (parent instanceof FieldDeclaration) {
             FieldDeclaration fieldDecl = (FieldDeclaration) parent;
+            /**
+             * A FieldDeclaration can contain multiple VariableDeclarationFragments.
+             * For example:
+             * int a, b, c;
+             */
             if (!fieldDecl.fragments().isEmpty()) {
                 return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
             }
         }
 
-        return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
+        return Bindings.getBindingOfParentType(node);
     }
 
     protected abstract ICodeActionId getCodeActionId();
