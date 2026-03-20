@@ -14,7 +14,10 @@ package org.eclipse.lsp4jakarta.jdt.internal;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -140,6 +143,42 @@ public class DiagnosticUtils {
                     return true;
                 }
             } else if (importDeclaration.getElementName().equals(javaElementFQName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the given Java class references imports of the given Java element and false
+     * otherwise.
+     *
+     * @param type Java class.
+     * @param javaElementFQName given Java element fully qualified name.
+     * @return true if the Java class imports the given Java element and false
+     *         otherwise.
+     */
+    public static boolean isImportReferencedJavaElement(ICompilationUnit unit, String javaElementFQName) throws JavaModelException {
+
+        if (!unit.isOpen()) {
+            unit.open(null);
+        }
+
+        IImportContainer container = unit.getImportContainer();
+        if (container == null) {
+            return false;
+        }
+
+        IImportDeclaration[] importDeclArray = unit.getImports();
+
+        for (IImportDeclaration importDeclaration : importDeclArray) {
+            if (importDeclaration.isOnDemand()) {
+                String fqn = importDeclaration.getElementName();
+                String qualifier = fqn.substring(0, fqn.lastIndexOf('.'));
+                if (qualifier.contains(javaElementFQName.substring(0, javaElementFQName.lastIndexOf('.')))) {
+                    return true;
+                }
+            } else if (importDeclaration.getElementName().contains(javaElementFQName)) {
                 return true;
             }
         }
@@ -350,6 +389,31 @@ public class DiagnosticUtils {
         return uriString.matches(LEVEL1_URI_REGEX);
     }
 
+    /**
+     * Checks if the given method is a constructor and has valid no-args constructor.
+     *
+     * @param m
+     * @param constructorInfo
+     * @return Map<String, Boolean>
+     * @throws JavaModelException
+     */
+    public static Map<String, Boolean> hasValidNoArgsConstructor(IMethod m, Map<String, Boolean> constructorInfo) throws JavaModelException {
+        if (isConstructorMethod(m)) {
+            constructorInfo.put("hasConstructor", true); // Check explicit constructor declaration
+            String[] params = m.getParameterTypes();
+            int flags = m.getFlags();
+            if (params.length == 0) { // Checks manually declared no-args constructor
+                if (Flags.isPublic(flags)) {
+                    constructorInfo.put("hasValidPublicNoArgsConstructor", true);
+                }
+                if (Flags.isProtected(flags)) {
+                    constructorInfo.put("hasValidProtectedNoArgsConstructor", true);
+                }
+            }
+        }
+        return constructorInfo;
+    }
+  
     /**
      * getDataTypeName
      * Converts signature type name into its type name.
