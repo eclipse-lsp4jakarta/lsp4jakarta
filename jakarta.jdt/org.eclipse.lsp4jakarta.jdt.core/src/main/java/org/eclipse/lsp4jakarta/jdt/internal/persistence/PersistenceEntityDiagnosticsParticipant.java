@@ -278,7 +278,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     }
                 }
 
-                // Check methods (getters) in superclass
+                // Check methods in superclass
                 for (IMethod method : superType.getMethods()) {
                     if (hasPrimaryKeyAnnotation(superType, method.getAnnotations())) {
                         return true;
