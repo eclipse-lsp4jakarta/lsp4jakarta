@@ -14,7 +14,10 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -31,6 +34,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -38,6 +42,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -82,6 +87,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 boolean hasPublicOrProtectedNoArgConstructor = false;
                 boolean hasArgConstructor = false;
                 boolean isEntityClassFinal = false;
+                boolean hasPrimaryKey = false;
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
@@ -105,6 +111,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  Constants.DIAGNOSTIC_SOURCE, method.getElementType(),
                                                                  ErrorCode.InvalidFinalMethodInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
+
+                    // Check if any method has @Id or @EmbeddedId annotation
+                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, method.getAnnotations())) {
+                        hasPrimaryKey = true;
+                    }
                 }
 
                 // Go through the instance variables and make sure no instance vars are final
@@ -121,6 +132,16 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
                                                                  ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
+
+                    // Check if any field has @Id or @EmbeddedId annotation
+                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
+                        hasPrimaryKey = true;
+                    }
+                }
+
+                // Check superclass hierarchy for primary key in @MappedSuperclass
+                if (!hasPrimaryKey) {
+                    hasPrimaryKey = hasPrimaryKeyInSuperclass(type);
                 }
 
                 // Ensure that the Entity class is not given a final modifier
@@ -143,6 +164,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              Messages.getMessage("EntityNoFinalClass"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, type.getElementType(),
                                                              ErrorCode.InvalidFinalModifierOnEntityAnnotatedClass, DiagnosticSeverity.Error));
+                }
+
+                if (!hasPrimaryKey) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
                 }
             }
         }
@@ -188,6 +217,76 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             || isProtectedFinal.equals(Flags.AccFinal) || isFinal.equals(Flags.AccFinal)) {
             return true;
         }
+        return false;
+    }
+
+    /**
+     * Check if the given annotations contain @Id or @EmbeddedId
+     *
+     * @param type the type context for resolving annotations
+     * @param annotations the annotations to check
+     * @return true if a primary key annotation is found
+     * @throws CoreException
+     */
+    private boolean hasPrimaryKeyAnnotation(IType type, IAnnotation[] annotations) throws CoreException {
+        return Arrays.stream(annotations).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ID) ||
+                       DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                            Constants.EMBEDDEDID);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Check if the type or its superclass hierarchy (annotated with @MappedSuperclass)
+     * contains a primary key (@Id or @EmbeddedId)
+     *
+     * @param type the type to check
+     * @return true if a primary key is found in the hierarchy
+     * @throws CoreException
+     */
+    private boolean hasPrimaryKeyInSuperclass(IType type) throws CoreException {
+        // Collect all supertypes using the utility
+        Set<IType> hierarchy = new HashSet<>();
+        TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
+
+        // Check each supertype for @MappedSuperclass and primary key
+        for (IType superType : hierarchy) {
+            // Skip the type itself
+            if (superType.equals(type)) {
+                continue;
+            }
+
+            // Check if superclass is annotated with @MappedSuperclass
+            boolean isMappedSuperclass = false;
+            for (IAnnotation annotation : superType.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedJavaElement(superType, annotation.getElementName(), Constants.MAPPEDSUPERCLASS)) {
+                    isMappedSuperclass = true;
+                    break;
+                }
+            }
+
+            // Only check for primary key if it's a @MappedSuperclass
+            if (isMappedSuperclass) {
+                // Check fields in superclass
+                for (IField field : superType.getFields()) {
+                    if (hasPrimaryKeyAnnotation(superType, field.getAnnotations())) {
+                        return true;
+                    }
+                }
+
+                // Check methods in superclass
+                for (IMethod method : superType.getMethods()) {
+                    if (hasPrimaryKeyAnnotation(superType, method.getAnnotations())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
         return false;
     }
 
