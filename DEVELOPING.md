@@ -63,13 +63,13 @@ The following instructions explain how to set up your Eclipse IDE workspace.
         <img src="/docs/images/building_lsp4e_4.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
 
 6. Set target platform:
-   Open jakarta.jdt/org.eclipse.lsp4jakarta.jdt.tp/org.eclipse.lsp4jakarta.jdt.target 
-   
-    	<img src="/docs/images/tp.png" alt="Eclipse project explorer" height="60%" width="60%"/>
+   Open `jakarta.jdt/org.eclipse.lsp4jakarta.jdt.tp/org.eclipse.lsp4jakarta.jdt.target` 
 
-    
-   Click on 'Set As Active target platform'
-   Clean and build the project
+   <img src="/docs/images/tp.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
+ 
+   Click on 'Set as Active target platform'.
+
+   Clean and build the project.
 
 
 ## Common Errors 
