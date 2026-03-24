@@ -65,7 +65,7 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 6. Set target platform:
    Open jakarta.jdt/org.eclipse.lsp4jakarta.jdt.tp/org.eclipse.lsp4jakarta.jdt.target 
    
-    	    <img src="/docs/images/tp.png" alt="Set target platform" height="60%" width="60%"/>
+    	<img src="/docs/images/tp.png" alt="Eclipse project explorer" height="60%" width="60%"/>
 
     
    Click on 'Set As Active target platform'
