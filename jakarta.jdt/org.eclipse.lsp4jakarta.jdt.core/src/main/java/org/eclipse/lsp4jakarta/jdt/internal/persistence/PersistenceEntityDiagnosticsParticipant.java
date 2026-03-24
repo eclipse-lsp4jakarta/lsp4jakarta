@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +34,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -167,7 +169,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 if (!hasPrimaryKey) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("EntityMissingPrimaryKey"), range,
+                                                             Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
                 }
@@ -227,13 +229,15 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @throws CoreException
      */
     private boolean hasPrimaryKeyAnnotation(IType type, IAnnotation[] annotations) throws CoreException {
-        for (IAnnotation annotation : annotations) {
-            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ID)
-                || DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.EMBEDDEDID)) {
-                return true;
+        return Arrays.stream(annotations).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ID) ||
+                       DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                            Constants.EMBEDDEDID);
+            } catch (JavaModelException e) {
+                return false;
             }
-        }
-        return false;
+        });
     }
 
     /**

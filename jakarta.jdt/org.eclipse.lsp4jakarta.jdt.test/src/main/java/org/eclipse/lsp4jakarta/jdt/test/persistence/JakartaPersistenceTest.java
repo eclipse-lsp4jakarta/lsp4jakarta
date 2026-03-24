@@ -292,7 +292,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic d = d(5, 13, 36,
-                         "A class using the @Entity annotation must define a primary key using @Id or @EmbeddedId.",
+                         "The class EntityMissingPrimaryKey annotated with @Entity must define a primary key using @Id or @EmbeddedId.",
                          DiagnosticSeverity.Error, "jakarta-persistence", "MissingPrimaryKey");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
