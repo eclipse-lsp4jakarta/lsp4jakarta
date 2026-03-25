@@ -457,26 +457,6 @@ public class DiagnosticUtils {
     }
 
     /**
-     * getAnnotationMemberNumericValue
-     * Helper method to get numeric annotation values with type conversion.
-     * Handles conversion from any Number type to the expected type.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends Number> T getAnnotationMemberNumericValue(
-                                                                       IAnnotation annotation, String memberName, Class<T> expectedType) throws JavaModelException {
-
-        Number num = DiagnosticUtils.getAnnotationMemberValue(annotation, memberName, Number.class);
-        if (num != null) {
-            if (expectedType == Long.class) {
-                return (T) Long.valueOf(num.longValue());
-            } else if (expectedType == Integer.class) {
-                return (T) Integer.valueOf(num.intValue());
-            }
-        }
-        return null;
-    }
-
-    /**
      * getRange
      * Returns the LSP range for the given Java element name.
      *

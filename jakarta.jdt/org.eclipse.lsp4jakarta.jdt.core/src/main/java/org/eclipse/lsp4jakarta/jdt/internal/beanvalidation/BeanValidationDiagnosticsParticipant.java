@@ -401,9 +401,10 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         // Check @Min/@Max conflict
         if (minAnnotation != null && maxAnnotation != null) {
-            Long min = DiagnosticUtils.getAnnotationMemberNumericValue(minAnnotation, "value", Long.class);
-            Long max = DiagnosticUtils.getAnnotationMemberNumericValue(maxAnnotation, "value", Long.class);
-            if (min != null && max != null && min > max) {
+            Number min = DiagnosticUtils.getAnnotationMemberValue(minAnnotation, "value", Number.class);
+            Number max = DiagnosticUtils.getAnnotationMemberValue(maxAnnotation, "value", Number.class);
+
+            if (min != null && max != null && min.longValue() > max.longValue()) {
                 Range range = DiagnosticUtils.getRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsMinMax", min.toString(), max.toString()),
@@ -431,9 +432,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         // Check @Size min/max conflict
         if (sizeAnnotation != null) {
-            Integer min = DiagnosticUtils.getAnnotationMemberNumericValue(sizeAnnotation, "min", Integer.class);
-            Integer max = DiagnosticUtils.getAnnotationMemberNumericValue(sizeAnnotation, "max", Integer.class);
-            if (min != null && max != null && min > max) {
+            Number min = DiagnosticUtils.getAnnotationMemberValue(sizeAnnotation, "min", Number.class);
+            Number max = DiagnosticUtils.getAnnotationMemberValue(sizeAnnotation, "max", Number.class);
+            if (min != null && max != null && min.intValue() > max.intValue()) {
                 Range range = DiagnosticUtils.getRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsSize", min.toString(), max.toString()),
