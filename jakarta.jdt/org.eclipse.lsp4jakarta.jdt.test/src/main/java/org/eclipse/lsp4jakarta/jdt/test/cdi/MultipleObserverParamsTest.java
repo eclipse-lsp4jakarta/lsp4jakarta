@@ -1,7 +1,5 @@
 /*******************************************************************************
  * Copyright (c) 2026 IBM Corporation and others.
-/*******************************************************************************
- * Copyright (c) 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,16 +13,23 @@
 
 package org.eclipse.lsp4jakarta.jdt.test.cdi;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -55,5 +60,20 @@ public class MultipleObserverParamsTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(15, 35, 15, 45, "");
+        CodeAction ca1 = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", d1, te1);
+        TextEdit te2 = te(15, 60, 15, 70, "");
+        CodeAction ca2 = ca(uri, "Remove the '@Observes' modifier from parameter 'event2'", d1, te2);
+
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        TextEdit te3 = te(19, 48, 19, 58, "");
+        CodeAction ca3 = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", d2, te3);
+        TextEdit te4 = te(19, 73, 19, 88, "");
+        CodeAction ca4 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event2'", d2, te4);
+
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
     }
 }
