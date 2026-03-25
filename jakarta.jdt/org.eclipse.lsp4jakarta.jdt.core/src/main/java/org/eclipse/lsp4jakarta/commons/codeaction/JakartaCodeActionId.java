@@ -76,7 +76,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
-    CDIReplaceScopeAnnotations;
+    CDIReplaceScopeAnnotations,
+    CDIRemoveAllObserverParamsExceptOne;
 
     @Override
     public String getId() {
