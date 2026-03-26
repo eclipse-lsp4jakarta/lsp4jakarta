@@ -247,7 +247,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 if (paramsWithObserverAnnotations.size() > 1) {
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("ManagedBeanMultipleObserverParams"), range,
+                                                             Messages.getMessage("ManagedBeanMultipleObserverParams", String.join(", ", paramsWithObserverAnnotations)), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMultipleObserverParams, DiagnosticSeverity.Error));
                 }
