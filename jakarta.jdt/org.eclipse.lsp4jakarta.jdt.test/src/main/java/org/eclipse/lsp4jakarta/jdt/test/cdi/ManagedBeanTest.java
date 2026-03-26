@@ -270,7 +270,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
         Diagnostic d5 = d(34, 18, 44,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                          "Parameters name1, name2 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         Diagnostic d6 = d(34, 18, 44,
@@ -282,7 +282,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInjectAnnotatedMethodParamAnnotation");
 
         Diagnostic d8 = d(46, 18, 52,
-                          "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                          "Parameters name2, name3 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         Diagnostic d9 = d(46, 18, 52,
@@ -441,11 +441,11 @@ public class ManagedBeanTest extends BaseJakartaTest {
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposerMethodParamAnnotation");
 
         Diagnostic d12 = d(36, 18, 44,
-                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           "Parameters name1, name2 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         Diagnostic d13 = d(48, 18, 52,
-                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           "Parameters name2, name3 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         Diagnostic d14 = d(48, 18, 52,
@@ -461,7 +461,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
 
         Diagnostic d17 = d(58, 18, 52,
-                           "A method cannot have more than one parameter annotated with @Observes or @ObservesAsync.",
+                           "Parameters name, name1 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d10, d12, d5, d6, d11, d13, d7, d14, d8, d9, d15, d16, d17);
