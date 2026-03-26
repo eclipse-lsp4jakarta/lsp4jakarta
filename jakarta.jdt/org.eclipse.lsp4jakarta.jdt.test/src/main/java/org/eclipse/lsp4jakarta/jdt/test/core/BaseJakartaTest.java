@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2019, 2025 Red Hat Inc. and others.
+* Copyright (c) 2019, 2026 Red Hat Inc. and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.test.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IProject;
@@ -38,8 +39,37 @@ import org.eclipse.jdt.internal.core.JavaModelManager;
  */
 public class BaseJakartaTest {
 
+    // Cache for loaded projects to avoid reloading and race conditions
+    private static final ConcurrentHashMap<String, IJavaProject> projectCache = new ConcurrentHashMap<>();
+
+    // Lock object for synchronizing project loading operations
+    private static final Object PROJECT_LOAD_LOCK = new Object();
+
     protected static IJavaProject loadJavaProject(String projectName, String parentDirName) throws CoreException, Exception {
-        // Move project to working directory
+        String projectKey = parentDirName + "/" + projectName;
+
+        // Check cache first (thread-safe)
+        IJavaProject cachedProject = projectCache.get(projectKey);
+        if (cachedProject != null && cachedProject.exists()) {
+            return cachedProject;
+        }
+
+        // Synchronize project loading to prevent race conditions
+        synchronized (PROJECT_LOAD_LOCK) {
+            // Double-check after acquiring lock
+            cachedProject = projectCache.get(projectKey);
+            if (cachedProject != null && cachedProject.exists()) {
+                return cachedProject;
+            }
+
+            IJavaProject javaProject = loadJavaProjectInternal(projectName, parentDirName);
+            projectCache.put(projectKey, javaProject);
+            return javaProject;
+        }
+    }
+
+    private static IJavaProject loadJavaProjectInternal(String projectName, String parentDirName) throws CoreException, Exception {
+        // Move project to working directory (synchronized to avoid file system conflicts)
         File projectFolder = copyProjectToWorkingDirectory(projectName, parentDirName);
 
         IPath path = new Path(new File(projectFolder, "/.project").getAbsolutePath());
@@ -47,6 +77,7 @@ public class BaseJakartaTest {
         IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
 
         if (!project.exists()) {
+            // Create and open project within workspace lock to prevent conflicts
             project.create(description, null);
             project.open(null);
 
@@ -72,14 +103,18 @@ public class BaseJakartaTest {
         File from = new File("projects/" + parentDirName + "/" + projectName);
         File to = new File(getWorkingProjectDirectory(), java.nio.file.Paths.get(parentDirName, projectName).toString());
 
-        if (to.exists()) {
-            FileUtils.forceDelete(to);
-        }
+        // Synchronize file operations to prevent race conditions during copy/delete
+        synchronized (BaseJakartaTest.class) {
+            if (to.exists()) {
+                // Only delete if we're about to copy - avoid unnecessary deletions
+                FileUtils.forceDelete(to);
+            }
 
-        if (from.isDirectory()) {
-            FileUtils.copyDirectory(from, to);
-        } else {
-            FileUtils.copyFile(from, to);
+            if (from.isDirectory()) {
+                FileUtils.copyDirectory(from, to);
+            } else {
+                FileUtils.copyFile(from, to);
+            }
         }
 
         return to;

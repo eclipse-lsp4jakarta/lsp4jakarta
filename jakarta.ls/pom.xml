@@ -29,10 +29,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <tycho.version>3.0.3</tycho.version>
+        <tycho.version>4.0.10</tycho.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <lsp4j.version>0.21.0</lsp4j.version>
+        <lsp4j.version>0.23.1</lsp4j.version>
         <releases.repo.id>repo.eclipse.org</releases.repo.id>
         <releases.repo.url>https://repo.eclipse.org/content/repositories/lsp4jakarta-releases/</releases.repo.url>
         <snapshots.repo.id>repo.eclipse.org</snapshots.repo.id>
