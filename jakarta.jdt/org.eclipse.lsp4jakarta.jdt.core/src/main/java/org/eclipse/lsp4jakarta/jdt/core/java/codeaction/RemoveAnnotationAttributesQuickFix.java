@@ -88,9 +88,13 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
         if (parent instanceof FieldDeclaration) {
             FieldDeclaration fieldDecl = (FieldDeclaration) parent;
             /**
-             * A FieldDeclaration can contain multiple VariableDeclarationFragments.
-             * For example:
+             * Returns the binding of the first variable in this field declaration.
+             * A FieldDeclaration may declare multiple variables at once, e.g.:
              * int a, b, c;
+             * In that case, each variable is represented as a separate
+             * VariableDeclarationFragment.
+             * This code checks if any fragments exist, then resolves and
+             * returns the binding for the first one (index 0).
              */
             if (!fieldDecl.fragments().isEmpty()) {
                 return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
