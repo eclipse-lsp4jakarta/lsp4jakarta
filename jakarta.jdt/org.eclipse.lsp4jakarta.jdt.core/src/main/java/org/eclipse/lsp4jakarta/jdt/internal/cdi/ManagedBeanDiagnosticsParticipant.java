@@ -64,12 +64,15 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         String[] scopeFQNames = Constants.SCOPE_FQ_NAMES.toArray(String[]::new);
         for (IType type : types) {
-            List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                             Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
-                                                                                             scopeFQNames);
+            String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+            List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations, scopeFQNames);
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
+
+            // Check if the class is a stateless session bean
+            boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                             new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
 
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
@@ -275,8 +278,16 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
 
-                // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
-                if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
+                // A stateless session bean must belong to the @Dependent scope only
+                // If it has multiple scopes, it's an error
+                if (isStateless && (!isDependent || hasMultipleScopes)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("StatelessSessionBeanWithIllegalScope"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidStatelessSessionBeanWithIllegalScope, DiagnosticSeverity.Error));
+
+                    // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
+                } else if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
