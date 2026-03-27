@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -280,4 +280,107 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
+
+    @Test
+    public void testIdDateMissingTemporal() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityIdDateMissingTemporal.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(11, 14, 16,
+                          "A field or property marked with @Id and typed as java.util.Date must explicitly declare @Temporal(TemporalType.DATE).",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(5, 30, 10, 1,
+                          "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction ca1 = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, te1);
+
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+    }
+
+    @Test
+    public void testPropertyIdDateMissingTemporal() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityPropertyIdDateMissingTemporal.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(13, 13, 18,
+                          "A field or property marked with @Id and typed as java.util.Date must explicitly declare @Temporal(TemporalType.DATE).",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(5, 30, 12, 1,
+                          "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction ca1 = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, te1);
+
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+    }
+
+    @Test
+    public void testIdDateInvalidTemporalType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityInvalidTemporalType.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(13, 1, 29,
+                          "The @Temporal annotation on a field or property annotated with @Id and of type java.util.Date must specify TemporalType.DATE.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(13, 11, 13, 28, "TemporalType.DATE");
+        CodeAction ca1 = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, te1);
+
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+    }
+
+    @Test
+    public void testPropertyIdDateInvalidTemporalType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityPropertyInvalidTemporalType.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(15, 1, 29,
+                          "The @Temporal annotation on a field or property annotated with @Id and of type java.util.Date must specify TemporalType.DATE.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(15, 11, 15, 28, "TemporalType.DATE");
+        CodeAction ca1 = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, te1);
+
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+    }
+
 }
