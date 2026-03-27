@@ -18,6 +18,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.annotations;
  */
 public class Constants {
 
+    /* single identifier OR fully qualified name */
+    public static final String GENERATED_NAME_REGEX = "^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)+$";
     /* Diagnostics source key */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-annotations";
 
