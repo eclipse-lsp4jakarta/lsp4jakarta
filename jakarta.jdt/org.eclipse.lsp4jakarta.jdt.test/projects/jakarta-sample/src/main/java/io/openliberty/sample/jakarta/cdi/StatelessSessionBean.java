@@ -8,7 +8,7 @@ import jakarta.enterprise.context.Dependent;
 // Invalid: Stateless with RequestScoped
 @Stateless
 @RequestScoped
-public class StatelessWithRequestScoped {
+public class StatelessSessionBean {
 }
 
 // Invalid: Stateless with SessionScoped
