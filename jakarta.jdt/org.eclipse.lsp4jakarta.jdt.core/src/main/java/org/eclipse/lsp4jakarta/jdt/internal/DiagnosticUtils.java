@@ -26,17 +26,13 @@ import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
-import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
-import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
-import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 
 /**
  *
@@ -456,28 +452,4 @@ public class DiagnosticUtils {
         return null;
     }
 
-    /**
-     * getRange
-     * Returns the LSP range for the given Java element name.
-     *
-     * @param element the Java element (must be one of: IField, IMethod, ILocalVariable, IType, IAnnotation)
-     * @param utils the JDT utilities
-     * @return the LSP range for the given element name
-     * @throws JavaModelException if there's an error accessing the element
-     * @throws IllegalArgumentException if the element type is not supported
-     */
-    public static Range getRange(IJavaElement element, IJDTUtils utils) throws JavaModelException {
-        if (element instanceof IField) {
-            return PositionUtils.toNameRange((IField) element, utils);
-        } else if (element instanceof IMethod) {
-            return PositionUtils.toNameRange((IMethod) element, utils);
-        } else if (element instanceof ILocalVariable) {
-            return PositionUtils.toNameRange((ILocalVariable) element, utils);
-        } else if (element instanceof IType) {
-            return PositionUtils.toNameRange((IType) element, utils);
-        } else if (element instanceof IAnnotation) {
-            return PositionUtils.toNameRange((IAnnotation) element, utils);
-        }
-        throw new IllegalArgumentException("Unsupported element type: " + element.getClass().getName());
-    }
 }

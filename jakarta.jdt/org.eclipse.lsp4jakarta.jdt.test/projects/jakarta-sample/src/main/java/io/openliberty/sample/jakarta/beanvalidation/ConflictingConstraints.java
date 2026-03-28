@@ -49,5 +49,3 @@ public class ConflictingConstraints {
     @Size(min = 5, max = 5)
     private String equalSize;
 }
-
-// Made with Bob

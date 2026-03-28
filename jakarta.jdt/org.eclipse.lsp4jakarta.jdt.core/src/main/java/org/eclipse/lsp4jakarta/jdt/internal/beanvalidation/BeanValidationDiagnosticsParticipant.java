@@ -189,7 +189,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
 
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BOOLEAN)) {
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
                                                                  DiagnosticSeverity.Error));
@@ -205,7 +205,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         && !type.equals(Signature.SIG_LONG)) {
                         String message = getDiagnosticMessage(isMethod, isField, annotationName,
                                                               "AnnotationBigDecimal");
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation,
                                                                  ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField,
@@ -219,7 +219,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                                       SET_OF_DATE_TYPES.toArray(new String[0]));
                     if (dataTypeFQName == null) {
                         String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationDate");
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField,
                                                                  DiagnosticSeverity.Error));
@@ -233,7 +233,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
                         && !type.equals(Signature.SIG_LONG)) {
                         String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationMinMax");
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField,
                                                                  DiagnosticSeverity.Error));
@@ -248,7 +248,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         && !type.equals(Signature.SIG_LONG) && !type.equals(Signature.SIG_FLOAT)
                         && !type.equals(Signature.SIG_DOUBLE)) {
                         String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationPositive");
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField,
                                                                  DiagnosticSeverity.Error));
@@ -265,7 +265,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     if (!(isSizeOrNonEmptyAllowed(declaringType, type))) {
                         String message = getDiagnosticMessage(isMethod, isField, annotationName,
                                                               "SizeOrNonEmptyAnnotations");
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
                                                                  DiagnosticSeverity.Error));
@@ -276,7 +276,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             //Throws invalid static element diagnostics if the element is static and has constraint annotations
             if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
                 String message = isMethod ? Messages.getMessage("ConstraintAnnotationsMethod") : Messages.getMessage("ConstraintAnnotationsField");
-                Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE, matchedAnnotation,
                                                          ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField, DiagnosticSeverity.Error));
             }
@@ -336,7 +336,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                           new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
         if (dataTypeFQName == null) {
             String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationString");
-            Range range = DiagnosticUtils.getRange(element, context.getUtils());
+            Range range = PositionUtils.toNameRange(element, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                      matchedAnnotation, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
                                                      DiagnosticSeverity.Error));
@@ -405,7 +405,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             Number max = DiagnosticUtils.getAnnotationMemberValue(maxAnnotation, "value", Number.class);
 
             if (min != null && max != null && min.longValue() > max.longValue()) {
-                Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsMinMax", min.toString(), max.toString()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
@@ -419,7 +419,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             if (min != null && max != null) {
                 try {
                     if (Double.parseDouble(min) > Double.parseDouble(max)) {
-                        Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
                                                                  Messages.getMessage("ConflictingConstraintAnnotationsDecimalMinMax", min, max),
                                                                  range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
@@ -435,7 +435,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             Number min = DiagnosticUtils.getAnnotationMemberValue(sizeAnnotation, "min", Number.class);
             Number max = DiagnosticUtils.getAnnotationMemberValue(sizeAnnotation, "max", Number.class);
             if (min != null && max != null && min.intValue() > max.intValue()) {
-                Range range = DiagnosticUtils.getRange(element, context.getUtils());
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("ConflictingConstraintAnnotationsSize", min.toString(), max.toString()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.ConflictingConstraintAnnotations, DiagnosticSeverity.Warning));
