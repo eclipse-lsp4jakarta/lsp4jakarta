@@ -430,4 +430,26 @@ public class DiagnosticUtils {
         return errorCodes;
     }
 
+    /**
+     * getAnnotationMemberValue
+     * Get an annotation member value with type casting.
+     *
+     * @param annotation the annotation
+     * @param memberName the member/attribute name
+     * @param type the expected type class
+     * @return the member value cast to the specified type, or null if not found or type mismatch
+     * @throws JavaModelException if there's an error accessing the annotation
+     *
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
+        for (var pair : annotation.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object value = pair.getValue();
+                return type.isInstance(value) ? (T) value : null;
+            }
+        }
+        return null;
+    }
+
 }
