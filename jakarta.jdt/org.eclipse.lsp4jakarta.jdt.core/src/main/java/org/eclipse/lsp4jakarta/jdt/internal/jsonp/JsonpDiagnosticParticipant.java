@@ -90,12 +90,12 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
         //Used to get the list of method invocations for JsonObjectBuilder add methods
         List<MethodInvocation> createObjectBuilderMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.OBJECT);
         //Used to get the list of method invocations for JsonArrayBuilder add methods
-        List<MethodInvocation> createObjectArrayMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.ARRAY);
+        List<MethodInvocation> createArrayBuilderMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.ARRAY);
         //Used to create diagnostics for invalid JsonObjectBuilder add methods
         createDiagnosticsForMethodInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
                                               ErrorCode.InvalidJsonObjectBuilderKey);
         //Used to create diagnostics for invalid JsonArrayBuilder add methods
-        createDiagnosticsForMethodInvocations(unit, createObjectArrayMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
+        createDiagnosticsForMethodInvocations(unit, createArrayBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
                                               ErrorCode.InvalidJsonArrayBuilderValue);
         return diagnostics;
     }
