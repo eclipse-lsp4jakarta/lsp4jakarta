@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -35,6 +36,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -86,52 +88,112 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
         }
 
         //Used to get the list of method invocations for JsonObjectBuilder add methods
-        List<MethodInvocation> createObjectBuilderMethodInvocations = allMethodInvocations.stream().filter(mi -> {
-            try {
-                return isMatchedJsonObjectBuilder(unit, mi);
-            } catch (JavaModelException e) {
-                return false;
-            }
-        }).collect(Collectors.toList());
-        for (MethodInvocation methodIn : createObjectBuilderMethodInvocations) {
+        List<MethodInvocation> createObjectBuilderMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.OBJECT);
+        //Used to get the list of method invocations for JsonArrayBuilder add methods
+        List<MethodInvocation> createObjectArrayMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.ARRAY);
+        //Used to create diagnostics for invalid JsonObjectBuilder add methods
+        createDiagnosticsForMethodInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
+                                              ErrorCode.InvalidJsonObjectBuilderKey);
+        //Used to create diagnostics for invalid JsonArrayBuilder add methods
+        createDiagnosticsForMethodInvocations(unit, createObjectArrayMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
+                                              ErrorCode.InvalidJsonArrayBuilderValue);
+        return diagnostics;
+    }
+
+    /**
+     * Method used to create diagnostics for invalid JsonObjectBuilder or JsonArrayBuilder
+     *
+     * https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
+     * Does not allow key to be null for JsonObjectBuilder.add() method
+     *
+     * https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonarraybuilder
+     * Does not allow value to be null for JsonArrayBuilder.add() method
+     *
+     * @param unit
+     * @param invocations
+     * @param diagnostics
+     * @param context
+     * @param uri
+     * @param msg
+     * @param errCode
+     */
+    private void createDiagnosticsForMethodInvocations(ICompilationUnit unit, List<MethodInvocation> invocations, List<Diagnostic> diagnostics,
+                                                       JavaDiagnosticsContext context, String uri, String msg, IJavaErrorCode errCode) {
+        for (MethodInvocation methodIn : invocations) {
             if (!methodIn.arguments().isEmpty()) {
                 Expression arg = (Expression) methodIn.arguments().get(0);
-                if (arg instanceof NullLiteral) {
-                    //https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
-                    //Does not allow key to be null for JsonObjectBuilder.add() method
+                if (isInvalidNullArgument(arg)) {
                     try {
                         Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
-                                                                 range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidJsonObjectBuilderKey, DiagnosticSeverity.Error));
+                        diagnostics.add(context.createDiagnostic(uri, msg,
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, errCode, DiagnosticSeverity.Error));
                     } catch (JavaModelException e) {
                         LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
                     }
                 }
             }
         }
-        return diagnostics;
     }
 
     /**
-     * Method used to identify jakarta.json.JsonObjectBuilder.add type method invocations
+     * Method is used to check if value of arg passed or Cast Expression inside passed arg is null
+     *
+     * @param arg
+     * @return
+     */
+    private boolean isInvalidNullArgument(Expression arg) {
+        if (arg instanceof NullLiteral) {
+            return true;
+        }
+        if (arg instanceof CastExpression cast) {
+            return cast.getExpression() instanceof NullLiteral;
+        }
+        return false;
+    }
+
+    /**
+     * Method used to collect the method invocations according to type passed
+     *
+     * @param unit
+     * @param allMethodInvocations
+     * @param type
+     * @return
+     */
+    private List<MethodInvocation> collectMethodInvocations(ICompilationUnit unit,
+                                                            List<MethodInvocation> allMethodInvocations, JSONBuilderType type) {
+        return allMethodInvocations.stream().filter(mi -> {
+            try {
+                return isMatchedJsonObjectBuilder(unit, mi) == type;
+            } catch (JavaModelException e) {
+                return false;
+            }
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Method used to identify jakarta.json.JsonObjectBuilder.add or jakarta.json.JsonArrayBuilder.add type method invocations
      *
      * @param unit
      * @param mi
      * @return boolean
      * @throws JavaModelException
      */
-    private boolean isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
-        IMethodBinding binding = mi.resolveMethodBinding();
-        if (binding != null) {
-            ITypeBinding declaringClass = binding.getDeclaringClass();
-            if (declaringClass != null) {
-                String fqName = declaringClass.getQualifiedName() + "." + binding.getName();
-                if (Constants.JAKARTA_JSON_OBJECT_BUILDER_ADD.equals(fqName)) {
-                    return true;
+    private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+        if (Constants.JAKARTA_JSON_OBJECT_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
+            && mi.getExpression() != null) {
+            IMethodBinding binding = mi.resolveMethodBinding();
+            if (binding != null) {
+                ITypeBinding declaringClass = binding.getDeclaringClass();
+                if (declaringClass != null) {
+                    if (Constants.JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME.equals(declaringClass.getQualifiedName())) {
+                        return JSONBuilderType.OBJECT;
+                    } else if (Constants.JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME.equals(declaringClass.getQualifiedName())) {
+                        return JSONBuilderType.ARRAY;
+                    }
                 }
             }
         }
-        return false;
+        return JSONBuilderType.UNKNOWN;
     }
 
     private boolean isInvalidArgument(Expression arg) {
