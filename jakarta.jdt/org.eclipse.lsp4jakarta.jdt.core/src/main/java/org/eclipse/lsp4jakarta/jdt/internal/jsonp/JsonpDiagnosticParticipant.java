@@ -139,7 +139,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * Method is used to check if value of arg passed or Cast Expression inside passed arg is null
      *
      * @param arg
-     * @return
+     * @return boolean
      */
     private boolean isInvalidNullArgument(Expression arg) {
         if (arg instanceof NullLiteral) {
@@ -157,7 +157,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @param unit
      * @param allMethodInvocations
      * @param type
-     * @return
+     * @return List
      */
     private List<MethodInvocation> collectMethodInvocations(ICompilationUnit unit,
                                                             List<MethodInvocation> allMethodInvocations, JSONBuilderType type) {
@@ -175,7 +175,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      *
      * @param unit
      * @param mi
-     * @return boolean
+     * @return JSONBuilderType
      * @throws JavaModelException
      */
     private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
