@@ -179,7 +179,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @throws JavaModelException
      */
     private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
-        if (Constants.JAKARTA_JSON_OBJECT_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
+        if (Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
             && mi.getExpression() != null) {
             IMethodBinding binding = mi.resolveMethodBinding();
             if (binding != null) {
