@@ -19,7 +19,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
  */
 public enum ErrorCode implements IJavaErrorCode {
     InvalidJsonCreatePointerTarget,
-    InvalidJsonObjectBuilderKey;
+    InvalidJsonObjectBuilderKey,
+    InvalidJsonArrayBuilderValue;
 
     /**
      * {@inheritDoc}
