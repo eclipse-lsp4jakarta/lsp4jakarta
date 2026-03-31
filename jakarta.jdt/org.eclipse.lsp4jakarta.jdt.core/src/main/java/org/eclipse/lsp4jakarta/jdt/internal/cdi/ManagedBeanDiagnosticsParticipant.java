@@ -70,10 +70,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
-            // Check if the class is a stateless session bean
-            boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                             new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
-
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
             boolean nonStaticPublicFieldPresent = false;
@@ -275,6 +271,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             if (isManagedBean) {
+                // Check if the class is a stateless session bean
+                boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                 new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
 
