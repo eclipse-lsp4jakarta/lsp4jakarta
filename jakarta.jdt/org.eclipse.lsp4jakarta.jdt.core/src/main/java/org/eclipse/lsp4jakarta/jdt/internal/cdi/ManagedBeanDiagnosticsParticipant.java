@@ -14,7 +14,6 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -64,8 +63,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         String[] scopeFQNames = Constants.SCOPE_FQ_NAMES.toArray(String[]::new);
         for (IType type : types) {
+            String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
             List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                             Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
+                                                                                             typeAnnotations,
                                                                                              scopeFQNames);
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
@@ -272,8 +272,26 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             if (isManagedBean) {
+                // Check if the class is a singleton session bean
+                boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                            new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
+
+                // If it's a singleton session bean, check if it has valid scope annotations
+                if (isSingletonSessionBean) {
+                    // A singleton session bean must be annotated with ONLY @ApplicationScoped or @Dependent
+                    // If it has any scope annotation that is not @ApplicationScoped or @Dependent, it's an error
+                    boolean hasInvalidScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
+                                                                                                     && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
+
+                    if (hasInvalidScope) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
+                                                                 ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
+                    }
+                }
 
                 // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
                 if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
