@@ -159,6 +159,6 @@ public class TypeHierarchyUtils {
      * @throws CoreException
      */
     public static boolean inheritsFrom(IType fieldType, String superType) throws CoreException {
-        return TypeHierarchyUtils.doesITypeHaveSuperType(fieldType, superType) == 1;
+        return doesITypeHaveSuperType(fieldType, superType) == 1;
     }
 }
