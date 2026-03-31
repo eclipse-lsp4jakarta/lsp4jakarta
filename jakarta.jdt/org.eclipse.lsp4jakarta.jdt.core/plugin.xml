@@ -317,6 +317,12 @@
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultProtectedConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveSingletonAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultPublicConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
