@@ -273,25 +273,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
             if (isManagedBean) {
                 // Check if the class is a singleton session bean
-                boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                            new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
+
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
 
-                // If it's a singleton session bean, check if it has valid scope annotations
-                if (isSingletonSessionBean) {
-                    // A singleton session bean must be annotated with ONLY @ApplicationScoped or @Dependent
-                    // If it has any scope annotation that is not @ApplicationScoped or @Dependent, it's an error
-                    boolean hasInvalidScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
-                                                                                                     && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
-
-                    if (hasInvalidScope) {
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
-                                                                 ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
-                    }
-                }
+                validateSingletonSessionBean(context, uri, diagnostics, type, typeAnnotations, managedBeanAnnotations,
+                                             range);
 
                 // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
                 if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
@@ -386,6 +373,36 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         return diagnostics;
+    }
+
+    /**
+     * validateSingletonSessionBean
+     * Singleton session bean scope validation
+     * A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.
+     * If a singleton bean declares any other scope, the container must treat it as a definition error.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param type
+     * @param typeAnnotations
+     * @param managedBeanAnnotations
+     * @param range
+     */
+    private void validateSingletonSessionBean(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                              IType type, String[] typeAnnotations, List<String> managedBeanAnnotations, Range range) {
+        boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                    new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
+        if (isSingletonSessionBean) {
+            boolean hasInvalidScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
+                                                                                             && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
+            if (hasInvalidScope) {
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
+                                                         ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
+            }
+        }
     }
 
     private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, ICompilationUnit unit,
