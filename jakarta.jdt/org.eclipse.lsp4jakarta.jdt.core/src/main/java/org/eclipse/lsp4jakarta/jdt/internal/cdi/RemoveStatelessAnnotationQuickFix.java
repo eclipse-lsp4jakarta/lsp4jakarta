@@ -25,7 +25,7 @@ public class RemoveStatelessAnnotationQuickFix extends RemoveAnnotationConflictQ
      * Constructor.
      */
     public RemoveStatelessAnnotationQuickFix() {
-        super(false, "jakarta.ejb.Stateless");
+        super(false, Constants.STATELESS_FQ_NAME);
     }
 
     /**
