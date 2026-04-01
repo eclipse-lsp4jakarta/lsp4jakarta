@@ -272,8 +272,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             if (isManagedBean) {
-                // Check if the class is a singleton session bean
-
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
 
