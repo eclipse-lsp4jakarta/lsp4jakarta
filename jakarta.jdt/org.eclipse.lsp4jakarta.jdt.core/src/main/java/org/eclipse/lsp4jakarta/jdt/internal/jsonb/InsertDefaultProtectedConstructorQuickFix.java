@@ -17,7 +17,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertDefaultConstructorToClassQuickFix;
 
 /**
- * Inserts a default public constructor to the active class.
+ * Inserts a default protected constructor to the active class.
  */
 public class InsertDefaultProtectedConstructorQuickFix extends InsertDefaultConstructorToClassQuickFix {
 
