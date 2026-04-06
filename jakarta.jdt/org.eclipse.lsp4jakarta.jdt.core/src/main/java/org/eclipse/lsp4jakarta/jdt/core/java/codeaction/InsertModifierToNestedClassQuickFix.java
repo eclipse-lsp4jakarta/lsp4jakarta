@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2025 IBM Corporation and others.
+* Copyright (c) 2025, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -109,6 +109,14 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
             }
         }
 
+        // Case 3: Annotation on a nested class
+        else if (node.getParent() instanceof TypeDeclaration) {
+            ITypeBinding typeBinding = (ITypeBinding) getBinding(node);
+            if (typeBinding != null) {
+                insertModifier(context, toResolve, typeBinding);
+            }
+        }
+
         return toResolve;
     }
 
@@ -158,6 +166,8 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
             return ((VariableDeclarationFragment) node.getParent()).resolveBinding();
         } else if (node.getParent() instanceof MethodDeclaration) {
             return ((MethodDeclaration) node.getParent()).resolveBinding();
+        } else if (node.getParent() instanceof TypeDeclaration) {
+            return ((TypeDeclaration) node.getParent()).resolveBinding();
         }
         return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
     }
