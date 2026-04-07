@@ -293,7 +293,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic d1 = d(11, 14, 16,
-                          "A field or property marked with @Id and typed as java.util.Date must explicitly declare @Temporal(TemporalType.DATE).",
+                          "A field or property marked with @Id and of type java.util.Date must explicitly specify @Temporal(TemporalType.DATE).",
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
@@ -319,7 +319,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic d1 = d(13, 13, 18,
-                          "A field or property marked with @Id and typed as java.util.Date must explicitly declare @Temporal(TemporalType.DATE).",
+                          "A field or property marked with @Id and of type java.util.Date must explicitly specify @Temporal(TemporalType.DATE).",
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);

@@ -372,7 +372,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         CodeAction ca15 = ca(uri, "Remove @JsonbTypeDeserializer, @JsonbTypeSerializer", d10, te15);
         assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca14, ca15);
     }
-  
+
     @Test
     public void JsonbDeserialization() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");

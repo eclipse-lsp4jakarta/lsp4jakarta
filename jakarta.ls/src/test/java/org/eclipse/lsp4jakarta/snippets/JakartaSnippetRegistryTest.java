@@ -101,6 +101,9 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> persistNamedEntityGraphSnippet = findByPrefix("persist_named_entitygraph", registry);
         assertTrue("persist_named_entitygraph Java snippet is not present in SnippetRegistry", persistNamedEntityGraphSnippet.isPresent());
 
+        Optional<Snippet> persistEntityListener = findByPrefix("persist_entity_listener", registry);
+        assertTrue("persist_entity_listener Java snippet is not present in SnippetRegistry", persistEntityListener.isPresent());
+
         snippetsContextTest(persistContextSnippet, "jakarta.persistence.PersistenceContextType",
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistContextExtendedSnippet, "jakarta.persistence.PersistenceContextType",
@@ -109,6 +112,7 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistEntitySnippet, "jakarta.persistence.Entity", JavaCursorContextKind.IN_EMPTY_FILE);
         snippetsContextTest(persistNamedEntityGraphSnippet, "jakarta.persistence.NamedEntityGraph", JavaCursorContextKind.BEFORE_CLASS);
+        snippetsContextTest(persistEntityListener, "jakarta.persistence.EntityListeners", JavaCursorContextKind.IN_EMPTY_FILE);
 
     }
 
@@ -242,14 +246,19 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta binding snippets test case- @Qualifier
+     * Jakarta binding snippets test case- @Qualifier, @Scope
      */
     @Test
     public void DISnippetsTest() {
         Optional<Snippet> diQualifierAnnotationSnippet = findByPrefix("di_qualifier", registry);
+        Optional<Snippet> diScopeAnnotationSnippet = findByPrefix("di_scope_annotation", registry);
+
         assertTrue("di_qualifier Java snippet is not present in SnippetRegistry", diQualifierAnnotationSnippet.isPresent());
+        assertTrue("di_scope_annotation Java snippet is not present in SnippetRegistry", diScopeAnnotationSnippet.isPresent());
 
         snippetsContextTest(diQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(diScopeAnnotationSnippet, "jakarta.inject.Scope",
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 

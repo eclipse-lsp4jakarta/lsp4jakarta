@@ -158,6 +158,93 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         return diagnostics;
     }
 
+	/**
+	 * Check the annotation value is TemporalType.DATE Enum
+	 *
+	 * @param pair
+	 * @return
+	 */
+	private boolean isValidTemporalDateValue(IMemberValuePair pair) {
+		if (pair == null) {
+			return false;
+		}
+
+		String memberName = pair.getMemberName();
+		Object value = pair.getValue();
+		int valueKind = pair.getValueKind();
+
+		return "value".equals(memberName)
+				&& valueKind == IMemberValuePair.K_QUALIFIED_NAME
+				&& value instanceof String
+				&& Constants.TEMPORAL_TYPE_DATE.equals((String) value);
+	}
+
+    /**
+     * Check @Temporal annotation exist for primary key field/property with @Id annotation
+     * Specification: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a132
+     *
+     * @param type
+     * @param member
+     * @param diagnostics
+     * @param context
+     * @throws JavaModelException
+     */
+    private void validatePKDateTemporal(IType type, IMember member, List<Diagnostic> diagnostics,
+                                        JavaDiagnosticsContext context) throws JavaModelException {
+        IAnnotation[] allAnnotations = null;
+        IAnnotation id = null, temporal = null;
+        String typeFQ = null;
+        Range range = null;
+
+        if (member instanceof IMethod) {
+            allAnnotations = ((IMethod) member).getAnnotations();
+            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+        } else if (member instanceof IField) {
+            allAnnotations = ((IField) member).getAnnotations();
+            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
+            range = PositionUtils.toNameRange((IField) member, context.getUtils());
+        }
+
+        for (IAnnotation annotation : allAnnotations) {
+            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                 annotation.getElementName(),
+                                                                                 Constants.SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS);
+            if (matchedAnnotation != null) {
+                if (matchedAnnotation.equals(Constants.ID)) {
+                    id = annotation;
+                } else if (matchedAnnotation.equals(Constants.TEMPORAL)) {
+                    temporal = annotation;
+                }
+            }
+        }
+
+        if (id != null) {
+            if (typeFQ.equals(Constants.UTIL_DATE)) {
+                if (temporal != null) {
+                    // Check value
+                    IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
+                    for (IMemberValuePair pair : memberValuePairs) {
+                        if (!isValidTemporalDateValue(pair)) {
+                            // Add diagnostics for invalid type
+                            range = PositionUtils.toNameRange(temporal, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                                     Messages.getMessage("InvalidValueInTemporalAnnotation"), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidValueInTemporalAnnotation, DiagnosticSeverity.Error));
+                        }
+                    }
+                } else {
+                    // Add diagnostics for missing annotation
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("MissingTemporalAnnotation"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.MissingTemporalAnnotation, DiagnosticSeverity.Error));
+                }
+            }
+        }
+    }
+
     /**
      * Check the annotation value is TemporalType.DATE Enum
      *

@@ -53,6 +53,7 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jaxrs#NoPublicConstructors"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jaxrs.InsertDefaultPublicConstructorQuickFix" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.jaxrs.JaxrsDiagnosticsParticipant" />
    </extension>
    
    <!-- Annotations -->
