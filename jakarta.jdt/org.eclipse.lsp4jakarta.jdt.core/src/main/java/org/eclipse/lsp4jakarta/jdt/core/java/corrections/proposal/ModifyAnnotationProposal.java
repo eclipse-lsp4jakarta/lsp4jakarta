@@ -118,50 +118,11 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         // if the Annotation is declared on a class field
         if (declNode.getNodeType() == ASTNode.FIELD_DECLARATION) {
-            AST ast = declNode.getAST();
-            ASTRewrite rewrite = ASTRewrite.create(ast);
-
-            ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
-            List<Annotation> existingAnnotations = new ArrayList<Annotation>();
-
-            List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
-
-            removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
-
-            // add new annotations to proposal (restoring those that were removed)
-            for (Annotation a : existingAnnotations) {
-                if (a instanceof NormalAnnotation) {
-                    NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
-
-                    // add new annotation proposal to the rewrite text edit
-                    rewrite.getListRewrite(declNode, FieldDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
-                }
-            }
-
-            return rewrite;
+            return processFieldOrMethodDeclaration(declNode, imports, annotationShortNames, annotations,
+                                                   FieldDeclaration.MODIFIERS2_PROPERTY);
         } else if (declNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
-            AST ast = declNode.getAST();
-            ASTRewrite rewrite = ASTRewrite.create(ast);
-
-            ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
-            List<Annotation> existingAnnotations = new ArrayList<Annotation>();
-
-            List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(MethodDeclaration.MODIFIERS2_PROPERTY);
-
-            // for all existing annotations (that are the annotation we want)
-            removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
-
-            // add new annotations to proposal (restoring those that were removed)
-            for (Annotation a : existingAnnotations) {
-                if (a instanceof NormalAnnotation) {
-                    NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
-
-                    // add new annotation proposal to the rewrite text edit
-                    rewrite.getListRewrite(declNode, MethodDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
-                }
-            }
-
-            return rewrite;
+            return processFieldOrMethodDeclaration(declNode, imports, annotationShortNames, annotations,
+                                                   MethodDeclaration.MODIFIERS2_PROPERTY);
 
         } else if (declNode instanceof TypeDeclaration || isSingleVarDecl) {
             // Annotation in question is set on a class declaration or is a method parameter declaration
@@ -249,6 +210,42 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                 }
             }
         }
+    }
+
+    /**
+     * Process field or method declaration by removing and adding annotation attributes.
+     *
+     * @param declNode the declaration node (field or method)
+     * @param imports the import rewrite
+     * @param annotationShortNames the short names of annotations to process
+     * @param annotations the full qualified names of annotations
+     * @param modifiersProperty the property descriptor for modifiers (MODIFIERS2_PROPERTY)
+     * @return the AST rewrite with the changes
+     */
+    private ASTRewrite processFieldOrMethodDeclaration(ASTNode declNode, ImportRewrite imports,
+                                                       String[] annotationShortNames, String[] annotations,
+                                                       ChildListPropertyDescriptor modifiersProperty) {
+        AST ast = declNode.getAST();
+        ASTRewrite rewrite = ASTRewrite.create(ast);
+
+        ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
+        List<Annotation> existingAnnotations = new ArrayList<Annotation>();
+
+        List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(modifiersProperty);
+
+        removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
+
+        // add new annotations to proposal (restoring those that were removed)
+        for (Annotation a : existingAnnotations) {
+            if (a instanceof NormalAnnotation) {
+                NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
+
+                // add new annotation proposal to the rewrite text edit
+                rewrite.getListRewrite(declNode, modifiersProperty).insertFirst(marker, null);
+            }
+        }
+
+        return rewrite;
     }
 
     private SingleMemberAnnotation processSingleMemberAnnotation(AST ast, ImportRewrite imports,

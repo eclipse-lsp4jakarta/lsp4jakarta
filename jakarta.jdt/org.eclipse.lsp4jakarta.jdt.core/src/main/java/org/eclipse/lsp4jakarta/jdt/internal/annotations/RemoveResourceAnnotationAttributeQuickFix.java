@@ -48,6 +48,6 @@ public class RemoveResourceAnnotationAttributeQuickFix extends RemoveAnnotationA
     }
 
     protected String getLabel() {
-        return Messages.getMessage("RemoveAttribute", "redundant 'type'", "@Resource");
+        return Messages.getMessage("RemoveAttribute", "type", "@Resource");
     }
 }
