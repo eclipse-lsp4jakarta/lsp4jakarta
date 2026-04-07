@@ -58,6 +58,7 @@
                 <!-- make sure server dir is removed after clean to avoid "dirty" build -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
+                <version>3.4.0</version>
                 <configuration>
                     <filesets>
                         <fileset>

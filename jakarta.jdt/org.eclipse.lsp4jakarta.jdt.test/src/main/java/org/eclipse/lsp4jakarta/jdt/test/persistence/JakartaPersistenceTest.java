@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -50,11 +50,11 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d1 = d(21, 32, 42,
+        Diagnostic d1 = d(16, 32, 42,
                           "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
 
-        Diagnostic d2 = d(16, 25, 32,
+        Diagnostic d2 = d(11, 25, 32,
                           "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
 
@@ -62,8 +62,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
-        TextEdit te1 = te(20, 4, 21, 4, "");
-        TextEdit te2 = te(19, 4, 20, 4, "");
+        TextEdit te1 = te(15, 4, 16, 4, "");
+        TextEdit te2 = te(14, 4, 15, 4, "");
         CodeAction ca1 = ca(uri, "Remove @MapKeyClass", d1, te1);
         CodeAction ca2 = ca(uri, "Remove @MapKey", d1, te2);
 
@@ -71,8 +71,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
 
-        TextEdit te3 = te(14, 13, 15, 27, "");
-        TextEdit te4 = te(14, 4, 15, 4, "");
+        TextEdit te3 = te(9, 13, 10, 27, "");
+        TextEdit te4 = te(9, 4, 10, 4, "");
         CodeAction ca3 = ca(uri, "Remove @MapKeyClass", d2, te3);
         CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);
 
@@ -91,21 +91,21 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d1 = d(16, 25, 30,
+        Diagnostic d1 = d(12, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-        Diagnostic d2 = d(16, 25, 30,
-                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-
-        Diagnostic d3 = d(20, 25, 30,
-                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-        Diagnostic d4 = d(20, 25, 30,
+        Diagnostic d2 = d(12, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
 
-        Diagnostic d5 = d(24, 25, 30,
+        Diagnostic d3 = d(16, 25, 30,
+                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
+        Diagnostic d4 = d(16, 25, 30,
+                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
+
+        Diagnostic d5 = d(20, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
 
@@ -113,21 +113,21 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(14, 4, 15, 23,
+        TextEdit te1 = te(10, 4, 11, 23,
                           "@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")\n\t@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")");
         CodeAction ca1 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation", d1, te1);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d3);
-        TextEdit te2 = te(18, 4, 19, 52,
+        TextEdit te2 = te(14, 4, 15, 52,
                           "@MapKeyJoinColumn(referencedColumnName = \"rcn2\", name = \"\")\n\t@MapKeyJoinColumn(name = \"n1\", referencedColumnName = \"\")");
         CodeAction ca2 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation", d3, te2);
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d5);
-        TextEdit te3 = te(22, 4, 23, 23,
+        TextEdit te3 = te(18, 4, 19, 23,
                           "@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")\n\t@MapKeyJoinColumn(name = \"n1\", referencedColumnName = \"rcn1\")");
         CodeAction ca3 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation",
                             d5, te3);
@@ -146,7 +146,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d = d(6, 13, 37,
+        Diagnostic d = d(5, 13, 37,
                          "A class using the @Entity annotation must contain a public or protected constructor with no arguments.",
                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidConstructorInEntityAnnotatedClass");
 
@@ -154,9 +154,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d);
-        TextEdit te1 = te(8, 1, 8, 1, "protected EntityMissingConstructor() {\n\t}\n\n\t");
+        TextEdit te1 = te(7, 4, 7, 4, "protected EntityMissingConstructor() {\n\t}\n\n\t");
         CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te1);
-        TextEdit te2 = te(8, 1, 8, 1, "public EntityMissingConstructor() {\n\t}\n\n\t");
+        TextEdit te2 = te(7, 4, 7, 4, "public EntityMissingConstructor() {\n\t}\n\n\t");
         CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te2);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
@@ -174,27 +174,27 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d1 = d(14, 21, 28,
+        Diagnostic d1 = d(10, 21, 28,
                           "A class using the @Entity annotation cannot contain any methods that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFinalMethodInEntityAnnotatedClass");
         d1.setData(IJavaElement.METHOD);
 
-        Diagnostic d2 = d(11, 14, 15,
+        Diagnostic d2 = d(7, 14, 15,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d2.setData(IJavaElement.FIELD);
 
-        Diagnostic d3 = d(12, 17, 18,
+        Diagnostic d3 = d(8, 17, 18,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d3.setData(IJavaElement.FIELD);
 
-        Diagnostic d4 = d(12, 30, 31,
+        Diagnostic d4 = d(8, 30, 31,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d4.setData(IJavaElement.FIELD);
 
-        Diagnostic d5 = d(6, 19, 33,
+        Diagnostic d5 = d(5, 19, 33,
                           "A class using the @Entity annotation must not be final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFinalModifierOnEntityAnnotatedClass");
         d5.setData(IJavaElement.TYPE);
@@ -203,31 +203,31 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(14, 10, 14, 16, "");
+        TextEdit te1 = te(10, 10, 10, 16, "");
         CodeAction ca1 = ca(uri, "Remove the 'final' modifier", d1, te1);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit te2 = te(11, 4, 11, 10, "");
+        TextEdit te2 = te(7, 4, 7, 10, "");
         CodeAction ca2 = ca(uri, "Remove the 'final' modifier", d2, te2);
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
-        TextEdit te3 = te(12, 4, 12, 10, "");
+        TextEdit te3 = te(8, 4, 8, 10, "");
         CodeAction ca3 = ca(uri, "Remove the 'final' modifier", d3, te3);
 
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3);
 
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d4);
-        TextEdit te4 = te(12, 4, 12, 10, "");
+        TextEdit te4 = te(8, 4, 8, 10, "");
         CodeAction ca4 = ca(uri, "Remove the 'final' modifier", d4, te4);
 
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
 
         JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
-        TextEdit te5 = te(6, 6, 6, 12, "");
+        TextEdit te5 = te(5, 6, 5, 12, "");
         CodeAction ca5 = ca(uri, "Remove the 'final' modifier", d5, te5);
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
@@ -282,66 +282,75 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     }
 
     @Test
-    public void testMissingPrimaryKey() throws Exception {
+    public void testIdDateMissingTemporal() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMissingPrimaryKey.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityIdDateMissingTemporal.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = d(5, 13, 36,
-                         "The class EntityMissingPrimaryKey annotated with @Entity must define a primary key using @Id or @EmbeddedId.",
-                         DiagnosticSeverity.Error, "jakarta-persistence", "MissingPrimaryKey");
+        Diagnostic d1 = d(11, 14, 16,
+                          "A field or property marked with @Id and of type java.util.Date must explicitly specify @Temporal(TemporalType.DATE).",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
     }
 
     @Test
-    public void testEntityWithEmbeddedId() throws Exception {
+    public void testPropertyIdDateMissingTemporal() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithEmbeddedId.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityPropertyIdDateMissingTemporal.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Verify that NO diagnostics are produced for an entity with @EmbeddedId
-        // This confirms that @EmbeddedId is correctly recognized as a primary key
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+        Diagnostic d1 = d(13, 13, 18,
+                          "A field or property marked with @Id and of type java.util.Date must explicitly specify @Temporal(TemporalType.DATE).",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
     }
 
     @Test
-    public void testEntityWithIdOnGetter() throws Exception {
+    public void testIdDateInvalidTemporalType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithIdOnGetter.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityInvalidTemporalType.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Verify that NO diagnostics are produced for an entity with @Id on getter method
-        // This confirms that @Id on getter methods is correctly recognized as a primary key
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+        Diagnostic d1 = d(13, 1, 29,
+                          "The @Temporal annotation on a field or property annotated with @Id and of type java.util.Date must specify TemporalType.DATE.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
     }
 
     @Test
-    public void testEntityWithEmbeddedIdOnGetter() throws Exception {
+    public void testPropertyIdDateInvalidTemporalType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithEmbeddedIdOnGetter.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityPropertyInvalidTemporalType.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Verify that NO diagnostics are produced for an entity with @EmbeddedId on getter method
-        // This confirms that @EmbeddedId on getter methods is correctly recognized as a primary key
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+        Diagnostic d1 = d(15, 1, 29,
+                          "The @Temporal annotation on a field or property annotated with @Id and of type java.util.Date must specify TemporalType.DATE.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
     }
-    
-    
+
 }
