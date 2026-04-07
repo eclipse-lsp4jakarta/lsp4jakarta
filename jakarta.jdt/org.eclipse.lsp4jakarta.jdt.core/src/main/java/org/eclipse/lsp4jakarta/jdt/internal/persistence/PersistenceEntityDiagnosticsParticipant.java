@@ -115,7 +115,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  ErrorCode.InvalidFinalMethodInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
 
-
                     // Check if any method has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, method.getAnnotations())) {
                         hasPrimaryKey = true;
@@ -140,12 +139,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
 
-
                     // Check if any field has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
                         hasPrimaryKey = true;
                     }
-                    
+
                     validatePKDateTemporal(type, field, diagnostics, context);
                 }
 
@@ -154,7 +152,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     hasPrimaryKey = hasPrimaryKeyInSuperclass(type);
 
                 }
-                
 
                 // Ensure that the Entity class is not given a final modifier
                 if (isFinal(type.getFlags()))
@@ -191,26 +188,26 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         return diagnostics;
     }
 
-	/**
-	 * Check the annotation value is TemporalType.DATE Enum
-	 *
-	 * @param pair
-	 * @return
-	 */
-	private boolean isValidTemporalDateValue(IMemberValuePair pair) {
-		if (pair == null) {
-			return false;
-		}
+    /**
+     * Check the annotation value is TemporalType.DATE Enum
+     *
+     * @param pair
+     * @return
+     */
+    private boolean isValidTemporalDateValue(IMemberValuePair pair) {
+        if (pair == null) {
+            return false;
+        }
 
-		String memberName = pair.getMemberName();
-		Object value = pair.getValue();
-		int valueKind = pair.getValueKind();
+        String memberName = pair.getMemberName();
+        Object value = pair.getValue();
+        int valueKind = pair.getValueKind();
 
-		return "value".equals(memberName)
-				&& valueKind == IMemberValuePair.K_QUALIFIED_NAME
-				&& value instanceof String
-				&& Constants.TEMPORAL_TYPE_DATE.equals((String) value);
-	}
+        return "value".equals(memberName)
+               && valueKind == IMemberValuePair.K_QUALIFIED_NAME
+               && value instanceof String
+               && Constants.TEMPORAL_TYPE_DATE.equals((String) value);
+    }
 
     /**
      * Check @Temporal annotation exist for primary key field/property with @Id annotation

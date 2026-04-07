@@ -25,7 +25,7 @@ public class Constants {
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
-    public static final String ID = "jakarta.persistence.Id";
+
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
 
     /* Annotation Fields */
