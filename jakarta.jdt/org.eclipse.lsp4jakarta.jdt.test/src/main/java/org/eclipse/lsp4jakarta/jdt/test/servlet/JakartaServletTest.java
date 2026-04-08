@@ -257,7 +257,7 @@ public class JakartaServletTest extends BaseJakartaTest {
     @Test
     public void DeclareRolesWithoutServlet() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/DeclareRolesWithoutServlet.java"));
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithoutServlet.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -277,5 +277,44 @@ public class JakartaServletTest extends BaseJakartaTest {
 
         CodeAction ca = ca(uri, "Let 'DeclareRolesWithoutServlet' extend 'HttpServlet'", d, te);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+    }
+
+    @Test
+    public void DeclareRolesWithGenericServlet() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithGenericServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - GenericServlet is a valid Servlet subclass
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void DeclareRolesWithServletInterface() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithServletInterface.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - implements Servlet interface directly
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void DeclareRolesWithHttpServlet() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithHttpServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - HttpServlet is a valid Servlet subclass
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }

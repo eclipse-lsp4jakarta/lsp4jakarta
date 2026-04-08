@@ -38,6 +38,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 @SuppressWarnings("restriction")
 public class TypeHierarchyUtils {
 
+    public static final int HAS_SUPERTYPE = 1;
+
     /**
      *
      * @param type The root type of which the super-types are checked.
@@ -159,6 +161,6 @@ public class TypeHierarchyUtils {
      * @throws CoreException
      */
     public static boolean inheritsFrom(IType fieldType, String superType) throws CoreException {
-        return doesITypeHaveSuperType(fieldType, superType) == 1;
+        return doesITypeHaveSuperType(fieldType, superType) == HAS_SUPERTYPE;
     }
 }

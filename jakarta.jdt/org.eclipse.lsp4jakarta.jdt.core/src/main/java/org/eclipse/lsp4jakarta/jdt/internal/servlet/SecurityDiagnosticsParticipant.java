@@ -54,16 +54,7 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         }
         IType[] alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
-            IAnnotation[] allAnnotations = type.getAnnotations();
-            IAnnotation declareRolesAnnotation = null;
-
-            for (IAnnotation annotation : allAnnotations) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                         Constants.DECLARE_ROLES_FQ_NAME)) {
-                    declareRolesAnnotation = annotation;
-                    break;
-                }
-            }
+            IAnnotation declareRolesAnnotation = findDeclareRolesAnnotation(type);
             boolean implementsServlet = TypeHierarchyUtils.inheritsFrom(type, Constants.SERVLET_FQ_NAME);
             if (declareRolesAnnotation != null && !implementsServlet) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -74,5 +65,23 @@ public class SecurityDiagnosticsParticipant implements IJavaDiagnosticsParticipa
             }
         }
         return diagnostics;
+    }
+
+    /**
+     * Finds the @DeclareRoles annotation on the given type using streams.
+     *
+     * @param type the type to search
+     * @return the @DeclareRoles annotation if found, null otherwise
+     * @throws CoreException if an error occurs while accessing the type's annotations
+     */
+    private IAnnotation findDeclareRolesAnnotation(IType type) throws CoreException {
+        IAnnotation[] allAnnotations = type.getAnnotations();
+        for (IAnnotation annotation : allAnnotations) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                     Constants.DECLARE_ROLES_FQ_NAME)) {
+                return annotation;
+            }
+        }
+        return null;
     }
 }
