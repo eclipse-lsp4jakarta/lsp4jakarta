@@ -26,5 +26,3 @@ public class BaseMappedSuperclassWithIdOnGetter {
         this.commonField = commonField;
     }
 }
-
-// Made with Bob

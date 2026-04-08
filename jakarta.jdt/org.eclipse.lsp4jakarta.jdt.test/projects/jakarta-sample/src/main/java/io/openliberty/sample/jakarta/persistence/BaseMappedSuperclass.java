@@ -27,5 +27,3 @@ public class BaseMappedSuperclass {
         this.commonField = commonField;
     }
 }
-
-// Made with Bob

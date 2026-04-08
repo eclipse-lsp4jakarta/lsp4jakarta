@@ -18,5 +18,3 @@ public class EntityWithMappedSuperclass extends BaseMappedSuperclass {
         this.name = name;
     }
 }
-
-// Made with Bob

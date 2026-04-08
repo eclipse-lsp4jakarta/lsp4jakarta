@@ -18,5 +18,3 @@ public class EntityWithMappedSuperclassIdOnGetter extends BaseMappedSuperclassWi
         this.name = name;
     }
 }
-
-// Made with Bob
