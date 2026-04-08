@@ -327,9 +327,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     private boolean hasPrimaryKeyAnnotation(IType type, IAnnotation[] annotations) throws CoreException {
         return Arrays.stream(annotations).anyMatch(annotation -> {
             try {
-                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ID) ||
-                       DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                            Constants.EMBEDDEDID);
+                return DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                 new String[] { Constants.ID, Constants.EMBEDDEDID }) != null;
             } catch (JavaModelException e) {
                 return false;
             }
