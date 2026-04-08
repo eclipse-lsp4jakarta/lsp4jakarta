@@ -237,9 +237,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // If a bean with scope @Dependent has an observer method declared notifyObserver=IF_EXISTS,
                 // the container automatically detects the problem and treats it as a definition error.
                 if (isDependent) {
-                    boolean hasConditionalObserver = hasConditionalObserverAnnotation(type, method);
-
-                    if (hasConditionalObserver) {
+                    if (hasConditionalObserverAnnotation(type, method)) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
                         diagnostics.add(context.createDiagnostic(
                                                                  uri,
