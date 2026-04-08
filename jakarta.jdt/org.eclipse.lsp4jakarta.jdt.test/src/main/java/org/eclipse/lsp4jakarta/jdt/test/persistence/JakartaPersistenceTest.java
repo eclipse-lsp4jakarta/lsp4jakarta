@@ -415,4 +415,34 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    @Test
+    public void testEntityWithMappedSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithMappedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity that inherits @Id from @MappedSuperclass
+        // This confirms that primary keys in @MappedSuperclass are correctly recognized
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testEntityWithMappedSuperclassIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithMappedSuperclassIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity that inherits @Id on getter from @MappedSuperclass
+        // This confirms that primary keys on getter methods in @MappedSuperclass are correctly recognized
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
