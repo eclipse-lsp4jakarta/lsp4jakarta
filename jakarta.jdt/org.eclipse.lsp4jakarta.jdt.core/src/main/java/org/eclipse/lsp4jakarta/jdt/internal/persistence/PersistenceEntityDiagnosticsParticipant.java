@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -55,6 +56,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * annotations.
  */
 public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+	
+	private static final Logger LOGGER = Logger.getLogger(PersistenceEntityDiagnosticsParticipant.class.getName());
 
     /**
      * {@inheritDoc}
@@ -330,6 +333,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 return DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
                                                                  new String[] { Constants.ID, Constants.EMBEDDEDID }) != null;
             } catch (JavaModelException e) {
+            	LOGGER.warning("JavaModelException while processing annotation:"+annotation.getElementName());
                 return false;
             }
         });
