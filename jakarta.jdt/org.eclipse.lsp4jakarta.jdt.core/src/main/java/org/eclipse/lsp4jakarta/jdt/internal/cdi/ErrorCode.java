@@ -32,7 +32,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidInjectAnnotatedMethodParamAnnotation,
     InvalidInjectAnnotationOnMultipleMethodParams,
     InvalidObservesObservesAsyncMethodParams,
-    InvalidStatelessSessionBeanWithIllegalScope;
+    InvalidStatelessSessionBeanScope;
 
     /**
      * {@inheritDoc}

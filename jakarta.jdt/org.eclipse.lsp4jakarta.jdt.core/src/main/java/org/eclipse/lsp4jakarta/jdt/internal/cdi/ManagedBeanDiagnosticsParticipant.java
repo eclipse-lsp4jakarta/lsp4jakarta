@@ -282,7 +282,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("StatelessSessionBeanWithIllegalScope"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidStatelessSessionBeanWithIllegalScope, DiagnosticSeverity.Error));
+                                                             ErrorCode.InvalidStatelessSessionBeanScope, DiagnosticSeverity.Error));
 
                     // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
                 } else if (isClassGeneric && (!isDependent || hasMultipleScopes)) {

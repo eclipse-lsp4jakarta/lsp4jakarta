@@ -50,42 +50,42 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test expected diagnostics
-        Diagnostic d1 = d(10, 13, 33,
-                          "A stateless session bean belongs to the @Dependent scope; any other scope is invalid.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanWithIllegalScope");
+        Diagnostic statelessWithRequestScoped = d(10, 13, 33,
+                                                  "A stateless session bean belongs to the @Dependent scope. any other scope is invalid.",
+                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
-        Diagnostic d2 = d(16, 6, 32,
-                          "A stateless session bean belongs to the @Dependent scope; any other scope is invalid.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanWithIllegalScope");
+        Diagnostic statelessWithSessionScoped = d(16, 6, 32,
+                                                  "A stateless session bean belongs to the @Dependent scope. any other scope is invalid.",
+                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
-        Diagnostic d3 = d(23, 6, 33,
-                          "A stateless session bean belongs to the @Dependent scope; any other scope is invalid.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanWithIllegalScope");
+        Diagnostic statelessWithApplicationScoped = d(23, 6, 33,
+                                                      "A stateless session bean belongs to the @Dependent scope. any other scope is invalid.",
+                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, statelessWithRequestScoped, statelessWithSessionScoped, statelessWithApplicationScoped);
 
-        // Assert for diagnostic d1 - Two quickfixes: Remove @Stateless or Replace scope with @Dependent
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1a = te(8, 0, 9, 0, "");
-        CodeAction ca1a = ca(uri, "Remove @Stateless", d1, te1a);
-        TextEdit te1b = te(8, 0, 10, 0, "@Dependent\n@Stateless\n");
-        CodeAction ca1b = ca(uri, "Replace current scope with @Dependent", d1, te1b);
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1a, ca1b);
+        // Assert for diagnostic statelessWithRequestScoped - Two quickfixes: Remove @Stateless or Replace scope with @Dependent
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, statelessWithRequestScoped);
+        TextEdit removeStateless1 = te(8, 0, 9, 0, "");
+        CodeAction removeStatelessAction1 = ca(uri, "Remove @Stateless", statelessWithRequestScoped, removeStateless1);
+        TextEdit replaceWithDependent1 = te(8, 0, 10, 0, "@Dependent\n@Stateless\n");
+        CodeAction replaceWithDependentAction1 = ca(uri, "Replace current scope with @Dependent", statelessWithRequestScoped, replaceWithDependent1);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeStatelessAction1, replaceWithDependentAction1);
 
-        // Assert for diagnostic d2 - Two quickfixes: Remove @Stateless or Replace scope with @Dependent
-        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit te2a = te(14, 0, 15, 0, "");
-        CodeAction ca2a = ca(uri, "Remove @Stateless", d2, te2a);
-        TextEdit te2b = te(14, 0, 15, 14, "@Dependent\n@Stateless");
-        CodeAction ca2b = ca(uri, "Replace current scope with @Dependent", d2, te2b);
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2a, ca2b);
+        // Assert for diagnostic statelessWithSessionScoped - Two quickfixes: Remove @Stateless or Replace scope with @Dependent
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, statelessWithSessionScoped);
+        TextEdit removeStateless2 = te(14, 0, 15, 0, "");
+        CodeAction removeStatelessAction2 = ca(uri, "Remove @Stateless", statelessWithSessionScoped, removeStateless2);
+        TextEdit replaceWithDependent2 = te(14, 0, 15, 14, "@Dependent\n@Stateless");
+        CodeAction replaceWithDependentAction2 = ca(uri, "Replace current scope with @Dependent", statelessWithSessionScoped, replaceWithDependent2);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeStatelessAction2, replaceWithDependentAction2);
 
-        // Assert for diagnostic d3 - Two quickfixes: Remove @Stateless or Replace scopes with @Dependent
-        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
-        TextEdit te3a = te(20, 0, 21, 0, "");
-        CodeAction ca3a = ca(uri, "Remove @Stateless", d3, te3a);
-        TextEdit te3b = te(20, 0, 22, 14, "@Dependent\n@Stateless");
-        CodeAction ca3b = ca(uri, "Replace current scope with @Dependent", d3, te3b);
-        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3a, ca3b);
+        // Assert for diagnostic statelessWithApplicationScoped - Two quickfixes: Remove @Stateless or Replace scopes with @Dependent
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, statelessWithApplicationScoped);
+        TextEdit removeStateless3 = te(20, 0, 21, 0, "");
+        CodeAction removeStatelessAction3 = ca(uri, "Remove @Stateless", statelessWithApplicationScoped, removeStateless3);
+        TextEdit replaceWithDependent3 = te(20, 0, 22, 14, "@Dependent\n@Stateless");
+        CodeAction replaceWithDependentAction3 = ca(uri, "Replace current scope with @Dependent", statelessWithApplicationScoped, replaceWithDependent3);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeStatelessAction3, replaceWithDependentAction3);
     }
 }
