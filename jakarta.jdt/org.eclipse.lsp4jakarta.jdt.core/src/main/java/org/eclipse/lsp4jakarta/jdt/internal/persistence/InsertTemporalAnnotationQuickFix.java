@@ -45,5 +45,3 @@ public class InsertTemporalAnnotationQuickFix extends InsertAnnotationWithAttrib
         return JakartaCodeActionId.PersistenceInsertTemporalAnnotation;
     }
 }
-
-// Made with Bob

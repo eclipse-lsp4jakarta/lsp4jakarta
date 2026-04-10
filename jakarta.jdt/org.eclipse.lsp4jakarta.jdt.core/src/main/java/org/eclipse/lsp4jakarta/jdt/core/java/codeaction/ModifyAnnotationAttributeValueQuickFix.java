@@ -25,13 +25,12 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.jdt.core.ASTNodeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyAnnotationAttributeValueProposal;
 
@@ -135,10 +134,7 @@ public abstract class ModifyAnnotationAttributeValueQuickFix implements IJavaCod
     }
 
     protected IBinding getBinding(ASTNode node) {
-        if (node.getParent() instanceof VariableDeclarationFragment) {
-            return ((VariableDeclarationFragment) node.getParent()).resolveBinding();
-        }
-        return Bindings.getBindingOfParentType(node);
+        return ASTNodeUtils.getParentTypeBinding(node);
     }
 
     /**
@@ -158,5 +154,3 @@ public abstract class ModifyAnnotationAttributeValueQuickFix implements IJavaCod
      */
     protected abstract ICodeActionId getCodeActionId();
 }
-
-// Made with Bob

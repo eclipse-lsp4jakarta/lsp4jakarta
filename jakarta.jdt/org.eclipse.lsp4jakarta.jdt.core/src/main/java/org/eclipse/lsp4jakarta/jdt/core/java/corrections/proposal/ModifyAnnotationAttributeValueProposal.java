@@ -191,5 +191,3 @@ public class ModifyAnnotationAttributeValueProposal extends ASTRewriteCorrection
         return rewrite;
     }
 }
-
-// Made with Bob

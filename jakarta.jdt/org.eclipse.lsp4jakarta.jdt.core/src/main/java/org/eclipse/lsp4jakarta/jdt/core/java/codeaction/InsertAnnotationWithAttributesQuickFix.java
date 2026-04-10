@@ -25,15 +25,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.jdt.core.ASTNodeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.InsertAnnotationWithAttributesProposal;
 
@@ -132,28 +129,7 @@ public abstract class InsertAnnotationWithAttributesQuickFix implements IJavaCod
     }
 
     protected IBinding getBinding(ASTNode node) {
-        // Check if parent is a VariableDeclarationFragment (field)
-        if (node.getParent() instanceof VariableDeclarationFragment) {
-            return ((VariableDeclarationFragment) node.getParent()).resolveBinding();
-        }
-
-        // Walk up the AST to find the method or field declaration
-        ASTNode current = node;
-        while (current != null) {
-            if (current instanceof MethodDeclaration) {
-                return ((MethodDeclaration) current).resolveBinding();
-            } else if (current instanceof FieldDeclaration) {
-                // For field declarations, we need to get the variable binding
-                FieldDeclaration fieldDecl = (FieldDeclaration) current;
-                if (!fieldDecl.fragments().isEmpty()) {
-                    return ((VariableDeclarationFragment) fieldDecl.fragments().get(0)).resolveBinding();
-                }
-            }
-            current = current.getParent();
-        }
-
-        // Fallback to the original behavior
-        return Bindings.getBindingOfParentType(node);
+        return ASTNodeUtils.getParentTypeBinding(node);
     }
 
     /**
@@ -185,5 +161,3 @@ public abstract class InsertAnnotationWithAttributesQuickFix implements IJavaCod
      */
     protected abstract ICodeActionId getCodeActionId();
 }
-
-// Made with Bob

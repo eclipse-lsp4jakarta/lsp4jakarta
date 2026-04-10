@@ -45,5 +45,3 @@ public class ChangeTemporalValueQuickFix extends ModifyAnnotationAttributeValueQ
         return JakartaCodeActionId.PersistenceChangeTemporalValue;
     }
 }
-
-// Made with Bob

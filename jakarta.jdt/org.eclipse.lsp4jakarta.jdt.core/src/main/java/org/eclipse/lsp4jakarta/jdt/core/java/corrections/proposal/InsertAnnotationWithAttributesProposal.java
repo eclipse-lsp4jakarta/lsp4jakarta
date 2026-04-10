@@ -147,5 +147,3 @@ public class InsertAnnotationWithAttributesProposal extends ASTRewriteCorrection
         return rewrite;
     }
 }
-
-// Made with Bob

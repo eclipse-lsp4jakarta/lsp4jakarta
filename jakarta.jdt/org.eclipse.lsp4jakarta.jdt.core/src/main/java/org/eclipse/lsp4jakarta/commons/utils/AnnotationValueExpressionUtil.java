@@ -13,10 +13,7 @@
 package org.eclipse.lsp4jakarta.commons.utils;
 
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.NumberLiteral;
-import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
@@ -99,5 +96,3 @@ public class AnnotationValueExpressionUtil {
         return ast.newSimpleName(strValue);
     }
 }
-
-// Made with Bob
