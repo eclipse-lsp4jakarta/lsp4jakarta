@@ -56,19 +56,19 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
 
         // Test case 1: @Singleton with @RequestScoped (line 11)
         Diagnostic singletonWithRequestScoped = d(11, 13, 33,
-                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope; any other scope is invalid.",
+                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithRequestScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
         // Test case 2: @Singleton with @SessionScoped (line 17)
         Diagnostic singletonWithSessionScoped = d(17, 6, 31,
-                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope; any other scope is invalid.",
+                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
         // Test case 6: @Singleton with @RequestScoped + @ApplicationScoped (line 41)
         Diagnostic singletonWithRequestAndApplicationScoped = d(41, 6, 51,
-                                                                "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope; any other scope is invalid.",
+                                                                "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithRequestAndApplicationScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                                              "jakarta.enterprise.context.RequestScoped")));
@@ -82,7 +82,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
 
         // Test case 7: @Singleton with @SessionScoped + @Dependent (line 48)
         Diagnostic singletonWithSessionAndDependent = d(48, 6, 43,
-                                                        "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope; any other scope is invalid.",
+                                                        "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionAndDependent.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.SessionScoped")));
 
@@ -112,52 +112,52 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, singletonWithRequestScoped);
 
         // Code action 1: Remove @Singleton annotation
-        TextEdit te1 = te(9, 0, 10, 0, "");
-        CodeAction ca1 = ca(uri, "Remove @Singleton", singletonWithRequestScoped, te1);
+        TextEdit removeSingleton1 = te(9, 0, 10, 0, "");
+        CodeAction removeSingletonAction1 = ca(uri, "Remove @Singleton", singletonWithRequestScoped, removeSingleton1);
 
         // Code action 2: Replace @Singleton and @RequestScoped with @Dependent and @Singleton
-        TextEdit te2 = te(9, 0, 11, 0, "@Dependent\n@Singleton\n");
-        CodeAction ca2 = ca(uri, "Replace current scope with @Dependent", singletonWithRequestScoped, te2);
+        TextEdit replaceWithDependent1 = te(9, 0, 11, 0, "@Dependent\n@Singleton\n");
+        CodeAction replaceWithDependentAction1 = ca(uri, "Replace current scope with @Dependent", singletonWithRequestScoped, replaceWithDependent1);
 
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeSingletonAction1, replaceWithDependentAction1);
 
         // Test code actions for singletonWithSessionScoped
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, singletonWithSessionScoped);
 
         // Code action 1: Remove @Singleton annotation
-        TextEdit te3 = te(15, 0, 16, 0, "");
-        CodeAction ca3 = ca(uri, "Remove @Singleton", singletonWithSessionScoped, te3);
+        TextEdit removeSingleton2 = te(15, 0, 16, 0, "");
+        CodeAction removeSingletonAction2 = ca(uri, "Remove @Singleton", singletonWithSessionScoped, removeSingleton2);
 
         // Code action 2: Replace @Singleton and @SessionScoped with @Dependent and @Singleton
-        TextEdit te4 = te(15, 0, 16, 14, "@Dependent\n@Singleton");
-        CodeAction ca4 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionScoped, te4);
+        TextEdit replaceWithDependent2 = te(15, 0, 16, 14, "@Dependent\n@Singleton");
+        CodeAction replaceWithDependentAction2 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionScoped, replaceWithDependent2);
 
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeSingletonAction2, replaceWithDependentAction2);
 
         // Test code actions for singletonWithRequestAndApplicationScoped
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, singletonWithRequestAndApplicationScoped);
 
         // Code action 1: Remove @Singleton annotation
-        TextEdit te5 = te(38, 0, 39, 0, "");
-        CodeAction ca5 = ca(uri, "Remove @Singleton", singletonWithRequestAndApplicationScoped, te5);
+        TextEdit removeSingleton3 = te(38, 0, 39, 0, "");
+        CodeAction removeSingletonAction3 = ca(uri, "Remove @Singleton", singletonWithRequestAndApplicationScoped, removeSingleton3);
 
         // Code action 2: Replace with @Dependent (removes @Singleton, @RequestScoped and @ApplicationScoped, then adds @Dependent and @Singleton)
-        TextEdit te6 = te(38, 0, 40, 18, "@Dependent\n@Singleton");
-        CodeAction ca6 = ca(uri, "Replace current scope with @Dependent", singletonWithRequestAndApplicationScoped, te6);
+        TextEdit replaceWithDependent3 = te(38, 0, 40, 18, "@Dependent\n@Singleton");
+        CodeAction replaceWithDependentAction3 = ca(uri, "Replace current scope with @Dependent", singletonWithRequestAndApplicationScoped, replaceWithDependent3);
 
-        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca5, ca6);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeSingletonAction3, replaceWithDependentAction3);
 
         // Test code actions for singletonWithSessionAndDependent
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, singletonWithSessionAndDependent);
 
         // Code action 1: Remove @Singleton annotation
-        TextEdit te7 = te(45, 0, 46, 0, "");
-        CodeAction ca7 = ca(uri, "Remove @Singleton", singletonWithSessionAndDependent, te7);
+        TextEdit removeSingleton4 = te(45, 0, 46, 0, "");
+        CodeAction removeSingletonAction4 = ca(uri, "Remove @Singleton", singletonWithSessionAndDependent, removeSingleton4);
 
         // Code action 2: Replace with @Dependent (removes @Singleton, @SessionScoped and @Dependent, then adds @Dependent and @Singleton)
-        TextEdit te8 = te(45, 0, 47, 10, "@Dependent\n@Singleton");
-        CodeAction ca8 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionAndDependent, te8);
+        TextEdit replaceWithDependent4 = te(45, 0, 47, 10, "@Dependent\n@Singleton");
+        CodeAction replaceWithDependentAction4 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionAndDependent, replaceWithDependent4);
 
-        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca7, ca8);
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, removeSingletonAction4, replaceWithDependentAction4);
     }
 }
