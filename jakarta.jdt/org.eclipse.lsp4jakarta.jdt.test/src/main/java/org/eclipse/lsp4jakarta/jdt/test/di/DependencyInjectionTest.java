@@ -150,7 +150,7 @@ public class DependencyInjectionTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8);
     }
-  
+
     @Test
     public void InvalidScopeAttributesOnType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
