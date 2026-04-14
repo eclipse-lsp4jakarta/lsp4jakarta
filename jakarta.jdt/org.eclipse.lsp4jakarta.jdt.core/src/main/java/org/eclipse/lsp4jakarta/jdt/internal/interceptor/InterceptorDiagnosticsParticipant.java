@@ -14,21 +14,28 @@
 package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4jakarta.commons.utils.InterModuleCommonUtils;
+import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
@@ -60,14 +67,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         for (IType type : types) {
             int typeFlag = type.getFlags();
             ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.initialize();
-            boolean isInterceptorType = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
-                try {
-                    return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.INTERCEPTOR_FQ_NAME);
-                } catch (JavaModelException e) {
-                    LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
-                    return false;
-                }
-            });
+            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 if (Flags.isAbstract(typeFlag)) {
@@ -90,6 +90,76 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
         }
+
+        List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
+        //Used to get the list of method declarations for interceptor methods that doesn't use proceed method
+        List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(mi -> {
+            try {
+                return isMatchedInvocationContextMethods(unit, mi);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        }).collect(Collectors.toList());
+        for (MethodDeclaration m : invocationContextMethodInvocations) {
+            Range range = JDTUtils.toRange(unit, m.getName().getStartPosition(), m.getName().getLength());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidInterceptorMethodsProceedMissing"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorMethodsProceedMissing,
+                                                     DiagnosticSeverity.Error));
+        }
         return diagnostics;
+    }
+
+    /**
+     * Method used to traverse through Interceptor method declarations and invocations to find out if proceed method is invoked.
+     *
+     * @param unit
+     * @param mi
+     * @return
+     * @throws JavaModelException
+     */
+    private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration mi) throws JavaModelException {
+        IType parentType = null;
+        IMethodBinding binding = mi.resolveBinding();
+        if (binding != null) {
+            ITypeBinding declaringClass = binding.getDeclaringClass();
+            if (declaringClass != null) {
+                IJavaElement javaElement = declaringClass.getJavaElement();
+                if (javaElement instanceof IType) {
+                    parentType = (IType) javaElement;
+                }
+            }
+        }
+        if (InterModuleCommonUtils.isInterceptorReferencedType(parentType, unit)) {
+            for (Object modifier : mi.modifiers()) {
+                if (modifier instanceof Annotation) {
+                    Annotation ann = (Annotation) modifier;
+                    String annName = ann.getTypeName().getFullyQualifiedName();
+                    if (isInterceptorAnnotation(parentType, annName) && !ASTUtils.containsMethodInvocation(mi,
+                                                                                                           Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Method used to check if annotation matches Interceptor method annotations fully qualified name
+     *
+     * @param type
+     * @param annName
+     * @return
+     * @throws JavaModelException
+     */
+    private boolean isInterceptorAnnotation(IType type, String annName) throws JavaModelException {
+        return Constants.INTERCEPTOR_METHODS.stream().anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedJavaElement(type, annName, annotation);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
+                return false;
+            }
+        });
     }
 }

@@ -70,4 +70,46 @@ public class InterceptorTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidAbstractModifier);
     }
 
+    @Test
+    public void invalidInterceptorMethodProceedTest() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidInterceptorMethodsProceed.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics
+        Diagnostic aroundInvokeInvalidProceed = d(12, 18, 38,
+                                                  "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic aroundConstructInvalidProceed = d(18, 18, 41,
+                                                     "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                     DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic aroundTimeoutInvalidProceed = d(24, 18, 39,
+                                                   "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                   DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic postConstructInvalidProceed = d(30, 16, 36,
+                                                   "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                   DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic preDestroyInvalidProceed = d(35, 16, 33,
+                                                "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic aroundInvokeInvalidProceedChild = d(46, 19, 44,
+                                                       "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                       DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic postConstructInvalidProceedChild = d(62, 17, 42,
+                                                        "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic preDestroyInvalidProceedChild = d(67, 14, 36,
+                                                     "Interceptor methods must always call the InvocationContext.proceed method.",
+                                                     DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundInvokeInvalidProceed, aroundConstructInvalidProceed,
+                              aroundTimeoutInvalidProceed, postConstructInvalidProceed, preDestroyInvalidProceed, aroundInvokeInvalidProceedChild,
+                              postConstructInvalidProceedChild, preDestroyInvalidProceedChild);
+    }
+
 }
