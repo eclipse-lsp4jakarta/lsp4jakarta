@@ -152,19 +152,31 @@ public class DependencyInjectionTest extends BaseJakartaTest {
     }
 
     @Test
-    public void InvalidScopeAttributesOnType() throws Exception {
+    public void InvalidScopeAttributesOnTypeQuickFix() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidScopeAttributes.java"));
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidScopeAttributes.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Create expected diagnostics.
+        // Create expected diagnostic
         Diagnostic d1 = d(5, 18, 40,
                           "Scope annotated interface: InvalidScopeAttributes should not declare any attributes.",
                           DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // Test quick fix to remove all attributes
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+
+        // The actual edit removes from after the opening brace to the end of the last attribute
+        // Line 5, char 42 (after '{') to Line 11, char 15 (after 'token = 0;')
+        TextEdit te = te(5, 42, 11, 15, "");
+        CodeAction ca = ca(uri, "Remove all attributes from @Scope annotation type", d1, te);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
     }
+
 }
