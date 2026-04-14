@@ -14,15 +14,10 @@
 package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -31,11 +26,9 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -43,7 +36,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.commons.utils.InterModuleCommonUtils;
 import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
-import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;

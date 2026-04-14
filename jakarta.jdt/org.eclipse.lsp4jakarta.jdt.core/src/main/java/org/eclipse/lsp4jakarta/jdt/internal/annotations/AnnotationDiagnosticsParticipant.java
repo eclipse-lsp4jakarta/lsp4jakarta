@@ -252,10 +252,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.POST_CONSTRUCT_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         //Checks if @PostConstruct is not used in Interceptor class
                         if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                            Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                            List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                             if (checkedExceptions.size() > 0) {
                                 String diagnosticMessage = Messages.getMessage(
                                                                                "MethodMustNotThrow", "@PostConstruct");
@@ -291,10 +291,10 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                Constants.PRE_DESTROY_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                         //Checks if @PreDestroy is not used in Interceptor class
                         if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                            Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                            List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                             if (checkedExceptions.size() > 0) {
                                 String diagnosticMessage = Messages.getMessage(
                                                                                "MethodMustNotThrow", "@PreDestroy");
