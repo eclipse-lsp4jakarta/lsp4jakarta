@@ -14,12 +14,13 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -49,6 +50,9 @@ import com.google.gson.Gson;
  * CDI diagnostics participant that manages the use of a managed bean.
  */
 public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(ManagedBeanDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -228,6 +232,23 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidObservesObservesAsyncMethodParams, DiagnosticSeverity.Error));
                 }
 
+                // Check for conditional observer methods on @Dependent scoped beans
+                // Beans with scope @Dependent may not have conditional observer methods.
+                // If a bean with scope @Dependent has an observer method declared notifyObserver=IF_EXISTS,
+                // the container automatically detects the problem and treats it as a definition error.
+                if (isDependent) {
+                    if (hasConditionalObserverAnnotation(type, method)) {
+                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(
+                                                                 uri,
+                                                                 Messages.getMessage("ManagedBeanDependentScopeConditionalObserver", method.getElementName()),
+                                                                 range,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 null,
+                                                                 ErrorCode.InvalidDependentScopeWithConditionalObserver,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
             }
 
             if (isManagedBean && constructorMethods.size() > 0) {
@@ -467,4 +488,46 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                && (!isDependent || hasMultipleScopes);
     }
 
+    /**
+     * isConditionalObserver
+     * Checks if the annotation is a conditional observer (notifyObserver=IF_EXISTS).
+     *
+     * @param type the type
+     * @param annotation the annotation to check
+     * @return true if the annotation is @Observes or @ObservesAsync with notifyObserver=IF_EXISTS
+     * @throws JavaModelException
+     */
+    private boolean isConditionalObserver(IType type, IAnnotation annotation) throws JavaModelException {
+        String matched = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                   new String[] { Constants.OBSERVES_FQ_NAME, Constants.OBSERVES_ASYNC_FQ_NAME });
+        if (null != matched) {
+            String notifyObserverValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "notifyObserver", String.class);
+            return notifyObserverValue != null && notifyObserverValue.contains("IF_EXISTS");
+        }
+        return false;
+    }
+
+    /**
+     * hasConditionalObserverAnnotation
+     * Checks if any parameter in the method has a conditional observer annotation.
+     *
+     * @param type the type
+     * @param method the method to check
+     * @return true if any parameter has a conditional observer annotation
+     * @throws JavaModelException
+     */
+    private boolean hasConditionalObserverAnnotation(IType type, IMethod method) {
+        try {
+            for (ILocalVariable param : method.getParameters()) {
+                for (IAnnotation annotation : param.getAnnotations()) {
+                    if (isConditionalObserver(type, annotation)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occured while checking ConditionalObserverAnnotation", e);
+        }
+        return false;
+    }
 }
