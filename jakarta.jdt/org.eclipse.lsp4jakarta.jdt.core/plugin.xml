@@ -305,6 +305,12 @@
                   targetDiagnostic="jakarta-cdi#InvalidGenericManagedBeanClassWithNoDependentScope"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidStatelessSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveStatelessAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidStatelessSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidFieldWithProducesAndInjectAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveProducesAndInjectAnnotationsQuickFix" />
       <codeAction kind="quickfix"
