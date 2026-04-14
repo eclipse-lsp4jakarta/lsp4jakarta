@@ -152,7 +152,7 @@ public class DependencyInjectionTest extends BaseJakartaTest {
     }
 
     @Test
-    public void InvalidScopeAttributesOnTypeQuickFix() throws Exception {
+    public void InvalidScopeAttributesOnType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/di/InvalidScopeAttributes.java"));
@@ -171,8 +171,6 @@ public class DependencyInjectionTest extends BaseJakartaTest {
         // Test quick fix to remove all attributes
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
 
-        // The actual edit removes from after the opening brace to the end of the last attribute
-        // Line 5, char 42 (after '{') to Line 11, char 15 (after 'token = 0;')
         TextEdit te = te(5, 42, 11, 15, "");
         CodeAction ca = ca(uri, "Remove all attributes from @Scope annotation type", d1, te);
 
