@@ -151,6 +151,30 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
+     * Jakarta RESTful Web Services RestClient snippets - rest_client_class,
+     * rest_client_simple, rest_client_get, rest_client_post
+     */
+    @Test
+    public void restfulWebServicesRestClientSnippetsTest() {
+        Optional<Snippet> restClientClassSnippet = findByPrefix("rest_client_class", registry);
+        assertTrue("rest_client_class Java snippet is not present in SnippetRegistry", restClientClassSnippet.isPresent());
+
+        Optional<Snippet> restClientSimpleSnippet = findByPrefix("rest_client_simple", registry);
+        assertTrue("rest_client_simple Java snippet is not present in SnippetRegistry", restClientSimpleSnippet.isPresent());
+
+        Optional<Snippet> restClientGetSnippet = findByPrefix("rest_client_get", registry);
+        assertTrue("rest_client_get Java snippet is not present in SnippetRegistry", restClientGetSnippet.isPresent());
+
+        Optional<Snippet> restClientPostSnippet = findByPrefix("rest_client_post", registry);
+        assertTrue("rest_client_post Java snippet is not present in SnippetRegistry", restClientPostSnippet.isPresent());
+
+        snippetsContextTest(restClientClassSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(restClientSimpleSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.BEFORE_METHOD);
+        snippetsContextTest(restClientGetSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.BEFORE_METHOD);
+        snippetsContextTest(restClientPostSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.BEFORE_METHOD);
+    }
+
+    /**
      * Jakarta Servlet snippets - servlet_generic, servlet_doget
      * servlet_dopost, servlet_webfilter, servlet_security
      */
