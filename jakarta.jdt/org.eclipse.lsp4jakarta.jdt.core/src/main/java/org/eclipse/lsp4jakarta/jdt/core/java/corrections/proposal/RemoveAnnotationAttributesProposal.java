@@ -5,7 +5,6 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -47,11 +46,8 @@ public class RemoveAnnotationAttributesProposal extends ASTRewriteCorrectionProp
     protected ASTRewrite getRewrite() throws CoreException {
         AST ast = annotationTypeDeclaration.getAST();
         ASTRewrite rewrite = ASTRewrite.create(ast);
-
         // Get the list rewriter for the annotation type's body declarations
-        ListRewrite listRewrite = rewrite.getListRewrite(annotationTypeDeclaration,
-                                                         AnnotationTypeDeclaration.BODY_DECLARATIONS_PROPERTY);
-
+        ListRewrite listRewrite = rewrite.getListRewrite(annotationTypeDeclaration, AnnotationTypeDeclaration.BODY_DECLARATIONS_PROPERTY);
         // Remove all attributes
         for (BodyDeclaration attribute : attributesToRemove) {
             listRewrite.remove(attribute, null);

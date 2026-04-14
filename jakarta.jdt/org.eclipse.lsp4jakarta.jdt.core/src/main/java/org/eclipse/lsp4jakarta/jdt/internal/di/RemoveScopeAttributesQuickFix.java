@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -78,34 +77,23 @@ public class RemoveScopeAttributesQuickFix implements IJavaCodeActionParticipant
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
         CodeAction toResolve = context.getUnresolved();
         ASTNode node = context.getCoveredNode();
-
-        // The diagnostic is on the SimpleName of the annotation type declaration
-        // Navigate to find the AnnotationTypeDeclaration
         AnnotationTypeDeclaration annotationTypeDecl = null;
         if (node.getParent() instanceof AnnotationTypeDeclaration) {
             annotationTypeDecl = (AnnotationTypeDeclaration) node.getParent();
         }
-
         if (annotationTypeDecl != null) {
             // Collect all methods and fields to remove
             List<BodyDeclaration> attributesToRemove = new ArrayList<>();
-
             // Add all body declarations (annotation members and fields)
             List<?> bodyDeclarations = annotationTypeDecl.bodyDeclarations();
             for (Object obj : bodyDeclarations) {
-                // In annotation interfaces:
-                // - Methods are AnnotationTypeMemberDeclaration
-                // - Fields are FieldDeclaration
                 if (obj instanceof AnnotationTypeMemberDeclaration || obj instanceof FieldDeclaration) {
                     attributesToRemove.add((BodyDeclaration) obj);
                 }
             }
-
             LOGGER.info("Found " + attributesToRemove.size() + " attributes to remove");
-
             if (!attributesToRemove.isEmpty()) {
                 ChangeCorrectionProposal proposal = new RemoveAnnotationAttributesProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), annotationTypeDecl, 0, attributesToRemove);
-
                 try {
                     toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
                 } catch (CoreException e) {
@@ -113,14 +101,13 @@ public class RemoveScopeAttributesQuickFix implements IJavaCodeActionParticipant
                 }
             }
         }
-
         return toResolve;
     }
 
     /**
      * Returns the code action label.
      *
-     * @return The code action label.
+     * @return
      */
     public String getLabel() {
         return Messages.getMessage("RemoveScopeAttributes");
