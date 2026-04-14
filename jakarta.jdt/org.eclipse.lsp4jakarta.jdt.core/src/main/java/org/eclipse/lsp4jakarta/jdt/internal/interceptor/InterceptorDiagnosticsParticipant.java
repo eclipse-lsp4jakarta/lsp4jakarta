@@ -72,10 +72,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
-            Map<String, Boolean> constructorInfo = new HashMap<>();
-            constructorInfo.put("hasConstructor", false);
-            constructorInfo.put("hasValidPublicNoArgsConstructor", false);
             int typeFlag = type.getFlags();
+            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.initialize();
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -83,16 +81,19 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InvalidInterceptorAbstractClass", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorAnnotationOnAbstractClass, DiagnosticSeverity.Error));
-                }
-                for (IMethod method : type.getMethods()) {
-                    //Checks if method is a constructor and has valid no-args constructor
-                    constructorInfo = DiagnosticUtils.hasValidNoArgsConstructor(method, constructorInfo);
-                }
-                // Conditions for checking missing public no-args constructor
-                if (!constructorInfo.get("hasValidPublicNoArgsConstructor") && constructorInfo.get("hasConstructor")) {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("ErrorMessageInterceptorNoArgConstructorMissing", type.getElementName()), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorNoArgsConstructorMissing, DiagnosticSeverity.Error));
+                } else {
+                    for (IMethod method : type.getMethods()) {
+                        // Checks if method is a constructor and has valid no-args constructor
+                        constructorInfo.mergeConstructorInfo(ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
+                    }
+                    // Conditions for checking missing public no-args constructor
+                    if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("ErrorMessageInterceptorNoArgConstructorMissing",
+                                                                                     type.getElementName()),
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorNoArgsConstructorMissing,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
             }
         }
