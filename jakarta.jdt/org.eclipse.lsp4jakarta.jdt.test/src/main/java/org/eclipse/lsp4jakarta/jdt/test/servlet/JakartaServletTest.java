@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -33,7 +33,6 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class JakartaServletTest extends BaseJakartaTest {
@@ -253,5 +252,69 @@ public class JakartaServletTest extends BaseJakartaTest {
         CodeAction ca2 = ca(uri, "Remove the `value` attribute from @WebFilter", d, te2);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1, ca2);
+    }
+
+    @Test
+    public void DeclareRolesWithoutServlet() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithoutServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // expected
+        Diagnostic d = d(5, 13, 39, "Annotated classes with @DeclareRoles must implement the Servlet interface or its subclasses.",
+                         DiagnosticSeverity.Error, "jakarta-servlet",
+                         "DeclareRolesOnNonServletClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+
+        // test associated quick-fix code action
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        TextEdit te = te(2, 48, 5, 39, "\nimport jakarta.servlet.http.HttpServlet;\n\n"
+                                       + "@DeclareRoles(\"Administrator\")\npublic class DeclareRolesWithoutServlet extends HttpServlet");
+
+        CodeAction ca = ca(uri, "Let 'DeclareRolesWithoutServlet' extend 'HttpServlet'", d, te);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+    }
+
+    @Test
+    public void DeclareRolesWithGenericServlet() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithGenericServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - GenericServlet is a valid Servlet subclass
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void DeclareRolesWithServletInterface() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithServletInterface.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - implements Servlet interface directly
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void DeclareRolesWithHttpServlet() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/servlet/declareroles/DeclareRolesWithHttpServlet.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Should not trigger any diagnostic - HttpServlet is a valid Servlet subclass
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
