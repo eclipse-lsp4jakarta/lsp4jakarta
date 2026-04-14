@@ -56,19 +56,19 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
 
         // Test case 1: @Singleton with @RequestScoped (line 11)
         Diagnostic singletonWithRequestScoped = d(11, 13, 33,
-                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
+                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithRequestScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
         // Test case 2: @Singleton with @SessionScoped (line 17)
         Diagnostic singletonWithSessionScoped = d(17, 6, 31,
-                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
+                                                  "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
         // Test case 6: @Singleton with @RequestScoped + @ApplicationScoped (line 41)
         Diagnostic singletonWithRequestAndApplicationScoped = d(41, 6, 51,
-                                                                "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
+                                                                "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithRequestAndApplicationScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                                              "jakarta.enterprise.context.RequestScoped")));
@@ -82,7 +82,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
 
         // Test case 7: @Singleton with @SessionScoped + @Dependent (line 48)
         Diagnostic singletonWithSessionAndDependent = d(48, 6, 43,
-                                                        "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. any other scope is invalid.",
+                                                        "A singleton session bean belongs to either the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionAndDependent.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.SessionScoped")));
 
