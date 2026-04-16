@@ -181,55 +181,5 @@
         "type": "jakarta.ws.rs.client.Client",
         "contentType": "class"
       }
-    },
-    "Jakarta RESTful Web Services - RestClient GET request": {
-      "prefix": "rest_client_get",
-      "body": [
-        "Client client = ClientBuilder.newClient();",
-        "try {",
-        "\tWebTarget target = client.target(\"${1:http://example.com/api/resource}\");",
-        "\tResponse response = target.request(MediaType.APPLICATION_JSON)",
-        "\t\t\t.get();",
-        "\t",
-        "\tif (response.getStatus() == 200) {",
-        "\t\t${2:String} result = response.readEntity(${2:String}.class);",
-        "\t\t${3:// Process result}",
-        "\t}",
-        "\tresponse.close();",
-        "} finally {",
-        "\tclient.close();",
-        "}"
-      ],
-      "description": "RestClient GET request with response handling",
-      "context": {
-        "type": "jakarta.ws.rs.client.Client",
-        "contentType": "method"
-      }
-    },
-    "Jakarta RESTful Web Services - RestClient POST request": {
-      "prefix": "rest_client_post",
-      "body": [
-        "Client client = ClientBuilder.newClient();",
-        "try {",
-        "\tWebTarget target = client.target(\"${1:http://example.com/api/resource}\");",
-        "\t${2:String} payload = ${3:\"{\\\"key\\\": \\\"value\\\"}\"};",
-        "\t",
-        "\tResponse response = target.request(MediaType.APPLICATION_JSON)",
-        "\t\t\t.post(Entity.entity(payload, MediaType.APPLICATION_JSON));",
-        "\t",
-        "\tif (response.getStatus() == 201 || response.getStatus() == 200) {",
-        "\t\t${4:String} result = response.readEntity(${4:String}.class);",
-        "\t\t${5:// Process result}",
-        "\t}",
-        "\tresponse.close();",
-        "} finally {",
-        "\tclient.close();",
-        "}"
-      ],
-      "description": "RestClient POST request with JSON payload",
-      "context": {
-        "type": "jakarta.ws.rs.client.Client",
-        "contentType": "method"
-      }
     }
   }

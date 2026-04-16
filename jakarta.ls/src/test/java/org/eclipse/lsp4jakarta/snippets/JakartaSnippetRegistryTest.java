@@ -159,15 +159,7 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> restClientClassSnippet = findByPrefix("rest_client_class", registry);
         assertTrue("rest_client_class Java snippet is not present in SnippetRegistry", restClientClassSnippet.isPresent());
 
-        Optional<Snippet> restClientGetSnippet = findByPrefix("rest_client_get", registry);
-        assertTrue("rest_client_get Java snippet is not present in SnippetRegistry", restClientGetSnippet.isPresent());
-
-        Optional<Snippet> restClientPostSnippet = findByPrefix("rest_client_post", registry);
-        assertTrue("rest_client_post Java snippet is not present in SnippetRegistry", restClientPostSnippet.isPresent());
-
         snippetsContextTest(restClientClassSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.IN_EMPTY_FILE);
-        snippetsContextTest(restClientGetSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.BEFORE_METHOD);
-        snippetsContextTest(restClientPostSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.BEFORE_METHOD);
     }
 
     /**
