@@ -86,7 +86,8 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
     /**
      * {@inheritDoc}
      * Resolves a code action by inserting the appropriate modifier into a nested class matching
-     * the annotated field or method parameter type.
+     * the annotated field or method parameter type. 
+     * Also, adds appropriate modifier to the nested class.
      */
     @Override
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
@@ -109,7 +110,7 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
             }
         }
 
-        // Case 3: Annotation on a nested class
+        // Case 3: Adds modifier on a nested class
         else if (node.getParent() instanceof TypeDeclaration) {
             ITypeBinding typeBinding = (ITypeBinding) getBinding(node);
             if (typeBinding != null) {
