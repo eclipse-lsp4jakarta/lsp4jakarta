@@ -182,22 +182,6 @@
         "contentType": "class"
       }
     },
-    "Jakarta RESTful Web Services - Simple RestClient": {
-      "prefix": "rest_client_simple",
-      "body": [
-        "Client client = ClientBuilder.newClient();",
-        "try {",
-        "\t${1:// Use client here}",
-        "} finally {",
-        "\tclient.close();",
-        "}"
-      ],
-      "description": "Simple RestClient with resource management",
-      "context": {
-        "type": "jakarta.ws.rs.client.Client",
-        "contentType": "method"
-      }
-    },
     "Jakarta RESTful Web Services - RestClient GET request": {
       "prefix": "rest_client_get",
       "body": [
