@@ -193,7 +193,16 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />                
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />  
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNoArgsConstructorMissing"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertDefaultPublicConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNoArgsConstructorMissing"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertDefaultProtectedConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertStaticModifierQuickFix" />              
    </extension>  
    
    <!-- JSON-P -->

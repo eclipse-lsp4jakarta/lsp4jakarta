@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2025 IBM Corporation and others.
+* Copyright (c) 2025, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -86,7 +86,8 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
     /**
      * {@inheritDoc}
      * Resolves a code action by inserting the appropriate modifier into a nested class matching
-     * the annotated field or method parameter type.
+     * the annotated field or method parameter type. 
+     * Also, adds appropriate modifier to the nested class.
      */
     @Override
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
@@ -106,6 +107,14 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
             IMethodBinding methodBinding = (IMethodBinding) getBinding(node);
             for (ITypeBinding paramType : methodBinding.getParameterTypes()) {
                 insertModifier(context, toResolve, paramType);
+            }
+        }
+
+        // Case 3: Adds modifier on a nested class
+        else if (node.getParent() instanceof TypeDeclaration) {
+            ITypeBinding typeBinding = (ITypeBinding) getBinding(node);
+            if (typeBinding != null) {
+                insertModifier(context, toResolve, typeBinding);
             }
         }
 
@@ -158,6 +167,8 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
             return ((VariableDeclarationFragment) node.getParent()).resolveBinding();
         } else if (node.getParent() instanceof MethodDeclaration) {
             return ((MethodDeclaration) node.getParent()).resolveBinding();
+        } else if (node.getParent() instanceof TypeDeclaration) {
+            return ((TypeDeclaration) node.getParent()).resolveBinding();
         }
         return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
     }
