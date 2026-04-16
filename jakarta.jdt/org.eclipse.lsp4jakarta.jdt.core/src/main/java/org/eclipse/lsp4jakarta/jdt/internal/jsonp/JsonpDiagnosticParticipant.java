@@ -142,13 +142,8 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @return boolean
      */
     private boolean isInvalidNullArgument(Expression arg) {
-        if (arg instanceof NullLiteral) {
-            return true;
-        }
-        if (arg instanceof CastExpression cast) {
-            return cast.getExpression() instanceof NullLiteral;
-        }
-        return false;
+        return arg instanceof NullLiteral
+               || (arg instanceof CastExpression cast && cast.getExpression() instanceof NullLiteral);
     }
 
     /**
