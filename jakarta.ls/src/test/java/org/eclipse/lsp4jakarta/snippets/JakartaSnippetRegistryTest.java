@@ -151,6 +151,18 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
+     * Jakarta RESTful Web Services RestClient snippets - rest_client_class,
+     * rest_client_simple, rest_client_get, rest_client_post
+     */
+    @Test
+    public void restfulWebServicesRestClientSnippetsTest() {
+        Optional<Snippet> restClientClassSnippet = findByPrefix("rest_client_class", registry);
+        assertTrue("rest_client_class Java snippet is not present in SnippetRegistry", restClientClassSnippet.isPresent());
+
+        snippetsContextTest(restClientClassSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
+    /**
      * Jakarta Servlet snippets - servlet_generic, servlet_doget
      * servlet_dopost, servlet_webfilter, servlet_security
      */
