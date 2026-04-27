@@ -392,9 +392,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
                                                                                     new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
         if (isSingletonSessionBean) {
-            boolean hasInvalidScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
-                                                                                             && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
-            if (hasInvalidScope) {
+            boolean hasInvalidSingletonScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
+                                                                                                      && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
+            if (hasInvalidSingletonScope) {
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
                                                          Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
