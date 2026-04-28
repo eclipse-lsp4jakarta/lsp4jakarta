@@ -353,4 +353,84 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
     }
 
+    @Test
+    public void testDuplicateVersionInClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionInClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(9, 16, 24,
+                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic d2 = d(12, 16, 24,
+                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+    }
+
+    @Test
+    public void testVersionInHierarchy() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChild.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(9, 16, 28,
+                          "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+    }
+
+    @Test
+    public void testDuplicateVersionOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionOnMethods.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(16, 15, 26,
+                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic d2 = d(25, 15, 26,
+                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+    }
+
+    @Test
+    public void testVersionInHierarchyOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChildMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(15, 15, 30,
+                          "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+    }
+
 }
