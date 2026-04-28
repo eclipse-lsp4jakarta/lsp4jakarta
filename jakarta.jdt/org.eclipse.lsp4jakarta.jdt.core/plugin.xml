@@ -355,5 +355,14 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
-   </extension>
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDependentScopeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveConditionalObserverParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNotifyObserverAttributeQuickFix" />
+  </extension>
 </plugin>

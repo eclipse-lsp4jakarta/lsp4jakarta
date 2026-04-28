@@ -20,10 +20,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
@@ -143,12 +144,18 @@ public class ModifyModifiersProposal extends ASTRewriteCorrectionProposal {
         }
 
         for (ASTNode modifier : modifiers) {
-            if (modifier instanceof MarkerAnnotation) {
-                MarkerAnnotation markAnno = (MarkerAnnotation) modifier;
-                Name markAnnoTypeName = markAnno.getTypeName();
-                // Check if modifier is in toRemove list
-                if (modifiersToRemove.stream().anyMatch(m -> m.equals(markAnnoTypeName.toString()))) {
-                    modifiersList.remove(markAnno, null);
+            if (modifier instanceof Annotation) {
+                Annotation annotation = (Annotation) modifier;
+                Name annoTypeName = annotation.getTypeName();
+                // Check if modifier is in toRemove list - compare simple name
+                if (modifiersToRemove.stream().anyMatch(m -> m.equals(annoTypeName.toString()))) {
+                    modifiersList.remove(annotation, null);
+                    continue;
+                }
+                // Also check against fully qualified name if type binding is available
+                ITypeBinding typeBinding = annotation.resolveTypeBinding();
+                if (typeBinding != null && modifiersToRemove.stream().anyMatch(m -> m.equals(typeBinding.getQualifiedName()))) {
+                    modifiersList.remove(annotation, null);
                     continue;
                 }
             } else if (modifier instanceof Modifier) {

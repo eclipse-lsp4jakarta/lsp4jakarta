@@ -104,7 +104,7 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
         List<String> annotationToRemoveList = (List<String>) data.getExtendedDataEntry(ANNOTATIONS_KEY);
         String[] annotationToRemove = annotationToRemoveList.toArray(String[]::new);
         String label = getLabel(annotationToRemove);
-        ChangeCorrectionProposal proposal = new RemoveAnnotationProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, context.getCoveredNode().getParent(), annotationToRemove);
+        ChangeCorrectionProposal proposal = new RemoveAnnotationProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, getDeclaringNode(context), annotationToRemove);
 
         try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
@@ -113,6 +113,17 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
         }
 
         return toResolve;
+    }
+
+    /**
+     * Returns the declaring node for the annotation to be removed.
+     * Can be overridden by subclasses to provide a different node.
+     *
+     * @param context The resolve context
+     * @return The declaring node
+     */
+    protected ASTNode getDeclaringNode(JavaCodeActionResolveContext context) {
+        return context.getCoveredNode().getParent();
     }
 
     /**
