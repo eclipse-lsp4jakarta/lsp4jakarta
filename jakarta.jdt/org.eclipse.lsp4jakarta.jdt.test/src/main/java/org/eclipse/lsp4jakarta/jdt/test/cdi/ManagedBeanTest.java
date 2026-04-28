@@ -583,4 +583,28 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
     }
+
+    @Test
+    public void dependentScopedConditionalObserver() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/DependentScopedConditionalObserver.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test case 1: @Dependent with conditional @Observes (should trigger diagnostic)
+        // Highlighting the @Observes annotation parameter
+        Diagnostic dependentWithConditionalObserves = d(12, 16, 30,
+                                                        "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+
+        // Test case 2: @Dependent with conditional @ObservesAsync (should trigger diagnostic)
+        // Highlighting the @ObservesAsync annotation parameter
+        Diagnostic dependentWithConditionalObservesAsync = d(21, 16, 30,
+                                                             "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, dependentWithConditionalObserves, dependentWithConditionalObservesAsync);
+    }
 }
