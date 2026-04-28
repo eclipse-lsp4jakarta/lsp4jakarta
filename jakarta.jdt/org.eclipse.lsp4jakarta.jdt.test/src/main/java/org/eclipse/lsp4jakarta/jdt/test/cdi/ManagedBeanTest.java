@@ -595,16 +595,16 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // Test case 1: @Dependent with conditional @Observes (should trigger diagnostic)
         // Highlighting the @Observes annotation parameter
-        Diagnostic d1 = d(12, 16, 30,
-                          "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' has notifyObserver set to Reception.IF_EXISTS, which is not allowed on a @Dependent scoped bean.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+        Diagnostic dependentWithConditionalObserves = d(12, 16, 30,
+                                                        "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
 
         // Test case 2: @Dependent with conditional @ObservesAsync (should trigger diagnostic)
         // Highlighting the @ObservesAsync annotation parameter
-        Diagnostic d2 = d(21, 16, 30,
-                          "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' has notifyObserver set to Reception.IF_EXISTS, which is not allowed on a @Dependent scoped bean.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+        Diagnostic dependentWithConditionalObservesAsync = d(21, 16, 30,
+                                                             "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, dependentWithConditionalObserves, dependentWithConditionalObservesAsync);
     }
 }

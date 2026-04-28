@@ -490,11 +490,11 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
     /**
      * isConditionalObserver
-     * Checks if the annotation is a conditional observer (notifyObserver=IF_EXISTS).
+     * Checks if the annotation is a conditional observer (notifyObserver=Reception.IF_EXISTS).
      *
      * @param type the type
      * @param annotation the annotation to check
-     * @return true if the annotation is @Observes or @ObservesAsync with notifyObserver=IF_EXISTS
+     * @return true if the annotation is @Observes or @ObservesAsync with notifyObserver=Reception.IF_EXISTS
      * @throws JavaModelException
      */
     private boolean isConditionalObserver(IType type, IAnnotation annotation) throws JavaModelException {
@@ -502,7 +502,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                    new String[] { Constants.OBSERVES_FQ_NAME, Constants.OBSERVES_ASYNC_FQ_NAME });
         if (null != matched) {
             String notifyObserverValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "notifyObserver", String.class);
-            return notifyObserverValue != null && notifyObserverValue.contains("IF_EXISTS");
+            // Check for IF_EXISTS - can be "Reception.IF_EXISTS" or "jakarta.enterprise.event.Reception.IF_EXISTS"
+            // Use endsWith to match the enum value precisely
+            return notifyObserverValue != null && notifyObserverValue.endsWith("IF_EXISTS");
         }
         return false;
     }
