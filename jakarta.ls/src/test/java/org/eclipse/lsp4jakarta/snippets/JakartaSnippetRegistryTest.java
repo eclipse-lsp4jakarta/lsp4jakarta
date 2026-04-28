@@ -65,14 +65,19 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta EJB snippets - @MessageDriven
+     * Jakarta EJB snippets - @MessageDriven, Timer Service (programmatic)
      */
     @Test
     public void ejbSnippetsTest() {
         Optional<Snippet> ejbSnippet = findByPrefix("ejb_messagedriven_bean", registry);
         assertTrue("ejb_messagedriven_bean Java snippet is not present in SnippetRegistry", ejbSnippet.isPresent());
 
+        Optional<Snippet> ejbTimerProgrammaticSnippet = findByPrefix("ejb_timer_programmatic", registry);
+        assertTrue("ejb_timer_programmatic Java snippet is not present in SnippetRegistry", ejbTimerProgrammaticSnippet.isPresent());
+
         snippetsContextTest(ejbSnippet, "jakarta.jms.MessageListener",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(ejbTimerProgrammaticSnippet, "jakarta.ejb.TimerService",
                             JavaCursorContextKind.IN_EMPTY_FILE);
 
     }

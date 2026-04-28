@@ -27,5 +27,45 @@
 			"type": "jakarta.jms.MessageListener",
 			"contentType": "class"
 		}
+	},
+	"Jakarta EJB - timer service with programmatic scheduling": {
+		"prefix": "ejb_timer_programmatic",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.annotation.Resource;",
+			"import jakarta.ejb.Singleton;",
+			"import jakarta.ejb.Startup;",
+			"import jakarta.ejb.Timeout;",
+			"import jakarta.ejb.Timer;",
+			"import jakarta.ejb.TimerConfig;",
+			"import jakarta.ejb.TimerService;",
+			"",
+			"@Singleton",
+			"@Startup",
+			"public class ${TM_FILENAME_BASE} {",
+			"",
+			"\t@Resource",
+			"\tprivate TimerService timerService;",
+			"",
+			"\tpublic void ${2:createTimer}() {",
+			"\t\t// Create a single-action timer that expires after 5 seconds",
+			"\t\tTimerConfig timerConfig = new TimerConfig();",
+			"\t\ttimerConfig.setInfo(\"${3:MyTimer}\");",
+			"\t\ttimerConfig.setPersistent(false);",
+			"\t\ttimerService.createSingleActionTimer(5000, timerConfig);",
+			"\t}",
+			"",
+			"\t@Timeout",
+			"\tpublic void ${4:handleTimeout}(Timer timer) {",
+			"\t\tSystem.out.println(\"Timer expired: \" + timer.getInfo());",
+			"\t}",
+			"}"
+		],
+		"description": "EJB Timer Service with programmatic scheduling",
+		"context": {
+			"type": "jakarta.ejb.TimerService",
+			"contentType": "class"
+		}
 	}
 }
