@@ -32,7 +32,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidReturnTypeOfMethod,
     InvalidMapKeyAnnotationsFieldNotFound,
     MissingTemporalAnnotation,
-    InvalidValueInTemporalAnnotation;
+    InvalidValueInTemporalAnnotation,
+    DuplicateVersionAnnotationInClass,
+    DuplicateVersionAnnotationInHierarchy;
 
     /**
      * {@inheritDoc}
