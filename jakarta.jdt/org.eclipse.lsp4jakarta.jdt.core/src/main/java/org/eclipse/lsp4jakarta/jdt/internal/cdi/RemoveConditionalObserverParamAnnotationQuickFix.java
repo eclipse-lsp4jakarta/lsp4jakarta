@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Removes the @Observes or @ObservesAsync annotations from method parameters
@@ -33,5 +35,11 @@ public class RemoveConditionalObserverParamAnnotationQuickFix extends RemoveMeth
     @Override
     protected ICodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveConditionalObserverAnnotations;
+    }
+
+    @Override
+    protected String getLabel(String parameterName, String... annotationsToRemove) {
+        String annotationName = "'@" + DiagnosticUtils.getSimpleName(annotationsToRemove[0]) + "'";
+        return Messages.getMessage("RemoveConditionalObserverParamAnnotation", annotationName, parameterName);
     }
 }
