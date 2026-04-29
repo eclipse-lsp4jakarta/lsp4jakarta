@@ -134,32 +134,14 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 if (modifier instanceof Annotation) {
                     Annotation ann = (Annotation) modifier;
                     String annName = ann.getTypeName().getFullyQualifiedName();
-                    if (isInterceptorAnnotation(parentType, annName) && !ASTUtils.containsMethodInvocation(mi,
-                                                                                                           Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
+                    if (InterceptorUtils.isInterceptorAnnotation(parentType, annName) && !ASTUtils.containsMethodInvocation(mi,
+                                                                                                                            Constants.PROCEED,
+                                                                                                                            Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
                         return true;
                     }
                 }
             }
         }
         return false;
-    }
-
-    /**
-     * Method used to check if annotation matches Interceptor method annotations fully qualified name
-     *
-     * @param type
-     * @param annName
-     * @return
-     * @throws JavaModelException
-     */
-    private boolean isInterceptorAnnotation(IType type, String annName) throws JavaModelException {
-        return Constants.INTERCEPTOR_METHODS.stream().anyMatch(annotation -> {
-            try {
-                return DiagnosticUtils.isMatchedJavaElement(type, annName, annotation);
-            } catch (JavaModelException e) {
-                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
-                return false;
-            }
-        });
     }
 }

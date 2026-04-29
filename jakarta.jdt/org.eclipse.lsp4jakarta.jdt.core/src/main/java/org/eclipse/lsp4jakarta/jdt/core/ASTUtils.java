@@ -77,7 +77,7 @@ public class ASTUtils {
     /**
      * This visitor visits an ASTNode and records all the method declarations during its visit.
      */
-    public class MethodDeclarationVisitor extends ASTVisitor {
+    private class MethodDeclarationVisitor extends ASTVisitor {
         private final List<MethodDeclaration> declarations = new ArrayList<>();
 
         @Override
