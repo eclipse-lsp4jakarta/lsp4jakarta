@@ -595,16 +595,44 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // Test case 1: @Dependent with conditional @Observes (should trigger diagnostic)
         // Highlighting the @Observes annotation parameter
-        Diagnostic dependentWithConditionalObserves = d(12, 16, 30,
-                                                        "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
-                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+        Diagnostic observesDiagnostic = d(12, 16, 30,
+                                          "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
 
         // Test case 2: @Dependent with conditional @ObservesAsync (should trigger diagnostic)
         // Highlighting the @ObservesAsync annotation parameter
-        Diagnostic dependentWithConditionalObservesAsync = d(21, 16, 30,
-                                                             "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
-                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+        Diagnostic observesAsyncDiagnostic = d(21, 16, 30,
+                                               "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, dependentWithConditionalObserves, dependentWithConditionalObservesAsync);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesDiagnostic, observesAsyncDiagnostic);
+
+        // Test code actions for @Observes case
+        JakartaJavaCodeActionParams observesCodeActionParams = createCodeActionParams(uri, observesDiagnostic);
+
+        // The quickfix replaces the entire annotation with @Observes() (removes the attribute)
+        TextEdit removeNotifyObserverEdit1 = te(12, 31, 12, 78, "@Observes()");
+        TextEdit removeDependentEdit1 = te(9, 0, 10, 0, "");
+        TextEdit removeObservesEdit = te(12, 31, 12, 79, "");
+
+        CodeAction removeNotifyObserverAction1 = ca(uri, "Remove 'notifyObserver' attribute from @Observes", observesDiagnostic, removeNotifyObserverEdit1);
+        CodeAction removeDependentAction1 = ca(uri, "Remove @Dependent", observesDiagnostic, removeDependentEdit1);
+        CodeAction removeObservesAction = ca(uri, "Remove the '@Observes' modifier from parameter 'event'", observesDiagnostic, removeObservesEdit);
+
+        assertJavaCodeAction(observesCodeActionParams, IJDT_UTILS, removeNotifyObserverAction1, removeDependentAction1, removeObservesAction);
+
+        // Test code actions for @ObservesAsync case
+        JakartaJavaCodeActionParams observesAsyncCodeActionParams = createCodeActionParams(uri, observesAsyncDiagnostic);
+
+        // The quickfix replaces the entire annotation with @ObservesAsync() (removes the attribute)
+        TextEdit removeNotifyObserverEdit2 = te(21, 31, 21, 83, "@ObservesAsync()");
+        TextEdit removeDependentEdit2 = te(18, 0, 19, 0, "");
+        TextEdit removeObservesAsyncEdit = te(21, 31, 21, 84, "");
+
+        CodeAction removeNotifyObserverAction2 = ca(uri, "Remove 'notifyObserver' attribute from @ObservesAsync", observesAsyncDiagnostic, removeNotifyObserverEdit2);
+        CodeAction removeDependentAction2 = ca(uri, "Remove @Dependent", observesAsyncDiagnostic, removeDependentEdit2);
+        CodeAction removeObservesAsyncAction = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event'", observesAsyncDiagnostic, removeObservesAsyncEdit);
+
+        assertJavaCodeAction(observesAsyncCodeActionParams, IJDT_UTILS, removeNotifyObserverAction2, removeDependentAction2, removeObservesAsyncAction);
     }
 }
