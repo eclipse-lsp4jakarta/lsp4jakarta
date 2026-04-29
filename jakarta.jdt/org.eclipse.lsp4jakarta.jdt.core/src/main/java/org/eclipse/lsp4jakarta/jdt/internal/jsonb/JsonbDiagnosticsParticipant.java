@@ -111,6 +111,8 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             childHasValidNoArgsConstructor = true;
                     }
                 }
+              //Create WARNING for thread safety close() invocations
+              collectJsonbCloseableThreadSafetyDiagnostics(context, uri, method, diagnostics);
             }
             if (jonbMethods.size() > Constants.MAX_METHOD_WITH_JSONBCREATOR) {
                 for (IMethod method : methods) {
@@ -429,4 +431,55 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         return false;
     }
 
+    /**
+     * Collects diagnostics for Jsonb.close() calls that may have thread safety issues.
+     * Warns when close() is called on a Jsonb instance while threads might still be using it.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param unit the compilation unit
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void collectJsonbCloseableThreadSafetyDiagnostics(JavaDiagnosticsContext context, String uri,
+                                                          IMethod method, List<Diagnostic> diagnostics) throws JavaModelException {
+        String source = method.getSource();
+        if (source != null && hasUnsafeJsonbCloseWithThreads(source)) {
+            String msg = Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety");
+            Range range = PositionUtils.toNameRange(method, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                    ErrorCode.JsonbCloseableThreadSafety,
+                                                    DiagnosticSeverity.Warning));
+        }
+    }
+
+    /**
+     * Checks if a method contains potentially unsafe Jsonb.close() calls with active threads.
+     *
+     * This method detects scenarios where:
+     * 1. Threads are created (new Thread, ExecutorService, etc.)
+     * 2. Jsonb instance is used
+     * 3. close() is called without proper thread synchronization (join, shutdown, awaitTermination)
+     *
+     * @param source the method source code
+     * @return true if the method has unsafe Jsonb.close() with threads
+     */
+    private boolean hasUnsafeJsonbCloseWithThreads(String source) {
+        if (source == null) {
+            return false;
+        }
+        
+        if (!JsonbUtils.hasJsonbReference(source) || !JsonbUtils.hasCloseCall(source)) {
+            return false;
+        }
+        
+        if (!JsonbUtils.hasThreadCreation(source)) {
+            // No threads, so close() is not a thread safety issue
+            return false;
+        }
+        
+        // Threads are created and close() is called
+        // Check if proper synchronization occurs before close()
+        return !JsonbUtils.isSynchronizationBeforeClose(source);
+    }
 }
