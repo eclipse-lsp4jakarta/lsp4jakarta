@@ -48,6 +48,7 @@ public class Constants {
     public static final List<String> JSONB_ANNOTATIONS = List.of(JSONB_CREATOR, JSONB_TRANSIENT_FQ_NAME,
                                                                  JSONB_ANNOTATION,
                                                                  JSONB_DATE_FORMAT, JSONB_NILLABLE, JSONB_NUMBER_FORMAT, JSONB_PROPERTY, JSONB_PROPERTY_ORDER,
-                                                                 JSONB_TYPE_ADAPTER, JSONB_TYPE_DESERIALIZER, JSONB_TYPE_SERIALIZER, JSONB_VISIBILITY);
-
+                                                                 JSONB_TYPE_ADAPTER, JSONB_TYPE_DESERIALIZER, JSONB_TYPE_SERIALIZER, JSONB_VISIBILITY);                                                        
+    public static final String CLOSEABLE_CLOSE_METHOD = ".close()";
+    public static final String JAKARTA_JSONB_CLOSEABLE = "jakarta.json.bind.Jsonb";
 }
