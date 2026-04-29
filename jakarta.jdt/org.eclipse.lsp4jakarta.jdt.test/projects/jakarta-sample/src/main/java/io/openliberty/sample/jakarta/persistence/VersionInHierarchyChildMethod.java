@@ -30,4 +30,3 @@ public class VersionInHierarchyChildMethod extends VersionInHierarchyParentMetho
     }
 }
 
-// Made with Bob

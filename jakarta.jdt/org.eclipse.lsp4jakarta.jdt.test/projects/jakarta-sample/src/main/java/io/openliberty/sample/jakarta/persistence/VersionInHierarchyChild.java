@@ -15,4 +15,3 @@ public class VersionInHierarchyChild extends VersionInHierarchyParent {
     }
 }
 
-// Made with Bob

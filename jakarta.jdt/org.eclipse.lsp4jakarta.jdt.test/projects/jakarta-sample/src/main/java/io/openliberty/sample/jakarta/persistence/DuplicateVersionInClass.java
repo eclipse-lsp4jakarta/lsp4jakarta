@@ -18,4 +18,3 @@ public class DuplicateVersionInClass {
     }
 }
 
-// Made with Bob
