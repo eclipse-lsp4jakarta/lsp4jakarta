@@ -15,6 +15,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationAttributesQuickFix;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Removes the 'notifyObserver' attribute from @Observes and @ObservesAsync annotations.
@@ -33,5 +35,11 @@ public class RemoveNotifyObserverAttributeQuickFix extends RemoveAnnotationAttri
     @Override
     protected ICodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveNotifyObserverAttribute;
+    }
+
+    @Override
+    protected String getLabel(String annotation, String[] attributes) {
+        String annotationName = DiagnosticUtils.getSimpleName(annotation);
+        return Messages.getMessage("RemoveNotifyObserverAttribute", annotationName);
     }
 }
