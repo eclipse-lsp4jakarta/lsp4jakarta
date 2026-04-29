@@ -193,14 +193,12 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
 
     /**
      * Returns the label for the code action.
+     *
+     * @param annotation The fully qualified annotation name
+     * @param attributes The attributes to remove
+     * @return The label for the code action
      */
-    protected String getLabel(String annotation, String[] attributes) {
-        String[] parts = annotation.split("\\.");
-        String annotationName = (parts.length > 1) ? parts[parts.length - 1] : annotation;
-        String attributeNames = String.join(",", attributes);
-        String pluralSuffix = (attributes.length > 1) ? "s" : "";
-        return "Remove '" + attributeNames + "' attribute" + pluralSuffix + " from @" + annotationName;
-    }
+    protected abstract String getLabel(String annotation, String[] attributes);
 
     /**
      * Returns the id for this code action.
