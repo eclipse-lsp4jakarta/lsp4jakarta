@@ -20,6 +20,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Removes the @Dependent annotation from the declaring type.
@@ -53,6 +54,11 @@ public class RemoveDependentScopeQuickFix extends RemoveAnnotationConflictQuickF
             node = node.getParent();
         }
         return node != null ? node : super.getDeclaringNode(context);
+    }
+
+    @Override
+    protected String getLabel(String[] annotations) {
+        return Messages.getMessage("RemoveDependentScope");
     }
 }
 // Made with Bob
