@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 
 /**
@@ -33,6 +34,7 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -86,6 +88,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 boolean hasPublicOrProtectedNoArgConstructor = false;
                 boolean hasArgConstructor = false;
                 boolean isEntityClassFinal = false;
+
+                // Validate @Version annotations
+                validateVersionAnnotations(type, diagnostics, context);
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
@@ -283,6 +288,118 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             || isProtectedFinal.equals(Flags.AccFinal) || isFinal.equals(Flags.AccFinal)) {
             return true;
         }
+        return false;
+    }
+
+    /**
+     * Checks if any annotation in the given array is a @Version annotation.
+     *
+     * @param type the type containing the annotations
+     * @param annotations the array of annotations to check
+     * @return true if any annotation is @Version, false otherwise
+     * @throws JavaModelException
+     */
+    private boolean hasVersionAnnotation(IType type, IAnnotation[] annotations) throws JavaModelException {
+        for (IAnnotation annotation : annotations) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.VERSION)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates @Version annotations on entity class.
+     * Checks for:
+     * 1. Multiple @Version annotations within the same class
+     * 2. @Version annotation in both parent and child entity classes
+     *
+     * @param type the entity class type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateVersionAnnotations(IType type, List<Diagnostic> diagnostics,
+                                            JavaDiagnosticsContext context) throws JavaModelException {
+        List<IMember> versionMembers = new ArrayList<>();
+
+        // Check fields for @Version annotation
+        for (IField field : type.getFields()) {
+            if (hasVersionAnnotation(type, field.getAnnotations())) {
+                versionMembers.add(field);
+            }
+        }
+
+        // Check methods for @Version annotation
+        for (IMethod method : type.getMethods()) {
+            if (hasVersionAnnotation(type, method.getAnnotations())) {
+                versionMembers.add(method);
+            }
+        }
+
+        // Check for duplicate @Version in the same class
+        if (versionMembers.size() > 1) {
+            for (IMember member : versionMembers) {
+                Range range = PositionUtils.toNameRange(member, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("DuplicateVersionAnnotation"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.DuplicateVersionAnnotationInClass, DiagnosticSeverity.Error));
+            }
+        }
+
+        // Check for @Version in parent entity classes
+        if (versionMembers.size() > 0 && hasVersionInParentEntity(type)) {
+            for (IMember member : versionMembers) {
+                Range range = PositionUtils.toNameRange(member, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("VersionAnnotationInHierarchy"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.DuplicateVersionAnnotationInHierarchy, DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * Checks if any parent entity class has a @Version annotation.
+     *
+     * @param type the current entity class type
+     * @return true if a parent entity has @Version annotation, false otherwise
+     * @throws JavaModelException
+     */
+    private boolean hasVersionInParentEntity(IType type) throws JavaModelException {
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType superclass = hierarchy.getSuperclass(type);
+
+        while (superclass != null && !superclass.getFullyQualifiedName().equals(Constants.OBJECT)) {
+            // Check if parent class is an entity
+            boolean isEntity = false;
+            for (IAnnotation annotation : superclass.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedJavaElement(superclass, annotation.getElementName(), Constants.ENTITY)) {
+                    isEntity = true;
+                    break;
+                }
+            }
+
+            if (isEntity) {
+                // Check if parent entity has @Version annotation on fields
+                for (IField field : superclass.getFields()) {
+                    if (hasVersionAnnotation(superclass, field.getAnnotations())) {
+                        return true;
+                    }
+                }
+
+                // Check if parent entity has @Version annotation on methods
+                for (IMethod method : superclass.getMethods()) {
+                    if (hasVersionAnnotation(superclass, method.getAnnotations())) {
+                        return true;
+                    }
+                }
+            }
+
+            superclass = hierarchy.getSuperclass(superclass);
+        }
+
         return false;
     }
 
