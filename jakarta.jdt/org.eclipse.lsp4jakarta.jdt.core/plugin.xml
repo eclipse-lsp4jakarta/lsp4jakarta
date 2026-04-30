@@ -223,16 +223,22 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />          
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMethodWithMultipleMPJCAnnotations"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFieldWithMultipleMPJCAnnotations"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />          
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#MissingTemporalAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertTemporalAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
    </extension>
    
    <!-- WebSocket -->

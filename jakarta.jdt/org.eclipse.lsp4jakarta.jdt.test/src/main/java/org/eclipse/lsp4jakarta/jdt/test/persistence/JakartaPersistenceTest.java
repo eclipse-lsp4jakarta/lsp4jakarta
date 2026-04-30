@@ -297,6 +297,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 10, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -315,6 +323,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 12, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -333,6 +349,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(13, 11, 13, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
     }
 
     @Test
@@ -351,6 +374,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(15, 11, 15, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
     }
 
 }
