@@ -33,6 +33,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.ASTNodeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyAnnotationAttributeValueProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Generic QuickFix for modifying an existing annotation's attribute value.
@@ -144,7 +145,7 @@ public abstract class ModifyAnnotationAttributeValueQuickFix implements IJavaCod
      */
     protected String getLabel() {
         String annotationName = annotation.substring(annotation.lastIndexOf('.') + 1);
-        return "Change @" + annotationName + " " + attributeName + " to " + newValue;
+        return Messages.getMessage("ChangeAttribute", annotationName, attributeName, newValue);
     }
 
     /**

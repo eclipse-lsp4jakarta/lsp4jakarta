@@ -33,6 +33,7 @@ import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.ASTNodeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.InsertAnnotationWithAttributesProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
  * Generic QuickFix for inserting an annotation with one or more attribute values.
@@ -139,7 +140,7 @@ public abstract class InsertAnnotationWithAttributesQuickFix implements IJavaCod
      */
     protected String getLabel() {
         String annotationName = annotation.substring(annotation.lastIndexOf('.') + 1);
-        StringBuilder label = new StringBuilder("Insert @").append(annotationName).append("(");
+        StringBuilder label = new StringBuilder(Messages.getMessage("InsertAnnotation")).append(annotationName).append("(");
 
         int i = 0;
         for (Map.Entry<String, String> entry : attributes.entrySet()) {

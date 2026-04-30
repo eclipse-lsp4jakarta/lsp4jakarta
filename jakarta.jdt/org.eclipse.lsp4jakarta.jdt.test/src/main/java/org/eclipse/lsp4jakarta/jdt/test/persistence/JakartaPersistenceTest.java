@@ -301,7 +301,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // test quick fix
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
         TextEdit dateMissingTemporalTE = te(5, 30, 10, 1,
-                          "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
         CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
@@ -327,7 +327,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // test quick fix
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
         TextEdit dateMissingTemporalTE = te(5, 30, 12, 1,
-                          "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
         CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
