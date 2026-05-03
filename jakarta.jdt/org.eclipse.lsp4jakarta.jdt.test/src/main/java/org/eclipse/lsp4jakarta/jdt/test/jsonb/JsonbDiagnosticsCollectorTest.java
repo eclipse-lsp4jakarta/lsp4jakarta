@@ -397,4 +397,50 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
+
+    @Test
+    public void JsonbCloseInvalidThreadSafety() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseInvalid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test 1: closeWithoutJoiningThreads() - Line 35
+        Diagnostic d1 = d(35, 16, 43,
+                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
+                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // Test 2: closeBeforeExecutorShutdown() - Line 58
+        Diagnostic d2 = d(58, 16, 44,
+                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
+                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // Test 3: closeAfterShutdownWithoutAwait() - Line 83
+        Diagnostic d3 = d(83, 16, 48,
+                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
+                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // Test 4: closeBeforeJoin() - Line 103
+        Diagnostic d4 = d(103, 16, 31,
+                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
+                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
+    }
+
+    @Test
+    public void JsonbCloseValidThreadSafety() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }

@@ -23,7 +23,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor,
     InvalidPropertyNamesOnJsonbFields,
     InvalidJsonBNoArgsConstructorMissing,
-    InvalidJsonBNonStaticInnerClass;
+    InvalidJsonBNonStaticInnerClass,
+    JsonbCloseableThreadSafety;
 
     /**
      * {@inheritDoc}
