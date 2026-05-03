@@ -396,5 +396,29 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Warning, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        String newText1 = "protected JsonbDeserialization() {\n\t}\n\n\t";
+        String newText2 = "public JsonbDeserialization() {\n\t}\n\n\t";
+        TextEdit te1 = te(6, 1, 6, 1, newText1);
+        TextEdit te2 = te(6, 1, 6, 1, newText2);
+        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d1, te1);
+        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d1, te2);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
+
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        String newText3 = "protected Childclass() {\n		}\n		";
+        String newText4 = "public Childclass() {\n		}\n		";
+        TextEdit te3 = te(58, 2, 58, 2, newText3);
+        TextEdit te4 = te(58, 2, 58, 2, newText4);
+        CodeAction ca3 = ca(uri, "Add a default 'protected' constructor to this class", d2, te3);
+        CodeAction ca4 = ca(uri, "Add a default 'public' constructor to this class", d2, te4);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
+
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
+        String newText5 = " static";
+        TextEdit te5 = te(83, 7, 83, 7, newText5);
+        CodeAction ca5 = ca(uri, "Add 'static' modifier to the nested class", d3, te5);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca5);
     }
 }
