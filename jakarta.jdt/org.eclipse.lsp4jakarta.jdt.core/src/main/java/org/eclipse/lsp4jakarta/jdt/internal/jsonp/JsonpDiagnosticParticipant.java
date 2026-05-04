@@ -130,14 +130,17 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                                                        JavaDiagnosticsContext context, String uri, String msg, IJavaErrorCode errCode) {
         for (MethodInvocation methodIn : invocations) {
             if (!methodIn.arguments().isEmpty()) {
-                Expression arg = (Expression) methodIn.arguments().get(0);
-                if (isInvalidNullArgument(arg)) {
-                    try {
-                        Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                        diagnostics.add(context.createDiagnostic(uri, msg,
-                                                                 range, Constants.DIAGNOSTIC_SOURCE, errCode, DiagnosticSeverity.Error));
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
+                for (Object argObj : methodIn.arguments()) {
+                    Expression arg = (Expression) argObj;
+                    if (isInvalidNullArgument(arg)) {
+                        try {
+                            Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
+                            diagnostics.add(context.createDiagnostic(uri, msg,
+                                                                     range, Constants.DIAGNOSTIC_SOURCE, errCode,
+                                                                     DiagnosticSeverity.Error));
+                        } catch (JavaModelException e) {
+                            LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
+                        }
                     }
                 }
             }
@@ -164,17 +167,13 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @throws JavaModelException
      */
     private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
-        // Early return if basic conditions not met or binding is null
         IMethodBinding binding = mi.resolveMethodBinding();
         if (!Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
             || mi.getExpression() == null || binding == null) {
             return JSONBuilderType.UNKNOWN;
         }
-        // Get qualified name, handling null declaringClass
         ITypeBinding declaringClass = binding.getDeclaringClass();
         String qualifiedName = (declaringClass != null) ? declaringClass.getQualifiedName() : null;
-
-        // Return appropriate type based on qualified name
         if (Constants.JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME.equals(qualifiedName)) {
             return JSONBuilderType.OBJECT;
         }

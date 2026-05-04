@@ -20,6 +20,9 @@ public class CreateInvalidJsonArrayBuilder {
 	JsonArrayBuilder builder3 = Json.createArrayBuilder();
 	builder2.add(null);
 	
+	JsonArrayBuilder builder4 = Json.createArrayBuilder();
+	builder4.add(1, (String) null);
+	
 	}
 	
 }
