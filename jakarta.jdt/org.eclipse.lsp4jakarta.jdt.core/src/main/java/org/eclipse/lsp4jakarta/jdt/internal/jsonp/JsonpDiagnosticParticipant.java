@@ -13,7 +13,9 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jsonp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -87,10 +89,17 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
             }
         }
 
-        //Used to get the list of method invocations for JsonObjectBuilder add methods
-        List<MethodInvocation> createObjectBuilderMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.OBJECT);
-        //Used to get the list of method invocations for JsonArrayBuilder add methods
-        List<MethodInvocation> createArrayBuilderMethodInvocations = collectMethodInvocations(unit, allMethodInvocations, JSONBuilderType.ARRAY);
+        // Single pass to collect both JsonObjectBuilder and JsonArrayBuilder method invocations
+        Map<JSONBuilderType, List<MethodInvocation>> builderInvocations = allMethodInvocations.stream().collect(Collectors.groupingBy(mi -> {
+            try {
+                return isMatchedJsonObjectBuilder(unit, mi);
+            } catch (JavaModelException e) {
+                return JSONBuilderType.UNKNOWN;
+            }
+        }));
+
+        List<MethodInvocation> createObjectBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.OBJECT, Collections.emptyList());
+        List<MethodInvocation> createArrayBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.ARRAY, Collections.emptyList());
         //Used to create diagnostics for invalid JsonObjectBuilder add methods
         createDiagnosticsForMethodInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
                                               ErrorCode.InvalidJsonObjectBuilderKey);
@@ -147,25 +156,6 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
     }
 
     /**
-     * Method used to collect the method invocations according to type passed
-     *
-     * @param unit
-     * @param allMethodInvocations
-     * @param type
-     * @return List
-     */
-    private List<MethodInvocation> collectMethodInvocations(ICompilationUnit unit,
-                                                            List<MethodInvocation> allMethodInvocations, JSONBuilderType type) {
-        return allMethodInvocations.stream().filter(mi -> {
-            try {
-                return isMatchedJsonObjectBuilder(unit, mi) == type;
-            } catch (JavaModelException e) {
-                return false;
-            }
-        }).collect(Collectors.toList());
-    }
-
-    /**
      * Method used to identify jakarta.json.JsonObjectBuilder.add or jakarta.json.JsonArrayBuilder.add type method invocations
      *
      * @param unit
@@ -174,19 +164,22 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @throws JavaModelException
      */
     private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
-        if (Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
-            && mi.getExpression() != null) {
-            IMethodBinding binding = mi.resolveMethodBinding();
-            if (binding != null) {
-                ITypeBinding declaringClass = binding.getDeclaringClass();
-                if (declaringClass != null) {
-                    if (Constants.JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME.equals(declaringClass.getQualifiedName())) {
-                        return JSONBuilderType.OBJECT;
-                    } else if (Constants.JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME.equals(declaringClass.getQualifiedName())) {
-                        return JSONBuilderType.ARRAY;
-                    }
-                }
-            }
+        // Early return if basic conditions not met or binding is null
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (!Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
+            || mi.getExpression() == null || binding == null) {
+            return JSONBuilderType.UNKNOWN;
+        }
+        // Get qualified name, handling null declaringClass
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        String qualifiedName = (declaringClass != null) ? declaringClass.getQualifiedName() : null;
+
+        // Return appropriate type based on qualified name
+        if (Constants.JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME.equals(qualifiedName)) {
+            return JSONBuilderType.OBJECT;
+        }
+        if (Constants.JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME.equals(qualifiedName)) {
+            return JSONBuilderType.ARRAY;
         }
         return JSONBuilderType.UNKNOWN;
     }
