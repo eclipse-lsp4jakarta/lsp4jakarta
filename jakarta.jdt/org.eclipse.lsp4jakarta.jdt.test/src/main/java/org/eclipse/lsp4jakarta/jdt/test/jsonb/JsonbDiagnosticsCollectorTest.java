@@ -402,31 +402,31 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
     public void JsonbCloseInvalidThreadSafety() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseInvalid.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseInvalid.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test 1: closeWithoutJoiningThreads() - Line 35
-        Diagnostic d1 = d(35, 16, 43,
-                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
-                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        Diagnostic d1 = d(35, 16, 42,
+                          "Ensure all threads have finished interaction with Jsonb before calling close(), as the behavior is undefined otherwise.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // Test 2: closeBeforeExecutorShutdown() - Line 58
-        Diagnostic d2 = d(58, 16, 44,
-                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
-                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // Test 2: closeBeforeExecutorShutdown() - Line 57
+        Diagnostic d2 = d(57, 16, 43,
+                          "Ensure all threads have finished interaction with Jsonb before calling close(), as the behavior is undefined otherwise.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // Test 3: closeAfterShutdownWithoutAwait() - Line 83
-        Diagnostic d3 = d(83, 16, 48,
-                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
-                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // Test 3: closeAfterShutdownWithoutAwait() - Line 82
+        Diagnostic d3 = d(82, 16, 46,
+                          "Ensure all threads have finished interaction with Jsonb before calling close(), as the behavior is undefined otherwise.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // Test 4: closeBeforeJoin() - Line 103
-        Diagnostic d4 = d(103, 16, 31,
-                "Calling Jsonb.close() while threads are still using the Jsonb instance can lead to undefined behavior. Ensure all threads have completed (e.g., join(), awaitTermination()) before calling close().",
-                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // Test 4: closeBeforeJoin() - Line 106
+        Diagnostic d4 = d(106, 16, 31,
+                          "Ensure all threads have finished interaction with Jsonb before calling close(), as the behavior is undefined otherwise.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4);
     }
@@ -435,7 +435,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
     public void JsonbCloseValidThreadSafety() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseValid.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseValid.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();

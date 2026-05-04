@@ -111,8 +111,8 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             childHasValidNoArgsConstructor = true;
                     }
                 }
-              //Create WARNING for thread safety close() invocations
-              collectJsonbCloseableThreadSafetyDiagnostics(context, uri, method, diagnostics);
+                //Create WARNING for thread safety close() invocations
+                collectJsonbCloseableThreadSafetyDiagnostics(context, uri, method, diagnostics);
             }
             if (jonbMethods.size() > Constants.MAX_METHOD_WITH_JSONBCREATOR) {
                 for (IMethod method : methods) {
@@ -437,19 +437,19 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      *
      * @param context the diagnostics context
      * @param uri the file URI
-     * @param unit the compilation unit
+     * @param method the method to check
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if there's an error accessing the Java model
      */
     private void collectJsonbCloseableThreadSafetyDiagnostics(JavaDiagnosticsContext context, String uri,
-                                                          IMethod method, List<Diagnostic> diagnostics) throws JavaModelException {
+                                                              IMethod method, List<Diagnostic> diagnostics) throws JavaModelException {
         String source = method.getSource();
         if (source != null && hasUnsafeJsonbCloseWithThreads(source)) {
             String msg = Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety");
             Range range = PositionUtils.toNameRange(method, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                    ErrorCode.JsonbCloseableThreadSafety,
-                                                    DiagnosticSeverity.Warning));
+                                                     ErrorCode.JsonbCloseableThreadSafety,
+                                                     DiagnosticSeverity.Warning));
         }
     }
 
@@ -468,16 +468,16 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         if (source == null) {
             return false;
         }
-        
+
         if (!JsonbUtils.hasJsonbReference(source) || !JsonbUtils.hasCloseCall(source)) {
             return false;
         }
-        
+
         if (!JsonbUtils.hasThreadCreation(source)) {
             // No threads, so close() is not a thread safety issue
             return false;
         }
-        
+
         // Threads are created and close() is called
         // Check if proper synchronization occurs before close()
         return !JsonbUtils.isSynchronizationBeforeClose(source);
