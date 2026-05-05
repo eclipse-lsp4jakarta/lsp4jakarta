@@ -14,10 +14,12 @@
 package org.eclipse.lsp4jakarta.commons.utils;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -47,20 +49,21 @@ public class InterModuleCommonUtils {
      */
     public static boolean isInterceptorReferencedType(IType type, ICompilationUnit unit) throws JavaModelException {
         if (type != null) {
-            // Check if the type has @Interceptor annotation
-            if (isInterceptorType(type)) {
+            // Check if the type has @Interceptor annotation (no method iteration needed)
+            if (isInterceptorType(type, unit)) {
                 return true;
             }
+            IMethod[] methods = type.getMethods();
             // Check if the type or methods use interceptor-specific annotations or features
-            if (hasInterceptorMethodAnnotations(type)) {
+            if (hasInterceptorMethodAnnotations(type, methods)) {
                 return true;
             }
             // Check if the type uses @Interceptors annotation (class-level or method-level)
-            if (hasInterceptorsAnnotation(type)) {
+            if (hasInterceptorsAnnotation(type, unit, methods)) {
                 return true;
             }
             // Check if any method uses InvocationContext parameter
-            if (hasInvocationContextParameter(type)) {
+            if (hasInvocationContextParameter(type, methods)) {
                 return true;
             }
         }
@@ -72,26 +75,29 @@ public class InterModuleCommonUtils {
      * Checks for: @AroundInvoke, @AroundConstruct, @AroundTimeout
      *
      * @param type the type to check
+     * @param methods the methods array (pre-fetched to avoid redundant calls)
      * @return true if any method uses interceptor-specific annotations
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    private static boolean hasInterceptorMethodAnnotations(IType type) throws JavaModelException {
-        // Convert Set to array for getMatchedJavaElementName
+    private static boolean hasInterceptorMethodAnnotations(IType type, IMethod[] methods) throws JavaModelException {
         String[] interceptorReferences = Constants.INTERCEPTOR_REFERENCES.toArray(String[]::new);
-        // Check all methods for interceptor-specific annotations
-        for (var method : type.getMethods()) {
-            for (var annotation : method.getAnnotations()) {
-                String annotationName = annotation.getElementName();
-                // Use DiagnosticUtils.getMatchedJavaElementName to check if this annotation
-                // matches any of the interceptor-specific annotations (excludes PostConstruct/PreDestroy)
-                String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
-                                                                                     interceptorReferences);
-                if (matchedAnnotation != null) {
-                    return true;
-                }
+        return Arrays.stream(methods).flatMap(method -> {
+            try {
+                return Arrays.stream(method.getAnnotations());
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to get method annotations", e);
+                return Arrays.stream(new IAnnotation[0]);
             }
-        }
-        return false;
+        }).anyMatch(annotation -> {
+            try {
+                String annotationName = annotation.getElementName();
+                return DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                 interceptorReferences) != null;
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to check method annotation", e);
+                return false;
+            }
+        });
     }
 
     /**
@@ -99,34 +105,40 @@ public class InterModuleCommonUtils {
      * The @Interceptors annotation is used to bind interceptors to a class or method.
      *
      * @param type the type to check
+     * @param unit the compilation unit
+     * @param methods the methods array (pre-fetched to avoid redundant calls)
      * @return true if @Interceptors annotation is found
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    private static boolean hasInterceptorsAnnotation(IType type) throws JavaModelException {
+    private static boolean hasInterceptorsAnnotation(IType type, ICompilationUnit unit, IMethod[] methods) throws JavaModelException {
         // Check class-level @Interceptors annotation
-        boolean hasClassLevelAnnotation = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
+        if (Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
             try {
-                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                            Constants.INTERCEPTORS_FQ_NAME);
+                return DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.INTERCEPTORS_FQ_NAME);
             } catch (JavaModelException e) {
-                LOGGER.log(Level.WARNING, "Unable to match class annotation", e.getMessage());
+                LOGGER.log(Level.WARNING, "Unable to match class annotation", e);
+                return false;
+            }
+        })) {
+            return true;
+        }
+
+        // Check method-level @Interceptors annotation
+        return Arrays.stream(methods).flatMap(method -> {
+            try {
+                return Arrays.stream(method.getAnnotations());
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to get method annotations", e);
+                return Arrays.stream(new IAnnotation[0]);
+            }
+        }).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.INTERCEPTORS_FQ_NAME);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to match method annotation", e);
                 return false;
             }
         });
-
-        if (hasClassLevelAnnotation) {
-            return true;
-        }
-        // Check method-level @Interceptors annotation using for loops (nested iteration)
-        for (var method : type.getMethods()) {
-            for (var annotation : method.getAnnotations()) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                         Constants.INTERCEPTORS_FQ_NAME)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -134,38 +146,39 @@ public class InterModuleCommonUtils {
      * Methods with InvocationContext parameters are interceptor methods.
      *
      * @param type the type to check
+     * @param methods the methods array (pre-fetched to avoid redundant calls)
      * @return true if any method has InvocationContext parameter
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    private static boolean hasInvocationContextParameter(IType type) throws JavaModelException {
-        for (var method : type.getMethods()) {
-            String[] parameterTypes = method.getParameterTypes();
-            for (String paramType : parameterTypes) {
-                // Get the resolved type name
+    private static boolean hasInvocationContextParameter(IType type, IMethod[] methods) throws JavaModelException {
+        return Arrays.stream(methods).flatMap(method -> {
+            return Arrays.stream(method.getParameterTypes());
+        }).anyMatch(paramType -> {
+            try {
                 String typeName = DiagnosticUtils.getDataTypeName(paramType);
-                // Check if it matches InvocationContext
-                if (DiagnosticUtils.isMatchedJavaElement(type, typeName, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
-                    return true;
-                }
+                return DiagnosticUtils.isMatchedJavaElement(type, typeName,
+                                                            Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to check parameter type", e);
+                return false;
             }
-        }
-        return false;
+        });
     }
 
     /**
-     * Method checks if the type is interceptor
+     * Checks if the type is an interceptor type (has @Interceptor annotation).
      *
-     * @param type
-     * @return
-     * @throws JavaModelException
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @return true if the type has @Interceptor annotation
+     * @throws JavaModelException if there's an error accessing the Java model
      */
-    public static boolean isInterceptorType(IType type) throws JavaModelException {
-        return Arrays.stream(type.getAnnotations()).filter(Objects::nonNull).anyMatch(annotation -> {
+    public static boolean isInterceptorType(IType type, ICompilationUnit unit) throws JavaModelException {
+        return Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
             try {
-                return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                            Constants.INTERCEPTOR_FQ_NAME);
+                return DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.INTERCEPTOR_FQ_NAME);
             } catch (JavaModelException e) {
-                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e.getMessage());
+                LOGGER.log(Level.WARNING, "Unable to find matching annotation", e);
                 return false;
             }
         });

@@ -63,7 +63,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         for (IType type : types) {
             int typeFlag = type.getFlags();
             ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.initialize();
-            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type);
+            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 if (Flags.isAbstract(typeFlag)) {
