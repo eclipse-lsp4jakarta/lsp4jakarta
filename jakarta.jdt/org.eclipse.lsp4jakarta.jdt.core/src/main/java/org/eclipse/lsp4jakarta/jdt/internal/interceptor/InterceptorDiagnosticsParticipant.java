@@ -15,8 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -49,8 +47,6 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfo
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
  */
 public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
-
-    private static final Logger LOGGER = Logger.getLogger(InterceptorDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -93,9 +89,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
         //Used to get the list of method declarations for interceptor methods that doesn't use proceed method
-        List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(mi -> {
+        List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(methodDecl -> {
             try {
-                return isMatchedInvocationContextMethods(unit, mi);
+                return isMatchedInvocationContextMethods(unit, methodDecl);
             } catch (JavaModelException e) {
                 return false;
             }
@@ -113,30 +109,30 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Method used to traverse through Interceptor method declarations and invocations to find out if proceed method is invoked.
      *
      * @param unit
-     * @param mi
+     * @param methodDecl
      * @return
      * @throws JavaModelException
      */
-    private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration mi) throws JavaModelException {
-        IType parentType = null;
-        IMethodBinding binding = mi.resolveBinding();
+    private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
+        IType targetClass = null;
+        IMethodBinding binding = methodDecl.resolveBinding();
         if (binding != null) {
             ITypeBinding declaringClass = binding.getDeclaringClass();
             if (declaringClass != null) {
                 IJavaElement javaElement = declaringClass.getJavaElement();
                 if (javaElement instanceof IType) {
-                    parentType = (IType) javaElement;
+                    targetClass = (IType) javaElement;
                 }
             }
         }
-        if (InterModuleCommonUtils.isInterceptorReferencedType(parentType, unit)) {
-            for (Object modifier : mi.modifiers()) {
+        if (InterModuleCommonUtils.isInterceptorReferencedType(targetClass, unit)) {
+            for (Object modifier : methodDecl.modifiers()) {
                 if (modifier instanceof Annotation) {
-                    Annotation ann = (Annotation) modifier;
-                    String annName = ann.getTypeName().getFullyQualifiedName();
-                    if (InterceptorUtils.isInterceptorAnnotation(parentType, annName) && !ASTUtils.containsMethodInvocation(mi,
-                                                                                                                            Constants.PROCEED,
-                                                                                                                            Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
+                    Annotation annotation = (Annotation) modifier;
+                    String annotationName = annotation.getTypeName().getFullyQualifiedName();
+                    String[] interceptorMethods = Constants.INTERCEPTOR_METHODS.toArray(String[]::new);
+                    if (DiagnosticUtils.getMatchedJavaElementName(targetClass, annotationName, interceptorMethods) != null
+                        && !ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
                         return true;
                     }
                 }
