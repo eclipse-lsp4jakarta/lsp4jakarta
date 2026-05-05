@@ -279,6 +279,18 @@ public class JakartaSnippetRegistryTest {
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
+    /**
+     * Jakarta Faces snippet test - faces_behavior
+     */
+    @Test
+    public void FacesSnippetsTest() {
+        Optional<Snippet> facesBehaviorSnippet = findByPrefix("faces_behavior", registry);
+        assertTrue("faces_behavior Java snippet is not present in SnippetRegistry", facesBehaviorSnippet.isPresent());
+
+        snippetsContextTest(facesBehaviorSnippet, "jakarta.faces.component.behavior.ClientBehaviorBase",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
     // Verify whether the snippet is present in the registry.
     private static Optional<Snippet> findByPrefix(String prefix, JavaTextDocumentSnippetRegistry registry) {
         return registry.getSnippets().stream().filter(snippet -> snippet.getPrefixes().contains(prefix)).findFirst();
