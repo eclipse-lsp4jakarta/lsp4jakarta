@@ -415,7 +415,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                                               DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
 
         // Diagnostic for package-private (default) static nested class PackagePrivateChild
-        Diagnostic packagePrivateClassDiagnostic = d(81, 17, 36,
+        Diagnostic packagePrivateClassDiagnostic = d(88, 17, 36,
                                                      "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private static nested classes are not supported.",
                                                      DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
 
@@ -432,7 +432,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         // Test code action for package-private static nested class
         // Note: For package-private, ModifyModifiersProposal inserts " public" after "static"
         JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
-        TextEdit packagePrivateClassTextEdit = te(81, 10, 81, 10, " public");
+        TextEdit packagePrivateClassTextEdit = te(88, 10, 88, 10, " public");
         CodeAction packagePrivateClassCodeAction = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEdit);
 
         assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeAction);
