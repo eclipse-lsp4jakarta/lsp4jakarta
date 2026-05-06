@@ -397,4 +397,44 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
+
+    @Test
+    public void JsonbNonPublicStaticNestedClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbStaticNestedClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic for private static nested class SubChild
+        // Note: protected is valid according to spec, so only private and package-private should be flagged
+        Diagnostic privateClassDiagnostic = d(50, 25, 33,
+                                              "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private static nested classes are not supported.",
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
+
+        // Diagnostic for package-private (default) static nested class PackagePrivateChild
+        Diagnostic packagePrivateClassDiagnostic = d(81, 17, 36,
+                                                     "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private static nested classes are not supported.",
+                                                     DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
+
+        // Test code action for private static nested class
+        // Note: ModifyModifiersProposal replaces all modifiers, so "private static" becomes "static public"
+        JakartaJavaCodeActionParams privateClassCodeActionParams = createCodeActionParams(uri, privateClassDiagnostic);
+        TextEdit privateClassTextEdit = te(50, 4, 50, 18, "static public");
+        CodeAction privateClassCodeAction = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEdit);
+
+        assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeAction);
+
+        // Test code action for package-private static nested class
+        // Note: For package-private, ModifyModifiersProposal inserts " public" after "static"
+        JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
+        TextEdit packagePrivateClassTextEdit = te(81, 10, 81, 10, " public");
+        CodeAction packagePrivateClassCodeAction = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEdit);
+
+        assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeAction);
+    }
 }

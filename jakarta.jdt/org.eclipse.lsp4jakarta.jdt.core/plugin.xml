@@ -187,14 +187,17 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />                
-   </extension>  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNonPublicStaticNestedClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
+   </extension>
    
    <!-- JSON-P -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
