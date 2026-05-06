@@ -411,30 +411,40 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         // Diagnostic for private static nested class SubChild
         // Note: protected is valid according to spec, so only private and package-private should be flagged
         Diagnostic privateClassDiagnostic = d(50, 25, 33,
-                                              "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private static nested classes are not supported.",
+                                              "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
                                               DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
 
         // Diagnostic for package-private (default) static nested class PackagePrivateChild
         Diagnostic packagePrivateClassDiagnostic = d(88, 17, 36,
-                                                     "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private static nested classes are not supported.",
+                                                     "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
                                                      DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
 
-        // Test code action for private static nested class
-        // Note: ModifyModifiersProposal replaces all modifiers, so "private static" becomes "static public"
+        // Test code actions for private static nested class
+        // Note: ModifyModifiersProposal replaces all modifiers, so "private static" becomes "static public" or "static protected"
         JakartaJavaCodeActionParams privateClassCodeActionParams = createCodeActionParams(uri, privateClassDiagnostic);
-        TextEdit privateClassTextEdit = te(50, 4, 50, 18, "static public");
-        CodeAction privateClassCodeAction = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEdit);
+        TextEdit privateClassTextEditPublic = te(50, 4, 50, 18, "static public");
+        CodeAction privateClassCodeActionPublic = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEditPublic);
 
-        assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeAction);
+        TextEdit privateClassTextEditProtected = te(50, 4, 50, 18, "static protected");
+        CodeAction privateClassCodeActionProtected = ca(uri, "Change modifier to protected", privateClassDiagnostic, privateClassTextEditProtected);
 
-        // Test code action for package-private static nested class
-        // Note: For package-private, ModifyModifiersProposal inserts " public" after "static"
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeActionProtected, privateClassCodeActionPublic);
+
+        // Test code actions for package-private static nested class
+        // Note: For package-private, ModifyModifiersProposal inserts " public" or " protected" after "static"
         JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
-        TextEdit packagePrivateClassTextEdit = te(88, 10, 88, 10, " public");
-        CodeAction packagePrivateClassCodeAction = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEdit);
+        TextEdit packagePrivateClassTextEditPublic = te(88, 10, 88, 10, " public");
+        CodeAction packagePrivateClassCodeActionPublic = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEditPublic);
 
-        assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeAction);
+        TextEdit packagePrivateClassTextEditProtected = te(88, 10, 88, 10, " protected");
+        CodeAction packagePrivateClassCodeActionProtected = ca(uri, "Change modifier to protected", packagePrivateClassDiagnostic, packagePrivateClassTextEditProtected);
+
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeActionProtected, packagePrivateClassCodeActionPublic);
     }
 }
