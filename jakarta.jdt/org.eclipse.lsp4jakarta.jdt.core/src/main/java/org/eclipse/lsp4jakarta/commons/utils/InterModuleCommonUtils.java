@@ -62,10 +62,19 @@ public class InterModuleCommonUtils {
             if (hasInterceptorsAnnotation(type, unit, methods)) {
                 return true;
             }
-            // Check if any method uses InvocationContext parameter
-            if (hasInvocationContextParameter(type, methods)) {
-                return true;
-            }
+            /**
+             * Check if any method uses InvocationContext parameter
+             * Commented out due to below SPEC conflicts. @PreDestory and @PostConstruct have different validations depending on modules for the same functionality.
+             * Can be uncommented for future use
+             * Interceptor Spec: https://jakarta.ee/specifications/interceptors/2.0/interceptors-spec-2.0#:~:text=Interceptor%20methods%
+             * 20must%20always%20call%20the%20InvocationContext.proceed%20method%20or%20no%20subsequent%20interceptor%20methods%2C%20target
+             * %20class%20method%2C%20or%20lifecycle%20callback%20methods%20will%20be%20invoked%2C%20or%E2%80%94in%20the%20case%20of%20around
+             * %2Dconstruct%20interceptor%20methods%E2%80%94the%20target%20instance%20will%20not%20be%20created
+             * Annotation Spec: https://jakarta.ee/specifications/annotations/2.0/annotations-spec-2.0#jakarta-annotation-postconstruct
+             */
+//            if (hasInvocationContextParameter(type, methods)) {
+//                return true;
+//            }
         }
         return false;
     }
@@ -150,20 +159,22 @@ public class InterModuleCommonUtils {
      * @return true if any method has InvocationContext parameter
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    private static boolean hasInvocationContextParameter(IType type, IMethod[] methods) throws JavaModelException {
-        return Arrays.stream(methods).flatMap(method -> {
-            return Arrays.stream(method.getParameterTypes());
-        }).anyMatch(paramType -> {
-            try {
-                String typeName = DiagnosticUtils.getDataTypeName(paramType);
-                return DiagnosticUtils.isMatchedJavaElement(type, typeName,
-                                                            Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
-            } catch (JavaModelException e) {
-                LOGGER.log(Level.WARNING, "Unable to check parameter type", e);
-                return false;
-            }
-        });
-    }
+//    private static boolean hasInvocationContextParameter(IType type, IMethod[] methods) throws JavaModelException {
+//        return Arrays.stream(methods)
+//                .flatMap(method -> {
+//                    return Arrays.stream(method.getParameterTypes());
+//                })
+//                .anyMatch(paramType -> {
+//                    try {
+//                        String typeName = DiagnosticUtils.getDataTypeName(paramType);
+//                        return DiagnosticUtils.isMatchedJavaElement(type, typeName,
+//                                                                    Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
+//                    } catch (JavaModelException e) {
+//                        LOGGER.log(Level.WARNING, "Unable to check parameter type", e);
+//                        return false;
+//                    }
+//                });
+//    }
 
     /**
      * Checks if the type is an interceptor type (has @Interceptor annotation).
