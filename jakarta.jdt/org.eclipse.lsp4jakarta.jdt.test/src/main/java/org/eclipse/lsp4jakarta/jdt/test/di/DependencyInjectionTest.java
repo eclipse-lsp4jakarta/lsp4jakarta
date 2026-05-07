@@ -170,8 +170,8 @@ public class DependencyInjectionTest extends BaseJakartaTest {
 
         // Test quick fix to remove all attributes
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, invalidScopeAttributes);
-        TextEdit te = te(5, 42, 11, 15, "");
-        CodeAction removeScopeBodyDeclarations = ca(uri, "Remove all attributes from @Scope annotation type", invalidScopeAttributes, te);
+        TextEdit removeBodyDeclarationsEdit = te(5, 42, 11, 15, "");
+        CodeAction removeScopeBodyDeclarations = ca(uri, "Remove all attributes from @Scope annotation", invalidScopeAttributes, removeBodyDeclarationsEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeScopeBodyDeclarations);
     }
 
