@@ -1,3 +1,15 @@
+/*******************************************************************************
+* Copyright (c) 2026 IBM Corporation and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     IBM Corporation - initial implementation
+*******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 
 import java.util.List;
@@ -13,33 +25,33 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.lsp4j.CodeActionKind;
 
 /**
- * Code action proposal for removing all attributes (methods and fields) from an annotation type.
+ * Code action proposal for removing body declarations (methods and fields) from an annotation type.
  */
-public class RemoveAnnotationAttributesProposal extends ASTRewriteCorrectionProposal {
+public class RemoveAnnotationBodyDeclarationsProposal extends ASTRewriteCorrectionProposal {
 
     private final CompilationUnit invocationNode;
     private final AnnotationTypeDeclaration annotationTypeDeclaration;
-    private final List<BodyDeclaration> attributesToRemove;
+    private final List<BodyDeclaration> bodyDeclarationsToRemove;
 
     /**
-     * Constructor for RemoveAnnotationAttributesProposal.
+     * Constructor for RemoveAnnotationBodyDeclarationsProposal.
      *
      * @param label The label for this proposal
      * @param targetCU The compilation unit
      * @param invocationNode The compilation unit AST node
      * @param annotationTypeDeclaration The annotation type declaration to modify
      * @param relevance The relevance of this proposal
-     * @param attributesToRemove The list of attributes (methods/fields) to remove
+     * @param bodyDeclarationsToRemove The list of body declarations (methods/fields) to remove
      */
-    public RemoveAnnotationAttributesProposal(String label, ICompilationUnit targetCU,
-                                              CompilationUnit invocationNode,
-                                              AnnotationTypeDeclaration annotationTypeDeclaration,
-                                              int relevance,
-                                              List<BodyDeclaration> attributesToRemove) {
+    public RemoveAnnotationBodyDeclarationsProposal(String label, ICompilationUnit targetCU,
+                                                    CompilationUnit invocationNode,
+                                                    AnnotationTypeDeclaration annotationTypeDeclaration,
+                                                    int relevance,
+                                                    List<BodyDeclaration> bodyDeclarationsToRemove) {
         super(label, CodeActionKind.QuickFix, targetCU, null, relevance);
         this.invocationNode = invocationNode;
         this.annotationTypeDeclaration = annotationTypeDeclaration;
-        this.attributesToRemove = attributesToRemove;
+        this.bodyDeclarationsToRemove = bodyDeclarationsToRemove;
     }
 
     @Override
@@ -48,9 +60,9 @@ public class RemoveAnnotationAttributesProposal extends ASTRewriteCorrectionProp
         ASTRewrite rewrite = ASTRewrite.create(ast);
         // Get the list rewriter for the annotation type's body declarations
         ListRewrite listRewrite = rewrite.getListRewrite(annotationTypeDeclaration, AnnotationTypeDeclaration.BODY_DECLARATIONS_PROPERTY);
-        // Remove all attributes
-        for (BodyDeclaration attribute : attributesToRemove) {
-            listRewrite.remove(attribute, null);
+        // Remove all body declarations
+        for (BodyDeclaration bodyDeclaration : bodyDeclarationsToRemove) {
+            listRewrite.remove(bodyDeclaration, null);
         }
 
         return rewrite;

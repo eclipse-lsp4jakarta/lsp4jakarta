@@ -162,19 +162,17 @@ public class DependencyInjectionTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Create expected diagnostic
-        Diagnostic d1 = d(5, 18, 40,
-                          "Scope annotated interface: InvalidScopeAttributes should not declare any attributes.",
-                          DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
+        Diagnostic invalidScopeAttributes = d(5, 18, 40,
+                                              "Scope annotated interface: InvalidScopeAttributes should not declare any attributes.",
+                                              DiagnosticSeverity.Error, "jakarta-di", "InvalidScopeAttributes");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidScopeAttributes);
 
         // Test quick fix to remove all attributes
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
-
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, invalidScopeAttributes);
         TextEdit te = te(5, 42, 11, 15, "");
-        CodeAction ca = ca(uri, "Remove all attributes from @Scope annotation type", d1, te);
-
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+        CodeAction removeScopeBodyDeclarations = ca(uri, "Remove all attributes from @Scope annotation type", invalidScopeAttributes, te);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeScopeBodyDeclarations);
     }
 
 }
