@@ -25,6 +25,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
@@ -138,5 +139,46 @@ public class ASTUtils {
             }
         });
         return found.get();
+    }
+
+    /**
+     * Retrieves the enclosing method declaration for a given AST node.
+     *
+     * <p>This method traverses up the Abstract Syntax Tree (AST) hierarchy starting from the
+     * given node, searching for the nearest ancestor that is a {@link MethodDeclaration}.
+     * This is useful for determining the method context in which a particular AST node exists.</p>
+     *
+     * @param node the AST node for which to find the enclosing method declaration
+     * @return the nearest enclosing {@link MethodDeclaration}, or {@code null} if the node
+     *         is not contained within any method (e.g., if it's a field declaration or
+     *         class-level element)
+     */
+    public static MethodDeclaration getEnclosingMethod(ASTNode node) {
+        ASTNode parent = node.getParent();
+        while (parent != null) {
+            if (parent instanceof MethodDeclaration) {
+                return (MethodDeclaration) parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the fully qualified class name of the declaring class for a method invocation.
+     *
+     * @param mi the method invocation
+     * @return the fully qualified class name, or null if it cannot be resolved
+     */
+    public static String getDeclaringClassName(MethodInvocation mi) {
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (binding == null) {
+            return null;
+        }
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
+            return null;
+        }
+        return declaringClass.getQualifiedName();
     }
 }

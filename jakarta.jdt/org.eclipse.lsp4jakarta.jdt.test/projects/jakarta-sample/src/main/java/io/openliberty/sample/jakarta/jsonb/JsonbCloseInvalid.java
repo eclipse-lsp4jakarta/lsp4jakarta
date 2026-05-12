@@ -1,62 +1,80 @@
-/******************************************************************************* 
-* Copyright (c) 2026 IBM Corporation and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
-
 package io.openliberty.sample.jakarta.jsonb;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.*;
 
-/**
- * Invalid usage example: Calling Jsonb.close() without ensuring all threads
- * have finished interaction with Jsonb.
- * 
- * This class demonstrates scenarios that should trigger the WARNING diagnostic
- * because close() is called while threads might still be using the Jsonb instance.
- */
 public class JsonbCloseInvalid {
 
-    /**
-     * WARNING: Close called immediately after starting threads.
-     * Threads are created but close() is called without waiting for them to finish.
-     * This is the exact dangerous scenario from the spec.
-     * @throws Exception 
-     */
-    public void closeWithoutJoiningThreads() throws Exception {
-        Jsonb jsonb = JsonbBuilder.create();
-        
-        // Start multiple threads that use jsonb
-        for (int i = 0; i < 5; i++) {
-            final int threadNum = i;
-            new Thread(() -> {
-                String json = jsonb.toJson(new Person("Person" + threadNum, 20 + threadNum));
-                System.out.println(json);
-            }).start();
-        }
-        
-        // WARNING: Calling close() while threads might still be running
-        // No join() or synchronization before close()
-        jsonb.close();
-    }
+	private static final Jsonb jsonb = JsonbBuilder.create();
 
-    /**
-     * WARNING: Using ExecutorService but calling close() before shutdown.
-     * The threads in the executor might still be processing.
-     * @throws Exception 
-     */
-    public void closeBeforeExecutorShutdown() throws Exception {
-        Jsonb jsonb = JsonbBuilder.create();
+	public static void main(String[] args) throws Exception {
+	        useThreadFactory();
+	        useExecutorService();
+	        useCompletableFuture();
+	        useThreadDirect();
+	        useTimer();
+	        reuseJsonbInstance();
+	        singleThreadedWithClose();
+	        closeAfterExecutorTermination();
+	}
+	private static void useThreadFactory() throws Exception {
+	        ThreadFactory factory = r -> new Thread(r, "custom-thread");
+	        Thread t = factory.newThread(() -> {
+	            String json = jsonb.toJson("ThreadFactory example");
+	            System.out.println(json);
+	        });
+	        t.start();
+	}
+	private static void useExecutorService() throws Exception {
+	        ExecutorService executor = Executors.newFixedThreadPool(2);
+	        executor.submit(() -> {
+	            jsonb.toJson("Executor example");
+	        });
+	}
+	private static void useCompletableFuture() throws Exception {
+	        CompletableFuture.runAsync(() -> {
+	            String json = jsonb.toJson("CompletableFuture example");
+	            System.out.println(json);
+	        });
+	}
+	private static void useThreadDirect() throws Exception {
+        Thread t = new Thread(() -> {
+            String json = jsonb.toJson("Direct Thread example");
+            System.out.println(json);
+        });
+        t.start();
+    }
+	private static void useTimer() throws Exception {
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                String json = jsonb.toJson("Timer example");
+                System.out.println(json);
+            }
+        }, 1000);
+    }
+	public static void reuseJsonbInstance() {
+        // Multiple operations with the same instance
+        for (int i = 0; i < 5; i++) {
+            String json = jsonb.toJson(new Person("Person" + i, 20 + i));
+            System.out.println(json);
+        }
+        // No close() - instance can be reused or garbage collected naturally
+    }
+	public static void singleThreadedWithClose() throws Exception {
+        try {
+            String json = jsonb.toJson(new Person("Jane", 25));
+            System.out.println(json);
+        } finally {
+            // VALID: No threads, so close() is safe
+            jsonb.close();
+        }
+    }
+	public static void closeAfterExecutorTermination() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(3);
         
         // Submit tasks that use jsonb
@@ -67,70 +85,13 @@ public class JsonbCloseInvalid {
                 System.out.println(json);
             });
         }
-        
-        // WARNING: Calling close() before executor.shutdown()
-        // Threads might still be executing tasks
         jsonb.close();
-        
+        // VALID: Properly shutdown and wait for termination
         executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.MINUTES);
+        // Now it's safe to close - all tasks have completed
     }
-
-    /**
-     * WARNING: Close called after shutdown but before awaitTermination.
-     * Shutdown is called but we don't wait for threads to finish.
-     * @throws Exception 
-     */
-    public void closeAfterShutdownWithoutAwait() throws Exception {
-        Jsonb jsonb = JsonbBuilder.create();
-        ExecutorService executor = Executors.newFixedThreadPool(3);
-        
-        for (int i = 0; i < 10; i++) {
-            final int taskNum = i;
-            executor.submit(() -> {
-                String json = jsonb.toJson(new Person("Person" + taskNum, 20 + taskNum));
-                System.out.println(json);
-            });
-        }
-        
-        executor.shutdown();
-        
-        // WARNING: Calling close() right after shutdown without awaitTermination
-        // Threads might still be finishing their work
-        jsonb.close();
-    }
-
-    /**
-     * WARNING: Threads are created and close() is called,
-     * but join() happens AFTER close() (wrong order).
-     * @throws Exception 
-     */
-    public void closeBeforeJoin() throws Exception {
-        Jsonb jsonb = JsonbBuilder.create();
-        Thread[] threads = new Thread[5];
-        
-        for (int i = 0; i < 5; i++) {
-            final int threadNum = i;
-            threads[i] = new Thread(() -> {
-                String json = jsonb.toJson(new Person("Person" + threadNum, 20 + threadNum));
-                System.out.println(json);
-            });
-            threads[i].start();
-        }
-        
-        // WARNING: Calling close() BEFORE join()
-        // This is unsafe - threads are still running
-        jsonb.close();
-        
-        // Join happens too late
-        for (Thread thread : threads) {
-            thread.join();
-        }
-    }
-
-    /**
-     * Helper class for demonstration
-     */
-    private static class Person {
+	private static class Person {
         private String name;
         private int age;
 
@@ -139,14 +100,24 @@ public class JsonbCloseInvalid {
             this.age = age;
         }
 
+        public Person() {
+            // Default constructor for JSON-B
+        }
+
         public String getName() {
             return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         public int getAge() {
             return age;
         }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
     }
 }
-
-// Made with Bob
