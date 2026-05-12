@@ -106,11 +106,17 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * Method used to traverse through Interceptor method declarations and invocations to find out if proceed method is invoked.
+     * Validates whether an interceptor method properly invokes the proceed() method.
+     *
+     * <p>This method checks if a given method declaration is an interceptor method (annotated with
+     * one of the Jakarta Interceptors lifecycle annotations) and verifies that it contains an
+     * invocation of the {@code proceed()} method on an {@code InvocationContext} object, as required
+     * by the Jakarta Interceptors specification.</p>
      *
      * @param unit
      * @param methodDecl
-     * @return
+     * @return {@code true} if the method is an interceptor method that does NOT invoke the
+     *         {@code proceed()} method (indicating a validation error); {@code false} otherwise
      * @throws JavaModelException
      */
     private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
@@ -131,6 +137,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     Annotation annotation = (Annotation) modifier;
                     String annotationName = annotation.getTypeName().getFullyQualifiedName();
                     String[] interceptorMethods = Constants.INTERCEPTOR_METHODS.toArray(String[]::new);
+                    //Verifies that the method does not invoke {@code proceed()}
                     if (DiagnosticUtils.getMatchedJavaElementName(targetClass, annotationName, interceptorMethods) != null
                         && !ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
                         return true;

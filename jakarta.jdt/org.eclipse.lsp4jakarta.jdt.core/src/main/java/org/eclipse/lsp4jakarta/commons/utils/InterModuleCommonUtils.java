@@ -159,22 +159,20 @@ public class InterModuleCommonUtils {
      * @return true if any method has InvocationContext parameter
      * @throws JavaModelException if there's an error accessing the Java model
      */
-//    private static boolean hasInvocationContextParameter(IType type, IMethod[] methods) throws JavaModelException {
-//        return Arrays.stream(methods)
-//                .flatMap(method -> {
-//                    return Arrays.stream(method.getParameterTypes());
-//                })
-//                .anyMatch(paramType -> {
-//                    try {
-//                        String typeName = DiagnosticUtils.getDataTypeName(paramType);
-//                        return DiagnosticUtils.isMatchedJavaElement(type, typeName,
-//                                                                    Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
-//                    } catch (JavaModelException e) {
-//                        LOGGER.log(Level.WARNING, "Unable to check parameter type", e);
-//                        return false;
-//                    }
-//                });
-//    }
+    private static boolean hasInvocationContextParameter(IType type, IMethod[] methods) throws JavaModelException {
+        return Arrays.stream(methods).flatMap(method -> {
+            return Arrays.stream(method.getParameterTypes());
+        }).anyMatch(paramType -> {
+            try {
+                String typeName = DiagnosticUtils.getDataTypeName(paramType);
+                return DiagnosticUtils.isMatchedJavaElement(type, typeName,
+                                                            Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to check parameter type", e);
+                return false;
+            }
+        });
+    }
 
     /**
      * Checks if the type is an interceptor type (has @Interceptor annotation).
