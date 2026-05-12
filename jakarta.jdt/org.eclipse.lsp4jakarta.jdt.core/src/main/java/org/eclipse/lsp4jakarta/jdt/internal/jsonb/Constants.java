@@ -49,6 +49,34 @@ public class Constants {
                                                                  JSONB_ANNOTATION,
                                                                  JSONB_DATE_FORMAT, JSONB_NILLABLE, JSONB_NUMBER_FORMAT, JSONB_PROPERTY, JSONB_PROPERTY_ORDER,
                                                                  JSONB_TYPE_ADAPTER, JSONB_TYPE_DESERIALIZER, JSONB_TYPE_SERIALIZER, JSONB_VISIBILITY);
-    public static final String CLOSEABLE_CLOSE_METHOD = ".close()";
-    public static final String JAKARTA_JSONB_CLOSEABLE = "jakarta.json.bind.Jsonb";
+
+    //JSONB Closable constants
+    public static final List<String> THREAD_METHODS = List.of(
+                                                              "submit", "execute", "schedule", "scheduleAtFixedRate",
+                                                              "scheduleWithFixedDelay", "runAsync", "supplyAsync",
+                                                              "parallelStream", "newThread", "start",
+                                                              "runLater", "invokeLater", "subscribeOn",
+                                                              "publishOn", "observeOn", "scheduleJob", "scheduleTask");
+    public static final List<String> THREAD_CLASSES = List.of(
+                                                              "java.util.concurrent.ExecutorService",
+                                                              "java.util.concurrent.ThreadPoolExecutor",
+                                                              "java.util.concurrent.ScheduledExecutorService",
+                                                              "java.util.concurrent.ForkJoinPool",
+                                                              "java.util.concurrent.CompletableFuture",
+                                                              "java.util.Timer",
+                                                              "java.lang.Thread",
+                                                              "java.util.concurrent.Executors",
+                                                              "javax.swing.SwingWorker",
+                                                              "javafx.application.Platform",
+                                                              "reactor.core.publisher.Flux",
+                                                              "reactor.core.publisher.Mono",
+                                                              "io.reactivex.Observable",
+                                                              "io.reactivex.Flowable",
+                                                              "org.quartz.Scheduler",
+                                                              "org.springframework.scheduling.TaskScheduler");
+
+    public static final String CLOSE_METHOD = "close";
+    public static final String JAKARTA_JSONB = "jakarta.json.bind.Jsonb";
+    public static final String CLOSABLE_CLOSE = "java.io.Closeable";
+    public static final String AUTOCLOSABLE_CLOSE = "java.lang.AutoCloseable";
 }

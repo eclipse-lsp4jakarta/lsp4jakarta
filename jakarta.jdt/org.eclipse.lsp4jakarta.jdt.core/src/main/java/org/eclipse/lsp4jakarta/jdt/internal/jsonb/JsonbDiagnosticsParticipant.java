@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -33,10 +34,16 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.commons.utils.JsonPropertyUtils;
+import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
@@ -46,7 +53,6 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
@@ -111,8 +117,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             childHasValidNoArgsConstructor = true;
                     }
                 }
-                //Create WARNING for thread safety close() invocations
-                collectJsonbCloseableThreadSafetyDiagnostics(context, uri, method, diagnostics);
             }
             if (jonbMethods.size() > Constants.MAX_METHOD_WITH_JSONBCREATOR) {
                 for (IMethod method : methods) {
@@ -166,7 +170,100 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
                                                  missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
         }
+        // Create WARNING diagnostics to determine the existence of close() method when threads are used.
+        // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
+        collectClosableDiagnostics(context, uri, diagnostics, unit);
         return diagnostics;
+    }
+
+    /**
+     * Collects diagnostics for Jsonb closeable thread safety issues.
+     * Detects methods that use thread sources without properly closing Jsonb instances.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param unit the compilation unit
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void collectClosableDiagnostics(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                            ICompilationUnit unit) throws JavaModelException {
+        List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
+        Map<MethodDeclaration, MethodAnalysis> analysisMap = new HashMap<>();
+        // Analyze all method invocations and group by enclosing method
+        for (MethodInvocation mi : allMethodInvocations) {
+            MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(mi);
+            if (enclosingMethod != null) {
+                MethodAnalysis analysis = analysisMap.computeIfAbsent(
+                                                                      enclosingMethod, k -> new MethodAnalysis());
+
+                if (!analysis.hasClose && isCloseInvocation(mi)) {
+                    analysis.hasClose = true;
+                }
+                if (isThreadSourceInvocation(mi)) {
+                    analysis.threadSourceCount++;
+                }
+            }
+        }
+        // Generate diagnostics for methods with thread sources but no close
+        for (Map.Entry<MethodDeclaration, MethodAnalysis> entry : analysisMap.entrySet()) {
+            MethodDeclaration method = entry.getKey();
+            MethodAnalysis analysis = entry.getValue();
+            if (!analysis.hasClose && analysis.threadSourceCount > 0) {
+                Range range = JDTUtils.toRange(unit, method.getName().getStartPosition(),
+                                               method.getName().getLength());
+                diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety", method.getName().getIdentifier()),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.JsonbCloseableThreadSafety,
+                                                         DiagnosticSeverity.Warning));
+            }
+        }
+    }
+
+    /**
+     * Checks if a method invocation is a close() call on Jsonb or related closeable types.
+     *
+     * @param mi the method invocation to check
+     * @return true if this is a close invocation on Jsonb, Closeable, or AutoCloseable
+     */
+    private boolean isCloseInvocation(MethodInvocation mi) {
+        String name = mi.getName().getIdentifier();
+        if (!name.equals(Constants.CLOSE_METHOD)) {
+            return false;
+        }
+        String fqName = ASTUtils.getDeclaringClassName(mi);
+        if (fqName == null) {
+            return false;
+        }
+        return fqName.equals(Constants.JAKARTA_JSONB) ||
+               fqName.equals(Constants.CLOSABLE_CLOSE) ||
+               fqName.equals(Constants.AUTOCLOSABLE_CLOSE);
+    }
+
+    /**
+     * Checks if a method invocation is a thread source operation.
+     *
+     * @param mi the method invocation to check
+     * @return true if this invocation creates or uses a thread source
+     */
+    private boolean isThreadSourceInvocation(MethodInvocation mi) {
+        String fqName = ASTUtils.getDeclaringClassName(mi);
+        if (fqName == null) {
+            return false;
+        }
+        String name = mi.getName().getIdentifier();
+        return isThreadSource(name, fqName);
+    }
+
+    /**
+     * Determines if a method name and fully qualified class name represent a thread source.
+     *
+     * @param methodName the method name
+     * @param fqName the fully qualified class name
+     * @return true if this is a thread source method
+     */
+    private boolean isThreadSource(String methodName, String fqName) {
+        return Constants.THREAD_METHODS.contains(methodName) &&
+               Constants.THREAD_CLASSES.stream().anyMatch(fqName::contains);
     }
 
     /**
@@ -429,57 +526,5 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 && !annotationName.equals(Constants.JSONB_TRANSIENT_FQ_NAME))
                 return true;
         return false;
-    }
-
-    /**
-     * Collects diagnostics for Jsonb.close() calls that may have thread safety issues.
-     * Warns when close() is called on a Jsonb instance while threads might still be using it.
-     *
-     * @param context the diagnostics context
-     * @param uri the file URI
-     * @param method the method to check
-     * @param diagnostics the list to add diagnostics to
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    private void collectJsonbCloseableThreadSafetyDiagnostics(JavaDiagnosticsContext context, String uri,
-                                                              IMethod method, List<Diagnostic> diagnostics) throws JavaModelException {
-        String source = method.getSource();
-        if (source != null && hasUnsafeJsonbCloseWithThreads(source)) {
-            String msg = Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety");
-            Range range = PositionUtils.toNameRange(method, context.getUtils());
-            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                     ErrorCode.JsonbCloseableThreadSafety,
-                                                     DiagnosticSeverity.Warning));
-        }
-    }
-
-    /**
-     * Checks if a method contains potentially unsafe Jsonb.close() calls with active threads.
-     *
-     * This method detects scenarios where:
-     * 1. Threads are created (new Thread, ExecutorService, etc.)
-     * 2. Jsonb instance is used
-     * 3. close() is called without proper thread synchronization (join, shutdown, awaitTermination)
-     *
-     * @param source the method source code
-     * @return true if the method has unsafe Jsonb.close() with threads
-     */
-    private boolean hasUnsafeJsonbCloseWithThreads(String source) {
-        if (source == null) {
-            return false;
-        }
-
-        if (!JsonbUtils.hasJsonbReference(source) || !JsonbUtils.hasCloseCall(source)) {
-            return false;
-        }
-
-        if (!JsonbUtils.hasThreadCreation(source)) {
-            // No threads, so close() is not a thread safety issue
-            return false;
-        }
-
-        // Threads are created and close() is called
-        // Check if proper synchronization occurs before close()
-        return !JsonbUtils.isSynchronizationBeforeClose(source);
     }
 }
