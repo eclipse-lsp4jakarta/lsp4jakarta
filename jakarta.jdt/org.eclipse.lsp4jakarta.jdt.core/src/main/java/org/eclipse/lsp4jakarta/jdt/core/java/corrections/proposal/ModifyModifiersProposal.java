@@ -142,6 +142,13 @@ public class ModifyModifiersProposal extends ASTRewriteCorrectionProposal {
                 modifiersList = null;
         }
 
+        // Track if we have any non-visibility, non-annotation modifiers remaining after removal
+        boolean hasNonVisibilityModifiers = false;
+        // Check if we're adding a visibility modifier
+        boolean addingVisibilityModifier = modifiersToAdd.stream().anyMatch(m -> m.equals(Modifier.ModifierKeyword.PRIVATE_KEYWORD.toString()) ||
+                                                                                 m.equals(Modifier.ModifierKeyword.PUBLIC_KEYWORD.toString()) ||
+                                                                                 m.equals(Modifier.ModifierKeyword.PROTECTED_KEYWORD.toString()));
+
         for (ASTNode modifier : modifiers) {
             if (modifier instanceof MarkerAnnotation) {
                 MarkerAnnotation markAnno = (MarkerAnnotation) modifier;
@@ -166,20 +173,34 @@ public class ModifyModifiersProposal extends ASTRewriteCorrectionProposal {
                     || modKeyword.equals(Modifier.ModifierKeyword.PROTECTED_KEYWORD)) {
 
                     // if adding a visibility modifier, need to remove the existing one
-                    if (modifiersToAdd.stream().anyMatch(m -> (m.equals(Modifier.ModifierKeyword.PRIVATE_KEYWORD.toString())
-                                                               || m.equals(Modifier.ModifierKeyword.PUBLIC_KEYWORD.toString())
-                                                               || m.equals(Modifier.ModifierKeyword.PROTECTED_KEYWORD.toString())))) {
+                    if (addingVisibilityModifier) {
                         modifiersList.remove(modifier, null);
+                        continue;
                     }
+                } else {
+                    // We have a non-visibility, non-annotation modifier that wasn't removed (e.g., static, final)
+                    hasNonVisibilityModifiers = true;
                 }
             }
         }
 
         // now add the ones we want
-        for (String newModifier : modifiersToAdd) {
-            // make a new marker
-            Modifier marker = ast.newModifier(Modifier.ModifierKeyword.toKeyword(newModifier));
-            modifiersList.insertLast(marker, null);
+        // If we're adding a visibility modifier AND there are existing non-visibility modifiers (like static),
+        // insert at first position (before them) to get correct order like "public static"
+        // Otherwise, insert at last position (after annotations or existing visibility modifiers)
+        if (addingVisibilityModifier && hasNonVisibilityModifiers) {
+            // Insert in reverse order so they appear in the correct order (first inserted will be last)
+            for (int i = modifiersToAdd.size() - 1; i >= 0; i--) {
+                String newModifier = modifiersToAdd.get(i);
+                Modifier marker = ast.newModifier(Modifier.ModifierKeyword.toKeyword(newModifier));
+                modifiersList.insertFirst(marker, null);
+            }
+        } else {
+            // Insert in normal order at the end (after annotations or visibility modifiers)
+            for (String newModifier : modifiersToAdd) {
+                Modifier marker = ast.newModifier(Modifier.ModifierKeyword.toKeyword(newModifier));
+                modifiersList.insertLast(marker, null);
+            }
         }
 
         return rewrite;

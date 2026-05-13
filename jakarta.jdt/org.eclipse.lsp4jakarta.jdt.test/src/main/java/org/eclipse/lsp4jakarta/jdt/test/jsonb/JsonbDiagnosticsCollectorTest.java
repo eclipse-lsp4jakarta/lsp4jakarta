@@ -422,12 +422,12 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
 
         // Test code actions for private static nested class
-        // Note: ModifyModifiersProposal replaces all modifiers, so "private static" becomes "static public" or "static protected"
+        // Note: ModifyModifiersProposal only replaces the visibility modifier, so "private " becomes "public " or "protected " (static remains)
         JakartaJavaCodeActionParams privateClassCodeActionParams = createCodeActionParams(uri, privateClassDiagnostic);
-        TextEdit privateClassTextEditPublic = te(50, 4, 50, 18, "static public");
+        TextEdit privateClassTextEditPublic = te(50, 4, 50, 12, "public ");
         CodeAction privateClassCodeActionPublic = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEditPublic);
 
-        TextEdit privateClassTextEditProtected = te(50, 4, 50, 18, "static protected");
+        TextEdit privateClassTextEditProtected = te(50, 4, 50, 12, "protected ");
         CodeAction privateClassCodeActionProtected = ca(uri, "Change modifier to protected", privateClassDiagnostic, privateClassTextEditProtected);
 
         // Assert both code actions are available
@@ -435,12 +435,12 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeActionProtected, privateClassCodeActionPublic);
 
         // Test code actions for package-private static nested class
-        // Note: For package-private, ModifyModifiersProposal inserts " public" or " protected" after "static"
+        // Note: For package-private, ModifyModifiersProposal inserts "public " or "protected " before "static"
         JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
-        TextEdit packagePrivateClassTextEditPublic = te(88, 10, 88, 10, " public");
+        TextEdit packagePrivateClassTextEditPublic = te(88, 4, 88, 4, "public ");
         CodeAction packagePrivateClassCodeActionPublic = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEditPublic);
 
-        TextEdit packagePrivateClassTextEditProtected = te(88, 10, 88, 10, " protected");
+        TextEdit packagePrivateClassTextEditProtected = te(88, 4, 88, 4, "protected ");
         CodeAction packagePrivateClassCodeActionProtected = ca(uri, "Change modifier to protected", packagePrivateClassDiagnostic, packagePrivateClassTextEditProtected);
 
         // Assert both code actions are available
