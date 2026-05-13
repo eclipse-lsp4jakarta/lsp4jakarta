@@ -215,7 +215,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 // Flag if not public and not protected (covers private and package-private/default)
                 if (!Flags.isPublic(flags) && !Flags.isProtected(flags)) {
                     deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNonPublicProtectedStaticNestedClass", type.getElementName());
-                    deserializeErrCode = ErrorCode.InvalidJsonBNonPublicStaticNestedClass;
+                    deserializeErrCode = ErrorCode.InvalidJsonBNonPublicProtectedStaticNestedClass;
                     createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
                 }
             }

@@ -412,12 +412,12 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         // Note: protected is valid according to spec, so only private and package-private should be flagged
         Diagnostic privateClassDiagnostic = d(50, 25, 33,
                                               "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
-                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
 
         // Diagnostic for package-private (default) static nested class PackagePrivateChild
         Diagnostic packagePrivateClassDiagnostic = d(88, 17, 36,
                                                      "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
-                                                     DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicStaticNestedClass");
+                                                     DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
 

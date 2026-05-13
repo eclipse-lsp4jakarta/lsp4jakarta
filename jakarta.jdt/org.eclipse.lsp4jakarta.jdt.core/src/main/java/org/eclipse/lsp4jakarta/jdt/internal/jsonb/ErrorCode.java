@@ -24,7 +24,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidPropertyNamesOnJsonbFields,
     InvalidJsonBNoArgsConstructorMissing,
     InvalidJsonBNonStaticInnerClass,
-    InvalidJsonBNonPublicStaticNestedClass;
+    InvalidJsonBNonPublicProtectedStaticNestedClass;
 
     /**
      * {@inheritDoc}
