@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
@@ -106,6 +107,6 @@ public class ChangeModifierToProtectedQuickFix implements IJavaCodeActionPartici
      */
     @SuppressWarnings("restriction")
     protected IBinding getBinding(ASTNode node) {
-        return org.eclipse.jdt.internal.corext.dom.Bindings.getBindingOfParentType(node);
+        return Bindings.getBindingOfParentType(node);
     }
 }

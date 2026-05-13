@@ -209,12 +209,12 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 deserializeErrCode = ErrorCode.InvalidJsonBNonStaticInnerClass;
                 createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
             }
-            // Check if static nested class is private or package-private (spec requires public or protected)
+            // Check if static nested class is not public or protected (spec requires public or protected)
             if (isStaticInner && jsonbtypeParent) {
                 int flags = type.getFlags();
-                // Flag if private OR if not public and not protected (i.e., package-private/default)
-                if (Flags.isPrivate(flags) || (!Flags.isPublic(flags) && !Flags.isProtected(flags))) {
-                    deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNonPublicStaticNestedClass", type.getElementName());
+                // Flag if not public and not protected (covers private and package-private/default)
+                if (!Flags.isPublic(flags) && !Flags.isProtected(flags)) {
+                    deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNonPublicProtectedStaticNestedClass", type.getElementName());
                     deserializeErrCode = ErrorCode.InvalidJsonBNonPublicStaticNestedClass;
                     createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
                 }
