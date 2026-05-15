@@ -1,0 +1,20 @@
+package io.openliberty.sample.jakarta.persistence;
+
+import jakarta.persistence.Entity;
+
+@Entity
+public class EntityWithMappedSuperclassIdOnGetter extends BaseMappedSuperclassWithIdOnGetter {
+    
+    private String name;
+    
+    public EntityWithMappedSuperclassIdOnGetter() {
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+}

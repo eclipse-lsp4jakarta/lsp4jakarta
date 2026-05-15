@@ -33,6 +33,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAllParameters,
     RemoveAnnotationPreDestroy,
     RemoveAnnotationPostConstruct,
+    RemoveAnnotationResource,
+    RemoveResourceAnnotationAttribute,
     RemoveCheckedExceptions,
     AnnotationRemoveStaticModifier,
     InsertSlashAnnotationValueAttribute,
@@ -79,6 +81,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
     CDIReplaceScopeAnnotations,
+    CDIRemoveSingletonAnnotation,
     CDIRemoveStatelessAnnotation;
 
     @Override

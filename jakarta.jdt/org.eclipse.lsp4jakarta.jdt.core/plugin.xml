@@ -100,7 +100,14 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyException"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />  
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationAttributeQuickFix" />
+                           
    </extension>
    
    <!-- Bean Validation -->
@@ -333,6 +340,12 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultProtectedConstructorToMBeanQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveSingletonAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultPublicConstructorToMBeanQuickFix" />

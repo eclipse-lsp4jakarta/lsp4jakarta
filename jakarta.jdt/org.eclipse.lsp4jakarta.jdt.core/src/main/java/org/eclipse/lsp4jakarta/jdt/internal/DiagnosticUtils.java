@@ -439,7 +439,6 @@ public class DiagnosticUtils {
      * @param type the expected type class
      * @return the member value cast to the specified type, or null if not found or type mismatch
      * @throws JavaModelException if there's an error accessing the annotation
-     *
      */
     @SuppressWarnings("unchecked")
     public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
@@ -451,5 +450,4 @@ public class DiagnosticUtils {
         }
         return null;
     }
-
 }

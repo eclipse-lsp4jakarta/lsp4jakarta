@@ -1,0 +1,37 @@
+{
+	"Jakarta Faces - @FacesBehavior": {
+		"prefix": "faces_behavior",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.faces.component.behavior.FacesBehavior;",
+			"import jakarta.faces.component.behavior.ClientBehaviorBase;",
+			"import jakarta.faces.context.FacesContext;",
+			"import jakarta.faces.component.UIComponent;",
+			"",
+			"/**",
+			" * Custom JSF behavior implementation.",
+			" * The @FacesBehavior annotation registers this behavior with the specified ID.",
+			" */",
+			"@FacesBehavior(\"${2:customBehaviorId}\")",
+			"public class ${TM_FILENAME_BASE} extends ClientBehaviorBase {",
+			"",
+			"\t/**",
+			"\t * Decodes the behavior from the request.",
+			"\t * ",
+			"\t * @param context the FacesContext for the current request",
+			"\t * @param component the UIComponent associated with this behavior",
+			"\t */",
+			"\t@Override",
+			"\tpublic void decode(FacesContext context, UIComponent component) {",
+			"\t\t// ${3:custom decode logic}",
+			"\t}",
+			"}"
+		],
+		"description": "Custom JSF behavior with @FacesBehavior annotation",
+		"context": {
+			"type": "jakarta.faces.component.behavior.ClientBehaviorBase",
+			"contentType": "class"
+		}
+	}
+}
