@@ -46,6 +46,7 @@ public class Constants {
     public static final String PATTERN = "jakarta.validation.constraints.Pattern";
     public static final String SIZE = "jakarta.validation.constraints.Size";
     public static final String NOT_EMPTY = "jakarta.validation.constraints.NotEmpty";
+    public static final String VALID = "jakarta.validation.Valid";
 
     /* Types */
     public static final String THAI_BUDDHIST_DATE = "java.time.chrono.ThaiBuddhistDate";
@@ -84,7 +85,7 @@ public class Constants {
                                                                                                                        DECIMAL_MIN, EMAIL, PAST_OR_PRESENT, FUTURE_OR_PRESENT, PAST,
                                                                                                                        FUTURE, MIN, MAX, NEGATIVE_OR_ZERO,
                                                                                                                        POSITIVE_OR_ZERO, NEGATIVE, POSITIVE, NOT_BLANK, PATTERN,
-                                                                                                                       SIZE, NOT_EMPTY)));
+                                                                                                                       SIZE, NOT_EMPTY, VALID)));
     public final static Set<String> SET_OF_DATE_TYPES = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(THAI_BUDDHIST_DATE, MINGUO_DATE, JAPANESE_DATE,
                                                                                                                       HIJRAH_DATE, ZONED_DATE_TIME, YEAR_MONTH, YEAR, OFFSET_TIME,
                                                                                                                       OFFSET_DATE_TIME, MONTH_DAY,

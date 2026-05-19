@@ -42,6 +42,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SIZE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING_FQ;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.VALID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -271,6 +272,16 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 }
+                case VALID -> {
+                    if (!isCascadableType(declaringType, type)) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
+                                                              "InvalidValidAnnotation");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidValidAnnotationOnNonCascadableType,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
                 default -> LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
             }
             //Throws invalid static element diagnostics if the element is static and has constraint annotations
@@ -327,6 +338,62 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                        || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
                        || doesITypeHaveSuperType(fieldType, Constants.MAP_FQ));
         }
+    }
+
+    /**
+     * isCascadableType
+     * This method checks whether a type is cascadable for @Valid annotation.
+     * Non-cascadable types include: primitives, boxed types, String, and other simple types.
+     * Cascadable types include: complex objects, collections, arrays, and maps.
+     *
+     * @param parentType the declaring type
+     * @param childTypeString the type signature to check
+     * @return true if the type is cascadable, false otherwise
+     * @throws CoreException
+     */
+    boolean isCascadableType(IType parentType, String childTypeString) throws CoreException {
+        // Arrays are cascadable
+        if (isArrayType(childTypeString)) {
+            return true;
+        }
+
+        // Primitive types are not cascadable
+        if (PRIMITIVE_TYPES.contains(childTypeString)) {
+            return false;
+        }
+
+        String dataTypeName = getDataTypeName(childTypeString);
+
+        // Boxed primitive types are not cascadable
+        if (dataTypeName.equals("Boolean") || dataTypeName.equals("Byte") ||
+            dataTypeName.equals("Character") || dataTypeName.equals("Short") ||
+            dataTypeName.equals("Integer") || dataTypeName.equals("Long") ||
+            dataTypeName.equals("Float") || dataTypeName.equals("Double")) {
+            return false;
+        }
+
+        // Check against known non-cascadable types
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName,
+                                                                          new String[] { STRING_FQ, CHAR_SEQUENCE_FQ, Constants.BIG_DECIMAL_FQ, Constants.BIG_INTEGER_FQ,
+                                                                                         Constants.DATE, Constants.CALENDAR, Constants.INSTANT, Constants.LOCAL_DATE,
+                                                                                         Constants.LOCAL_DATE_TIME, Constants.LOCAL_TIME, Constants.MONTH_DAY,
+                                                                                         Constants.OFFSET_DATE_TIME, Constants.OFFSET_TIME, Constants.YEAR,
+                                                                                         Constants.YEAR_MONTH, Constants.ZONED_DATE_TIME, Constants.HIJRAH_DATE,
+                                                                                         Constants.JAPANESE_DATE, Constants.MINGUO_DATE, Constants.THAI_BUDDHIST_DATE });
+
+        if (dataTypeFQName != null) {
+            return false;
+        }
+
+        // Collections and Maps are cascadable
+        IType fieldType = ManagedBean.getChildITypeByName(parentType, dataTypeName);
+        if (fieldType != null && (doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ) ||
+                                  doesITypeHaveSuperType(fieldType, Constants.MAP_FQ))) {
+            return true;
+        }
+
+        // All other complex types (custom classes, etc.) are cascadable
+        return true;
     }
 
     private void checkStringOnly(JavaDiagnosticsContext context, String uri, IJavaElement element,
