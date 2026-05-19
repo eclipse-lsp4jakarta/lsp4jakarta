@@ -100,7 +100,14 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyException"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />  
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationAttributeQuickFix" />
+                           
    </extension>
    
    <!-- Bean Validation -->
