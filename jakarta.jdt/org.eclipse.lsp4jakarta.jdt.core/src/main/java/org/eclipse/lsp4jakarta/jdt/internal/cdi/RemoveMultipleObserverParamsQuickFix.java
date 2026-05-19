@@ -35,6 +35,6 @@ public class RemoveMultipleObserverParamsQuickFix extends RemoveMethodParamAnnot
 
     @Override
     protected ICodeActionId getCodeActionId() {
-        return JakartaCodeActionId.CDIRemoveAllObserverParamsExceptOne;
+        return JakartaCodeActionId.CDIRemoveObserverConflictParams;
     }
 }
