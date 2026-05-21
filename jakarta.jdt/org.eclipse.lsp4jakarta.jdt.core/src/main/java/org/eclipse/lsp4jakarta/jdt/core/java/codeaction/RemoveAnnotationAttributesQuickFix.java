@@ -27,9 +27,7 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
@@ -193,9 +191,7 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
             if (typeBinding != null) {
                 String annotationName = typeBinding.getQualifiedName();
                 List<String> attributesToRemove = annotationAttributesMap.get(annotationName);
-                if (attributesToRemove != null && hasAttributesToRemove(annotation, attributesToRemove)) {
-                    result.put(annotationName, attributesToRemove);
-                }
+                result.put(annotationName, attributesToRemove);
             }
         }
         return result;
@@ -259,40 +255,6 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
             }
         }
         return null;
-    }
-
-    /**
-     * Checks if the given annotation has any of the attributes that need to be removed.
-     * This prevents code actions from appearing after attributes have already been removed.
-     * Subclasses can override shouldRemoveAttribute() to add value-based checks.
-     */
-    @SuppressWarnings("unchecked")
-    protected boolean hasAttributesToRemove(Annotation annotation, List<String> attributesToCheck) {
-        if (!(annotation instanceof NormalAnnotation)) {
-            return false;
-        }
-
-        List<MemberValuePair> values = ((NormalAnnotation) annotation).values();
-        for (String attributeToRemove : attributesToCheck) {
-            for (MemberValuePair mvp : values) {
-                if (mvp.getName().getFullyQualifiedName().equals(attributeToRemove)
-                    && shouldRemoveAttribute(mvp)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Determines if a specific attribute should be removed based on its value.
-     * Default: remove regardless of value. Override to add value checks.
-     *
-     * @param memberValuePair The member value pair to check
-     * @return true if the attribute should be removed
-     */
-    protected boolean shouldRemoveAttribute(MemberValuePair memberValuePair) {
-        return true;
     }
 
     /**

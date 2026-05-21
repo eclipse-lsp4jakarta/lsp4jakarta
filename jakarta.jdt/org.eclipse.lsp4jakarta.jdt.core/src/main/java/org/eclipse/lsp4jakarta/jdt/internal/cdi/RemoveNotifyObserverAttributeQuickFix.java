@@ -16,9 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.MemberValuePair;
-import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationAttributesQuickFix;
@@ -56,19 +53,5 @@ public class RemoveNotifyObserverAttributeQuickFix extends RemoveAnnotationAttri
     protected String getLabel(String annotation, String[] attributes) {
         String annotationName = DiagnosticUtils.getSimpleName(annotation);
         return Messages.getMessage("RemoveNotifyObserverAttribute", annotationName);
-    }
-
-    @Override
-    protected boolean shouldRemoveAttribute(MemberValuePair memberValuePair) {
-        // Only remove notifyObserver attribute if its value is IF_EXISTS
-        // The value can be "Reception.IF_EXISTS" or "jakarta.enterprise.event.Reception.IF_EXISTS"
-        Expression value = memberValuePair.getValue();
-        if (value instanceof QualifiedName) {
-            QualifiedName qualifiedName = (QualifiedName) value;
-            String valueStr = qualifiedName.toString();
-            // Check if it ends with IF_EXISTS to match both short and fully qualified forms
-            return valueStr.endsWith("IF_EXISTS");
-        }
-        return false;
     }
 }
