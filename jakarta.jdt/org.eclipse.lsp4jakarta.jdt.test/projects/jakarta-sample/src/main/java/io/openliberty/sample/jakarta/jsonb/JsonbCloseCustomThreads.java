@@ -19,7 +19,6 @@ public class JsonbCloseCustomThreads {
         @Override
         public void run() {
             String json = jsonb.toJson("Custom Runnable");
-            System.out.println(json);
         }
     }
 
@@ -36,7 +35,6 @@ public class JsonbCloseCustomThreads {
         @Override
         public void run() {
             String json = jsonb.toJson("Custom Thread");
-            System.out.println(json);
         }
     }
 
@@ -157,7 +155,6 @@ public class JsonbCloseCustomThreads {
         CustomExecutor executor = new CustomExecutor();
         executor.execute(() -> {
             String json = jsonb.toJson("Custom Executor");
-            System.out.println(json);
         });
     }
 
@@ -176,7 +173,6 @@ public class JsonbCloseCustomThreads {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.schedule(() -> {
             String json = jsonb.toJson("Scheduled Task");
-            System.out.println(json);
         }, 1, TimeUnit.SECONDS);
     }
 
@@ -187,7 +183,6 @@ public class JsonbCloseCustomThreads {
             @Override
             public void run() {
                 String json = jsonb.toJson("Timer Task");
-                System.out.println(json);
             }
         }, 1000);
     }
@@ -196,7 +191,6 @@ public class JsonbCloseCustomThreads {
     public static void useThreadsWithoutJsonb() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
-            System.out.println("No jsonb usage here");
             return "done";
         });
     }
@@ -231,7 +225,7 @@ public class JsonbCloseCustomThreads {
     public static void useParallelStreamWithJsonb() {
         java.util.Arrays.asList("a", "b", "c").parallelStream()
             .map(s -> jsonb.toJson(s))
-            .forEach(System.out::println);
+            .count(); // Just consume the stream without printing
     }
 
     // SCENARIO 3: CompletableFuture with jsonb (should warn)
@@ -245,7 +239,6 @@ public class JsonbCloseCustomThreads {
     public static void useThreadStartWithJsonb() {
         new Thread(() -> {
             String json = jsonb.toJson("Thread.start");
-            System.out.println(json);
         }).start();
     }
 
@@ -254,7 +247,6 @@ public class JsonbCloseCustomThreads {
         java.util.concurrent.Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             String json = jsonb.toJson("Executor.execute");
-            System.out.println(json);
         });
     }
 
@@ -263,7 +255,6 @@ public class JsonbCloseCustomThreads {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(() -> {
             String json = jsonb.toJson("Fixed Rate Task");
-            System.out.println(json);
         }, 0, 1, TimeUnit.SECONDS);
     }
 
@@ -272,7 +263,6 @@ public class JsonbCloseCustomThreads {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleWithFixedDelay(() -> {
             String json = jsonb.toJson("Fixed Delay Task");
-            System.out.println(json);
         }, 0, 1, TimeUnit.SECONDS);
     }
 
@@ -283,7 +273,6 @@ public class JsonbCloseCustomThreads {
             @Override
             public void run() {
                 String json = jsonb.toJson("Timer Schedule");
-                System.out.println(json);
             }
         }, 1000);
     }
@@ -295,7 +284,6 @@ public class JsonbCloseCustomThreads {
             @Override
             public void run() {
                 String json = jsonb.toJson("Timer Fixed Rate");
-                System.out.println(json);
             }
         }, 0, 1000);
     }
@@ -305,7 +293,6 @@ public class JsonbCloseCustomThreads {
         new Thread(() -> {
             new Thread(() -> {
                 String json = jsonb.toJson("Nested Thread");
-                System.out.println(json);
             }).start();
         }).start();
     }
@@ -332,7 +319,6 @@ public class JsonbCloseCustomThreads {
             @Override
             public void run() {
                 String json = jsonb.toJson("Anonymous Runnable");
-                System.out.println(json);
             }
         }).start();
     }
@@ -352,7 +338,6 @@ public class JsonbCloseCustomThreads {
     public static void useThreadConstructorWithJsonb() {
         Thread thread = new Thread(() -> {
             String json = jsonb.toJson("Thread Constructor");
-            System.out.println(json);
         });
         thread.start();
     }
@@ -382,7 +367,6 @@ public class JsonbCloseCustomThreads {
         Jsonb localJsonb = JsonbBuilder.create();
         new Thread(() -> {
             String json = localJsonb.toJson("Local Jsonb");
-            System.out.println(json);
         }).start();
         localJsonb.close();
     }
@@ -390,7 +374,6 @@ public class JsonbCloseCustomThreads {
     // SCENARIO 19: Thread without jsonb usage (should NOT warn)
     public static void useThreadWithoutJsonb() {
         new Thread(() -> {
-            System.out.println("No jsonb usage");
         }).start();
     }
 
@@ -398,7 +381,6 @@ public class JsonbCloseCustomThreads {
     public static void useExecutorWithoutJsonb() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
-            System.out.println("No jsonb usage");
             return "done";
         });
     }
@@ -406,7 +388,6 @@ public class JsonbCloseCustomThreads {
     // SCENARIO 21: Jsonb usage without threads (should NOT warn)
     public static void useJsonbWithoutThreads() {
         String json = jsonb.toJson("No threads");
-        System.out.println(json);
     }
 
     // SCENARIO 22: Thread with jsonb and close() in finally (should NOT warn)
@@ -414,7 +395,6 @@ public class JsonbCloseCustomThreads {
         try {
             new Thread(() -> {
                 String json = jsonb.toJson("Thread with finally");
-                System.out.println(json);
             }).start();
         } finally {
             jsonb.close();
@@ -425,7 +405,6 @@ public class JsonbCloseCustomThreads {
     public static void useThreadWithCloseAfter() throws Exception {
         new Thread(() -> {
             String json = jsonb.toJson("Thread with close after");
-            System.out.println(json);
         }).start();
         jsonb.close();
     }
@@ -465,7 +444,6 @@ public class JsonbCloseCustomThreads {
     public static void useDaemonThreadWithJsonb() {
         Thread thread = new Thread(() -> {
             String json = jsonb.toJson("Daemon Thread");
-            System.out.println(json);
         });
         thread.setDaemon(true);
         thread.start();
@@ -475,7 +453,6 @@ public class JsonbCloseCustomThreads {
         ThreadGroup group = new ThreadGroup("MyGroup");
         new Thread(group, () -> {
             String json = jsonb.toJson("Thread Group");
-            System.out.println(json);
         }).start();
         try (Jsonb localJsonb = JsonbBuilder.create()) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
