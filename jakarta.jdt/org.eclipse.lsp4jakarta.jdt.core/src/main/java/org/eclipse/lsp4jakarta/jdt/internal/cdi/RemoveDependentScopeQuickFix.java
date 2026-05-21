@@ -61,4 +61,3 @@ public class RemoveDependentScopeQuickFix extends RemoveAnnotationConflictQuickF
         return Messages.getMessage("RemoveDependentScope");
     }
 }
-// Made with Bob
