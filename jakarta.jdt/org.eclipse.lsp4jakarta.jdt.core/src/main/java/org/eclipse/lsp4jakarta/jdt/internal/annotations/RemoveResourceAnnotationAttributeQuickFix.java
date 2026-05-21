@@ -48,7 +48,7 @@ public class RemoveResourceAnnotationAttributeQuickFix extends RemoveAnnotationA
         return JakartaCodeActionId.RemoveResourceAnnotationAttribute;
     }
 
-    protected String getLabel() {
+    protected String getLabel(String annotation, String[] attributes) {
         return Messages.getMessage("RemoveRedundantAttribute", "type", "Resource");
     }
 }

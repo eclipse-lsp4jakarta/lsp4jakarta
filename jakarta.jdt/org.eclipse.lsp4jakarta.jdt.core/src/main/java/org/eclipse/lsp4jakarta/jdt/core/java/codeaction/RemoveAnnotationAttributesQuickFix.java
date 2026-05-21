@@ -102,7 +102,7 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
      * Creates code actions for field/method-level annotations.
      */
     private List<? extends CodeAction> getFieldMethodLevelCodeActions(JavaCodeActionContext context, Diagnostic diagnostic) {
-        return Collections.singletonList(createCodeAction(getLabel(), diagnostic, context, null));
+        return Collections.singletonList(createCodeAction(getLabel(null, null), diagnostic, context, null));
     }
 
     @Override
@@ -142,7 +142,8 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
         IBinding parentType = getBinding(context.getCoveringNode());
         String annotationName = annotationAttributesMap.keySet().iterator().next();
         List<String> attributes = annotationAttributesMap.get(annotationName);
-        ModifyAnnotationProposal proposal = new ModifyAnnotationProposal(getLabel(), context.getCompilationUnit(), context.getASTRoot(), parentType, 0, annotationName, Collections.emptyList(), attributes);
+        ModifyAnnotationProposal proposal = new ModifyAnnotationProposal(getLabel(null,
+                                                                                  null), context.getCompilationUnit(), context.getASTRoot(), parentType, 0, annotationName, Collections.emptyList(), attributes);
         setWorkspaceEdit(toResolve, context, proposal);
         return toResolve;
     }
@@ -258,18 +259,6 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
     }
 
     /**
-     * Returns the label for the code action (for field/method-level).
-     * Subclasses must implement this for field/method-level quick fixes.
-     *
-     * @return The label for the code action
-     */
-    protected String getLabel() {
-        String annotationName = annotationAttributesMap.keySet().iterator().next();
-        List<String> attributes = annotationAttributesMap.get(annotationName);
-        return getLabel(annotationName, attributes.toArray(new String[0]));
-    }
-
-    /**
      * Returns the label for the code action (for parameter-level).
      * Subclasses must implement this for parameter-level quick fixes.
      *
@@ -277,9 +266,7 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
      * @param attributes The attributes to remove
      * @return The label for the code action
      */
-    protected String getLabel(String annotation, String[] attributes) {
-        return getLabel();
-    }
+    protected abstract String getLabel(String annotation, String[] attributes);
 
     protected abstract ICodeActionId getCodeActionId();
 }
