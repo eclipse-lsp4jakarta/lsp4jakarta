@@ -154,12 +154,12 @@ public class ASTUtils {
      *         class-level element)
      */
     public static MethodDeclaration getEnclosingMethod(ASTNode node) {
-        ASTNode parent = node.getParent();
-        while (parent != null) {
-            if (parent instanceof MethodDeclaration) {
-                return (MethodDeclaration) parent;
+        ASTNode currentNode = node.getParent();
+        while (currentNode != null) {
+            if (currentNode instanceof MethodDeclaration) {
+                return (MethodDeclaration) currentNode;
             }
-            parent = parent.getParent();
+            currentNode = currentNode.getParent();
         }
         return null;
     }

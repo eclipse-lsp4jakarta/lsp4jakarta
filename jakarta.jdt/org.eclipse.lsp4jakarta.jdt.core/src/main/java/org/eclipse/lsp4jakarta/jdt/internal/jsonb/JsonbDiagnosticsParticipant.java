@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -80,6 +79,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IMethod[] methods;
         IAnnotation[] allAnnotations;
         boolean jsonbtypeParent = false; //Variable for checking parent class is JSONB type or not
+        boolean jsonbTypeClosable = false; //Variable for checking if class has Jsonb fields (for closeable checking)
         //Variables for determining invalid constructor in parent and child classes
         boolean parentHasValidNoArgsConstructor;
         boolean childHasValidNoArgsConstructor;
@@ -95,6 +95,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             hasConstructor = false;
             boolean isInnerClass = type.getDeclaringType() != null; //Variable to check if inner class or not
             jsonbtypeParent = false;
+            jsonbTypeClosable = false;
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -158,6 +159,20 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         }
                     });
                 }
+
+                // Check if field is of type jakarta.json.bind.Jsonb (for closeable checking)
+                if (!jsonbTypeClosable) {
+                    try {
+                        String fieldType = field.getTypeSignature();
+                        String resolvedType = org.eclipse.jdt.core.Signature.toString(fieldType);
+                        if (resolvedType.equals("Jsonb") || resolvedType.equals(Constants.JAKARTA_JSONB)) {
+                            jsonbTypeClosable = true;
+                        }
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.INFO, "Unable to resolve field type", e.getMessage());
+                    }
+                }
+
                 collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
                 collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
                 // Get unique property name values from the fields into a list uniquePropertyNames
@@ -177,16 +192,32 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             if (!isInnerClass && jsonbtypeParent) {
                 parentClassHasJsonbAnnotations = true;
             }
+            // Create WARNING diagnostics to determine the existence of close() method when threads are used.
+            // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
+            // Only check classes that have Jsonb fields or Jsonb annotations
+            if (jsonbTypeClosable || jsonbtypeParent) {
+                collectClosableDiagnostics(context, uri, diagnostics, unit);
+            }
         }
-        // Create WARNING diagnostics to determine the existence of close() method when threads are used.
-        // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
-        collectClosableDiagnostics(context, uri, diagnostics, unit);
         return diagnostics;
     }
 
     /**
      * Collects diagnostics for Jsonb closeable thread safety issues.
      * Detects methods that use thread sources without properly closing Jsonb instances.
+     *
+     * <p><b>Current Scope:</b> Method-level analysis only. Detects thread sources
+     * and close() calls within the same method.
+     *
+     * <p><b>Known Limitations:</b>
+     * <ul>
+     * <li>Does not track Jsonb instances stored in fields</li>
+     * <li>Does not perform inter-procedural analysis (close in different method)</li>
+     * <li>Does not track Jsonb instances passed as parameters</li>
+     * </ul>
+     *
+     * <p>These limitations are acceptable trade-offs for performance and complexity.
+     * Most thread safety issues occur within a single method scope.
      *
      * @param context the diagnostics context
      * @param uri the file URI
@@ -197,30 +228,60 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private void collectClosableDiagnostics(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
                                             ICompilationUnit unit) throws JavaModelException {
         List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
-        Map<MethodDeclaration, MethodAnalysis> analysisMap = new HashMap<>();
+        Map<MethodDeclaration, JsonbThreadSafetyAnalysis> analysisMap = new HashMap<>();
+
+        // Cache binding resolutions to avoid repeated expensive lookups
+        Map<MethodInvocation, IMethodBinding> bindingCache = new HashMap<>(allMethodInvocations.size());
+
+        // Pre-resolve all bindings in one pass for performance
+        for (MethodInvocation mi : allMethodInvocations) {
+            IMethodBinding binding = mi.resolveMethodBinding();
+            if (binding != null) {
+                bindingCache.put(mi, binding);
+            }
+        }
+
         // Analyze all method invocations and group by enclosing method
         for (MethodInvocation mi : allMethodInvocations) {
             MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(mi);
             if (enclosingMethod != null) {
-                MethodAnalysis analysis = analysisMap.computeIfAbsent(
-                                                                      enclosingMethod, k -> new MethodAnalysis());
+                JsonbThreadSafetyAnalysis analysis = analysisMap.computeIfAbsent(
+                                                                                 enclosingMethod, k -> new JsonbThreadSafetyAnalysis());
 
-                if (!analysis.hasClose && isCloseInvocation(mi)) {
-                    analysis.hasClose = true;
-                }
-                if (isThreadSourceInvocation(mi)) {
-                    analysis.threadSourceCount++;
+                IMethodBinding binding = bindingCache.get(mi);
+                if (binding != null) {
+                    ITypeBinding declaringClass = binding.getDeclaringClass();
+                    if (declaringClass != null) {
+                        String fqName = declaringClass.getQualifiedName();
+
+                        // Check if this method uses Jsonb
+                        if (!analysis.methodUsesJsonb && fqName.equals(Constants.JAKARTA_JSONB)) {
+                            analysis.methodUsesJsonb = true;
+                        }
+
+                        // Check if this is a close() invocation
+                        if (!analysis.hasClose && isCloseInvocation(mi, binding)) {
+                            analysis.hasClose = true;
+                        }
+
+                        // Check if this is a thread source invocation
+                        if (isThreadSourceInvocation(mi, binding)) {
+                            analysis.threadSourceCount++;
+                        }
+                    }
                 }
             }
         }
-        // Generate diagnostics for methods with thread sources but no close
-        for (Map.Entry<MethodDeclaration, MethodAnalysis> entry : analysisMap.entrySet()) {
+
+        // Generate diagnostics for methods that use Jsonb, have thread sources, but no close
+        for (Map.Entry<MethodDeclaration, JsonbThreadSafetyAnalysis> entry : analysisMap.entrySet()) {
             MethodDeclaration method = entry.getKey();
-            MethodAnalysis analysis = entry.getValue();
-            if (!analysis.hasClose && analysis.threadSourceCount > 0) {
+            JsonbThreadSafetyAnalysis analysis = entry.getValue();
+            if (analysis.methodUsesJsonb && !analysis.hasClose && analysis.threadSourceCount > 0) {
                 Range range = JDTUtils.toRange(unit, method.getName().getStartPosition(),
                                                method.getName().getLength());
-                diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety", method.getName().getIdentifier()),
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("ErrorMessageJsonbCloseableThreadSafety", method.getName().getIdentifier()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.JsonbCloseableThreadSafety,
                                                          DiagnosticSeverity.Warning));
             }
@@ -231,17 +292,21 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * Checks if a method invocation is a close() call on Jsonb or related closeable types.
      *
      * @param mi the method invocation to check
+     * @param binding the pre-resolved method binding (for performance)
      * @return true if this is a close invocation on Jsonb, Closeable, or AutoCloseable
      */
-    private boolean isCloseInvocation(MethodInvocation mi) {
+    private boolean isCloseInvocation(MethodInvocation mi, IMethodBinding binding) {
         String name = mi.getName().getIdentifier();
         if (!name.equals(Constants.CLOSE_METHOD)) {
             return false;
         }
-        String fqName = ASTUtils.getDeclaringClassName(mi);
-        if (fqName == null) {
+
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
             return false;
         }
+
+        String fqName = declaringClass.getQualifiedName();
         return fqName.equals(Constants.JAKARTA_JSONB) ||
                fqName.equals(Constants.CLOSABLE_CLOSE) ||
                fqName.equals(Constants.AUTOCLOSABLE_CLOSE);
@@ -249,17 +314,28 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
     /**
      * Checks if a method invocation is a thread source operation.
+     * Detects both known thread classes and custom implementations through type hierarchy.
      *
      * @param mi the method invocation to check
+     * @param binding the pre-resolved method binding (for performance)
      * @return true if this invocation creates or uses a thread source
      */
-    private boolean isThreadSourceInvocation(MethodInvocation mi) {
-        String fqName = ASTUtils.getDeclaringClassName(mi);
-        if (fqName == null) {
+    private boolean isThreadSourceInvocation(MethodInvocation mi, IMethodBinding binding) {
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
             return false;
         }
+
         String name = mi.getName().getIdentifier();
-        return isThreadSource(name, fqName);
+        String fqName = declaringClass.getQualifiedName();
+
+        // Check known thread methods and classes
+        if (isThreadSource(name, fqName)) {
+            return true;
+        }
+
+        // Check if declaring class extends/implements thread-related types
+        return isThreadRelatedType(declaringClass);
     }
 
     /**
@@ -272,6 +348,44 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private boolean isThreadSource(String methodName, String fqName) {
         return Constants.THREAD_METHODS.contains(methodName) &&
                Constants.THREAD_CLASSES.stream().anyMatch(fqName::contains);
+    }
+
+    /**
+     * Checks if a type is thread-related by examining its type hierarchy.
+     * Detects custom implementations of ExecutorService, Runnable, Callable, TimerTask, etc.
+     *
+     * @param type the type binding to check
+     * @return true if the type extends/implements thread-related interfaces
+     */
+    private boolean isThreadRelatedType(ITypeBinding type) {
+        if (type == null) {
+            return false;
+        }
+
+        // Check if implements thread-related interfaces
+        for (ITypeBinding iface : type.getInterfaces()) {
+            String ifaceName = iface.getQualifiedName();
+            if (Constants.THREAD_HIERARCHY_TYPES.contains(ifaceName)) {
+                return true;
+            }
+            // Recursively check interface hierarchy
+            if (isThreadRelatedType(iface)) {
+                return true;
+            }
+        }
+
+        // Check if extends thread-related classes (Thread, TimerTask, etc.)
+        ITypeBinding superclass = type.getSuperclass();
+        if (superclass != null) {
+            String superName = superclass.getQualifiedName();
+            if (Constants.THREAD_HIERARCHY_TYPES.contains(superName)) {
+                return true;
+            }
+            // Recursively check superclass hierarchy
+            return isThreadRelatedType(superclass);
+        }
+
+        return false;
     }
 
     /**
