@@ -24,7 +24,6 @@ public class JsonbCloseInvalid {
 	        ThreadFactory factory = r -> new Thread(r, "custom-thread");
 	        Thread t = factory.newThread(() -> {
 	            String json = jsonb.toJson("ThreadFactory example");
-	            System.out.println(json);
 	        });
 	        t.start();
 	}
@@ -37,13 +36,11 @@ public class JsonbCloseInvalid {
 	private static void useCompletableFuture() throws Exception {
 	        CompletableFuture.runAsync(() -> {
 	            String json = jsonb.toJson("CompletableFuture example");
-	            System.out.println(json);
 	        });
 	}
 	private static void useThreadDirect() throws Exception {
         Thread t = new Thread(() -> {
             String json = jsonb.toJson("Direct Thread example");
-            System.out.println(json);
         });
         t.start();
     }
@@ -53,7 +50,6 @@ public class JsonbCloseInvalid {
             @Override
             public void run() {
                 String json = jsonb.toJson("Timer example");
-                System.out.println(json);
             }
         }, 1000);
     }
@@ -61,14 +57,12 @@ public class JsonbCloseInvalid {
         // Multiple operations with the same instance
         for (int i = 0; i < 5; i++) {
             String json = jsonb.toJson(new Person("Person" + i, 20 + i));
-            System.out.println(json);
         }
         // No close() - instance can be reused or garbage collected naturally
     }
 	public static void singleThreadedWithClose() throws Exception {
         try {
             String json = jsonb.toJson(new Person("Jane", 25));
-            System.out.println(json);
         } finally {
             // VALID: No threads, so close() is safe
             jsonb.close();
@@ -82,7 +76,6 @@ public class JsonbCloseInvalid {
             final int taskNum = i;
             executor.submit(() -> {
                 String json = jsonb.toJson(new Person("Person" + taskNum, 20 + taskNum));
-                System.out.println(json);
             });
         }
         jsonb.close();
