@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.annotations;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationAttributesQuickFix;
