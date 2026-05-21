@@ -66,29 +66,30 @@ public class MultipleObserverParamsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, twoObserves, observesAndObservesAsync, threeObserves);
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, twoObserves);
-        TextEdit te1 = te(15, 35, 15, 45, "");
-        CodeAction ca1 = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", twoObserves, te1);
-        TextEdit te2 = te(15, 60, 15, 70, "");
-        CodeAction ca2 = ca(uri, "Remove the '@Observes' modifier from parameter 'event2'", twoObserves, te2);
+        JakartaJavaCodeActionParams twoObservesCodeActionParams = createCodeActionParams(uri, twoObserves);
+        TextEdit removeEvent1ObservesEdit = te(15, 35, 15, 45, "");
+        CodeAction removeTwoObservesEvent1Action = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", twoObserves, removeEvent1ObservesEdit);
+        TextEdit removeEvent2ObservesEdit = te(15, 60, 15, 70, "");
+        CodeAction removeTwoObservesEvent2Action = ca(uri, "Remove the '@Observes' modifier from parameter 'event2'", twoObserves, removeEvent2ObservesEdit);
 
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
+        assertJavaCodeAction(twoObservesCodeActionParams, IJDT_UTILS, removeTwoObservesEvent1Action, removeTwoObservesEvent2Action);
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, observesAndObservesAsync);
-        TextEdit te3 = te(19, 48, 19, 58, "");
-        CodeAction ca3 = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", observesAndObservesAsync, te3);
-        TextEdit te4 = te(19, 73, 19, 88, "");
-        CodeAction ca4 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event2'", observesAndObservesAsync, te4);
+        TextEdit removeEvent1ObservesEdit2 = te(19, 48, 19, 58, "");
+        CodeAction removeMixedObservesEvent1Action = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", observesAndObservesAsync, removeEvent1ObservesEdit2);
+        TextEdit removeEvent2ObservesAsyncEdit = te(19, 73, 19, 88, "");
+        CodeAction removeMixedObservesAsyncEvent2Action = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event2'", observesAndObservesAsync,
+                                                             removeEvent2ObservesAsyncEdit);
 
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeMixedObservesEvent1Action, removeMixedObservesAsyncEvent2Action);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, threeObserves);
-        TextEdit te5 = te(23, 37, 23, 47, "");
-        CodeAction ca5 = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", threeObserves, te5);
-        TextEdit te6 = te(23, 62, 23, 77, "");
-        CodeAction ca6 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event2'", threeObserves, te6);
-        TextEdit te7 = te(23, 92, 23, 107, "");
-        CodeAction ca7 = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event3'", threeObserves, te7);
+        TextEdit removeEvent1ObservesEdit3 = te(23, 37, 23, 47, "");
+        CodeAction removeThreeObservesEvent1Action = ca(uri, "Remove the '@Observes' modifier from parameter 'event1'", threeObserves, removeEvent1ObservesEdit3);
+        TextEdit removeEvent2ObservesAsyncEdit2 = te(23, 62, 23, 77, "");
+        CodeAction removeThreeObservesAsyncEvent2Action = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event2'", threeObserves, removeEvent2ObservesAsyncEdit2);
+        TextEdit removeEvent3ObservesAsyncEdit = te(23, 92, 23, 107, "");
+        CodeAction removeThreeObservesAsyncEvent3Action = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event3'", threeObserves, removeEvent3ObservesAsyncEdit);
 
-        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca5, ca6, ca7);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeThreeObservesEvent1Action, removeThreeObservesAsyncEvent2Action, removeThreeObservesAsyncEvent3Action);
     }
 }
