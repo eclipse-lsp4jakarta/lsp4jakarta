@@ -12,6 +12,10 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.QualifiedName;
@@ -28,7 +32,14 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 public class RemoveNotifyObserverAttributeQuickFix extends RemoveAnnotationAttributesQuickFix {
 
     public RemoveNotifyObserverAttributeQuickFix() {
-        super(new String[] { Constants.OBSERVES_FQ_NAME, Constants.OBSERVES_ASYNC_FQ_NAME }, "notifyObserver");
+        super(createAnnotationAttributesMap(), true);
+    }
+
+    private static Map<String, List<String>> createAnnotationAttributesMap() {
+        Map<String, List<String>> map = new HashMap<>();
+        map.put(Constants.OBSERVES_FQ_NAME, List.of("notifyObserver"));
+        map.put(Constants.OBSERVES_ASYNC_FQ_NAME, List.of("notifyObserver"));
+        return map;
     }
 
     @Override
