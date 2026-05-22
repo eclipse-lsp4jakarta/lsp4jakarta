@@ -31,7 +31,12 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidProducerMethodParamAnnotation,
     InvalidInjectAnnotatedMethodParamAnnotation,
     InvalidInjectAnnotationOnMultipleMethodParams,
-    InvalidObservesObservesAsyncMethodParams;
+    InvalidObservesObservesAsyncMethodParams,
+    InvalidInterceptorOrDecoratorWithObserverMethod,
+    InvalidDependentScopeWithConditionalObserver,
+    InvalidSingletonSessionBeanScope,
+    InvalidMultipleObserverParams,
+    InvalidStatelessSessionBeanScope;
 
     /**
      * {@inheritDoc}

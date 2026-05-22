@@ -397,4 +397,54 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
     }
+
+    @Test
+    public void JsonbNonPublicStaticNestedClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbStaticNestedClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic for private static nested class SubChild
+        // Note: protected is valid according to spec, so only private and package-private should be flagged
+        Diagnostic privateClassDiagnostic = d(50, 25, 33,
+                                              "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
+
+        // Diagnostic for package-private (default) static nested class PackagePrivateChild
+        Diagnostic packagePrivateClassDiagnostic = d(88, 17, 36,
+                                                     "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
+                                                     DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
+
+        // Test code actions for private static nested class
+        // Note: ModifyModifiersProposal only replaces the visibility modifier, so "private " becomes "public " or "protected " (static remains)
+        JakartaJavaCodeActionParams privateClassCodeActionParams = createCodeActionParams(uri, privateClassDiagnostic);
+        TextEdit privateClassTextEditPublic = te(50, 4, 50, 12, "public ");
+        CodeAction privateClassCodeActionPublic = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEditPublic);
+
+        TextEdit privateClassTextEditProtected = te(50, 4, 50, 12, "protected ");
+        CodeAction privateClassCodeActionProtected = ca(uri, "Change modifier to protected", privateClassDiagnostic, privateClassTextEditProtected);
+
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeActionProtected, privateClassCodeActionPublic);
+
+        // Test code actions for package-private static nested class
+        // Note: For package-private, ModifyModifiersProposal inserts "public " or "protected " before "static"
+        JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
+        TextEdit packagePrivateClassTextEditPublic = te(88, 4, 88, 4, "public ");
+        CodeAction packagePrivateClassCodeActionPublic = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEditPublic);
+
+        TextEdit packagePrivateClassTextEditProtected = te(88, 4, 88, 4, "protected ");
+        CodeAction packagePrivateClassCodeActionProtected = ca(uri, "Change modifier to protected", packagePrivateClassDiagnostic, packagePrivateClassTextEditProtected);
+
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeActionProtected, packagePrivateClassCodeActionPublic);
+    }
 }

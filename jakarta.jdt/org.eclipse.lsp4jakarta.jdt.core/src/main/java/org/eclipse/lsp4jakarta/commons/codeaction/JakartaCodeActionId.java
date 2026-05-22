@@ -33,6 +33,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAllParameters,
     RemoveAnnotationPreDestroy,
     RemoveAnnotationPostConstruct,
+    RemoveAnnotationResource,
+    RemoveResourceAnnotationAttribute,
     RemoveCheckedExceptions,
     AnnotationRemoveStaticModifier,
     InsertSlashAnnotationValueAttribute,
@@ -48,6 +50,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     JSONBRemoveJsonbCreatorAnnotation,
     JSONBRemoveJsonbTransientAnnotation,
     JSONBRemoveAllButJsonbTransientAnnotation,
+    JSONBChangeModifierToPublic,
+    JSONBChangeModifierToProtected,
     // Persistence
     PersistenceRemoveFinalModifier,
     PersistenceRemoveMapKeyAnnotation,
@@ -76,7 +80,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
-    CDIReplaceScopeAnnotations;
+    CDIReplaceScopeAnnotations,
+    CDIRemoveSingletonAnnotation,
+    CDIRemoveStatelessAnnotation;
 
     @Override
     public String getId() {
