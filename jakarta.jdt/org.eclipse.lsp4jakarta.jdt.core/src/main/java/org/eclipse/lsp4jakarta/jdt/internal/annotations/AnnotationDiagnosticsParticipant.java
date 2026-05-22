@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -47,7 +48,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-
+import org.eclipse.lsp4jakarta.commons.utils.InterModuleCommonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
@@ -139,6 +140,9 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 // process Types? (class declarations)
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.GENERATED_FQ_NAME)) {
                     for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+                        if ("value".equals(pair.getMemberName())) {
+                            validateGeneratedName(annotation, pair, context, diagnostics);
+                        }
                         // If date element exists and is non-empty, it must follow ISO 8601 format.
                         if (pair.getMemberName().equals("date")) {
                             if (pair.getValue() instanceof String) {
@@ -248,71 +252,76 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.POST_CONSTRUCT_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
-                        if (checkedExceptions.size() > 0) {
-                            String diagnosticMessage = Messages.getMessage(
-                                                                           "MethodMustNotThrow", "@PostConstruct");
-                            diagnostics.add(
-                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
-                                                                     ErrorCode.PostConstructException,
-                                                                     DiagnosticSeverity.Error));
+                        //Checks if @PostConstruct is not used in Interceptor class
+                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                            Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                            List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                            if (checkedExceptions.size() > 0) {
+                                String diagnosticMessage = Messages.getMessage(
+                                                                               "MethodMustNotThrow", "@PostConstruct");
+                                diagnostics.add(
+                                                context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
+                                                                         ErrorCode.PostConstructException,
+                                                                         DiagnosticSeverity.Error));
+                            }
+
+                            if (method.getNumberOfParameters() != 0) {
+
+                                String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
+                                                                               "@PostConstruct");
+                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         ErrorCode.PostConstructParams,
+                                                                         DiagnosticSeverity.Error));
+                            }
+
+                            if (!method.getReturnType().equals("V")) {
+                                String diagnosticMessage = Messages.getMessage("MethodMustBeVoid",
+                                                                               "@PostConstruct");
+                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         ErrorCode.PostConstructReturnType,
+                                                                         DiagnosticSeverity.Error));
+                            }
                         }
-
-                        if (method.getNumberOfParameters() != 0) {
-
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
-                                                                           "@PostConstruct");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PostConstructParams,
-                                                                     DiagnosticSeverity.Error));
-                        }
-
-                        if (!method.getReturnType().equals("V")) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustBeVoid",
-                                                                           "@PostConstruct");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PostConstructReturnType,
-                                                                     DiagnosticSeverity.Error));
-                        }
-
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, annotation,
                                                                Constants.PRE_DESTROY_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
-                        if (checkedExceptions.size() > 0) {
-                            String diagnosticMessage = Messages.getMessage(
-                                                                           "MethodMustNotThrow", "@PreDestroy");
-                            diagnostics.add(
-                                            context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
-                                                                     ErrorCode.PreDestroyException,
-                                                                     DiagnosticSeverity.Error));
-                        }
-                        if (method.getNumberOfParameters() != 0) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
-                                                                           "@PreDestroy");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PreDestroyParams,
-                                                                     DiagnosticSeverity.Error));
-                        }
+                        //Checks if @PreDestroy is not used in Interceptor class
+                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                            Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                            List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
+                            if (checkedExceptions.size() > 0) {
+                                String diagnosticMessage = Messages.getMessage(
+                                                                               "MethodMustNotThrow", "@PreDestroy");
+                                diagnostics.add(
+                                                context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         (JsonArray) (new Gson().toJsonTree(checkedExceptions)),
+                                                                         ErrorCode.PreDestroyException,
+                                                                         DiagnosticSeverity.Error));
+                            }
+                            if (method.getNumberOfParameters() != 0) {
+                                String diagnosticMessage = Messages.getMessage("MethodMustNotHaveParameters",
+                                                                               "@PreDestroy");
+                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         ErrorCode.PreDestroyParams,
+                                                                         DiagnosticSeverity.Error));
+                            }
 
-                        if (Flags.isStatic(method.getFlags())) {
-                            String diagnosticMessage = Messages.getMessage("MethodMustNotBeStatic",
-                                                                           "@PreDestroy");
-                            diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     ErrorCode.PreDestroyStatic,
-                                                                     DiagnosticSeverity.Error));
+                            if (Flags.isStatic(method.getFlags())) {
+                                String diagnosticMessage = Messages.getMessage("MethodMustNotBeStatic",
+                                                                               "@PreDestroy");
+                                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage, methodRange,
+                                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                                         ErrorCode.PreDestroyStatic,
+                                                                         DiagnosticSeverity.Error));
+                            }
                         }
                     }
                 }
@@ -586,6 +595,58 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return null;
+    }
+
+    /**
+     * Validates the 'value' attribute of the @Generated annotation.
+     *
+     * @param annotation
+     * @param pair
+     * @param context
+     * @param diagnostics
+     * @throws JavaModelException
+     */
+    private void validateGeneratedName(IAnnotation annotation, IMemberValuePair pair, JavaDiagnosticsContext context,
+                                       List<Diagnostic> diagnostics) throws JavaModelException {
+        Object val = pair.getValue();
+        if (val instanceof String) {
+            validateGeneratedName((String) val, annotation, context, diagnostics);
+        } else if (val instanceof String[]) {
+            for (String strVal : (String[]) val) {
+                validateGeneratedName(strVal, annotation, context, diagnostics);
+            }
+        }
+    }
+
+    /**
+     * validateGeneratedName
+     * Validates a single generator name value from the @Generated annotation.
+     *
+     * @param name
+     * @param annotation
+     * @param context
+     * @param diagnostics
+     * @return true if the name is valid, false otherwise
+     * @throws JavaModelException
+     */
+    private void validateGeneratedName(String name, IAnnotation annotation, JavaDiagnosticsContext context,
+                                       List<Diagnostic> diagnostics) throws JavaModelException {
+        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+
+        // Check for null or empty (including whitespace-only strings)
+        if (StringUtils.isBlank(name)) {
+            String diagnosticMessage = Messages.getMessage("GeneratedValueCannotBeEmpty", "@Generated", "value");
+            diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.GeneratedValueEmpty,
+                                                     DiagnosticSeverity.Error));
+        } else if (!name.matches(Constants.GENERATED_NAME_REGEX)) {
+            String diagnosticMessage = Messages.getMessage("GeneratedValueMustBeValidIdentifier", "@Generated", "value");
+            diagnostics.add(context.createDiagnostic(context.getUri(), diagnosticMessage, annotationRange,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.GeneratedValueInvalidFormat,
+                                                     DiagnosticSeverity.Warning));
+        }
     }
 
 }

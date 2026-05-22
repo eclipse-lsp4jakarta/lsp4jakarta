@@ -83,6 +83,24 @@ public class DiagnosticUtils {
     }
 
     /**
+     * Return true if any of the annotation in the array matches the given annotationFQName
+     *
+     * @param unit
+     * @param annotations
+     * @param annotationFQName
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isMatchedAnnotation(ICompilationUnit unit, IAnnotation[] annotations, String annotationFQName) throws JavaModelException {
+        for (IAnnotation annotation : annotations) {
+            if (isMatchedAnnotation(unit, annotation, annotationFQName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns true if the java element name matches the given fully qualified java
      * element name and false otherwise.
      *
@@ -430,4 +448,24 @@ public class DiagnosticUtils {
         return errorCodes;
     }
 
+    /**
+     * getAnnotationMemberValue
+     * Get an annotation member value with type casting.
+     *
+     * @param annotation the annotation
+     * @param memberName the member/attribute name
+     * @param type the expected type class
+     * @return the member value cast to the specified type, or null if not found or type mismatch
+     * @throws JavaModelException if there's an error accessing the annotation
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
+        for (var pair : annotation.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object value = pair.getValue();
+                return type.isInstance(value) ? (T) value : null;
+            }
+        }
+        return null;
+    }
 }

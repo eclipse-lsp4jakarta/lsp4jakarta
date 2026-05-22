@@ -50,11 +50,11 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d1 = d(16, 32, 42,
+        Diagnostic d1 = d(21, 32, 42,
                           "@MapKeyClass and @MapKey annotations cannot be used on the same method.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameMethod");
 
-        Diagnostic d2 = d(11, 25, 32,
+        Diagnostic d2 = d(16, 25, 32,
                           "@MapKeyClass and @MapKey annotations cannot be used on the same field or property.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyAnnotationsOnSameField");
 
@@ -62,8 +62,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
 
-        TextEdit te1 = te(15, 4, 16, 4, "");
-        TextEdit te2 = te(14, 4, 15, 4, "");
+        TextEdit te1 = te(20, 4, 21, 4, "");
+        TextEdit te2 = te(19, 4, 20, 4, "");
         CodeAction ca1 = ca(uri, "Remove @MapKeyClass", d1, te1);
         CodeAction ca2 = ca(uri, "Remove @MapKey", d1, te2);
 
@@ -71,8 +71,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
 
-        TextEdit te3 = te(9, 13, 10, 27, "");
-        TextEdit te4 = te(9, 4, 10, 4, "");
+        TextEdit te3 = te(14, 13, 15, 27, "");
+        TextEdit te4 = te(14, 4, 15, 4, "");
         CodeAction ca3 = ca(uri, "Remove @MapKeyClass", d2, te3);
         CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);
 
@@ -91,21 +91,21 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d1 = d(12, 25, 30,
+        Diagnostic d1 = d(16, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-        Diagnostic d2 = d(12, 25, 30,
-                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-
-        Diagnostic d3 = d(16, 25, 30,
-                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
-                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
-        Diagnostic d4 = d(16, 25, 30,
+        Diagnostic d2 = d(16, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
 
-        Diagnostic d5 = d(20, 25, 30,
+        Diagnostic d3 = d(20, 25, 30,
+                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
+        Diagnostic d4 = d(20, 25, 30,
+                          "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
+                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
+
+        Diagnostic d5 = d(24, 25, 30,
                           "A field with multiple @MapKeyJoinColumn annotations must specify both the name and referencedColumnName attributes in the corresponding @MapKeyJoinColumn annotations.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFieldWithMultipleMPJCAnnotations");
 
@@ -113,21 +113,21 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(10, 4, 11, 23,
+        TextEdit te1 = te(14, 4, 15, 23,
                           "@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")\n\t@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")");
         CodeAction ca1 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation", d1, te1);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d3);
-        TextEdit te2 = te(14, 4, 15, 52,
+        TextEdit te2 = te(18, 4, 19, 52,
                           "@MapKeyJoinColumn(referencedColumnName = \"rcn2\", name = \"\")\n\t@MapKeyJoinColumn(name = \"n1\", referencedColumnName = \"\")");
         CodeAction ca2 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation", d3, te2);
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d5);
-        TextEdit te3 = te(18, 4, 19, 23,
+        TextEdit te3 = te(22, 4, 23, 23,
                           "@MapKeyJoinColumn(name = \"\", referencedColumnName = \"\")\n\t@MapKeyJoinColumn(name = \"n1\", referencedColumnName = \"rcn1\")");
         CodeAction ca3 = ca(uri, "Insert the missing attributes to the @MapKeyJoinColumn annotation",
                             d5, te3);
@@ -146,7 +146,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d = d(5, 13, 37,
+        Diagnostic d = d(6, 13, 37,
                          "A class using the @Entity annotation must contain a public or protected constructor with no arguments.",
                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidConstructorInEntityAnnotatedClass");
 
@@ -154,9 +154,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d);
-        TextEdit te1 = te(7, 4, 7, 4, "protected EntityMissingConstructor() {\n\t}\n\n\t");
+        TextEdit te1 = te(8, 1, 8, 1, "protected EntityMissingConstructor() {\n\t}\n\n\t");
         CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te1);
-        TextEdit te2 = te(7, 4, 7, 4, "public EntityMissingConstructor() {\n\t}\n\n\t");
+        TextEdit te2 = te(8, 1, 8, 1, "public EntityMissingConstructor() {\n\t}\n\n\t");
         CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te2);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
@@ -174,27 +174,27 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // test diagnostics are present
-        Diagnostic d1 = d(10, 21, 28,
+        Diagnostic d1 = d(14, 21, 28,
                           "A class using the @Entity annotation cannot contain any methods that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFinalMethodInEntityAnnotatedClass");
         d1.setData(IJavaElement.METHOD);
 
-        Diagnostic d2 = d(7, 14, 15,
+        Diagnostic d2 = d(11, 14, 15,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d2.setData(IJavaElement.FIELD);
 
-        Diagnostic d3 = d(8, 17, 18,
+        Diagnostic d3 = d(12, 17, 18,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d3.setData(IJavaElement.FIELD);
 
-        Diagnostic d4 = d(8, 30, 31,
+        Diagnostic d4 = d(12, 30, 31,
                           "A class using the @Entity annotation cannot contain any persistent instance variables that are declared final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidPersistentFieldInEntityAnnotatedClass");
         d4.setData(IJavaElement.FIELD);
 
-        Diagnostic d5 = d(5, 19, 33,
+        Diagnostic d5 = d(6, 19, 33,
                           "A class using the @Entity annotation must not be final.",
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidFinalModifierOnEntityAnnotatedClass");
         d5.setData(IJavaElement.TYPE);
@@ -203,31 +203,31 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(10, 10, 10, 16, "");
+        TextEdit te1 = te(14, 10, 14, 16, "");
         CodeAction ca1 = ca(uri, "Remove the 'final' modifier", d1, te1);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit te2 = te(7, 4, 7, 10, "");
+        TextEdit te2 = te(11, 4, 11, 10, "");
         CodeAction ca2 = ca(uri, "Remove the 'final' modifier", d2, te2);
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
-        TextEdit te3 = te(8, 4, 8, 10, "");
+        TextEdit te3 = te(12, 4, 12, 10, "");
         CodeAction ca3 = ca(uri, "Remove the 'final' modifier", d3, te3);
 
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca3);
 
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d4);
-        TextEdit te4 = te(8, 4, 8, 10, "");
+        TextEdit te4 = te(12, 4, 12, 10, "");
         CodeAction ca4 = ca(uri, "Remove the 'final' modifier", d4, te4);
 
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca4);
 
         JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
-        TextEdit te5 = te(5, 6, 5, 12, "");
+        TextEdit te5 = te(6, 6, 6, 12, "");
         CodeAction ca5 = ca(uri, "Remove the 'final' modifier", d5, te5);
 
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca5);
@@ -297,6 +297,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 10, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -315,6 +323,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 12, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -333,6 +349,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(13, 11, 13, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
     }
 
     @Test
@@ -351,6 +374,185 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(15, 11, 15, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
+    }
+
+    @Test
+    public void testMissingPrimaryKey() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMissingPrimaryKey.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d = d(5, 13, 36,
+                         "The class EntityMissingPrimaryKey annotated with @Entity must define a primary key using @Id or @EmbeddedId.",
+                         DiagnosticSeverity.Error, "jakarta-persistence", "MissingPrimaryKey");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+    }
+
+    @Test
+    public void testEntityWithEmbeddedId() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithEmbeddedId.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity with @EmbeddedId
+        // This confirms that @EmbeddedId is correctly recognized as a primary key
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testEntityWithIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity with @Id on getter method
+        // This confirms that @Id on getter methods is correctly recognized as a primary key
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testEntityWithEmbeddedIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithEmbeddedIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity with @EmbeddedId on getter method
+        // This confirms that @EmbeddedId on getter methods is correctly recognized as a primary key
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testEntityWithMappedSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithMappedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity that inherits @Id from @MappedSuperclass
+        // This confirms that primary keys in @MappedSuperclass are correctly recognized
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testEntityWithMappedSuperclassIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityWithMappedSuperclassIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for an entity that inherits @Id on getter from @MappedSuperclass
+        // This confirms that primary keys on getter methods in @MappedSuperclass are correctly recognized
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testDuplicateVersionInClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionInClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic duplicateVersionD1 = d(10, 16, 24,
+                                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic duplicateVersionD2 = d(13, 16, 24,
+                                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateVersionD1, duplicateVersionD2);
+    }
+
+    @Test
+    public void testVersionInHierarchy() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChild.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic versionInHierarchyD1 = d(10, 16, 28,
+                                            "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyD1);
+    }
+
+    @Test
+    public void testDuplicateVersionOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionOnMethods.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic duplicateVersionOnMethodsD1 = d(19, 15, 26,
+                                                   "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic duplicateVersionOnMethodsD2 = d(28, 15, 26,
+                                                   "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateVersionOnMethodsD1, duplicateVersionOnMethodsD2);
+    }
+
+    @Test
+    public void testVersionInHierarchyOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChildMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic versionInHierarchyOnMethodsD1 = d(18, 15, 30,
+                                                     "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyOnMethodsD1);
     }
 
 }
