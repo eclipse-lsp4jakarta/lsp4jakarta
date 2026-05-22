@@ -297,6 +297,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 10, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityIdDateMissingTemporal {\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -315,6 +323,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "MissingTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit dateMissingTemporalTE = te(5, 30, 12, 1,
+                                            "\nimport jakarta.persistence.Temporal;\nimport jakarta.persistence.TemporalType;\n\n@Entity\npublic class EntityPropertyIdDateMissingTemporal {\n\n	private Date pk;\n\n	@Temporal(value = TemporalType.DATE)\n	");
+        CodeAction dateMissingTemporalCA = ca(uri, "Insert @Temporal(value = TemporalType.DATE)", d1, dateMissingTemporalTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, dateMissingTemporalCA);
     }
 
     @Test
@@ -333,6 +349,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(13, 11, 13, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
     }
 
     @Test
@@ -351,6 +374,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidValueInTemporalAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1);
+
+        // test quick fix
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
+        TextEdit invalidTemporalTypeTE = te(15, 11, 15, 28, "TemporalType.DATE");
+        CodeAction invalidTemporalTypeCA = ca(uri, "Change @Temporal value to TemporalType.DATE", d1, invalidTemporalTypeTE);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, invalidTemporalTypeCA);
     }
 
     @Test
@@ -443,6 +473,86 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // Verify that NO diagnostics are produced for an entity that inherits @Id on getter from @MappedSuperclass
         // This confirms that primary keys on getter methods in @MappedSuperclass are correctly recognized
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testDuplicateVersionInClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionInClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic duplicateVersionD1 = d(10, 16, 24,
+                                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic duplicateVersionD2 = d(13, 16, 24,
+                                          "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateVersionD1, duplicateVersionD2);
+    }
+
+    @Test
+    public void testVersionInHierarchy() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChild.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic versionInHierarchyD1 = d(10, 16, 28,
+                                            "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyD1);
+    }
+
+    @Test
+    public void testDuplicateVersionOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/DuplicateVersionOnMethods.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic duplicateVersionOnMethodsD1 = d(19, 15, 26,
+                                                   "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        Diagnostic duplicateVersionOnMethodsD2 = d(28, 15, 26,
+                                                   "Multiple fields or properties are annotated with @Version. Only one @Version annotation is allowed per entity class.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateVersionOnMethodsD1, duplicateVersionOnMethodsD2);
+    }
+
+    @Test
+    public void testVersionInHierarchyOnMethods() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/VersionInHierarchyChildMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic versionInHierarchyOnMethodsD1 = d(18, 15, 30,
+                                                     "The @Version annotation is already present in the parent entity class. Only one @Version annotation is allowed in the entity hierarchy.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyOnMethodsD1);
     }
 
 }

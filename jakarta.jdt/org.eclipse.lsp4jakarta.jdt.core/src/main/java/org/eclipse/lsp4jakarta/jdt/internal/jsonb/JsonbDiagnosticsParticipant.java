@@ -74,19 +74,21 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IMethod[] methods;
         IAnnotation[] allAnnotations;
         boolean jsonbtypeParent = false; //Variable for checking parent class is JSONB type or not
-        boolean isInnerClass = false; //Variable to check if inner class or not
         //Variables for determining invalid constructor in parent and child classes
         boolean parentHasValidNoArgsConstructor;
         boolean childHasValidNoArgsConstructor;
         boolean missingParentNoArgsConstructor;
         boolean missingChildNoArgsConstructor;
         boolean hasConstructor; //To check for existence of explicit constructors
+        boolean parentClassHasJsonbAnnotations = false; // Track if parent class has JSON-B annotations
         for (IType type : types) {
             parentHasValidNoArgsConstructor = false;
             childHasValidNoArgsConstructor = false;
             missingParentNoArgsConstructor = false;
             missingChildNoArgsConstructor = false;
             hasConstructor = false;
+            boolean isInnerClass = type.getDeclaringType() != null; //Variable to check if inner class or not
+            jsonbtypeParent = false;
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -123,7 +125,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             //Changes to detect if Jsonb property names are not unique
             Set<String> propertyNames = new LinkedHashSet<String>();
             Set<String> uniquePropertyNames = new LinkedHashSet<String>();
-            isInnerClass = type.getDeclaringType() != null;
             //Checks whether parent class is JSONB type by checking class level annotations
             if (!isInnerClass) {
                 jsonbtypeParent = Arrays.stream(type.getAnnotations()).anyMatch(annotation -> {
@@ -134,6 +135,9 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         return false;
                     }
                 });
+            } else {
+                // For nested classes, check if parent has JSON-B annotations
+                jsonbtypeParent = parentClassHasJsonbAnnotations;
             }
             // fields
             for (IField field : type.getFields()) {
@@ -163,6 +167,10 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             //Generate Jsonb deseriazation diagnostics
             generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
                                                  missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
+            // Save parent class JSON-B status for nested classes
+            if (!isInnerClass && jsonbtypeParent) {
+                parentClassHasJsonbAnnotations = true;
+            }
         }
         return diagnostics;
     }
@@ -200,8 +208,22 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 deserializeErrCode = ErrorCode.InvalidJsonBNonStaticInnerClass;
                 createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
             }
-            if (isStaticInner && missingChildNoArgs)
+            // Check if static nested class is not public or protected (spec requires public or protected)
+            if (isStaticInner && jsonbtypeParent) {
+                int flags = type.getFlags();
+                // Flag if not public and not protected (covers private and package-private/default)
+                if (!Flags.isPublic(flags) && !Flags.isProtected(flags)) {
+                    deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNonPublicProtectedStaticNestedClass", type.getElementName());
+                    deserializeErrCode = ErrorCode.InvalidJsonBNonPublicProtectedStaticNestedClass;
+                    createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
+                }
+            }
+            // Check for missing no-args constructor in static nested class
+            if (isStaticInner && missingChildNoArgs) {
+                deSerializeMsg = Messages.getMessage("ErrorMessageJsonbNoArgConstructorMissing", type.getElementName());
+                deserializeErrCode = ErrorCode.InvalidJsonBNoArgsConstructorMissing;
                 createJsonbNoArgConstructorDiagnostics(context, uri, diagnostics, type, deSerializeMsg, deserializeErrCode);
+            }
         }
     }
 

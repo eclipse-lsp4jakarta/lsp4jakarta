@@ -43,6 +43,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
+import org.eclipse.lsp4jakarta.commons.utils.AnnotationValueExpressionUtil;
 
 /**
  *
@@ -428,8 +429,8 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                 // Returns the default AST {@link Expression} for an annotation attribute.
                 // If the attribute has a declared default, that is used. Otherwise, a
                 // custom default is created based on the attribute type.
-                Expression valueExpr = ModifyAnnotationProposalHelper.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(),
-                                                                                                annotationFqn);
+                Expression valueExpr = AnnotationValueExpressionUtil.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(),
+                                                                                               annotationFqn);
                 if (valueExpr != null) {
                     newMemberValuePair.setValue(valueExpr);
                 }

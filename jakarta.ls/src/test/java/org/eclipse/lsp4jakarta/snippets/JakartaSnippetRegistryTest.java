@@ -213,6 +213,19 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
+     * Jakarta Servlet - DataSourceDefinition snippet
+     */
+    @Test
+    public void dataSourceDefinitionSnippetTest() {
+        Optional<Snippet> dataSourceSnippet = findByPrefix("servlet_datasource_definition", registry);
+        assertTrue("servlet_datasource_definition Java snippet is not present in SnippetRegistry",
+                   dataSourceSnippet.isPresent());
+
+        snippetsContextTest(dataSourceSnippet, "jakarta.annotation.sql.DataSourceDefinition",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
+    /**
      * Jakarta Transactions snippets - tx_user_inject,
      * tx_user_jndi, @ Transactional
      */

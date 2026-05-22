@@ -33,7 +33,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyAnnotationsFieldNotFound,
     MissingPrimaryKey,
     MissingTemporalAnnotation,
-    InvalidValueInTemporalAnnotation;
+    InvalidValueInTemporalAnnotation,
+    DuplicateVersionAnnotationInClass,
+    DuplicateVersionAnnotationInHierarchy;
 
     /**
      * {@inheritDoc}
