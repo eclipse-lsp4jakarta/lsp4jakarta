@@ -78,21 +78,15 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                 // and is neither an empty String
                 // or a sequence of '/' prefixed tokens, a diagnostic highlighting the invalid
                 // argument is created.
-                try {
-                    String msg = Messages.getMessage("CreatePointerErrorMessage");
-                    Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                    diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidJsonCreatePointerTarget, DiagnosticSeverity.Error));
-                } catch (JavaModelException e) {
-                    JakartaCorePlugin.logException("Cannot calculate diagnostics", e);
-                }
+                String msg = Messages.getMessage("CreatePointerErrorMessage");
+                createDiagnostic(unit, diagnostics, context, uri, msg, ErrorCode.InvalidJsonCreatePointerTarget, arg);
             }
         }
 
         // Single pass to collect both JsonObjectBuilder and JsonArrayBuilder method invocations
         Map<JSONBuilderType, List<MethodInvocation>> builderInvocations = allMethodInvocations.stream().collect(Collectors.groupingBy(mi -> {
             try {
-                return isMatchedJsonObjectBuilder(unit, mi);
+                return getJsonBuilderType(unit, mi);
             } catch (JavaModelException e) {
                 return JSONBuilderType.UNKNOWN;
             }
@@ -101,11 +95,13 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
         List<MethodInvocation> createObjectBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.OBJECT, Collections.emptyList());
         List<MethodInvocation> createArrayBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.ARRAY, Collections.emptyList());
         //Used to create diagnostics for invalid JsonObjectBuilder add methods
-        createDiagnosticsForMethodInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
-                                              ErrorCode.InvalidJsonObjectBuilderKey);
+        createDiagnosticsForBuilderInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri,
+                                               Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
+                                               ErrorCode.InvalidJsonObjectBuilderKey);
         //Used to create diagnostics for invalid JsonArrayBuilder add methods
-        createDiagnosticsForMethodInvocations(unit, createArrayBuilderMethodInvocations, diagnostics, context, uri, Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
-                                              ErrorCode.InvalidJsonArrayBuilderValue);
+        createDiagnosticsForBuilderInvocations(unit, createArrayBuilderMethodInvocations, diagnostics, context, uri,
+                                               Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
+                                               ErrorCode.InvalidJsonArrayBuilderValue);
         return diagnostics;
     }
 
@@ -126,24 +122,40 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @param msg
      * @param errCode
      */
-    private void createDiagnosticsForMethodInvocations(ICompilationUnit unit, List<MethodInvocation> invocations, List<Diagnostic> diagnostics,
-                                                       JavaDiagnosticsContext context, String uri, String msg, IJavaErrorCode errCode) {
+    private void createDiagnosticsForBuilderInvocations(ICompilationUnit unit, List<MethodInvocation> invocations,
+                                                        List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                                        String uri, String msg, IJavaErrorCode errCode) {
         for (MethodInvocation methodIn : invocations) {
             if (!methodIn.arguments().isEmpty()) {
                 for (Object argObj : methodIn.arguments()) {
                     Expression arg = (Expression) argObj;
                     if (isInvalidNullArgument(arg)) {
-                        try {
-                            Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                            diagnostics.add(context.createDiagnostic(uri, msg,
-                                                                     range, Constants.DIAGNOSTIC_SOURCE, errCode,
-                                                                     DiagnosticSeverity.Error));
-                        } catch (JavaModelException e) {
-                            LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
-                        }
+                        createDiagnostic(unit, diagnostics, context, uri, msg, errCode, arg);
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Common method to create a diagnostic for an invalid argument
+     *
+     * @param unit
+     * @param diagnostics
+     * @param context
+     * @param uri
+     * @param msg
+     * @param errCode
+     * @param arg
+     */
+    private void createDiagnostic(ICompilationUnit unit, List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                  String uri, String msg, IJavaErrorCode errCode, Expression arg) {
+        try {
+            Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE, errCode,
+                                                     DiagnosticSeverity.Error));
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
         }
     }
 
@@ -163,10 +175,10 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      *
      * @param unit
      * @param mi
-     * @return JSONBuilderType
+     * @return enum JSONBuilderType
      * @throws JavaModelException
      */
-    private JSONBuilderType isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+    private JSONBuilderType getJsonBuilderType(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
         IMethodBinding binding = mi.resolveMethodBinding();
         if (!Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
             || binding == null) {
