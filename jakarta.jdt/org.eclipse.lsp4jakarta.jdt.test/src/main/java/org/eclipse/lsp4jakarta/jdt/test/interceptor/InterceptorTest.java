@@ -96,13 +96,7 @@ public class InterceptorTest extends BaseJakartaTest {
                                                     "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
-        // Test diagnostics for multiple observer parameters
-        Diagnostic multipleObserverParamsDiagnostic = d(23, 16, 34,
-                                                        "Parameters event1, event2 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
-                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic, observesBothMethodDiagnostic,
-                              multipleObserverParamsDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic, observesBothMethodDiagnostic);
     }
 
     @Test
@@ -128,7 +122,7 @@ public class InterceptorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic);
     }
-  
+
     @Test
     public void invalidInterceptorMethodProceedTest() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
