@@ -29,7 +29,7 @@ public class RemoveResourceAnnotationAttributeQuickFix extends RemoveAnnotationA
      * Constructor.
      */
     public RemoveResourceAnnotationAttributeQuickFix() {
-        super(Collections.singletonMap("jakarta.annotation.Resource", List.of("type")), false);
+        super(Collections.singletonMap(Constants.RESOURCE_FQ_NAME, List.of("type")), false);
     }
 
     /**
