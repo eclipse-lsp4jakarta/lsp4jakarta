@@ -86,7 +86,7 @@ public abstract class InsertModifierToNestedClassQuickFix implements IJavaCodeAc
     /**
      * {@inheritDoc}
      * Resolves a code action by inserting the appropriate modifier into a nested class matching
-     * the annotated field or method parameter type. 
+     * the annotated field or method parameter type.
      * Also, adds appropriate modifier to the nested class.
      */
     @Override

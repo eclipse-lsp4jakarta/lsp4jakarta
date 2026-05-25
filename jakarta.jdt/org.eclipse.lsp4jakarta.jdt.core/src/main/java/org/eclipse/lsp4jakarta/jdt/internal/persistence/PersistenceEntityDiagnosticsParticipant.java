@@ -100,8 +100,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
-                	
-                	// check @version annotation usage on methods
+
+                    // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
                     }
@@ -139,7 +139,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 // Go through the instance variables and make sure no instance vars are final
                 for (IField field : type.getFields()) {
 
-                	// check @version annotation usage on fields
+                    // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
                     }

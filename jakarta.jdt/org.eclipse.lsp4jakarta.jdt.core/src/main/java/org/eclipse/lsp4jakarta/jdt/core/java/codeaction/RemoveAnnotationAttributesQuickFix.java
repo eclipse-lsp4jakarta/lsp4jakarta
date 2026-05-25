@@ -140,6 +140,9 @@ public abstract class RemoveAnnotationAttributesQuickFix implements IJavaCodeAct
     private CodeAction resolveFieldMethodLevelCodeAction(JavaCodeActionResolveContext context) {
         CodeAction toResolve = context.getUnresolved();
         IBinding parentType = getBinding(context.getCoveringNode());
+        if (parentType == null) {
+            return toResolve;
+        }
         String annotationName = annotationAttributesMap.keySet().iterator().next();
         List<String> attributes = annotationAttributesMap.get(annotationName);
         ModifyAnnotationProposal proposal = new ModifyAnnotationProposal(getLabel(null,
