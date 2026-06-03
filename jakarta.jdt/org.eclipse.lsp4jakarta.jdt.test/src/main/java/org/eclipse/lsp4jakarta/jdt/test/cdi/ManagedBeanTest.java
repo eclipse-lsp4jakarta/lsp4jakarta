@@ -469,15 +469,11 @@ public class ManagedBeanTest extends BaseJakartaTest {
                                                                 "A CDI method must not have parameter(s): name, name1 annotated with @Observes and @ObservesAsync.",
                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObservesObservesAsyncMethodParams");
 
-        Diagnostic multipleObserverParams3 = d(58, 18, 52,
-                                               "Parameters name, name1 are annotated with @Observes or @ObservesAsync, but a method cannot contain more than one such parameter.",
-                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidMultipleObserverParams");
-
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, producesWithDisposes, producesWithObserves, producesWithObservesAsync,
                               producesWithDisposesAndObserves, disposerWithObserves, multipleObserverParams1, producesWithObservesAndObservesAsync,
                               producesWithDisposesAndObservesAsync, disposerWithObservesAsync, multipleObserverParams2, producesWithAllThreeAnnotations,
                               disposerWithObservesAndObservesAsync, producesObservesAndObservesAsyncOnSameParam, producesWithAllAnnotationsOnSameParam,
-                              disposerWithAllAnnotationsOnSameParam, observesAndObservesAsyncOnMultipleParams, multipleObserverParams3);
+                              disposerWithAllAnnotationsOnSameParam, observesAndObservesAsyncOnMultipleParams);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, producesWithDisposes);
 
@@ -599,5 +595,57 @@ public class ManagedBeanTest extends BaseJakartaTest {
                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDisposesAnnotationOnMultipleMethodParams");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+    }
+
+    @Test
+    public void dependentScopedConditionalObserver() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/DependentScopedConditionalObserver.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test case 1: @Dependent with conditional @Observes (should trigger diagnostic)
+        // Highlighting the @Observes annotation parameter
+        Diagnostic observesDiagnostic = d(12, 16, 30,
+                                          "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+
+        // Test case 2: @Dependent with conditional @ObservesAsync (should trigger diagnostic)
+        // Highlighting the @ObservesAsync annotation parameter
+        Diagnostic observesAsyncDiagnostic = d(21, 16, 30,
+                                               "Beans with scope @Dependent may not have conditional observer methods. Observer method 'observerMethod' sets notifyObserver to Reception.IF_EXISTS, which is not permitted for @Dependent scoped bean.",
+                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDependentScopeWithConditionalObserver");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesDiagnostic, observesAsyncDiagnostic);
+
+        // Test code actions for @Observes case
+        JakartaJavaCodeActionParams observesCodeActionParams = createCodeActionParams(uri, observesDiagnostic);
+
+        // The quickfix replaces the entire annotation with @Observes() (removes the attribute)
+        TextEdit removeNotifyObserverEdit1 = te(12, 31, 12, 78, "@Observes()");
+        TextEdit removeDependentEdit1 = te(9, 0, 10, 0, "");
+        TextEdit removeObservesEdit = te(12, 31, 12, 79, "");
+
+        CodeAction removeNotifyObserverAction1 = ca(uri, "Remove 'notifyObserver' attribute from @Observes", observesDiagnostic, removeNotifyObserverEdit1);
+        CodeAction removeDependentAction1 = ca(uri, "Remove @Dependent", observesDiagnostic, removeDependentEdit1);
+        CodeAction removeObservesAction = ca(uri, "Remove the '@Observes' modifier from parameter 'event'", observesDiagnostic, removeObservesEdit);
+
+        assertJavaCodeAction(observesCodeActionParams, IJDT_UTILS, removeNotifyObserverAction1, removeDependentAction1, removeObservesAction);
+
+        // Test code actions for @ObservesAsync case
+        JakartaJavaCodeActionParams observesAsyncCodeActionParams = createCodeActionParams(uri, observesAsyncDiagnostic);
+
+        // The quickfix replaces the entire annotation with @ObservesAsync() (removes the attribute)
+        TextEdit removeNotifyObserverEdit2 = te(21, 31, 21, 83, "@ObservesAsync()");
+        TextEdit removeDependentEdit2 = te(18, 0, 19, 0, "");
+        TextEdit removeObservesAsyncEdit = te(21, 31, 21, 84, "");
+
+        CodeAction removeNotifyObserverAction2 = ca(uri, "Remove 'notifyObserver' attribute from @ObservesAsync", observesAsyncDiagnostic, removeNotifyObserverEdit2);
+        CodeAction removeDependentAction2 = ca(uri, "Remove @Dependent", observesAsyncDiagnostic, removeDependentEdit2);
+        CodeAction removeObservesAsyncAction = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event'", observesAsyncDiagnostic, removeObservesAsyncEdit);
+
+        assertJavaCodeAction(observesAsyncCodeActionParams, IJDT_UTILS, removeNotifyObserverAction2, removeDependentAction2, removeObservesAsyncAction);
     }
 }

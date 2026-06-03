@@ -21,11 +21,11 @@ jobs:
           java-version: 17
       - name: Build LSP4Jakarta JDT LS Extension with Maven
         working-directory: ./jakarta.jdt
-        run: xvfb-run -a mvn -B install --file pom.xml
+        run: xvfb-run -a ./mvnw clean install -B --file pom.xml
       - name: Build LSP4Jakarta Language Server with Maven
         working-directory: ./jakarta.ls
-        run: mvn clean install --file pom.xml 
+        run: ./mvnw clean install -B --file pom.xml
       - name: Build LSP4Jakarta Eclipse client plug-in with Maven
         working-directory: ./jakarta.eclipse
-        run: xvfb-run -a mvn -B install --file pom.xml
+        run: xvfb-run -a ./mvnw clean install -B --file pom.xml
           

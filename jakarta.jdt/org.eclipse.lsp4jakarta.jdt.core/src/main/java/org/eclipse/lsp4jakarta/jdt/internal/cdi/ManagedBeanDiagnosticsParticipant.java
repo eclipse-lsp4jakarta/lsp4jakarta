@@ -14,11 +14,14 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -49,6 +52,9 @@ import com.google.gson.Gson;
  */
 public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(ManagedBeanDiagnosticsParticipant.class.getName());
+
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
@@ -65,6 +71,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         for (IType type : types) {
             String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
             List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations, scopeFQNames);
+            boolean interceptorOrDecorator = !DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations, new String[] {
+                                                                                                                               Constants.INTERCEPTOR_FQ_NAME,
+                                                                                                                               Constants.DECORATOR_FQ_NAME
+            }).isEmpty();
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
@@ -215,8 +225,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // 2. Multiple parameters where each has at least one of @Observes or @ObservesAsync
                 Set<String> conflictParams = new HashSet<>();
                 List<String> paramsWithObserverAnnotations = new ArrayList<>();
-
                 for (ILocalVariable param : method.getParameters()) {
+
                     String[] annotationQualifiedNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
                     String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
                     Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type, annotationQualifiedNames, conflictedParamAnnotations));
@@ -231,26 +241,44 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                         paramsWithObserverAnnotations.add(param.getElementName());
                     }
                 }
-
-                // Report error if a parameter has both annotations on it
-                if (!conflictParams.isEmpty()) {
+                if (interceptorOrDecorator && !paramsWithObserverAnnotations.isEmpty()) {
+                    Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidInterceptorOrDecoratorWithObserverMethod"),
+                                                             methodRange,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidInterceptorOrDecoratorWithObserverMethod,
+                                                             DiagnosticSeverity.Error));
+                } else if (!conflictParams.isEmpty()) {
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanObservesAndObservesAsyncParam", String.join(", ", conflictParams)), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidObservesObservesAsyncMethodParams, DiagnosticSeverity.Error));
-                }
-
-                // Report error if method has more than one parameter with observer annotations
-                // (even if each parameter has only one type of observer annotation)
-                if (paramsWithObserverAnnotations.size() > 1) {
+                } else if (paramsWithObserverAnnotations.size() > 1) {
+                    // Report error if method has more than one parameter with observer annotations
+                    // (even if each parameter has only one type of observer annotation)
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanMultipleObserverParams", String.join(", ", paramsWithObserverAnnotations)), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMultipleObserverParams, DiagnosticSeverity.Error));
-                }
+                } else if (isDependent && hasConditionalObserverAnnotation(type, method)) {
+                    // Check for conditional observer methods on @Dependent scoped beans
+                    // Beans with scope @Dependent may not have conditional observer methods.
+                    // If a bean with scope @Dependent has an observer method declared notifyObserver=IF_EXISTS,
+                    // the container automatically detects the problem and treats it as a definition error.
 
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(
+                                                             uri,
+                                                             Messages.getMessage("ManagedBeanDependentScopeConditionalObserver", method.getElementName()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             null,
+                                                             ErrorCode.InvalidDependentScopeWithConditionalObserver,
+                                                             DiagnosticSeverity.Error));
+                }
             }
 
             if (isManagedBean && constructorMethods.size() > 0) {
@@ -550,4 +578,53 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                && (!isDependent || hasMultipleScopes);
     }
 
+    /**
+     * isConditionalObserver
+     * Checks if the annotation is a conditional observer (notifyObserver=Reception.IF_EXISTS).
+     *
+     * @param type the type
+     * @param annotation the annotation to check
+     * @return true if the annotation is @Observes or @ObservesAsync with notifyObserver=Reception.IF_EXISTS
+     * @throws JavaModelException
+     */
+    private boolean isConditionalObserver(IType type, IAnnotation annotation) throws JavaModelException {
+        String matched = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                   new String[] { Constants.OBSERVES_FQ_NAME, Constants.OBSERVES_ASYNC_FQ_NAME });
+        if (null != matched) {
+            String notifyObserverValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "notifyObserver", String.class);
+            // Check for IF_EXISTS - can be "Reception.IF_EXISTS" or "jakarta.enterprise.event.Reception.IF_EXISTS"
+            // Use endsWith to match the enum value precisely
+            return notifyObserverValue != null && notifyObserverValue.endsWith("IF_EXISTS");
+        }
+        return false;
+    }
+
+    /**
+     * hasConditionalObserverAnnotation
+     * Checks if any parameter in the method has a conditional observer annotation.
+     *
+     * @param type the type
+     * @param method the method to check
+     * @return true if any parameter has a conditional observer annotation
+     */
+    private boolean hasConditionalObserverAnnotation(IType type, IMethod method) {
+        try {
+            return Arrays.stream(method.getParameters()).flatMap(param -> {
+                try {
+                    return Arrays.stream(param.getAnnotations());
+                } catch (JavaModelException e) {
+                    return Stream.empty();
+                }
+            }).anyMatch(annotation -> {
+                try {
+                    return isConditionalObserver(type, annotation);
+                } catch (JavaModelException e) {
+                    return false;
+                }
+            });
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occurred while checking ConditionalObserverAnnotation", e);
+            return false;
+        }
+    }
 }

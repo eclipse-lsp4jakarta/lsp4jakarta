@@ -211,5 +211,33 @@
 			"type": "jakarta.servlet.http.HttpServlet",
 			"contentType": "class"
 		}
+	},
+	"Jakarta Servlet - DataSourceDefinition": {
+		"prefix": "servlet_datasource_definition",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.annotation.sql.DataSourceDefinition;",
+			"",
+			"@DataSourceDefinition(",
+			"\tname = \"java:app/jdbc/${2:MyDS}\",",
+			"\tclassName = \"${3:org.h2.Driver}\",",
+			"\t// Option 1: Use url for complete JDBC connection string (remove Option 2 if using this)",
+			"\turl = \"${4:jdbc:h2:mem:test;DB_CLOSE_DELAY=-1}\",",
+			"\t// Option 2: Or use serverName and portNumber instead of url (remove Option 1 if using this)",
+			"\tserverName = \"${5:localhost}\",",
+			"\tportNumber = ${6:1527},",
+			"\tuser = \"${7:sa}\",",
+			"\tpassword = \"${8:secret}\"",
+			")",
+			"public class ${TM_FILENAME_BASE} {",
+			"\t// This class is used only for declaring the DataSource",
+			"}"
+		],
+		"description": "Define a DataSource using @DataSourceDefinition annotation",
+		"context": {
+			"type": "jakarta.annotation.sql.DataSourceDefinition",
+			"contentType": "class"
+		}
 	}
 }
