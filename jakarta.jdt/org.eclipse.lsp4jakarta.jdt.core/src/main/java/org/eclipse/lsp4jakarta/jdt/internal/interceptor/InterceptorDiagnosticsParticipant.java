@@ -16,9 +16,12 @@ package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
@@ -41,7 +44,10 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import org.eclipse.lsp4jakarta.jdt.internal.jsonb.ErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
@@ -65,7 +71,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
-                if (Flags.isAbstract(typeFlag)) {
+                boolean isAbstract = Flags.isAbstract(typeFlag);
+                // Check 1: Validate if class is abstract
+                if (isAbstract) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InvalidInterceptorAbstractClass", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorAnnotationOnAbstractClass, DiagnosticSeverity.Error));
@@ -82,9 +90,12 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  DiagnosticSeverity.Error));
                     }
                 }
+                for (IMethod method : type.getMethods()) {
+                    // Validate interceptor method modifiers
+                    validateInterceptorMethodModifiers(context, uri, diagnostics, type, method);
+                }
             }
         }
-
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
         //Used to get the list of method declarations for interceptor methods that doesn't use proceed method
         List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(methodDecl -> {
@@ -144,5 +155,135 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
         }
         return false;
+    }
+
+    /**
+     * Validates interceptor method modifiers and creates diagnostics for invalid modifiers.
+     * Checks for final, abstract, and static modifiers on interceptor methods.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param type the declaring type
+     * @param method the method to validate
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateInterceptorMethodModifiers(JavaDiagnosticsContext context, String uri,
+                                                    List<Diagnostic> diagnostics, IType type,
+                                                    IMethod method) throws JavaModelException {
+        List<String> interceptorAnnotations = getInterceptorMethodAnnotations(type, method);
+
+        if (interceptorAnnotations.isEmpty()) {
+            return;
+        }
+
+        int methodFlag = method.getFlags();
+        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+        String annotationNames = getSimpleAnnotationNames(interceptorAnnotations);
+        JsonArray annotationData = (JsonArray) new Gson().toJsonTree(interceptorAnnotations);
+        // Check for final modifier
+        if (Flags.isFinal(methodFlag)) {
+            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+                                           annotationData, "InvalidInterceptorMethodAnnotationFinalMethod",
+                                           ErrorCode.InvalidInterceptorMethodAnnotationOnFinalMethod,
+                                           DiagnosticSeverity.Error);
+        }
+        // Check for abstract modifier
+        if (Flags.isAbstract(methodFlag)) {
+            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+                                           annotationData, "InvalidInterceptorMethodAnnotationAbstractMethod",
+                                           ErrorCode.InvalidInterceptorMethodAnnotationOnAbstractMethod,
+                                           DiagnosticSeverity.Error);
+        }
+        // Check for static modifier
+        if (Flags.isStatic(methodFlag)) {
+            validateStaticModifier(context, uri, diagnostics, type, method, methodRange,
+                                   annotationNames, annotationData, interceptorAnnotations);
+        }
+    }
+
+    /**
+     * Gets the list of interceptor method annotations present on a method.
+     *
+     * @param type the declaring type
+     * @param method the method to check
+     * @return list of matched interceptor annotation FQ names
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private List<String> getInterceptorMethodAnnotations(IType type, IMethod method) throws JavaModelException {
+        return DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                          Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                          Constants.INTERCEPTOR_METHODS.toArray(String[]::new));
+    }
+
+    /**
+     * Validates static modifier on interceptor methods.
+     * Lifecycle callback methods get a warning, other interceptor methods get an error.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param type the declaring type
+     * @param method the method being validated
+     * @param methodRange the method name range
+     * @param annotationNames the simple annotation names
+     * @param annotationData the annotation data for the diagnostic
+     * @param interceptorAnnotations the full list of interceptor annotations
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateStaticModifier(JavaDiagnosticsContext context, String uri,
+                                        List<Diagnostic> diagnostics, IType type, IMethod method,
+                                        Range methodRange, String annotationNames,
+                                        JsonArray annotationData, List<String> interceptorAnnotations) throws JavaModelException {
+        boolean isLifecycleCallback = !DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                  Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                  Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS.toArray(String[]::new)).isEmpty();
+
+        if (isLifecycleCallback) {
+            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+                                           annotationData, "InvalidLifecycleCallbackMethodAnnotationStaticMethod",
+                                           ErrorCode.InvalidInterceptorMethodAnnotationOnStaticMethod,
+                                           DiagnosticSeverity.Warning);
+        } else {
+            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+                                           annotationData, "InvalidInterceptorMethodAnnotationStaticMethod",
+                                           ErrorCode.InvalidInterceptorMethodAnnotationOnStaticMethod,
+                                           DiagnosticSeverity.Error);
+        }
+    }
+
+    /**
+     * Creates a diagnostic for an invalid method modifier.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param range the range for the diagnostic
+     * @param annotationNames the simple annotation names for the message
+     * @param annotationData the annotation data
+     * @param messageKey the message key
+     * @param errorCode the error code
+     * @param severity the diagnostic severity
+     */
+    private void createMethodModifierDiagnostic(JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics, Range range,
+                                                String annotationNames, JsonArray annotationData,
+                                                String messageKey, ErrorCode errorCode,
+                                                DiagnosticSeverity severity) {
+        String message = Messages.getMessage(messageKey, annotationNames);
+        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                 annotationData, errorCode, severity));
+    }
+
+    /**
+     * Converts a list of fully qualified annotation names to simple names.
+     *
+     * @param annotations the list of FQ annotation names
+     * @return comma-separated string of simple annotation names
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
+        List<String> simpleAnnotationNames = annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.toList());
+        return String.join(", ", simpleAnnotationNames);
     }
 }
