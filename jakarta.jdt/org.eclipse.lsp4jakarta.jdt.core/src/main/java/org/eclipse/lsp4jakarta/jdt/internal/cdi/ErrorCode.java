@@ -36,7 +36,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidDependentScopeWithConditionalObserver,
     InvalidSingletonSessionBeanScope,
     InvalidMultipleObserverParams,
-    InvalidStatelessSessionBeanScope;
+    InvalidStatelessSessionBeanScope,
+    InvalidProducerFieldWithNamedAnnotation;
 
     /**
      * {@inheritDoc}

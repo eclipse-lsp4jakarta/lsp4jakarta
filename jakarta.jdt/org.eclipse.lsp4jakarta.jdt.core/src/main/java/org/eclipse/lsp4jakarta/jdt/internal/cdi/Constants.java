@@ -24,6 +24,7 @@ public class Constants {
     /* Annotation Constants */
     public static final String PRODUCES_FQ_NAME = "jakarta.enterprise.inject.Produces";
     public static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
+    public static final String NAMED_FQ_NAME = "jakarta.inject.Named";
     public static final String DISPOSES_FQ_NAME = "jakarta.enterprise.inject.Disposes";
     public static final String OBSERVES_FQ_NAME = "jakarta.enterprise.event.Observes";
     public static final String OBSERVES_ASYNC_FQ_NAME = "jakarta.enterprise.event.ObservesAsync";
