@@ -103,4 +103,11 @@ public class Constants {
     public final static String[] NUMERIC_AND_CHAR_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
                                                                     INTEGER_FQ, LONG_FQ, CHAR_SEQUENCE_FQ };
 
+    public final static String[] NON_CASCADABLE_TYPES = { STRING_FQ, CHAR_SEQUENCE_FQ, BIG_DECIMAL_FQ, BIG_INTEGER_FQ,
+                                                          DATE, CALENDAR, INSTANT, LOCAL_DATE,
+                                                          LOCAL_DATE_TIME, LOCAL_TIME, MONTH_DAY,
+                                                          OFFSET_DATE_TIME, OFFSET_TIME, YEAR,
+                                                          YEAR_MONTH, ZONED_DATE_TIME, HIJRAH_DATE,
+                                                          JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE };
+
 }

@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
 
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_FALSE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_TRUE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BOOLEAN_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.CHAR_SEQUENCE_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MAX;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MIN;
@@ -37,6 +36,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NON_CASCADABLE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PRIMITIVE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
@@ -184,12 +184,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             //The below block throws diagnostics if invalid element type is used with constraint annotations
             switch (matchedAnnotation) {
                 case ASSERT_FALSE, ASSERT_TRUE -> {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
-                                                                                      getDataTypeName(type),
-                                                                                      new String[] { BOOLEAN_FQ });
                     String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
 
-                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BOOLEAN)) {
+                    if (!type.equals(Signature.SIG_BOOLEAN) && !getDataTypeName(type).equals("Boolean")) {
                         Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
@@ -274,8 +271,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 case VALID -> {
                     if (!isCascadableType(declaringType, type)) {
-                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
-                                                              "InvalidValidAnnotation");
+                        String message = Messages.getMessage("InvalidValidAnnotation");
                         Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidValidAnnotationOnNonCascadableType,
@@ -373,13 +369,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         // Check against known non-cascadable types
-        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName,
-                                                                          new String[] { STRING_FQ, CHAR_SEQUENCE_FQ, Constants.BIG_DECIMAL_FQ, Constants.BIG_INTEGER_FQ,
-                                                                                         Constants.DATE, Constants.CALENDAR, Constants.INSTANT, Constants.LOCAL_DATE,
-                                                                                         Constants.LOCAL_DATE_TIME, Constants.LOCAL_TIME, Constants.MONTH_DAY,
-                                                                                         Constants.OFFSET_DATE_TIME, Constants.OFFSET_TIME, Constants.YEAR,
-                                                                                         Constants.YEAR_MONTH, Constants.ZONED_DATE_TIME, Constants.HIJRAH_DATE,
-                                                                                         Constants.JAPANESE_DATE, Constants.MINGUO_DATE, Constants.THAI_BUDDHIST_DATE });
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName, NON_CASCADABLE_TYPES);
 
         if (dataTypeFQName != null) {
             return false;
