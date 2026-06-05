@@ -323,10 +323,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             if (isManagedBean) {
-                boolean interceptorOrDecorator = !DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                             new String[] {
-                                                                                                            Constants.INTERCEPTOR_FQ_NAME,
-                                                                                                            Constants.DECORATOR_FQ_NAME }).isEmpty();
 
                 // Check if the class is a stateless session bean
                 boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
