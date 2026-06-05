@@ -61,6 +61,12 @@ public class Constants {
                                                                                        "jakarta.enterprise.context.ConversationScoped", "jakarta.enterprise.context.RequestScoped",
                                                                                        "jakarta.enterprise.context.SessionScoped", "jakarta.enterprise.context.NormalScope",
                                                                                        "jakarta.Interceptor", "jakarta.Decorator", "jakarta.enterprise.inject.Stereotype"));
+    // Scopes that are invalid for interceptors and decorators (they must use @Dependent only)
+    public static final String[] INVALID_INTERCEPTOR_DECORATOR_SCOPES = {
+                                                                          "jakarta.enterprise.context.ApplicationScoped",
+                                                                          "jakarta.enterprise.context.SessionScoped",
+                                                                          "jakarta.enterprise.context.ConversationScoped",
+                                                                          "jakarta.enterprise.context.RequestScoped" };
 
     public static final Set<String> INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS = Set.of(OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME);
 }

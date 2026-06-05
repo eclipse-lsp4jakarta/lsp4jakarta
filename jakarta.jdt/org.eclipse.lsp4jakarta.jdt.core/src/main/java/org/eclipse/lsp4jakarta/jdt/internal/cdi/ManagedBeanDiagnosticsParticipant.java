@@ -359,6 +359,18 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
+                // Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
+                // They should only use @Dependent scope
+                if (interceptorOrDecorator) {
+                    List<String> foundInvalidScopes = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                                 Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+                    if (!foundInvalidScopes.isEmpty()) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
+                    }
+                }
 
             }
 
