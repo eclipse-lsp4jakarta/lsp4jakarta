@@ -374,6 +374,41 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
             invalidParamsCheck(context, uri, unit, diagnostics, type, Constants.INJECT_FQ_NAME);
 
+            // Check for @Disposes in interceptors/decorators
+            // Interceptors and decorators cannot have disposer methods
+            if (interceptorOrDecorator) {
+                for (IMethod method : methods) {
+                    ILocalVariable[] params = method.getParameters();
+                    boolean hasDisposesParam = false;
+
+                    for (ILocalVariable param : params) {
+                        IAnnotation[] annotations = param.getAnnotations();
+                        for (IAnnotation annotation : annotations) {
+                            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                                 annotation.getElementName(),
+                                                                                                 Constants.INVALID_PRODUCER_PARAMS_FQ);
+                            if (Constants.DISPOSES_FQ_NAME.equals(matchedAnnotation)) {
+                                hasDisposesParam = true;
+                                break;
+                            }
+                        }
+                        if (hasDisposesParam) {
+                            break;
+                        }
+                    }
+
+                    if (hasDisposesParam) {
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod"),
+                                                                 methodRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+            }
+
             if (isManagedBean) {
 
                 // Produces and Disposes, Observes, ObservesAsync Annotations:
@@ -402,6 +437,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                                  Constants.INVALID_PRODUCER_PARAMS_FQ);
                             if (Constants.DISPOSES_FQ_NAME.equals(matchedAnnotation)) {
                                 numDisposes++;
+
                             } else if (Constants.OBSERVES_FQ_NAME.equals(matchedAnnotation)
                                        || Constants.OBSERVES_ASYNC_FQ_NAME.equals(matchedAnnotation)) {
                                 invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation.getElementName()));
