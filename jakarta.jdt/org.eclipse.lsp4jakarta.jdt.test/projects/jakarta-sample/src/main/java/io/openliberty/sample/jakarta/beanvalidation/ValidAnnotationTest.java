@@ -13,61 +13,150 @@
 package io.openliberty.sample.jakarta.beanvalidation;
 
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class ValidAnnotationTest {
-    
-    // Invalid cases - should trigger diagnostics
+
+    // ========== INVALID CASES - Non-cascadable types (should trigger diagnostics) ==========
+
+    // Primitive type
     @Valid
-    private int primitiveInt; // Error: primitive type
-    
+    private int primitiveIntField;
+
+    // Boxed types
     @Valid
-    private Integer boxedInteger; // Error: boxed type
-    
+    private Integer boxedIntegerField;
     @Valid
-    private String stringField; // Error: String type
-    
+    private Byte boxedByteField;
     @Valid
-    private Double boxedDouble; // Error: boxed type
-    
+    private Short boxedShortField;
     @Valid
-    private java.math.BigDecimal bigDecimal; // Error: BigDecimal
-    
-    // Valid cases - should NOT trigger diagnostics
+    private Long boxedLongField;
     @Valid
-    private Product product; // OK: complex object
-    
+    private Float boxedFloatField;
     @Valid
-    private List<Product> products; // OK: collection
-    
+    private Character boxedCharacterField;
     @Valid
-    private Product[] productArray; // OK: array
-    
+    private Boolean boxedBooleanField;
     @Valid
-    private Map<String, Product> productMap; // OK: map
-    
-    // Test on methods
+    private Double boxedDoubleField;
+
+    // String
     @Valid
-    public int getInvalidMethod() { // Error: returns primitive
+    private String stringField;
+
+    // BigDecimal and BigInteger
+    @Valid
+    private BigInteger bigIntegerField;
+    @Valid
+    private BigDecimal bigDecimalField;
+
+    // Date types
+    @Valid
+    private Date dateField;
+    @Valid
+    private LocalDate localDateField;
+
+    // UUID, URI, URL
+    @Valid
+    private java.util.UUID uuidField;
+    @Valid
+    private java.net.URI uriField;
+    @Valid
+    private java.net.URL urlField;
+
+    // Enum
+    @Valid
+    private Status enumField;
+
+    // Primitive arrays
+    @Valid
+    private int[] primitiveIntArray;
+    @Valid
+    private boolean[] primitiveBooleanArray;
+    @Valid
+    private double[] primitiveDoubleArray;
+
+    // ========== VALID CASES - Cascadable types (should NOT trigger diagnostics) ==========
+
+    // Complex object
+    @Valid
+    private Product product;
+
+    // Collection
+    @Valid
+    private List<Product> products;
+
+    // Object array
+    @Valid
+    private Product[] productArray;
+
+    // Map
+    @Valid
+    private Map<String, Product> productMap;
+
+    // ========== METHODS ==========
+
+    // Invalid return types
+    @Valid
+    public int invalidPrimitiveMethod() {
         return 0;
     }
-    
+
     @Valid
-    public Product getValidMethod() { // OK: returns complex object
+    public Long invalidBoxedMethod() {
+        return 0L;
+    }
+
+    @Valid
+    public int[] invalidPrimitiveArrayMethod() {
         return null;
     }
-    
-    // Test on parameters
-    public void invalidParam(@Valid int param) { // Error: primitive parameter
+
+    // Valid return type
+    @Valid
+    public Product validMethod() {
+        return null;
     }
-    
-    public void validParam(@Valid Product param) // OK: complex object parameter
-    {
+
+    // Valid return type - collection
+    @Valid
+    public List<Product> validCollectionMethod() {
+        return null;
     }
-    
-    static class Product {
-        private String name;
-        private int price;
+
+    // ========== PARAMETERS ==========
+
+    // Invalid parameters
+    public void invalidPrimitiveParam(@Valid int param) {
     }
+
+    public void invalidBoxedParam(@Valid Integer param) {
+    }
+
+    public void invalidPrimitiveArrayParam(@Valid int[] param) {
+    }
+
+    // Valid parameters
+    public void validParam(@Valid Product param) {
+    }
+
+    public void validCollectionParam(@Valid List<Product> param) {
+    }
+}
+
+enum Status {
+    ACTIVE, INACTIVE
+}
+
+class Product {
+    private String name;
 }

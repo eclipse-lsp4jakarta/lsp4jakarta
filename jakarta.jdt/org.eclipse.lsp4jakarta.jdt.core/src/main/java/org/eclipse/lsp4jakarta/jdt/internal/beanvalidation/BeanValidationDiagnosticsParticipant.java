@@ -340,8 +340,8 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     /**
      * isCascadableType
      * This method checks whether a type is cascadable for @Valid annotation.
-     * Non-cascadable types include: primitives, boxed types, String, and other simple types.
-     * Cascadable types include: complex objects, collections, arrays, and maps.
+     * Non-cascadable types include: primitives, primitive arrays, boxed types, String, and other simple types.
+     * Cascadable types include: complex objects, object arrays, collections, and maps.
      *
      * @param parentType the declaring type
      * @param childTypeString the type signature to check
@@ -349,8 +349,15 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      * @throws CoreException
      */
     boolean isCascadableType(IType parentType, String childTypeString) throws CoreException {
-        // Arrays are cascadable
+        // Check arrays: primitive arrays are NOT cascadable, object arrays are cascadable
         if (isArrayType(childTypeString)) {
+            // Get the element type signature (remove the array bracket '[')
+            String elementTypeSignature = Signature.getElementType(childTypeString);
+            // If the element type is primitive, the array is not cascadable
+            if (PRIMITIVE_TYPES.contains(elementTypeSignature)) {
+                return false;
+            }
+            // Object arrays are cascadable
             return true;
         }
 
@@ -361,8 +368,15 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         String dataTypeName = getDataTypeName(childTypeString);
 
+        // Extract simple name for wrapper type check (e.g., "java/lang/Integer" -> "Integer")
+        String simpleName = dataTypeName;
+        int lastSlash = dataTypeName.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            simpleName = dataTypeName.substring(lastSlash + 1);
+        }
+
         // Boxed primitive types are not cascadable
-        if (WRAPPER_TYPES.contains(dataTypeName)) {
+        if (WRAPPER_TYPES.contains(simpleName)) {
             return false;
         }
 
@@ -373,8 +387,24 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             return false;
         }
 
-        // Collections and Maps are cascadable
+        // Enum types are not cascadable
+        // Try to find the type - it could be in the same compilation unit or elsewhere
         IType fieldType = ManagedBean.getChildITypeByName(parentType, dataTypeName);
+        if (fieldType == null && parentType != null) {
+            // Try to find it as a sibling type in the same compilation unit
+            IType[] types = parentType.getCompilationUnit().getAllTypes();
+            for (IType type : types) {
+                if (type.getElementName().equals(simpleName)) {
+                    fieldType = type;
+                    break;
+                }
+            }
+        }
+        if (fieldType != null && fieldType.isEnum()) {
+            return false;
+        }
+
+        // Collections and Maps are cascadable
         if (fieldType != null && (doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ) ||
                                   doesITypeHaveSuperType(fieldType, Constants.MAP_FQ))) {
             return true;
