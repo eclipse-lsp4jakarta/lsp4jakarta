@@ -88,7 +88,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyStatic"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveStaticModifierQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />
@@ -118,7 +118,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-bean-validation#InvalidConstrainAnnotationOnStaticMethodOrField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveStaticModifierQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-bean-validation#InvalidAnnotationOnNonBooleanMethodOrField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.RemoveDynamicConstraintAnnotationQuickFix" />
@@ -156,25 +156,25 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.InsertStaticModifierQuickFix" />                 
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveFinalModifierQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnFinalMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveFinalModifierQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />                  
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnAbstractMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnAbstractMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveAbstractModifierQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />                  
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnStaticMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnStaticMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveStaticModifierQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />                  
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnGenericMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
@@ -231,13 +231,13 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalMethodInEntityAnnotatedClass"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveFinalModifierQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidPersistentFieldInEntityAnnotatedClass"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveFinalModifierQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalModifierOnEntityAnnotatedClass"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveFinalModifierQuickFix" />  
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />  
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidConstructorInEntityAnnotatedClass"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertDefaultProtectedConstructorQuickFix" />
@@ -420,5 +420,8 @@
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.InterceptorDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorAnnotationOnAbstractClass"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
    </extension>
 </plugin>
