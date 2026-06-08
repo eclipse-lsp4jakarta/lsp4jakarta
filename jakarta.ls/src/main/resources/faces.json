@@ -4,7 +4,7 @@
 		"body": [
 			"package ${1:packagename};",
 			"",
-			"import jakarta.enterprise.context.FlowScoped;",
+			"import jakarta.faces.flow.FlowScoped;",
 			"import java.io.Serializable;",
 			"",
 			"/**",
@@ -39,7 +39,7 @@
 		],
 		"description": "Flow-scoped bean with @FlowScoped annotation",
 		"context": {
-			"type": "jakarta.enterprise.context.FlowScoped",
+			"type": "jakarta.faces.flow.FlowScoped",
 			"contentType": "class"
 		}
 	},

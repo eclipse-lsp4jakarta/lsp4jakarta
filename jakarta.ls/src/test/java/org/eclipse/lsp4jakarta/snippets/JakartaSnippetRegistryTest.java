@@ -310,7 +310,7 @@ public class JakartaSnippetRegistryTest {
 
         snippetsContextTest(facesBehaviorSnippet, "jakarta.faces.component.behavior.ClientBehaviorBase",
                             JavaCursorContextKind.IN_EMPTY_FILE);
-        snippetsContextTest(facesFlowScopedSnippet, "jakarta.enterprise.context.FlowScoped",
+        snippetsContextTest(facesFlowScopedSnippet, "jakarta.faces.flow.FlowScoped",
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
