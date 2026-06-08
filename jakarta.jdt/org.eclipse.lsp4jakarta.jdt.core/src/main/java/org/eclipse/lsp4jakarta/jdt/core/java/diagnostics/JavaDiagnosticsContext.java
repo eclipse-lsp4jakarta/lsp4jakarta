@@ -76,6 +76,21 @@ public class JavaDiagnosticsContext extends AbstractJavaContext {
                                        IJavaErrorCode code,
                                        DiagnosticSeverity severity) {
         Diagnostic diagnostic = new Diagnostic();
+        System.out.println(
+                           "JavaDiagnosticsContext loader = "
+                           + JavaDiagnosticsContext.class.getClassLoader());
+
+        System.out.println(
+                           "Range loader from context = "
+                           + range.getClass().getClassLoader());
+
+        System.out.println(
+                           "Range class object = "
+                           + range.getClass());
+
+        System.out.println(
+                           "Diagnostic loader = "
+                           + Diagnostic.class.getClassLoader());
         diagnostic.setSource(source);
         diagnostic.setMessage(message);
         diagnostic.setSeverity(severity);
