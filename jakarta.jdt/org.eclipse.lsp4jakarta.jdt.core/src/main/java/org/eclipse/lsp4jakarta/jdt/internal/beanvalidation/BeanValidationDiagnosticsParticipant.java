@@ -31,6 +31,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_CHAR_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
@@ -361,10 +362,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         String dataTypeName = getDataTypeName(childTypeString);
 
         // Boxed primitive types are not cascadable
-        if (dataTypeName.equals("Boolean") || dataTypeName.equals("Byte") ||
-            dataTypeName.equals("Character") || dataTypeName.equals("Short") ||
-            dataTypeName.equals("Integer") || dataTypeName.equals("Long") ||
-            dataTypeName.equals("Float") || dataTypeName.equals("Double")) {
+        if (WRAPPER_TYPES.contains(dataTypeName)) {
             return false;
         }
 

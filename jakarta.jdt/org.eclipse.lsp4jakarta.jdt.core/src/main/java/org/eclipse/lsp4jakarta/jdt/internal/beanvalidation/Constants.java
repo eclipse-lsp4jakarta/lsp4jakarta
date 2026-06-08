@@ -110,4 +110,14 @@ public class Constants {
                                                           YEAR_MONTH, ZONED_DATE_TIME, HIJRAH_DATE,
                                                           JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE };
 
+    public final static Set<String> WRAPPER_TYPES = Set.of(
+                                                           "Boolean",
+                                                           "Byte",
+                                                           "Character",
+                                                           "Short",
+                                                           "Integer",
+                                                           "Long",
+                                                           "Float",
+                                                           "Double");
+
 }
