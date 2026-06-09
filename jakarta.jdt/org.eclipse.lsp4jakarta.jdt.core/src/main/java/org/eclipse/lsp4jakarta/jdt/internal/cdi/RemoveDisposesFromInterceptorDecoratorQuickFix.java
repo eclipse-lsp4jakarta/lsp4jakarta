@@ -43,5 +43,3 @@ public class RemoveDisposesFromInterceptorDecoratorQuickFix extends RemoveMethod
         return JakartaCodeActionId.CDIRemoveDisposesFromInterceptorDecorator;
     }
 }
-
-// Made with Bob

@@ -89,5 +89,3 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1);
     }
 }
-
-// Made with Bob

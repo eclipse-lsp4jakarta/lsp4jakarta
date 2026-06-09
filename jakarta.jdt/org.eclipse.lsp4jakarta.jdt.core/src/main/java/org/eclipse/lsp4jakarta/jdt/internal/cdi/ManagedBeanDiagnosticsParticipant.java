@@ -215,6 +215,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
+
                 // Generate diagnostics for mutually exclusive observes and observesAsync annotations
                 //
                 // see: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#
@@ -278,6 +279,18 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              null,
                                                              ErrorCode.InvalidDependentScopeWithConditionalObserver,
                                                              DiagnosticSeverity.Error));
+                }
+                // Check for @Disposes in interceptors/decorators
+                if (interceptorOrDecorator) {
+                    if (hasInvalidParamAnnotation(type, method, Constants.INVALID_PRODUCER_PARAMS_FQ, Constants.DISPOSES_FQ_NAME)) {
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod"),
+                                                                 methodRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
             }
 
@@ -373,41 +386,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             // declaring_initializer
 
             invalidParamsCheck(context, uri, unit, diagnostics, type, Constants.INJECT_FQ_NAME);
-
-            // Check for @Disposes in interceptors/decorators
-            // Interceptors and decorators cannot have disposer methods
-            if (interceptorOrDecorator) {
-                for (IMethod method : methods) {
-                    ILocalVariable[] params = method.getParameters();
-                    boolean hasDisposesParam = false;
-
-                    for (ILocalVariable param : params) {
-                        IAnnotation[] annotations = param.getAnnotations();
-                        for (IAnnotation annotation : annotations) {
-                            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
-                                                                                                 annotation.getElementName(),
-                                                                                                 Constants.INVALID_PRODUCER_PARAMS_FQ);
-                            if (Constants.DISPOSES_FQ_NAME.equals(matchedAnnotation)) {
-                                hasDisposesParam = true;
-                                break;
-                            }
-                        }
-                        if (hasDisposesParam) {
-                            break;
-                        }
-                    }
-
-                    if (hasDisposesParam) {
-                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod"),
-                                                                 methodRange,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
-                                                                 DiagnosticSeverity.Error));
-                    }
-                }
-            }
 
             if (isManagedBean) {
 
@@ -642,6 +620,39 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             });
         } catch (JavaModelException e) {
             LOGGER.log(Level.SEVERE, "Error occurred while checking ConditionalObserverAnnotation", e);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a method has an invalid parameter annotation.
+     * This is a generic method that can check for any target annotation within a set of invalid annotations.
+     *
+     * @param type the type being checked
+     * @param method the method to check
+     * @param invalidAnnotations array of invalid annotation FQ names to check against
+     * @param targetAnnotation the specific target annotation FQ name to look for
+     * @return true if the method has a parameter with the target annotation
+     */
+    private boolean hasInvalidParamAnnotation(IType type, IMethod method, String[] invalidAnnotations, String targetAnnotation) {
+        try {
+            return Stream.of(method.getParameters()).flatMap(param -> {
+                try {
+                    return Stream.of(param.getAnnotations());
+                } catch (JavaModelException e) {
+                    return Stream.empty();
+                }
+            }).map(annotation -> {
+                try {
+                    return DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                     annotation.getElementName(),
+                                                                     invalidAnnotations);
+                } catch (JavaModelException e) {
+                    return null;
+                }
+            }).anyMatch(targetAnnotation::equals);
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occurred while checking for invalid parameter annotation", e);
             return false;
         }
     }
