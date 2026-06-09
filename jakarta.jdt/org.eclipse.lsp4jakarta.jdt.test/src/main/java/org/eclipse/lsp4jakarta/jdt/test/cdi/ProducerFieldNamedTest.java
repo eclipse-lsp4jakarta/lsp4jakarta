@@ -55,27 +55,27 @@ public class ProducerFieldNamedTest extends BaseJakartaTest {
 
         // Test expected diagnostics for producer fields with @Named annotation
         // Line 12: @Named("config") annotation on producer field config
-        Diagnostic d1 = d(12, 4, 20,
-                          "Producer fields must not declare a bean name using @Named annotation.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
+        Diagnostic namedConfigDiagnostic = d(12, 4, 20,
+                                             "Producer fields must not declare a bean name using @Named annotation.",
+                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
 
         // Line 17: @Named annotation (no value) on producer field greeting
-        Diagnostic d2 = d(17, 4, 10,
-                          "Producer fields must not declare a bean name using @Named annotation.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
+        Diagnostic namedGreetingDiagnostic = d(17, 4, 10,
+                                               "Producer fields must not declare a bean name using @Named annotation.",
+                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedConfigDiagnostic, namedGreetingDiagnostic);
 
-        // Test code action for d1 - Remove @Named("config")
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(12, 4, 13, 4, "");
-        CodeAction ca1 = ca(uri, "Remove @Named", d1, te1);
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+        // Test code action for namedConfigDiagnostic - Remove @Named("config")
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, namedConfigDiagnostic);
+        TextEdit removeNamedConfigEdit = te(12, 4, 13, 4, "");
+        CodeAction removeNamedConfigAction = ca(uri, "Remove @Named", namedConfigDiagnostic, removeNamedConfigEdit);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeNamedConfigAction);
 
-        // Test code action for d2 - Remove @Named
-        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit te2 = te(17, 4, 18, 4, "");
-        CodeAction ca2 = ca(uri, "Remove @Named", d2, te2);
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca2);
+        // Test code action for namedGreetingDiagnostic - Remove @Named
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, namedGreetingDiagnostic);
+        TextEdit removeNamedGreetingEdit = te(17, 4, 18, 4, "");
+        CodeAction removeNamedGreetingAction = ca(uri, "Remove @Named", namedGreetingDiagnostic, removeNamedGreetingEdit);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeNamedGreetingAction);
     }
 }
