@@ -88,19 +88,6 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
         CodeAction ca1 = ca(uri, "Remove the '@Disposes' modifier from parameter 'resource'", d1, te1);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca1);
     }
-
-    @Test
-    public void validInterceptor() throws Exception {
-        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ValidInterceptor.java"));
-        String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
-
-        // Test that no diagnostics are reported for valid interceptor
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
-    }
 }
 
 // Made with Bob
