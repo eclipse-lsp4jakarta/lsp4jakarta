@@ -615,4 +615,18 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
                               useInvokeAnyWithJsonbDiag, useCachedThreadPoolWithJsonbDiag, useFixedThreadPoolWithJsonbDiag,
                               useSingleThreadExecutorWithJsonbDiag, useWorkStealingPoolWithJsonbDiag, useDaemonThreadWithJsonbDiag);
     }
+
+    @Test
+    public void JsonbCloseValidNoDiagnostics() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics should be reported for valid cases
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
