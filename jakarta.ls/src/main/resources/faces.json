@@ -11,7 +11,7 @@
 			" * Flow-scoped bean tied to a specific flow in Jakarta Faces.",
 			" * The @FlowScoped annotation ensures this bean is active only within the specified flow.",
 			" */",
-			"@FlowScoped(\"${2:basicFlow}\")",
+			"@FlowScoped(\"${2:basicFlow}\") // flow id must match your @FlowDefinition",
 			"public class ${TM_FILENAME_BASE} implements Serializable {",
 			"",
 			"\tprivate String value;",
