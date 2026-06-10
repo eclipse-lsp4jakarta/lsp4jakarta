@@ -282,10 +282,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
                 // Check for @Disposes in interceptors/decorators
                 if (interceptorOrDecorator) {
-                    if (hasInvalidParamAnnotation(type, method, Constants.INVALID_PRODUCER_PARAMS_FQ, Constants.DISPOSES_FQ_NAME)) {
+                    List<String> disposesParams = getDisposesParamNames(type, method);
+                    if (!disposesParams.isEmpty()) {
                         Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        String paramNames = String.join(", ", disposesParams);
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod"),
+                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod", paramNames),
                                                                  methodRange,
                                                                  Constants.DIAGNOSTIC_SOURCE,
                                                                  ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
@@ -625,35 +627,26 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * Check if a method has an invalid parameter annotation.
-     * This is a generic method that can check for any target annotation within a set of invalid annotations.
+     * Get the names of all parameters annotated with @Disposes in a method.
      *
      * @param type the type being checked
      * @param method the method to check
-     * @param invalidAnnotations array of invalid annotation FQ names to check against
-     * @param targetAnnotation the specific target annotation FQ name to look for
-     * @return true if the method has a parameter with the target annotation
+     * @return list of parameter names that have @Disposes annotation
      */
-    private boolean hasInvalidParamAnnotation(IType type, IMethod method, String[] invalidAnnotations, String targetAnnotation) {
+    private List<String> getDisposesParamNames(IType type, IMethod method) {
+        List<String> paramNames = new ArrayList<>();
         try {
-            return Stream.of(method.getParameters()).flatMap(param -> {
-                try {
-                    return Stream.of(param.getAnnotations());
-                } catch (JavaModelException e) {
-                    return Stream.empty();
+            for (ILocalVariable param : method.getParameters()) {
+                for (IAnnotation annotation : param.getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.DISPOSES_FQ_NAME)) {
+                        paramNames.add(param.getElementName());
+                        break;
+                    }
                 }
-            }).map(annotation -> {
-                try {
-                    return DiagnosticUtils.getMatchedJavaElementName(type,
-                                                                     annotation.getElementName(),
-                                                                     invalidAnnotations);
-                } catch (JavaModelException e) {
-                    return null;
-                }
-            }).anyMatch(targetAnnotation::equals);
+            }
         } catch (JavaModelException e) {
-            LOGGER.log(Level.SEVERE, "Error occurred while checking for invalid parameter annotation", e);
-            return false;
+            LOGGER.log(Level.SEVERE, "Error occurred while getting @Disposes parameter names", e);
         }
+        return paramNames;
     }
 }
