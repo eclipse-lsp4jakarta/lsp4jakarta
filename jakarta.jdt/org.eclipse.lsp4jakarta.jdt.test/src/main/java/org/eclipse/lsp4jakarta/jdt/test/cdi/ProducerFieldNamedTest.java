@@ -56,12 +56,12 @@ public class ProducerFieldNamedTest extends BaseJakartaTest {
         // Test expected diagnostics for producer fields with @Named annotation
         // Line 12: @Named("config") annotation on producer field config
         Diagnostic namedConfigDiagnostic = d(12, 4, 20,
-                                             "Producer fields must not declare a bean name using @Named annotation.",
+                                             "Producer field 'config' must not declare a bean name using @Named annotation.",
                                              DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
 
         // Line 17: @Named annotation (no value) on producer field greeting
         Diagnostic namedGreetingDiagnostic = d(17, 4, 10,
-                                               "Producer fields must not declare a bean name using @Named annotation.",
+                                               "Producer field 'greeting' must not declare a bean name using @Named annotation.",
                                                DiagnosticSeverity.Error, "jakarta-cdi", "InvalidProducerFieldWithNamedAnnotation");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedConfigDiagnostic, namedGreetingDiagnostic);

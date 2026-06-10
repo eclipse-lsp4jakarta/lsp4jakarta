@@ -161,7 +161,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                         if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
                             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                             diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("ProducerFieldWithNamedAnnotation"), range,
+                                                                     Messages.getMessage("ProducerFieldWithNamedAnnotation", field.getElementName()), range,
                                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                                      ErrorCode.InvalidProducerFieldWithNamedAnnotation, DiagnosticSeverity.Error));
                             break;
