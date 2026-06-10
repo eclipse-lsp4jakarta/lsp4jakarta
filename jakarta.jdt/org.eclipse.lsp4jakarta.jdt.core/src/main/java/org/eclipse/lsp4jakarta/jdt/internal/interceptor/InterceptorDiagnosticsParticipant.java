@@ -178,26 +178,25 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         int methodFlag = method.getFlags();
-        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
         String annotationNames = getSimpleAnnotationNames(interceptorAnnotations);
         JsonArray annotationData = (JsonArray) new Gson().toJsonTree(interceptorAnnotations);
         // Check for final modifier
         if (Flags.isFinal(methodFlag)) {
-            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+            createMethodModifierDiagnostic(context, uri, diagnostics, method, annotationNames,
                                            annotationData, "InvalidInterceptorMethodAnnotationFinalMethod",
                                            ErrorCode.InvalidInterceptorMethodAnnotationOnFinalMethod,
                                            DiagnosticSeverity.Error);
         }
         // Check for abstract modifier
         if (Flags.isAbstract(methodFlag)) {
-            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+            createMethodModifierDiagnostic(context, uri, diagnostics, method, annotationNames,
                                            annotationData, "InvalidInterceptorMethodAnnotationAbstractMethod",
                                            ErrorCode.InvalidInterceptorMethodAnnotationOnAbstractMethod,
                                            DiagnosticSeverity.Error);
         }
         // Check for static modifier
         if (Flags.isStatic(methodFlag)) {
-            validateStaticModifier(context, uri, diagnostics, type, method, methodRange,
+            validateStaticModifier(context, uri, diagnostics, type, method,
                                    annotationNames, annotationData, interceptorAnnotations);
         }
     }
@@ -225,27 +224,25 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param diagnostics the list to add diagnostics to
      * @param type the declaring type
      * @param method the method being validated
-     * @param methodRange the method name range
      * @param annotationNames the simple annotation names
      * @param annotationData the annotation data for the diagnostic
      * @param interceptorAnnotations the full list of interceptor annotations
      * @throws JavaModelException if there's an error accessing the Java model
      */
     private void validateStaticModifier(JavaDiagnosticsContext context, String uri,
-                                        List<Diagnostic> diagnostics, IType type, IMethod method,
-                                        Range methodRange, String annotationNames,
+                                        List<Diagnostic> diagnostics, IType type, IMethod method, String annotationNames,
                                         JsonArray annotationData, List<String> interceptorAnnotations) throws JavaModelException {
         boolean isLifecycleCallback = !DiagnosticUtils.getMatchedJavaElementNames(type,
                                                                                   Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
-                                                                                  Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS.toArray(String[]::new)).isEmpty();
+                                                                                  Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS).isEmpty();
 
         if (isLifecycleCallback) {
-            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+            createMethodModifierDiagnostic(context, uri, diagnostics, method, annotationNames,
                                            annotationData, "InvalidLifecycleCallbackMethodAnnotationStaticMethod",
                                            ErrorCode.InvalidInterceptorMethodAnnotationOnStaticMethod,
                                            DiagnosticSeverity.Warning);
         } else {
-            createMethodModifierDiagnostic(context, uri, diagnostics, methodRange, annotationNames,
+            createMethodModifierDiagnostic(context, uri, diagnostics, method, annotationNames,
                                            annotationData, "InvalidInterceptorMethodAnnotationStaticMethod",
                                            ErrorCode.InvalidInterceptorMethodAnnotationOnStaticMethod,
                                            DiagnosticSeverity.Error);
@@ -258,19 +255,21 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param context the diagnostics context
      * @param uri the file URI
      * @param diagnostics the list to add diagnostics to
-     * @param range the range for the diagnostic
+     * @param method the method being validated
      * @param annotationNames the simple annotation names for the message
      * @param annotationData the annotation data
      * @param messageKey the message key
      * @param errorCode the error code
      * @param severity the diagnostic severity
+     * @throws JavaModelException
      */
     private void createMethodModifierDiagnostic(JavaDiagnosticsContext context, String uri,
-                                                List<Diagnostic> diagnostics, Range range,
+                                                List<Diagnostic> diagnostics, IMethod method,
                                                 String annotationNames, JsonArray annotationData,
                                                 String messageKey, ErrorCode errorCode,
-                                                DiagnosticSeverity severity) {
+                                                DiagnosticSeverity severity) throws JavaModelException {
         String message = Messages.getMessage(messageKey, annotationNames);
+        Range range = PositionUtils.toNameRange(method, context.getUtils());
         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                  annotationData, errorCode, severity));
     }

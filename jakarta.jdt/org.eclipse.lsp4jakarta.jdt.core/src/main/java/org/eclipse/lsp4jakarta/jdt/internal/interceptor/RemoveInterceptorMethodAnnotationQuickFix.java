@@ -60,7 +60,7 @@ public class RemoveInterceptorMethodAnnotationQuickFix extends RemoveAnnotationC
         if (parentType != null) {
             JsonArray diagnosticData = (JsonArray) diagnostic.getData();
             List<String> annotations = IntStream.range(0, diagnosticData.size()).mapToObj(idx -> diagnosticData.get(idx).getAsString()).collect(Collectors.toList());
-            if (annotations.size() > 0) {
+            if (!annotations.isEmpty()) {
                 createCodeAction(diagnostic, context, parentType, codeActions, annotations.toArray(new String[0]));
             }
         }

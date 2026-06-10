@@ -276,8 +276,18 @@ public class InterceptorTest extends BaseJakartaTest {
                                                        "The class InvalidAroundConstructMethods should not contain the abstract modifier. If it contains the abstract modifier, the class should not be annotated with @Interceptor.",
                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorAnnotationOnAbstractClass");
 
+        Diagnostic invalidMulipleModifierFinalDiagnostics = d(21, 31, 50,
+                                                              "AroundConstruct interceptor method must not be declared as a final method.",
+                                                              DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnFinalMethod",
+                                                              new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
+
+        Diagnostic invalidMulipleModifierStaticDiagnostics = d(21, 31, 50,
+                                                               "AroundConstruct lifecycle callback interceptor method must not be declared as static except in an application client.",
+                                                               DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnStaticMethod",
+                                                               new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, finalModifierDiagnostic, abstractModifierDiagnostic, proceedDiagnostics, staticModifierDiagnostic,
-                              invalidAbstractClassDiagnostics);
+                              invalidAbstractClassDiagnostics, invalidMulipleModifierFinalDiagnostics, invalidMulipleModifierStaticDiagnostics);
 
         // Test code actions for final modifier
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, finalModifierDiagnostic);
@@ -288,20 +298,39 @@ public class InterceptorTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAroundConstructOnFinalAction, removeFinalAction);
 
         // Test code actions for abstract modifier
-        codeActionParams = createCodeActionParams(uri, abstractModifierDiagnostic);
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, abstractModifierDiagnostic);
         TextEdit removeAroundConstructOnAbstractEdit = te(12, 4, 13, 4, "");
         TextEdit removeAbstractEdit = te(13, 10, 13, 19, "");
         CodeAction removeAroundConstructOnAbstractAction = ca(uri, "Remove @AroundConstruct", abstractModifierDiagnostic, removeAroundConstructOnAbstractEdit);
         CodeAction removeAbstractAction = ca(uri, "Remove the 'abstract' modifier", abstractModifierDiagnostic, removeAbstractEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAroundConstructOnAbstractAction, removeAbstractAction);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeAroundConstructOnAbstractAction, removeAbstractAction);
 
         // Test code actions for static modifier
-        codeActionParams = createCodeActionParams(uri, staticModifierDiagnostic);
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, staticModifierDiagnostic);
         TextEdit removeAroundConstructOnStaticEdit = te(15, 4, 16, 4, "");
         TextEdit removeStaticEdit = te(16, 10, 16, 17, "");
         CodeAction removeAroundConstructOnStaticAction = ca(uri, "Remove @AroundConstruct", staticModifierDiagnostic, removeAroundConstructOnStaticEdit);
         CodeAction removeStaticAction = ca(uri, "Remove the 'static' modifier", staticModifierDiagnostic, removeStaticEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAroundConstructOnStaticAction, removeStaticAction);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeAroundConstructOnStaticAction, removeStaticAction);
+
+        // Test code actions for multiple modifiers
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, invalidMulipleModifierFinalDiagnostics);
+        TextEdit removeAroundConstructOnFinalMultipleEdit = te(20, 4, 21, 4, "");
+        TextEdit removeFinalMultipleEdit = te(21, 17, 21, 23, "");
+        CodeAction removeAroundConstructOnFinalMultipleAction = ca(uri, "Remove @AroundConstruct", invalidMulipleModifierFinalDiagnostics,
+                                                                   removeAroundConstructOnFinalMultipleEdit);
+        CodeAction removeFinalMultipleAction = ca(uri, "Remove the 'final' modifier", invalidMulipleModifierFinalDiagnostics, removeFinalMultipleEdit);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeAroundConstructOnFinalMultipleAction, removeFinalMultipleAction);
+
+        // Test code actions for multiple modifiers
+        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, invalidMulipleModifierStaticDiagnostics);
+        TextEdit removeAroundConstructOnStaticMultipleEdit = te(20, 4, 21, 4, "");
+        TextEdit removeStaticMultipleEdit = te(21, 11, 21, 18, "");
+        CodeAction removeAroundConstructOnStaticMultipleAction = ca(uri, "Remove @AroundConstruct", invalidMulipleModifierStaticDiagnostics,
+                                                                    removeAroundConstructOnStaticMultipleEdit);
+        CodeAction removeStaticMultipleAction = ca(uri, "Remove the 'static' modifier", invalidMulipleModifierStaticDiagnostics, removeStaticMultipleEdit);
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, removeAroundConstructOnStaticMultipleAction, removeStaticMultipleAction);
+
     }
 
     @Test
