@@ -376,58 +376,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             invalidParamsCheck(context, uri, unit, diagnostics, type, Constants.INJECT_FQ_NAME);
             // Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
             // They should only use @Dependent scope
-            if (interceptorOrDecorator) {
-                List<String> foundInvalidScopes = new ArrayList<>();
-
-                // Check each annotation to see if it's an invalid scope
-                for (IAnnotation annotation : type.getAnnotations()) {
-                    String annotationName = annotation.getElementName();
-
-                    // Get the fully qualified name for the annotation
-                    String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
-
-                    // Skip @Interceptor, @Decorator, and @Dependent annotations - these are not scopes we're checking
-                    if (Constants.INTERCEPTOR_FQ_NAME.equals(fqName) ||
-                        Constants.DECORATOR_FQ_NAME.equals(fqName) ||
-                        Constants.DEPENDENT_FQ_NAME.equals(fqName)) {
-                        continue;
-                    }
-
-                    // First check if it's a built-in normal scope
-                    String matchedBuiltIn = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
-                                                                                      Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
-                    if (matchedBuiltIn != null) {
-                        foundInvalidScopes.add(matchedBuiltIn);
-                    } else if (fqName != null) {
-                        // Not a built-in scope, check if it's a custom scope with @NormalScope
-                        try {
-                            // Get the annotation type using getChildITypeByName
-                            IType annotationType = ManagedBean.getChildITypeByName(type, annotationName);
-                            if (annotationType != null) {
-                                // Check if the annotation type has @NormalScope meta-annotation
-                                for (IAnnotation metaAnnotation : annotationType.getAnnotations()) {
-                                    String metaAnnotationFQ = ManagedBean.getFullyQualifiedClassName(annotationType,
-                                                                                                     metaAnnotation.getElementName());
-                                    if (Constants.NORMAL_SCOPE_FQ_NAME.equals(metaAnnotationFQ)) {
-                                        foundInvalidScopes.add(fqName);
-                                        break;
-                                    }
-                                }
-                            }
-                        } catch (JavaModelException e) {
-                            LOGGER.log(Level.WARNING, "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
-                        }
-                    }
-                }
-
-                if (!foundInvalidScopes.isEmpty()) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
-                                                             ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
-                }
-            }
+            validateinterceptorDecoratorScopes(context, uri, diagnostics, type, interceptorOrDecorator);
             if (isManagedBean) {
 
                 // Produces and Disposes, Observes, ObservesAsync Annotations:
@@ -486,6 +435,71 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         return diagnostics;
     }
+
+    /**
+     * validateinterceptorDecoratorScopes
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param type
+     * @param interceptorOrDecorator
+     * @throws JavaModelException
+     */
+	private void validateinterceptorDecoratorScopes(JavaDiagnosticsContext context, String uri,
+			List<Diagnostic> diagnostics, IType type, boolean interceptorOrDecorator) throws JavaModelException {
+		if (interceptorOrDecorator) {
+		    List<String> foundInvalidScopes = new ArrayList<>();
+
+		    // Check each annotation to see if it's an invalid scope
+		    for (IAnnotation annotation : type.getAnnotations()) {
+		        String annotationName = annotation.getElementName();
+
+		        // Get the fully qualified name for the annotation
+		        String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
+
+		        // Skip @Interceptor, @Decorator, and @Dependent annotations - these are not scopes we're checking
+		        if (Constants.INTERCEPTOR_FQ_NAME.equals(fqName) ||
+		            Constants.DECORATOR_FQ_NAME.equals(fqName) ||
+		            Constants.DEPENDENT_FQ_NAME.equals(fqName)) {
+		            continue;
+		        }
+
+		        // First check if it's a built-in normal scope
+		        String matchedBuiltIn = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+		                                                                          Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+		        if (matchedBuiltIn != null) {
+		            foundInvalidScopes.add(matchedBuiltIn);
+		        } else if (fqName != null) {
+		            // Not a built-in scope, check if it's a custom scope with @NormalScope
+		            try {
+		                // Get the annotation type using getChildITypeByName
+		                IType annotationType = ManagedBean.getChildITypeByName(type, annotationName);
+		                if (annotationType != null) {
+		                    // Check if the annotation type has @NormalScope meta-annotation
+		                    for (IAnnotation metaAnnotation : annotationType.getAnnotations()) {
+		                        String metaAnnotationFQ = ManagedBean.getFullyQualifiedClassName(annotationType,
+		                                                                                         metaAnnotation.getElementName());
+		                        if (Constants.NORMAL_SCOPE_FQ_NAME.equals(metaAnnotationFQ)) {
+		                            foundInvalidScopes.add(fqName);
+		                            break;
+		                        }
+		                    }
+		                }
+		            } catch (JavaModelException e) {
+		                LOGGER.log(Level.WARNING, "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
+		            }
+		        }
+		    }
+
+		    if (!foundInvalidScopes.isEmpty()) {
+		        Range range = PositionUtils.toNameRange(type, context.getUtils());
+		        diagnostics.add(context.createDiagnostic(uri,
+		                                                 Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
+		                                                 Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
+		                                                 ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
+		    }
+		}
+	}
 
     /**
      * validateSingletonSessionBean
