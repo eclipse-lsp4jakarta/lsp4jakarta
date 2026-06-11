@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
@@ -71,6 +72,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("InvalidInterceptorAbstractClass", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorAnnotationOnAbstractClass, DiagnosticSeverity.Error));
                 } else {
+                    // Check for negative priority value
+                    checkNegativePriority(type, unit, uri, diagnostics, context);
                     for (IMethod method : type.getMethods()) {
                         // Checks if method is a constructor and has valid no-args constructor
                         constructorInfo.mergeConstructorInfo(ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
@@ -146,5 +149,45 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if an interceptor class has a @Priority annotation with a negative value.
+     * According to Jakarta Interceptors 2.0 specification, negative priority values are
+     * reserved for future use and should not be used.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkNegativePriority(IType type, ICompilationUnit unit, String uri,
+                                       List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
+        IAnnotation priorityAnnotation = null;
+        for (IAnnotation annotation : type.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PRIORITY_FQ_NAME)) {
+                priorityAnnotation = annotation;
+                break;
+            }
+        }
+
+        if (priorityAnnotation != null) {
+            try {
+                Number priorityValue = DiagnosticUtils.getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
+                if (priorityValue != null && priorityValue.intValue() < 0) {
+                    Range range = PositionUtils.toNameRange(priorityAnnotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidInterceptorNegativePriority"),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidInterceptorNegativePriority,
+                                                             DiagnosticSeverity.Error));
+                }
+            } catch (Exception e) {
+                // If we can't parse the priority value, skip this check
+            }
+        }
     }
 }
