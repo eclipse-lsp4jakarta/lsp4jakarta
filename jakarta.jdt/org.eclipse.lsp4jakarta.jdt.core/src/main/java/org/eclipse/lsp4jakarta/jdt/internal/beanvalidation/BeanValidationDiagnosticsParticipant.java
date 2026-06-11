@@ -32,6 +32,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUME
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.WRAPPER_TYPES_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
@@ -376,7 +377,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         // Boxed primitive types are not cascadable
-        if (WRAPPER_TYPES.contains(simpleName)) {
+        if (WRAPPER_TYPES.contains(simpleName) || WRAPPER_TYPES_FQ.contains(dataTypeName)) {
             return false;
         }
 
@@ -394,7 +395,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             // Try to find it as a sibling type in the same compilation unit
             IType[] types = parentType.getCompilationUnit().getAllTypes();
             for (IType type : types) {
-                if (type.getElementName().equals(simpleName)) {
+                if (type.getElementName().equals(simpleName) || type.getElementName().equals(dataTypeName)) {
                     fieldType = type;
                     break;
                 }

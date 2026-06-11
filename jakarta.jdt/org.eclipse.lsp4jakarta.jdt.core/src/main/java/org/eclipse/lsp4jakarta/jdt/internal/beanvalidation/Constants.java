@@ -123,5 +123,13 @@ public class Constants {
                                                            "Long",
                                                            "Float",
                                                            "Double");
-
+    public final static Set<String> WRAPPER_TYPES_FQ = Set.of(
+                                                              "java.lang.Boolean",
+                                                              "java.lang.Byte",
+                                                              "java.lang.Character",
+                                                              "java.lang.Short",
+                                                              "java.lang.Integer",
+                                                              "java.lang.Long",
+                                                              "java.lang.Float",
+                                                              "java.lang.Double");
 }
