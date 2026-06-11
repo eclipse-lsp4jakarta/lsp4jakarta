@@ -369,15 +369,10 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         String dataTypeName = getDataTypeName(childTypeString);
 
-        // Extract simple name for wrapper type check (e.g., "java/lang/Integer" -> "Integer")
-        String simpleName = dataTypeName;
-        int lastSlash = dataTypeName.lastIndexOf('/');
-        if (lastSlash >= 0) {
-            simpleName = dataTypeName.substring(lastSlash + 1);
-        }
-
-        // Boxed primitive types are not cascadable
-        if (WRAPPER_TYPES.contains(simpleName) || WRAPPER_TYPES_FQ.contains(dataTypeName)) {
+        // Boxed primitive types are not cascadable - use fully qualified name check
+        String wrapperTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName,
+                                                                             WRAPPER_TYPES_FQ.toArray(new String[0]));
+        if (wrapperTypeFQName != null) {
             return false;
         }
 
@@ -389,18 +384,27 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         // Enum types are not cascadable
-        // Try to find the type - it could be in the same compilation unit or elsewhere
+        // Try to resolve the type - ManagedBean.getChildITypeByName handles most cases via resolveType()
         IType fieldType = ManagedBean.getChildITypeByName(parentType, dataTypeName);
+
+        // Fallback: For types in the same compilation unit that resolveType() might miss,
+        // check sibling types directly (e.g., inner classes, same-file classes)
         if (fieldType == null && parentType != null) {
-            // Try to find it as a sibling type in the same compilation unit
+            String simpleName = dataTypeName;
+            int lastSlash = dataTypeName.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                simpleName = dataTypeName.substring(lastSlash + 1);
+            }
+
             IType[] types = parentType.getCompilationUnit().getAllTypes();
             for (IType type : types) {
-                if (type.getElementName().equals(simpleName) || type.getElementName().equals(dataTypeName)) {
+                if (type.getElementName().equals(simpleName)) {
                     fieldType = type;
                     break;
                 }
             }
         }
+
         if (fieldType != null && fieldType.isEnum()) {
             return false;
         }

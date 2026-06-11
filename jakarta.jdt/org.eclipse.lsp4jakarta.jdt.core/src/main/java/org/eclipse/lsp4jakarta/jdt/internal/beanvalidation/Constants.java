@@ -113,16 +113,6 @@ public class Constants {
                                                           YEAR_MONTH, ZONED_DATE_TIME, HIJRAH_DATE,
                                                           JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE,
                                                           UUID_FQ, URI_FQ, URL_FQ };
-
-    public final static Set<String> WRAPPER_TYPES = Set.of(
-                                                           "Boolean",
-                                                           "Byte",
-                                                           "Character",
-                                                           "Short",
-                                                           "Integer",
-                                                           "Long",
-                                                           "Float",
-                                                           "Double");
     public final static Set<String> WRAPPER_TYPES_FQ = Set.of(
                                                               "java.lang.Boolean",
                                                               "java.lang.Byte",
