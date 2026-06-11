@@ -43,6 +43,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
+import static org.eclipse.lsp4jakarta.jdt.internal.annotations.Constants.PRIORITY_FQ_NAME;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
@@ -167,7 +168,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                        List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
         IAnnotation priorityAnnotation = null;
         for (IAnnotation annotation : type.getAnnotations()) {
-            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PRIORITY_FQ_NAME)) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, PRIORITY_FQ_NAME)) {
                 priorityAnnotation = annotation;
                 break;
             }

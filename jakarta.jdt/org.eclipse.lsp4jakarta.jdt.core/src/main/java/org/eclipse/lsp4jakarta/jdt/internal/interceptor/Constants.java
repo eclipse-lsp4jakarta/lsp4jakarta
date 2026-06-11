@@ -48,6 +48,4 @@ public class Constants {
 
     public static final String INTERCEPTOR_IMPORT = "jakarta.interceptor";
 
-    public static final String PRIORITY_FQ_NAME = "jakarta.annotation.Priority";
-
 }
