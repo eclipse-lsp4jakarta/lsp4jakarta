@@ -348,7 +348,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidInterceptorOrDecorator"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ReplaceInvalidScopesWithDependentQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidFieldWithProducesAndInjectAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveProducesAndInjectAnnotationsQuickFix" />

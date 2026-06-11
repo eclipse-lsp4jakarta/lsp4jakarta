@@ -43,6 +43,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.Gson;
@@ -362,12 +363,37 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
                 // They should only use @Dependent scope
                 if (interceptorOrDecorator) {
-                    List<String> foundInvalidScopes = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                                 Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+                    List<String> foundInvalidScopes = new ArrayList<>();
+
+                    // Check each annotation to see if it's an invalid scope
+                    for (IAnnotation annotation : type.getAnnotations()) {
+                        String annotationName = annotation.getElementName();
+
+                        // First check if it's a built-in normal scope
+                        String matchedBuiltIn = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                                          Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+                        if (matchedBuiltIn != null) {
+                            foundInvalidScopes.add(matchedBuiltIn);
+                        } else {
+                            // Not a built-in scope, check if it's a custom scope with @NormalScope
+                            try {
+                                if (ManagedBean.hasMetaAnnotation(annotation, type, unit, Constants.NORMAL_SCOPE_FQ_NAME)) {
+                                    // Get the fully qualified name for the custom scope
+                                    String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
+                                    if (fqName != null) {
+                                        foundInvalidScopes.add(fqName);
+                                    }
+                                }
+                            } catch (JavaModelException e) {
+                                LOGGER.log(Level.WARNING, "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
+                            }
+                        }
+                    }
+
                     if (!foundInvalidScopes.isEmpty()) {
                         diagnostics.add(context.createDiagnostic(uri,
                                                                  Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
                                                                  ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
                     }
                 }

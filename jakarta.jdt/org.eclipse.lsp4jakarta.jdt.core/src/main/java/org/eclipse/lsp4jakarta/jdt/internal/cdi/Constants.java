@@ -43,6 +43,8 @@ public class Constants {
     public static final String DIAGNOSTIC_CODE_INVALID_INJECT_PARAM = "RemoveInjectOrConflictedAnnotations";
     public static final String DIAGNOSTIC_CODE_INVALID_PRODUCES_PARAM = "RemoveProducesOrConflictedAnnotations";
     public static final String DIAGNOSTIC_CODE_INVALID_DISPOSES_PARAM = "RemoveDisposesOrConflictedAnnotations";
+    // Meta-annotation that defines normal scopes
+    public static final String NORMAL_SCOPE_FQ_NAME = "jakarta.enterprise.context.NormalScope";
 
     public static final String DIAGNOSTIC_CODE_REDUNDANT_DISPOSES = "RemoveExtraDisposes";
     public static final String[] INVALID_INITIALIZER_PARAMS_FQ = { DISPOSES_FQ_NAME, OBSERVES_FQ_NAME,
@@ -66,6 +68,7 @@ public class Constants {
                                                                           "jakarta.enterprise.context.ApplicationScoped",
                                                                           "jakarta.enterprise.context.SessionScoped",
                                                                           "jakarta.enterprise.context.ConversationScoped",
+                                                                          "jakarta.enterprise.context.NormalScope",
                                                                           "jakarta.enterprise.context.RequestScoped" };
 
     public static final Set<String> INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS = Set.of(OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME);
