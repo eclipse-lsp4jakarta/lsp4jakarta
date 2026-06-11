@@ -469,7 +469,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Check if it's a built-in invalid scope
                 String matchedBuiltInScopes = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
-                                                                                  Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+                                                                                        Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
                 if (matchedBuiltInScopes != null) {
                     foundInvalidScopes.add(matchedBuiltInScopes);
                 } else {
