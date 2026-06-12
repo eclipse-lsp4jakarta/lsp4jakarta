@@ -44,11 +44,15 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import static org.eclipse.lsp4jakarta.jdt.internal.annotations.Constants.PRIORITY_FQ_NAME;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
  */
 public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(InterceptorDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -187,7 +191,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              DiagnosticSeverity.Error));
                 }
             } catch (Exception e) {
-                // If we can't parse the priority value, skip this check
+                // If we can't parse the priority value, skip this check and log a warning
+                LOGGER.log(Level.WARNING, "Unable to check method annotation", e);
             }
         }
     }
