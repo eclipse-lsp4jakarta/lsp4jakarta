@@ -415,6 +415,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidMultipleObserverParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveMultipleObserverParamsQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInterceptorOrDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ReplaceInvalidScopesWithDependentQuickFix" />
   </extension>
    
    <!-- Interceptor -->
