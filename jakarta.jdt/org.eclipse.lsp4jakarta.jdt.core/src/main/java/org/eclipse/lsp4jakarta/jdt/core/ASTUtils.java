@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -27,6 +28,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 public class ASTUtils {
 
@@ -138,5 +140,46 @@ public class ASTUtils {
             }
         });
         return found.get();
+    }
+
+    /**
+     * Resolves the fully qualified class name of the declaring class for a method invocation.
+     *
+     * @param mi the method invocation
+     * @return the fully qualified class name, or null if it cannot be resolved
+     */
+    public static String getDeclaringClassName(MethodInvocation mi) {
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (binding == null) {
+            return null;
+        }
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
+            return null;
+        }
+        return declaringClass.getQualifiedName();
+    }
+
+    /**
+     * Checks if the declaring class name of a method invocation matches the expected fully qualified name.
+     * This overloaded version includes an optimization that checks if the expected class is imported
+     * before performing the full resolution, improving performance.
+     *
+     * @param unit the compilation unit containing the method invocation
+     * @param mi the method invocation
+     * @param expectedFQN the expected fully qualified class name to match against
+     * @return true if the declaring class matches the expected FQN, false otherwise
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    public static boolean isMatchedTargetClass(ICompilationUnit unit, MethodInvocation mi, String expectedFQN) throws JavaModelException {
+        String qualifiedName = getDeclaringClassName(mi);
+        if (expectedFQN.equals(qualifiedName)) {
+            return true;
+        }
+        // Check if the import is present for performance
+        if (DiagnosticUtils.isImportedJavaElement(unit, expectedFQN)) {
+            return expectedFQN.equals(qualifiedName);
+        }
+        return false;
     }
 }
