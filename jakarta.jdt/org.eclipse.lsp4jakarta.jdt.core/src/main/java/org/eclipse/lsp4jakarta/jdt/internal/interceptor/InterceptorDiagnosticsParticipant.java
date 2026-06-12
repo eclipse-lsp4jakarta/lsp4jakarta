@@ -192,7 +192,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             } catch (Exception e) {
                 // If we can't parse the priority value, skip this check and log a warning
-                LOGGER.log(Level.WARNING, "Unable to check method annotation", e);
+                LOGGER.log(Level.WARNING, "Unable to parse the priority value", e);
             }
         }
     }
