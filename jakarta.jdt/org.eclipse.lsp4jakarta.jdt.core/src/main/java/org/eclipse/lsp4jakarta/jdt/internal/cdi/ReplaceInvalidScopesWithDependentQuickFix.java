@@ -12,43 +12,16 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.lsp4j.CodeAction;
-import org.eclipse.lsp4j.CodeActionKind;
-import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ExtendedCodeAction;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationMissingQuickFix;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
-import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
-import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ReplaceAnnotationProposal;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ReplaceAnnotationsQuickFix;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
-
-import com.google.gson.JsonArray;
 
 /**
  * Quickfix for InvalidInterceptorOrDecorator diagnostic.
  * Replaces all invalid scope annotations with @Dependent.
  */
-public class ReplaceInvalidScopesWithDependentQuickFix extends InsertAnnotationMissingQuickFix {
-
-    /** Logger object to record events for this class. */
-    private static final Logger LOGGER = Logger.getLogger(ReplaceInvalidScopesWithDependentQuickFix.class.getName());
+public class ReplaceInvalidScopesWithDependentQuickFix extends ReplaceAnnotationsQuickFix {
 
     /**
      * Constructor.
@@ -77,72 +50,7 @@ public class ReplaceInvalidScopesWithDependentQuickFix extends InsertAnnotationM
      * {@inheritDoc}
      */
     @Override
-    protected void insertAnnotations(Diagnostic diagnostic, JavaCodeActionContext context,
-                                     List<CodeAction> codeActions) throws CoreException {
-        // Extract the list of invalid scope annotations from the diagnostic data
-        JsonArray diagnosticData = (JsonArray) diagnostic.getData();
-        if (diagnosticData == null || diagnosticData.size() == 0) {
-            return;
-        }
-
-        List<String> invalidScopes = IntStream.range(0, diagnosticData.size()).mapToObj(idx -> diagnosticData.get(idx).getAsString()).collect(Collectors.toList());
-
-        // Create a single code action to replace all invalid scopes with @Dependent
-        // Format scope names for display (e.g., "@ApplicationScoped, @RequestScoped")
-        String scopeNames = invalidScopes.stream().map(scope -> "@" + scope.substring(scope.lastIndexOf('.') + 1)).collect(Collectors.joining(", "));
-        String name = Messages.getMessage("ReplaceInvalidScopesWithDependent", scopeNames);
-        ExtendedCodeAction codeAction = new ExtendedCodeAction(name);
-        codeAction.setRelevance(0);
-        codeAction.setDiagnostics(Collections.singletonList(diagnostic));
-        codeAction.setKind(CodeActionKind.QuickFix);
-
-        Map<String, Object> extendedData = new HashMap<>();
-        extendedData.put(ANNOTATION_KEY, Arrays.asList(Constants.DEPENDENT_FQ_NAME));
-        extendedData.put("invalidScopes", invalidScopes);
-        codeAction.setData(new CodeActionResolveData(context.getUri(), getParticipantId(), context.getParams().getRange(), extendedData, context.getParams().isResourceOperationSupported(), context.getParams().isCommandConfigurationUpdateSupported(), getCodeActionId()));
-
-        codeActions.add(codeAction);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
-        CodeAction toResolve = context.getUnresolved();
-
-        // Get the covered node and its binding
-        ASTNode node = context.getCoveredNode();
-        IBinding parentType = getBinding(node);
-        ASTNode parentNode = context.getASTRoot().findDeclaringNode(parentType);
-        IBinding classBinding = getBinding(parentNode);
-
-        CodeActionResolveData data = (CodeActionResolveData) toResolve.getData();
-        List<String> invalidScopes = (List<String>) data.getExtendedDataEntry("invalidScopes");
-
-        if (invalidScopes != null && !invalidScopes.isEmpty()) {
-            // Extract simple names from fully qualified names for ReplaceAnnotationProposal
-            // ReplaceAnnotationProposal expects simple names (e.g., "ApplicationScoped" not "jakarta.enterprise.context.ApplicationScoped")
-            String[] invalidScopeSimpleNames = invalidScopes.stream().map(fqName -> fqName.substring(fqName.lastIndexOf('.') + 1)).toArray(String[]::new);
-
-            // Format scope names for display message
-            String scopeNames = invalidScopes.stream().map(scope -> "@" + scope.substring(scope.lastIndexOf('.') + 1)).collect(Collectors.joining(", "));
-            String name = Messages.getMessage("ReplaceInvalidScopesWithDependent", scopeNames);
-
-            // Create a proposal that replaces all invalid scopes with @Dependent
-            ChangeCorrectionProposal proposal = new ReplaceAnnotationProposal(name, context.getCompilationUnit(), context.getASTRoot(), classBinding, 0, Constants.DEPENDENT_FQ_NAME, invalidScopeSimpleNames);
-
-            try {
-                toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
-            } catch (CoreException e) {
-                LOGGER.log(Level.SEVERE,
-                           "Unable to create workspace edit for code action to replace invalid scopes with @Dependent",
-                           e);
-            }
-        }
-
-        return toResolve;
+    protected String getCodeActionLabel(String formattedNames) {
+        return Messages.getMessage("ReplaceInvalidScopesWithDependent", formattedNames);
     }
 }
-
-// Made with Bob
