@@ -33,9 +33,15 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4jakarta.commons.utils.JsonPropertyUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
@@ -172,7 +178,75 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                 parentClassHasJsonbAnnotations = true;
             }
         }
+
+        // Collect diagnostics for Jsonb.fromJson() method invocations with null parameters
+        collectJsonbFromJsonNullParameterDiagnostics(unit, context, uri, diagnostics);
+
         return diagnostics;
+    }
+
+    /**
+     * Collects diagnostics for Jsonb.fromJson() method invocations where null is passed as a parameter.
+     * According to the Jakarta JSON Binding specification, the fromJson() method must not accept null parameters.
+     *
+     * @param unit the compilation unit
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     */
+    private void collectJsonbFromJsonNullParameterDiagnostics(ICompilationUnit unit, JavaDiagnosticsContext context,
+                                                              String uri, List<Diagnostic> diagnostics) throws JavaModelException {
+        List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
+        List<MethodInvocation> fromJsonInvocations = allMethodInvocations.stream().filter(mi -> {
+            try {
+                return isMatchedJsonbFromJson(unit, mi);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.INFO, "Unable to find invokations", e.getMessage());
+            }
+            return false;
+        }).collect(java.util.stream.Collectors.toList());
+
+        for (MethodInvocation methodInvocation : fromJsonInvocations) {
+            if (!methodInvocation.arguments().isEmpty()) {
+                for (Object argObj : methodInvocation.arguments()) {
+                    Expression arg = (Expression) argObj;
+                    if (isInvalidNullArgument(arg)) {
+                        // Try to get actual parameter name from method binding
+                        String msg = Messages.getMessage("ErrorMessageJsonbFromJsonNullParameter");
+                        Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
+                        diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidJsonbFromJsonNullParameter,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if the given method invocation is a call to Jsonb.fromJson().
+     *
+     * @param unit the compilation unit
+     * @param mi the method invocation
+     * @return true if this is a fromJson() call on a Jsonb instance
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private boolean isMatchedJsonbFromJson(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+        if (!Constants.FROM_JSON_METHOD.equals(mi.getName().getIdentifier())) {
+            return false;
+        }
+        return ASTUtils.isMatchedTargetClass(unit, mi, Constants.JSONB_FROM_JSON_PACKAGE);
+    }
+
+    /**
+     * Checks if the given expression is a null literal or a cast expression containing a null literal.
+     *
+     * @param arg the expression to check
+     * @return true if the expression is null or a cast of null
+     */
+    private boolean isInvalidNullArgument(Expression arg) {
+        return arg instanceof NullLiteral
+               || (arg instanceof CastExpression && ((CastExpression) arg).getExpression() instanceof NullLiteral);
     }
 
     /**
