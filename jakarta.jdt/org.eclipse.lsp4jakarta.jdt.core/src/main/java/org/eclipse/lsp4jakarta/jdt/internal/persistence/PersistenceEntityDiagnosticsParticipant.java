@@ -104,6 +104,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
+                        validateVersionFieldOrPropertyType(method, type, diagnostics, context);
                     }
 
                     if (DiagnosticUtils.isConstructorMethod(method)) {
@@ -142,6 +143,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
+                        validateVersionFieldOrPropertyType(field, type, diagnostics, context);
                     }
 
                     // If a field is static, we do not care about it, we care about all other field
@@ -490,6 +492,37 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         return false;
+    }
+
+    /**
+     * Validates that a field or method annotated with @Version has a supported type.
+     * Supported types are: int, Integer, short, Short, long, Long, java.sql.Timestamp
+     *
+     * @param member the field or method to validate
+     * @param type the containing type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateVersionFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                                    JavaDiagnosticsContext context) throws JavaModelException {
+        String typeFQ = null;
+        Range range = null;
+
+        if (member instanceof IMethod) {
+            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+        } else if (member instanceof IField) {
+            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
+            range = PositionUtils.toNameRange((IField) member, context.getUtils());
+        }
+
+        if (typeFQ != null && !Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage("InvalidVersionFieldOrPropertyType"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
+        }
     }
 
 }
