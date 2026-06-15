@@ -153,6 +153,22 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidFieldWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
 
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#declaring_resource
+                // Producer fields must not declare a bean name using @Named annotation.
+                // Bean naming is reserved for producer methods and managed beans.
+                if (isProducerField) {
+                    for (IAnnotation annotation : field.getAnnotations()) {
+                        if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage("ProducerFieldWithNamedAnnotation", field.getElementName()), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidProducerFieldWithNamedAnnotation, DiagnosticSeverity.Error));
+                            break;
+                        }
+                    }
+                }
+
             }
 
             IMethod[] methods = type.getMethods();

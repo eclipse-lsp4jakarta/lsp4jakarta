@@ -418,6 +418,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidMultipleObserverParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveMultipleObserverParamsQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidProducerFieldWithNamedAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedAnnotationQuickFix" />
   </extension>
    
    <!-- Interceptor -->

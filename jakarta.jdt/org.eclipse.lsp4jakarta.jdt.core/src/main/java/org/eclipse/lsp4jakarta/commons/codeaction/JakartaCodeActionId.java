@@ -93,7 +93,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveObserverConflictParams,
     CDIRemoveSingletonAnnotation,
     CDIRemoveStatelessAnnotation,
-    CDIRemoveDisposesFromInterceptorDecorator;
+    CDIRemoveDisposesFromInterceptorDecorator,
+    CDIRemoveNamedAnnotation;
 
     @Override
     public String getId() {
