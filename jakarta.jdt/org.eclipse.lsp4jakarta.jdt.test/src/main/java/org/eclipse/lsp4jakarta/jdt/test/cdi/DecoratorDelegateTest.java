@@ -41,9 +41,9 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     /**
-     * Test that a decorator with multiple @Delegate fields triggers a diagnostic.
+     * Test that a decorator with multiple @Delegate fields triggers diagnostics at each field.
      *
-     * Expected: Error on class name indicating 2 @Delegate injection points found.
+     * Expected: Error on each @Delegate field indicating 2 @Delegate injection points found.
      */
     @Test
     public void testDecoratorWithMultipleDelegateFields() throws Exception {
@@ -54,15 +54,22 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Expected diagnostic on class name
-        // Line 12 (0-based: 11), class name "DecoratorWithMultipleDelegates" starts at column 13, ends at column 42
-        Diagnostic multipleDelegatesDiagnostic = d(11, 13, 43,
-                                                   "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
-                                                   DiagnosticSeverity.Error,
-                                                   "jakarta-cdi",
-                                                   "InvalidDecoratorDelegateInjectionPoints");
+        // Expected diagnostics on each @Delegate field
+        // Line 16 (0-based: 15), field name "delegateA" starts at column 27, ends at column 36
+        Diagnostic delegateADiagnostic = d(15, 27, 36,
+                                           "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                           DiagnosticSeverity.Error,
+                                           "jakarta-cdi",
+                                           "InvalidDecoratorDelegateInjectionPoints");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, multipleDelegatesDiagnostic);
+        // Line 20 (0-based: 19), field name "delegateB" starts at column 27, ends at column 36
+        Diagnostic delegateBDiagnostic = d(19, 27, 36,
+                                           "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                           DiagnosticSeverity.Error,
+                                           "jakarta-cdi",
+                                           "InvalidDecoratorDelegateInjectionPoints");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, delegateADiagnostic, delegateBDiagnostic);
     }
 
     /**
@@ -91,9 +98,9 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
     }
 
     /**
-     * Test that a decorator with @Delegate on both field and constructor parameter triggers a diagnostic.
+     * Test that a decorator with @Delegate on both field and constructor parameter triggers diagnostics at each location.
      *
-     * Expected: Error on class name indicating 2 @Delegate injection points found.
+     * Expected: Error on field and parameter indicating 2 @Delegate injection points found.
      */
     @Test
     public void testDecoratorWithMixedDelegateInjectionPoints() throws Exception {
@@ -104,22 +111,29 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Expected diagnostic on class name
-        // Line 12 (0-based: 11), class name "DecoratorWithMixedDelegates" starts at column 13, ends at column 39
-        // Expected diagnostics: our decorator diagnostic + DI diagnostic for constructor parameter
-        Diagnostic mixedDelegatesDiagnostic = d(11, 13, 40,
-                                                "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
-                                                DiagnosticSeverity.Error,
-                                                "jakarta-cdi",
-                                                "InvalidDecoratorDelegateInjectionPoints");
+        // Expected diagnostics on field and constructor parameter
+        // Line 16 (0-based: 15), field name "delegateField" starts at column 27, ends at column 40
+        Diagnostic fieldDelegateDiagnostic = d(15, 27, 40,
+                                               "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidDecoratorDelegateInjectionPoints");
 
+        // Line 21 (0-based: 20), parameter name "delegate" starts at column 64, ends at column 72
+        Diagnostic paramDelegateDiagnostic = d(20, 64, 72,
+                                               "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidDecoratorDelegateInjectionPoints");
+
+        // DI diagnostic for constructor parameter
         Diagnostic diDiagnostic = d(20, 64, 72,
                                     "The parameter should define a constructor with no parameters or a constructor annotated with @Inject.",
                                     DiagnosticSeverity.Warning,
                                     "jakarta-di",
                                     "InjectionPointInvalidConstructorBean");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diDiagnostic, mixedDelegatesDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diDiagnostic, fieldDelegateDiagnostic, paramDelegateDiagnostic);
     }
 
     /**

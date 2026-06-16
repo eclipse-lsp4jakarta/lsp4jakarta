@@ -88,8 +88,8 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
             return;
         }
 
-        // Count @Delegate injection points across fields and method/constructor parameters
-        int delegateCount = 0;
+        // Collect all @Delegate injection points
+        List<Object> delegateElements = new ArrayList<>();
 
         // Check fields for @Delegate annotation
         IField[] fields = type.getFields();
@@ -98,7 +98,7 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
             List<String> delegateOnField = DiagnosticUtils.getMatchedJavaElementNames(type, fieldAnnotations,
                                                                                       new String[] { Constants.DELEGATE_FQ_NAME });
             if (!delegateOnField.isEmpty()) {
-                delegateCount++;
+                delegateElements.add(field);
             }
         }
 
@@ -111,26 +111,40 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 List<String> delegateOnParam = DiagnosticUtils.getMatchedJavaElementNames(type, paramAnnotations,
                                                                                           new String[] { Constants.DELEGATE_FQ_NAME });
                 if (!delegateOnParam.isEmpty()) {
-                    delegateCount++;
+                    delegateElements.add(parameter);
                 }
             }
         }
 
-        // Report diagnostic if delegate count is not exactly 1
-        if (delegateCount != 1) {
+        int delegateCount = delegateElements.size();
+
+        // Report diagnostics based on delegate count
+        if (delegateCount == 0) {
+            // No @Delegate found - report at class level
             Range range = PositionUtils.toNameRange(type, context.getUtils());
-            String message;
-
-            if (delegateCount == 0) {
-                message = Messages.getMessage("DecoratorWithInvalidDelegateCount");
-            } else {
-                message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
-            }
-
+            String message = Messages.getMessage("DecoratorWithInvalidDelegateCount");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidDecoratorDelegateInjectionPoints,
                                                      DiagnosticSeverity.Error));
+        } else if (delegateCount > 1) {
+            // Multiple @Delegate found - report at each field/parameter level
+            String message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
+            for (Object element : delegateElements) {
+                Range range;
+                if (element instanceof IField) {
+                    range = PositionUtils.toNameRange((IField) element, context.getUtils());
+                } else if (element instanceof ILocalVariable) {
+                    range = PositionUtils.toNameRange((ILocalVariable) element, context.getUtils());
+                } else {
+                    continue;
+                }
+                diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidDecoratorDelegateInjectionPoints,
+                                                         DiagnosticSeverity.Error));
+            }
         }
+        // If delegateCount == 1, no diagnostic needed (valid case)
     }
 }
