@@ -18,5 +18,3 @@ public class DecoratorWithNoDelegate implements PaymentService {
         logger.log("Processing payment: " + amount);
     }
 }
-
-// Made with Bob

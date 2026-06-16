@@ -24,5 +24,3 @@ public class DecoratorWithMultipleDelegates implements PaymentService {
         // Implementation
     }
 }
-
-// Made with Bob

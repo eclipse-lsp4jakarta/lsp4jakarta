@@ -27,5 +27,3 @@ public class DecoratorWithDelegateOnConstructor implements PaymentService {
         delegate.processPayment(amount);
     }
 }
-
-// Made with Bob

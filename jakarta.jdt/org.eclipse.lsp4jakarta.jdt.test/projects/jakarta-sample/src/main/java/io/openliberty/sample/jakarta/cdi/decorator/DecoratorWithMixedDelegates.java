@@ -27,5 +27,3 @@ public class DecoratorWithMixedDelegates implements PaymentService {
         delegateField.processPayment(amount);
     }
 }
-
-// Made with Bob
