@@ -120,7 +120,12 @@ public class InterceptorTest extends BaseJakartaTest {
                                                      "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic);
+        // Test diagnostic for missing @Delegate (from DecoratorDiagnosticsParticipant)
+        Diagnostic noDelegateDiagnostic = d(7, 13, 47,
+                                            "A decorator must declare exactly one @Delegate injection point.",
+                                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDecoratorDelegateInjectionPoints");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic, noDelegateDiagnostic);
     }
 
     @Test
