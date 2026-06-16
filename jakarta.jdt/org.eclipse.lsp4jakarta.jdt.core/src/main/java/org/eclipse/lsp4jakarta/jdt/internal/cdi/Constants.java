@@ -39,6 +39,7 @@ public class Constants {
     public static final String DIAGNOSTIC_CODE_PRODUCES_INJECT = "RemoveProducesOrInject";
     public static final String INTERCEPTOR_FQ_NAME = "jakarta.interceptor.Interceptor";
     public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
+    public static final String DELEGATE_FQ_NAME = "jakarta.decorator.Delegate";
     public static final String CONSTRUCTOR_DIAGNOSTIC_CODE = "InvalidManagedBeanConstructor";
 
     public static final String DIAGNOSTIC_CODE_INVALID_INJECT_PARAM = "RemoveInjectOrConflictedAnnotations";
