@@ -418,6 +418,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidProducerFieldWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDelegateAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDelegateAnnotationQuickFix" />
   </extension>
    
    <!-- Interceptor -->

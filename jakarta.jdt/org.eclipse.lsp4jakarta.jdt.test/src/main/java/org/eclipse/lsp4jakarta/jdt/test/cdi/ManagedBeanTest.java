@@ -648,4 +648,48 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         assertJavaCodeAction(observesAsyncCodeActionParams, IJDT_UTILS, removeNotifyObserverAction2, removeDependentAction2, removeObservesAsyncAction);
     }
+
+    @Test
+    public void invalidDelegateAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/InvalidDelegateAnnotation.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test expected diagnostics for @Delegate on class and methods
+        Diagnostic delegateOnClassDiagnostic = d(14, 0, 9,
+                                                 "The @Delegate annotation is only valid on injection points (fields or parameters), not on classes.",
+                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDelegateAnnotation");
+
+        Diagnostic delegateOnMethod1Diagnostic = d(37, 4, 13,
+                                                   "The @Delegate annotation is only valid on injection points (fields or parameters), not on methods.",
+                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDelegateAnnotation");
+
+        Diagnostic delegateOnMethod2Diagnostic = d(43, 4, 13,
+                                                   "The @Delegate annotation is only valid on injection points (fields or parameters), not on methods.",
+                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDelegateAnnotation");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, delegateOnClassDiagnostic, delegateOnMethod1Diagnostic, delegateOnMethod2Diagnostic);
+
+        // Test code action for @Delegate on class
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, delegateOnClassDiagnostic);
+        TextEdit classFixTextEdit = te(13, 0, 15, 0, "");
+        CodeAction removeDelegateFromClassAction = ca(uri, "Remove @Delegate", delegateOnClassDiagnostic, classFixTextEdit);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeDelegateFromClassAction);
+
+        // Test code action for @Delegate on first method
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, delegateOnMethod1Diagnostic);
+        TextEdit method1FixTextEdit = te(37, 4, 38, 4, "");
+        CodeAction removeDelegateFromMethod1Action = ca(uri, "Remove @Delegate", delegateOnMethod1Diagnostic, method1FixTextEdit);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeDelegateFromMethod1Action);
+
+        // Test code action for @Delegate on second method
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, delegateOnMethod2Diagnostic);
+        TextEdit method2FixTextEdit = te(43, 4, 44, 4, "");
+        CodeAction removeDelegateFromMethod2Action = ca(uri, "Remove @Delegate", delegateOnMethod2Diagnostic, method2FixTextEdit);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeDelegateFromMethod2Action);
+
+    }
 }

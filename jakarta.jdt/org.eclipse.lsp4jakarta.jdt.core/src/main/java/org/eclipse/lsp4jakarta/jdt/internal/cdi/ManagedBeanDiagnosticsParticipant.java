@@ -79,6 +79,19 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
+            // Check for @Delegate on class - it's only valid on injection points (fields/parameters)
+            // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
+            for (IAnnotation annotation : type.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.DELEGATE_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidDelegateAnnotationOnClass"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDelegateAnnotation, DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+
             String[] injectAnnotations = { Constants.PRODUCES_FQ_NAME, Constants.INJECT_FQ_NAME };
             IField fields[] = type.getFields();
             boolean nonStaticPublicFieldPresent = false;
@@ -174,6 +187,32 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             IMethod[] methods = type.getMethods();
             List<IMethod> constructorMethods = new ArrayList<IMethod>();
             for (IMethod method : methods) {
+
+                // Check for @Delegate on method - it's only valid on injection points (fields/parameters)
+                // Note: @Delegate is valid on bean constructor and initializer method parameters (methods with @Inject),
+                // but NOT valid directly on the method itself
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
+                String[] methodAnnotations = Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+
+                // Check if method has @Inject annotation (bean constructor or initializer method)
+                List<String> methodHasInjectAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, methodAnnotations,
+                                                                                                     new String[] { Constants.INJECT_FQ_NAME });
+                boolean hasInject = !methodHasInjectAnnotations.isEmpty();
+
+                // Only check for @Delegate on regular methods (not bean constructors or initializer methods)
+                if (!hasInject) {
+                    // Check for @Delegate annotation
+                    for (IAnnotation annotation : method.getAnnotations()) {
+                        if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.DELEGATE_FQ_NAME)) {
+                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage("InvalidDelegateAnnotationOnMethod"), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidDelegateAnnotation, DiagnosticSeverity.Error));
+                            break;
+                        }
+                    }
+                }
 
                 // Find all methods on the type that are constructors.
                 if (DiagnosticUtils.isConstructorMethod(method))
