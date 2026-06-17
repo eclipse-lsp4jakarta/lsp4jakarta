@@ -100,7 +100,14 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveCheckedExceptionsInThrowsQuickFix" />    
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-annotations#PreDestroyException"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />           
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemovePreDestroyAnnotationQuickFix" />  
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-annotations#ResourceTypeMismatch"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveResourceAnnotationAttributeQuickFix" />
+                           
    </extension>
    
    <!-- Bean Validation -->
@@ -174,6 +181,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-di#InvalidInjectAnnotationOnMultipleConstructors"
                   class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+		          targetDiagnostic="jakarta-di#InvalidScopeAttributes"
+		          class="org.eclipse.lsp4jakarta.jdt.internal.di.RemoveScopeAttributesQuickFix" />
    </extension>
    
    <!-- JSON-B -->
@@ -187,14 +197,29 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnField"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveAllButJsonbTransientAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-jsonb#InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />                
-   </extension>  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.RemoveJsonbTransientAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNonPublicProtectedStaticNestedClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNonPublicProtectedStaticNestedClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToProtectedQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNoArgsConstructorMissing"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertDefaultPublicConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNoArgsConstructorMissing"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertDefaultProtectedConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-jsonb#InvalidJsonBNonStaticInnerClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.InsertStaticModifierQuickFix" />
+   </extension>
    
    <!-- JSON-P -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
@@ -223,16 +248,22 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />          
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMethodWithMultipleMPJCAnnotations"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />                  
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFieldWithMultipleMPJCAnnotations"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />          
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#MissingTemporalAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertTemporalAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
    </extension>
    
    <!-- WebSocket -->
@@ -328,6 +359,12 @@
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultProtectedConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveSingletonAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidManagedBeanWithInvalidConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultPublicConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
@@ -366,7 +403,19 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
-   </extension>
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDependentScopeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveConditionalObserverParamAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNotifyObserverAttributeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidMultipleObserverParams"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveMultipleObserverParamsQuickFix" />
+  </extension>
    
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">

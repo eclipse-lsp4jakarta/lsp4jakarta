@@ -105,6 +105,20 @@
 			"contentType": "before-class"
 	    }
 	},
+	"Jakarta Persistence - named query annotation": {
+	    "prefix": "persist_named_query",
+	    "body": [
+	        "@NamedQuery(",
+	        "\tname = \"${TM_FILENAME_BASE}.${1:findAll}\",",
+	        "\tquery = \"SELECT ${2:e} FROM ${TM_FILENAME_BASE} ${2:e}\"",
+			")"
+	    ],
+	    "description": "NamedQuery annotation for defining reusable JPQL queries",
+	    "context": {
+	        "type": "jakarta.persistence.NamedQuery",
+			"contentType": "before-class"
+	    }
+	},
 	"Jakarta Persistence - entity listener": {
 	    "prefix": "persist_entity_listener",
 	    "body": [

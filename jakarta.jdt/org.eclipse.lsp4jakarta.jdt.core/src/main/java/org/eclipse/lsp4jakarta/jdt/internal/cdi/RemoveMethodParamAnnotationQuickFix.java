@@ -23,10 +23,10 @@ import java.util.logging.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -90,10 +90,10 @@ public abstract class RemoveMethodParamAnnotationQuickFix implements IJavaCodeAc
             ArrayList<String> annotationsToRemove = new ArrayList<>();
 
             for (ASTNode modifier : modifiers) {
-                if (modifier instanceof MarkerAnnotation) {
-                    MarkerAnnotation annotation = (MarkerAnnotation) modifier;
+                if (modifier instanceof Annotation) {
+                    Annotation annotation = (Annotation) modifier;
                     ITypeBinding typeBinding = annotation.resolveTypeBinding();
-                    if (Arrays.asList(this.annotations).stream().anyMatch(m -> m.equals(typeBinding.getQualifiedName()))) {
+                    if (typeBinding != null && Arrays.asList(this.annotations).stream().anyMatch(m -> m.equals(typeBinding.getQualifiedName()))) {
                         annotationsToRemove.add(annotation.getTypeName().toString());
                     }
                 }

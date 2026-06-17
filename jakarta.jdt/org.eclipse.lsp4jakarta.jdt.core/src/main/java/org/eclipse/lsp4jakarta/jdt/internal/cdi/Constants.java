@@ -28,13 +28,16 @@ public class Constants {
     public static final String OBSERVES_FQ_NAME = "jakarta.enterprise.event.Observes";
     public static final String OBSERVES_ASYNC_FQ_NAME = "jakarta.enterprise.event.ObservesAsync";
     public static final String DEPENDENT_FQ_NAME = "jakarta.enterprise.context.Dependent";
+    public static final String APPLICATION_SCOPED_FQ_NAME = "jakarta.enterprise.context.ApplicationScoped";
+    public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
     public static final String DIAGNOSTIC_CODE = "InvalidManagedBeanAnnotation";
     public static final String DIAGNOSTIC_CODE_SCOPEDECL = "InvalidScopeDecl";
     public static final String DIAGNOSTIC_CODE_PRODUCES_INJECT = "RemoveProducesOrInject";
-
+    public static final String INTERCEPTOR_FQ_NAME = "jakarta.interceptor.Interceptor";
+    public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
     public static final String CONSTRUCTOR_DIAGNOSTIC_CODE = "InvalidManagedBeanConstructor";
 
     public static final String DIAGNOSTIC_CODE_INVALID_INJECT_PARAM = "RemoveInjectOrConflictedAnnotations";

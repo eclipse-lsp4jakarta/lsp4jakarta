@@ -13,7 +13,9 @@
 package org.eclipse.lsp4jakarta.jdt.internal.jsonp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -35,6 +38,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -74,64 +78,121 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                 // and is neither an empty String
                 // or a sequence of '/' prefixed tokens, a diagnostic highlighting the invalid
                 // argument is created.
-                try {
-                    String msg = Messages.getMessage("CreatePointerErrorMessage");
-                    Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                    diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidJsonCreatePointerTarget, DiagnosticSeverity.Error));
-                } catch (JavaModelException e) {
-                    JakartaCorePlugin.logException("Cannot calculate diagnostics", e);
-                }
+                String msg = Messages.getMessage("CreatePointerErrorMessage");
+                createDiagnostic(unit, diagnostics, context, uri, msg, ErrorCode.InvalidJsonCreatePointerTarget, arg);
             }
         }
 
-        //Used to get the list of method invocations for JsonObjectBuilder add methods
-        List<MethodInvocation> createObjectBuilderMethodInvocations = allMethodInvocations.stream().filter(mi -> {
+        // Single pass to collect both JsonObjectBuilder and JsonArrayBuilder method invocations
+        Map<JSONBuilderType, List<MethodInvocation>> builderInvocations = allMethodInvocations.stream().collect(Collectors.groupingBy(mi -> {
             try {
-                return isMatchedJsonObjectBuilder(unit, mi);
+                return getJsonBuilderType(unit, mi);
             } catch (JavaModelException e) {
-                return false;
+                return JSONBuilderType.UNKNOWN;
             }
-        }).collect(Collectors.toList());
-        for (MethodInvocation methodIn : createObjectBuilderMethodInvocations) {
-            if (!methodIn.arguments().isEmpty()) {
-                Expression arg = (Expression) methodIn.arguments().get(0);
-                if (arg instanceof NullLiteral) {
-                    //https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
-                    //Does not allow key to be null for JsonObjectBuilder.add() method
-                    try {
-                        Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-                        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
-                                                                 range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidJsonObjectBuilderKey, DiagnosticSeverity.Error));
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
-                    }
-                }
-            }
-        }
+        }));
+
+        List<MethodInvocation> createObjectBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.OBJECT, Collections.emptyList());
+        List<MethodInvocation> createArrayBuilderMethodInvocations = builderInvocations.getOrDefault(JSONBuilderType.ARRAY, Collections.emptyList());
+        //Used to create diagnostics for invalid JsonObjectBuilder add methods
+        createDiagnosticsForBuilderInvocations(unit, createObjectBuilderMethodInvocations, diagnostics, context, uri,
+                                               Messages.getMessage("ErrorMessageJsonPObjectKeyNonNull"),
+                                               ErrorCode.InvalidJsonObjectBuilderKey);
+        //Used to create diagnostics for invalid JsonArrayBuilder add methods
+        createDiagnosticsForBuilderInvocations(unit, createArrayBuilderMethodInvocations, diagnostics, context, uri,
+                                               Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
+                                               ErrorCode.InvalidJsonArrayBuilderValue);
         return diagnostics;
     }
 
     /**
-     * Method used to identify jakarta.json.JsonObjectBuilder.add type method invocations
+     * Method used to create diagnostics for invalid JsonObjectBuilder or JsonArrayBuilder
+     *
+     * https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonobjectbuilder
+     * Does not allow key to be null for JsonObjectBuilder.add() method
+     *
+     * https://jakarta.ee/specifications/jsonp/2.1/apidocs/jakarta.json/jakarta/json/jsonarraybuilder
+     * Does not allow value to be null for JsonArrayBuilder.add() method
      *
      * @param unit
-     * @param mi
-     * @return boolean
-     * @throws JavaModelException
+     * @param invocations
+     * @param diagnostics
+     * @param context
+     * @param uri
+     * @param msg
+     * @param errCode
      */
-    private boolean isMatchedJsonObjectBuilder(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
-        IMethodBinding binding = mi.resolveMethodBinding();
-        if (binding != null) {
-            ITypeBinding declaringClass = binding.getDeclaringClass();
-            if (declaringClass != null) {
-                String fqName = declaringClass.getQualifiedName() + "." + binding.getName();
-                if (Constants.JAKARTA_JSON_OBJECT_BUILDER_ADD.equals(fqName)) {
-                    return true;
+    private void createDiagnosticsForBuilderInvocations(ICompilationUnit unit, List<MethodInvocation> invocations,
+                                                        List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                                        String uri, String msg, IJavaErrorCode errCode) {
+        for (MethodInvocation methodIn : invocations) {
+            if (!methodIn.arguments().isEmpty()) {
+                for (Object argObj : methodIn.arguments()) {
+                    Expression arg = (Expression) argObj;
+                    if (isInvalidNullArgument(arg)) {
+                        createDiagnostic(unit, diagnostics, context, uri, msg, errCode, arg);
+                    }
                 }
             }
         }
-        return false;
+    }
+
+    /**
+     * Common method to create a diagnostic for an invalid argument
+     *
+     * @param unit
+     * @param diagnostics
+     * @param context
+     * @param uri
+     * @param msg
+     * @param errCode
+     * @param arg
+     */
+    private void createDiagnostic(ICompilationUnit unit, List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                  String uri, String msg, IJavaErrorCode errCode, Expression arg) {
+        try {
+            Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE, errCode,
+                                                     DiagnosticSeverity.Error));
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
+        }
+    }
+
+    /**
+     * Method is used to check if value of arg passed or Cast Expression inside passed arg is null
+     *
+     * @param arg
+     * @return boolean
+     */
+    private boolean isInvalidNullArgument(Expression arg) {
+        return arg instanceof NullLiteral
+               || (arg instanceof CastExpression cast && cast.getExpression() instanceof NullLiteral);
+    }
+
+    /**
+     * Method used to identify jakarta.json.JsonObjectBuilder.add or jakarta.json.JsonArrayBuilder.add type method invocations
+     *
+     * @param unit
+     * @param mi
+     * @return enum JSONBuilderType
+     * @throws JavaModelException
+     */
+    private JSONBuilderType getJsonBuilderType(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (!Constants.JAKARTA_JSON_BUILDER_ADD_METHOD.equals(mi.getName().getIdentifier())
+            || binding == null) {
+            return JSONBuilderType.UNKNOWN;
+        }
+        ITypeBinding methodTargetClass = binding.getDeclaringClass();
+        String qualifiedName = (methodTargetClass != null) ? methodTargetClass.getQualifiedName() : null;
+        if (Constants.JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME.equals(qualifiedName)) {
+            return JSONBuilderType.OBJECT;
+        }
+        if (Constants.JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME.equals(qualifiedName)) {
+            return JSONBuilderType.ARRAY;
+        }
+        return JSONBuilderType.UNKNOWN;
     }
 
     private boolean isInvalidArgument(Expression arg) {
