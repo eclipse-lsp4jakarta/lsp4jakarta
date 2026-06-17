@@ -82,6 +82,24 @@ public class WildcardBeanTypes {
         return null;
     }
 
+    // Invalid: Nested wildcard - Map with List containing wildcard
+    @Inject
+    Map<String, List<?>> nestedWildcardMap;
+
+    // Invalid: Deeply nested wildcard - Map with Map containing wildcard
+    @Inject
+    Map<String, Map<Integer, ?>> deeplyNestedWildcardMap;
+
+    // Invalid: Producer method with nested wildcard return type
+    @Produces
+    public Map<String, List<?>> produceNestedWildcardMap() {
+        return null;
+    }
+
+    // Invalid: Array of nested wildcard type
+    @Inject
+    Map<String, List<?>>[] nestedWildcardArray;
+
     // Valid: Producer method with concrete return type
     @Produces
     public List<Double> produceConcreteList() {
@@ -93,4 +111,8 @@ public class WildcardBeanTypes {
     public Map<String, Integer> produceConcreteMap() {
         return null;
     }
+
+    // Valid: Nested concrete types without wildcards
+    @Inject
+    Map<String, List<Integer>> nestedConcreteMap;
 }

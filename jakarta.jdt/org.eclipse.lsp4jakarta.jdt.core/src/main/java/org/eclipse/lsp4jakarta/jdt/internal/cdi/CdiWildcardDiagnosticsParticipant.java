@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -47,10 +46,10 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * - Producer fields (@Produces fields)
  * - Arrays whose component type contains wildcards
  */
-public class WildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /** Logger object to record events for this class. */
-    private static final Logger LOGGER = Logger.getLogger(WildcardDiagnosticsParticipant.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CdiWildcardDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -66,15 +65,11 @@ public class WildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             // Check fields with @Inject annotation
-            IField[] fields = type.getFields();
-            for (IField field : fields) {
-                String[] annotationNames = Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+            for (IField field : type.getFields()) {
+                String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
 
                 // Check if field has @Inject annotation
-                boolean hasInject = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                                               new String[] { Constants.INJECT_FQ_NAME }).size() > 0;
-
-                if (hasInject) {
+                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
                     String typeSignature = field.getTypeSignature();
                     if (containsWildcard(typeSignature)) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -89,10 +84,7 @@ public class WildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipa
                 }
 
                 // Check if field has @Produces annotation
-                boolean hasProduces = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                                                 new String[] { Constants.PRODUCES_FQ_NAME }).size() > 0;
-
-                if (hasProduces) {
+                if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
                     String typeSignature = field.getTypeSignature();
                     if (containsWildcard(typeSignature)) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -108,14 +100,10 @@ public class WildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipa
             }
 
             // Check methods with @Produces annotation
-            IMethod[] methods = type.getMethods();
-            for (IMethod method : methods) {
-                String[] annotationNames = Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+            for (IMethod method : type.getMethods()) {
+                String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
-                boolean hasProduces = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                                                 new String[] { Constants.PRODUCES_FQ_NAME }).size() > 0;
-
-                if (hasProduces) {
+                if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
                     String returnTypeSignature = method.getReturnType();
                     if (containsWildcard(returnTypeSignature)) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
@@ -132,6 +120,19 @@ public class WildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipa
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Checks if an annotation array contains a specific annotation.
+     *
+     * @param type the type containing the annotations
+     * @param annotationNames array of annotation names to check
+     * @param annotationFQName the fully qualified name of the annotation to match
+     * @return true if the annotation is found, false otherwise
+     */
+    private boolean hasAnnotation(IType type, String[] annotationNames, String annotationFQName) {
+        return DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
+                                                          new String[] { annotationFQName }).size() > 0;
     }
 
     /**

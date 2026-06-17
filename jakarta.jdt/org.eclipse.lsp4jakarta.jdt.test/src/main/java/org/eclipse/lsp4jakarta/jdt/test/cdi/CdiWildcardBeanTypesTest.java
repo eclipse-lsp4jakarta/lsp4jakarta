@@ -35,7 +35,7 @@ import org.junit.Test;
  * According to CDI specification section 2.2.1:
  * "A parameterized type that contains a wildcard type parameter is not a legal bean type."
  */
-public class WildcardBeanTypesTest extends BaseJakartaTest {
+public class CdiWildcardBeanTypesTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
@@ -91,9 +91,27 @@ public class WildcardBeanTypesTest extends BaseJakartaTest {
                                                    "Wildcard types are not legal bean types. Producer methods must return concrete parameterized types without wildcards (?, ? extends, ? super).",
                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInProducerMethod");
 
+        // Test expected diagnostics for nested wildcard types (recursive checking)
+        Diagnostic injectNestedWildcard = d(86, 25, 42,
+                                            "Wildcard types are not legal bean types. Injection points must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectDeeplyNestedWildcard = d(90, 33, 56,
+                                                  "Wildcard types are not legal bean types. Injection points must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic producerMethodNestedWildcard = d(94, 32, 56,
+                                                    "Wildcard types are not legal bean types. Producer methods must return concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInProducerMethod");
+
+        Diagnostic injectNestedWildcardArray = d(100, 27, 46,
+                                                 "Wildcard types are not legal bean types. Injection points must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
                               injectWildcard, injectExtendsWildcard, injectSuperWildcard, injectMapWildcard,
                               producerFieldWildcard, producerFieldExtendsWildcard,
-                              producerMethodMapWildcard, producerMethodExtendsWildcard, producerMethodSuperWildcard, producerMethodArrayWildcard);
+                              producerMethodMapWildcard, producerMethodExtendsWildcard, producerMethodSuperWildcard, producerMethodArrayWildcard,
+                              injectNestedWildcard, injectDeeplyNestedWildcard, producerMethodNestedWildcard, injectNestedWildcardArray);
     }
 }
