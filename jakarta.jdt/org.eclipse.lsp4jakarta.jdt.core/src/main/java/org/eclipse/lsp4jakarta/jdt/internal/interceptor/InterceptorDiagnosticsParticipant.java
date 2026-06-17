@@ -43,9 +43,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
-import static org.eclipse.lsp4jakarta.jdt.internal.annotations.Constants.PRIORITY_FQ_NAME;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static org.eclipse.lsp4jakarta.jdt.internal.interceptor.Constants.PRIORITY_FQ_NAME;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
