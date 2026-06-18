@@ -235,7 +235,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
                 IMethodBinding binding = bindingCache.get(mi);
                 if (binding != null) {
-                    String fqName = getDeclaringClassName(binding);
+                    String fqName = ASTUtils.getDeclaringClassName(mi);
                     if (fqName != null) {
                         // Check if this method uses Jsonb
                         if (!analysis.methodUsesJsonb && fqName.equals(Constants.JAKARTA_JSONB)) {
@@ -285,17 +285,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     }
 
     /**
-     * Helper method to get the fully qualified name of the declaring class from a method binding.
-     *
-     * @param binding the method binding
-     * @return the fully qualified class name, or null if not available
-     */
-    private String getDeclaringClassName(IMethodBinding binding) {
-        ITypeBinding declaringClass = binding.getDeclaringClass();
-        return declaringClass != null ? declaringClass.getQualifiedName() : null;
-    }
-
-    /**
      * Checks if a method invocation creates a local Jsonb instance.
      * Detects both JsonbBuilder.create() and JsonbBuilder.build() patterns.
      * This distinguishes between local instances (which should be closed) and
@@ -314,7 +303,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             return false;
         }
 
-        String fqName = getDeclaringClassName(binding);
+        String fqName = ASTUtils.getDeclaringClassName(mi);
         if (fqName == null) {
             return false;
         }
@@ -337,7 +326,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             return false;
         }
 
-        String fqName = getDeclaringClassName(binding);
+        String fqName = ASTUtils.getDeclaringClassName(mi);
         if (fqName == null) {
             return false;
         }
@@ -356,13 +345,12 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * @return true if this invocation creates or uses a thread source
      */
     private boolean isThreadSourceInvocation(MethodInvocation mi, IMethodBinding binding) {
-        ITypeBinding declaringClass = binding.getDeclaringClass();
-        if (declaringClass == null) {
+        String fqName = ASTUtils.getDeclaringClassName(mi);
+        if (fqName == null) {
             return false;
         }
 
         String name = mi.getName().getIdentifier();
-        String fqName = declaringClass.getQualifiedName();
 
         // Check known thread methods and classes
         if (isThreadSource(name, fqName)) {
@@ -370,7 +358,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         }
 
         // Check if declaring class extends/implements thread-related types
-        return isThreadRelatedType(declaringClass);
+        return isThreadRelatedType(binding.getDeclaringClass());
     }
 
     /**
