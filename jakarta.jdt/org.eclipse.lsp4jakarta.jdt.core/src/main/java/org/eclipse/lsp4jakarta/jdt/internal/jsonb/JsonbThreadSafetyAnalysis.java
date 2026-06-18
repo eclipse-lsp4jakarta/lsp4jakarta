@@ -39,4 +39,14 @@ class JsonbThreadSafetyAnalysis {
      * Thread sources include ExecutorService, CompletableFuture, Thread, Timer, etc.
      */
     int threadSourceCount = 0;
+
+    /**
+     * Indicates whether the method creates a local Jsonb instance (via JsonbBuilder.create()).
+     * True if Jsonb is created locally within the method.
+     * False if Jsonb is accessed from a field or passed as parameter (global/shared instance).
+     *
+     * Diagnostics should only be generated for local instances, as global instances
+     * should not be closed within individual methods when threads are involved.
+     */
+    boolean hasLocalJsonbInstance = false;
 }

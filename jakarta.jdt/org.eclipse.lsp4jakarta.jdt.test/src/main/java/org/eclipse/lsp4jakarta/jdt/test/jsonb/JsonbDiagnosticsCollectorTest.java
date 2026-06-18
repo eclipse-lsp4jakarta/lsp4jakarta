@@ -473,304 +473,67 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
     }
 
     @Test
-    public void JsonbCloseableThreadSafety() throws Exception {
+    public void JsonbLocalInstanceClosable() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseInvalid.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbLocalInstanceClosable.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Diagnostic for useThreadFactory() - uses thread without close
-        Diagnostic threadFactoryDiagnostic = d(22, 21, 37,
-                                               "Thread source detected in method useThreadFactory, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                               DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // INVALID SCENARIOS - Diagnostics SHOULD trigger for local Jsonb instances with threads but no close()
 
-        // Diagnostic for useExecutorService() - uses executor without close
-        Diagnostic executorServiceDiagnostic = d(29, 21, 39,
-                                                 "Thread source detected in method useExecutorService, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // localJsonbWithExecutorNoClose() - Local Jsonb with ExecutorService, no close()
+        Diagnostic localExecutorNoCloseDiag = d(18, 16, 45,
+                                                "Thread source detected in method localJsonbWithExecutorNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // Diagnostic for useCompletableFuture() - uses CompletableFuture without close
-        Diagnostic completableFutureDiagnostic = d(35, 21, 41,
-                                                   "Thread source detected in method useCompletableFuture, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                   DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // localJsonbWithCompletableFutureNoClose() - Local Jsonb with CompletableFuture, no close()
+        Diagnostic localCompletableFutureNoCloseDiag = d(29, 16, 54,
+                                                         "Thread source detected in method localJsonbWithCompletableFutureNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // Diagnostic for useThreadDirect() - uses Thread directly without close
-        Diagnostic threadDirectDiagnostic = d(40, 21, 36,
-                                              "Thread source detected in method useThreadDirect, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+        // localJsonbWithThreadNoClose() - Local Jsonb with Thread, no close()
+        Diagnostic localThreadNoCloseDiag = d(39, 16, 43,
+                                              "Thread source detected in method localJsonbWithThreadNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
                                               DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        // NOTE: useTimer() currently does NOT generate a diagnostic due to a bug in the implementation.
-        // The jsonb.toJson() call is inside an anonymous TimerTask's run() method, and getEnclosingMethod()
-        // returns the run() method instead of useTimer(). This causes the analysis to miss the connection
-        // between the thread source (timer.schedule) in useTimer() and the Jsonb usage in the TimerTask.
-        // TODO: Fix the diagnostic participant to properly handle Jsonb usage in anonymous classes passed to thread sources.
+        // localJsonbWithTryWithResources() - Try-with-resources (known limitation - false positive)
+        Diagnostic localTryWithResourcesDiag = d(68, 16, 46,
+                                                 "Thread source detected in method localJsonbWithTryWithResources, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, threadFactoryDiagnostic, executorServiceDiagnostic,
-                              completableFutureDiagnostic, threadDirectDiagnostic);
+        // VALID SCENARIOS - No diagnostics expected:
+        // - localJsonbWithThreadsAndClose(): Has explicit close()
+        // - localJsonbWithoutThreads(): No threads used
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, localExecutorNoCloseDiag, localCompletableFutureNoCloseDiag,
+                              localThreadNoCloseDiag, localTryWithResourcesDiag);
     }
 
     @Test
-    public void JsonbCloseableThreadSafetyCustomThreads() throws Exception {
+    public void JsonbGlobalInstanceClosableValid() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseCustomThreads.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbGlobalInstanceClosableValid.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic useCustomExecutorDiag = d(153, 23, 40,
-                                             "Thread source detected in method useCustomExecutor, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                             DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // ALL SCENARIOS - No diagnostics expected for global/field Jsonb instances
+        // Global and instance field Jsonb instances should NOT be closed in individual methods
+        // Therefore, no diagnostics should trigger even when threads are used without close()
 
-        Diagnostic useScheduledExecutorWithJsonbDiag = d(171, 23, 52,
-                                                         "Thread source detected in method useScheduledExecutorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+        // Test cases:
+        // - globalJsonbWithExecutor(): Global Jsonb with ExecutorService
+        // - globalJsonbWithCompletableFuture(): Global Jsonb with CompletableFuture
+        // - globalJsonbWithThread(): Global Jsonb with Thread
+        // - instanceFieldJsonbWithThreads(): Instance field Jsonb with threads
+        // - globalJsonbWithoutThreads(): Global Jsonb without threads
+        // - multipleOperationsWithGlobalJsonb(): Multiple operations with global Jsonb
 
-        Diagnostic multipleThreadOperationsWithJsonbDiag = d(198, 23, 56,
-                                                             "Thread source detected in method multipleThreadOperationsWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                             DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadsWithTryWithResourcesDiag = d(205, 23, 53,
-                                                          "Thread source detected in method useThreadsWithTryWithResources, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useForkJoinPoolWithJsonbDiag = d(215, 23, 47,
-                                                    "Thread source detected in method useForkJoinPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useParallelStreamWithJsonbDiag = d(224, 23, 49,
-                                                      "Thread source detected in method useParallelStreamWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                      DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useCompletableFutureWithJsonbDiag = d(231, 23, 52,
-                                                         "Thread source detected in method useCompletableFutureWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadStartWithJsonbDiag = d(238, 23, 46,
-                                                   "Thread source detected in method useThreadStartWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                   DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useExecutorExecuteWithJsonbDiag = d(245, 23, 50,
-                                                       "Thread source detected in method useExecutorExecuteWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                       DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useScheduleAtFixedRateWithJsonbDiag = d(253, 23, 54,
-                                                           "Thread source detected in method useScheduleAtFixedRateWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                           DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useScheduleWithFixedDelayWithJsonbDiag = d(261, 23, 57,
-                                                              "Thread source detected in method useScheduleWithFixedDelayWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                              DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useNestedThreadsWithJsonbDiag = d(291, 23, 48,
-                                                     "Thread source detected in method useNestedThreadsWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                     DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useLambdaSubmitWithJsonbDiag = d(300, 23, 47,
-                                                    "Thread source detected in method useLambdaSubmitWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadConstructorWithJsonbDiag = d(337, 23, 52,
-                                                         "Thread source detected in method useThreadConstructorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useInvokeAllWithJsonbDiag = d(345, 23, 44,
-                                                 "Thread source detected in method useInvokeAllWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useInvokeAnyWithJsonbDiag = d(355, 23, 44,
-                                                 "Thread source detected in method useInvokeAnyWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useCachedThreadPoolWithJsonbDiag = d(419, 23, 51,
-                                                        "Thread source detected in method useCachedThreadPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                        DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useFixedThreadPoolWithJsonbDiag = d(425, 23, 50,
-                                                       "Thread source detected in method useFixedThreadPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                       DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useSingleThreadExecutorWithJsonbDiag = d(431, 23, 55,
-                                                            "Thread source detected in method useSingleThreadExecutorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                            DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useWorkStealingPoolWithJsonbDiag = d(437, 23, 51,
-                                                        "Thread source detected in method useWorkStealingPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                        DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useDaemonThreadWithJsonbDiag = d(443, 23, 47,
-                                                    "Thread source detected in method useDaemonThreadWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
-                              useCustomExecutorDiag, useScheduledExecutorWithJsonbDiag, multipleThreadOperationsWithJsonbDiag,
-                              useThreadsWithTryWithResourcesDiag, useForkJoinPoolWithJsonbDiag, useParallelStreamWithJsonbDiag,
-                              useCompletableFutureWithJsonbDiag, useThreadStartWithJsonbDiag, useExecutorExecuteWithJsonbDiag,
-                              useScheduleAtFixedRateWithJsonbDiag, useScheduleWithFixedDelayWithJsonbDiag, useNestedThreadsWithJsonbDiag,
-                              useLambdaSubmitWithJsonbDiag, useThreadConstructorWithJsonbDiag, useInvokeAllWithJsonbDiag,
-                              useInvokeAnyWithJsonbDiag, useCachedThreadPoolWithJsonbDiag, useFixedThreadPoolWithJsonbDiag,
-                              useSingleThreadExecutorWithJsonbDiag, useWorkStealingPoolWithJsonbDiag, useDaemonThreadWithJsonbDiag);
-    }
-
-    @Test
-    public void JsonbCloseValidNoDiagnostics() throws Exception {
-        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseValid.java"));
-        String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
-
-        // No diagnostics should be reported for valid cases
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
-    }
-
-    @Test
-    public void JsonbCloseableThreadSafety() throws Exception {
-        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseInvalid.java"));
-        String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
-
-        // Diagnostic for useThreadFactory() - uses thread without close
-        Diagnostic threadFactoryDiagnostic = d(22, 21, 37,
-                                               "Thread source detected in method useThreadFactory, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                               DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        // Diagnostic for useExecutorService() - uses executor without close
-        Diagnostic executorServiceDiagnostic = d(29, 21, 39,
-                                                 "Thread source detected in method useExecutorService, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        // Diagnostic for useCompletableFuture() - uses CompletableFuture without close
-        Diagnostic completableFutureDiagnostic = d(35, 21, 41,
-                                                   "Thread source detected in method useCompletableFuture, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                   DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        // Diagnostic for useThreadDirect() - uses Thread directly without close
-        Diagnostic threadDirectDiagnostic = d(40, 21, 36,
-                                              "Thread source detected in method useThreadDirect, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                              DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        // NOTE: useTimer() currently does NOT generate a diagnostic due to a bug in the implementation.
-        // The jsonb.toJson() call is inside an anonymous TimerTask's run() method, and getEnclosingMethod()
-        // returns the run() method instead of useTimer(). This causes the analysis to miss the connection
-        // between the thread source (timer.schedule) in useTimer() and the Jsonb usage in the TimerTask.
-        // TODO: Fix the diagnostic participant to properly handle Jsonb usage in anonymous classes passed to thread sources.
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, threadFactoryDiagnostic, executorServiceDiagnostic,
-                              completableFutureDiagnostic, threadDirectDiagnostic);
-    }
-
-    @Test
-    public void JsonbCloseableThreadSafetyCustomThreads() throws Exception {
-        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbCloseCustomThreads.java"));
-        String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
-
-        Diagnostic useCustomExecutorDiag = d(153, 23, 40,
-                                             "Thread source detected in method useCustomExecutor, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                             DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useScheduledExecutorWithJsonbDiag = d(171, 23, 52,
-                                                         "Thread source detected in method useScheduledExecutorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic multipleThreadOperationsWithJsonbDiag = d(198, 23, 56,
-                                                             "Thread source detected in method multipleThreadOperationsWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                             DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadsWithTryWithResourcesDiag = d(205, 23, 53,
-                                                          "Thread source detected in method useThreadsWithTryWithResources, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                          DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useForkJoinPoolWithJsonbDiag = d(215, 23, 47,
-                                                    "Thread source detected in method useForkJoinPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useParallelStreamWithJsonbDiag = d(224, 23, 49,
-                                                      "Thread source detected in method useParallelStreamWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                      DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useCompletableFutureWithJsonbDiag = d(231, 23, 52,
-                                                         "Thread source detected in method useCompletableFutureWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadStartWithJsonbDiag = d(238, 23, 46,
-                                                   "Thread source detected in method useThreadStartWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                   DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useExecutorExecuteWithJsonbDiag = d(245, 23, 50,
-                                                       "Thread source detected in method useExecutorExecuteWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                       DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useScheduleAtFixedRateWithJsonbDiag = d(253, 23, 54,
-                                                           "Thread source detected in method useScheduleAtFixedRateWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                           DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useScheduleWithFixedDelayWithJsonbDiag = d(261, 23, 57,
-                                                              "Thread source detected in method useScheduleWithFixedDelayWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                              DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useNestedThreadsWithJsonbDiag = d(291, 23, 48,
-                                                     "Thread source detected in method useNestedThreadsWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                     DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useLambdaSubmitWithJsonbDiag = d(300, 23, 47,
-                                                    "Thread source detected in method useLambdaSubmitWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useThreadConstructorWithJsonbDiag = d(337, 23, 52,
-                                                         "Thread source detected in method useThreadConstructorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useInvokeAllWithJsonbDiag = d(345, 23, 44,
-                                                 "Thread source detected in method useInvokeAllWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useInvokeAnyWithJsonbDiag = d(355, 23, 44,
-                                                 "Thread source detected in method useInvokeAnyWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useCachedThreadPoolWithJsonbDiag = d(419, 23, 51,
-                                                        "Thread source detected in method useCachedThreadPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                        DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useFixedThreadPoolWithJsonbDiag = d(425, 23, 50,
-                                                       "Thread source detected in method useFixedThreadPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                       DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useSingleThreadExecutorWithJsonbDiag = d(431, 23, 55,
-                                                            "Thread source detected in method useSingleThreadExecutorWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                            DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useWorkStealingPoolWithJsonbDiag = d(437, 23, 51,
-                                                        "Thread source detected in method useWorkStealingPoolWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                        DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        Diagnostic useDaemonThreadWithJsonbDiag = d(443, 23, 47,
-                                                    "Thread source detected in method useDaemonThreadWithJsonb, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
-                                                    DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
-                              useCustomExecutorDiag, useScheduledExecutorWithJsonbDiag, multipleThreadOperationsWithJsonbDiag,
-                              useThreadsWithTryWithResourcesDiag, useForkJoinPoolWithJsonbDiag, useParallelStreamWithJsonbDiag,
-                              useCompletableFutureWithJsonbDiag, useThreadStartWithJsonbDiag, useExecutorExecuteWithJsonbDiag,
-                              useScheduleAtFixedRateWithJsonbDiag, useScheduleWithFixedDelayWithJsonbDiag, useNestedThreadsWithJsonbDiag,
-                              useLambdaSubmitWithJsonbDiag, useThreadConstructorWithJsonbDiag, useInvokeAllWithJsonbDiag,
-                              useInvokeAnyWithJsonbDiag, useCachedThreadPoolWithJsonbDiag, useFixedThreadPoolWithJsonbDiag,
-                              useSingleThreadExecutorWithJsonbDiag, useWorkStealingPoolWithJsonbDiag, useDaemonThreadWithJsonbDiag);
     }
 }

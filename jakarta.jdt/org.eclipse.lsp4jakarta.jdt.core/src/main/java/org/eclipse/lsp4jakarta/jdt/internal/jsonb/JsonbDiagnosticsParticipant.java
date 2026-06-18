@@ -79,7 +79,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         IMethod[] methods;
         IAnnotation[] allAnnotations;
         boolean jsonbtypeParent = false; //Variable for checking parent class is JSONB type or not
-        boolean jsonbTypeClosable = false; //Variable for checking if class has Jsonb fields (for closeable checking)
         //Variables for determining invalid constructor in parent and child classes
         boolean parentHasValidNoArgsConstructor;
         boolean childHasValidNoArgsConstructor;
@@ -95,7 +94,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             hasConstructor = false;
             boolean isInnerClass = type.getDeclaringType() != null; //Variable to check if inner class or not
             jsonbtypeParent = false;
-            jsonbTypeClosable = false;
             methods = type.getMethods();
             List<IMethod> jonbMethods = new ArrayList<IMethod>();
             // methods
@@ -160,19 +158,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                     });
                 }
 
-                // Check if field is of type jakarta.json.bind.Jsonb (for closeable checking)
-                if (!jsonbTypeClosable) {
-                    try {
-                        String fieldType = field.getTypeSignature();
-                        String resolvedType = org.eclipse.jdt.core.Signature.toString(fieldType);
-                        if (resolvedType.equals("Jsonb") || resolvedType.equals(Constants.JAKARTA_JSONB)) {
-                            jsonbTypeClosable = true;
-                        }
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.INFO, "Unable to resolve field type", e.getMessage());
-                    }
-                }
-
                 collectJsonbTransientFieldDiagnostics(context, uri, unit, type, diagnostics, field);
                 collectJsonbTransientAccessorDiagnostics(context, uri, unit, type, diagnostics, field);
                 // Get unique property name values from the fields into a list uniquePropertyNames
@@ -192,13 +177,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             if (!isInnerClass && jsonbtypeParent) {
                 parentClassHasJsonbAnnotations = true;
             }
-            // Create WARNING diagnostics to determine the existence of close() method when threads are used.
-            // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
-            // Only check classes that have Jsonb fields or Jsonb annotations
-            if (jsonbTypeClosable || jsonbtypeParent) {
-                collectClosableDiagnostics(context, uri, diagnostics, unit);
-            }
         }
+
+        // Create WARNING diagnostics to determine the existence of close() method when threads are used.
+        // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
+        // Check all classes - the method itself filters to only those that actually use Jsonb
+        collectClosableDiagnostics(context, uri, diagnostics, unit);
+
         return diagnostics;
     }
 
@@ -250,10 +235,8 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
                 IMethodBinding binding = bindingCache.get(mi);
                 if (binding != null) {
-                    ITypeBinding declaringClass = binding.getDeclaringClass();
-                    if (declaringClass != null) {
-                        String fqName = declaringClass.getQualifiedName();
-
+                    String fqName = getDeclaringClassName(binding);
+                    if (fqName != null) {
                         // Check if this method uses Jsonb
                         if (!analysis.methodUsesJsonb && fqName.equals(Constants.JAKARTA_JSONB)) {
                             analysis.methodUsesJsonb = true;
@@ -268,16 +251,29 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                         if (isThreadSourceInvocation(mi, binding)) {
                             analysis.threadSourceCount++;
                         }
+
+                        // Check if this is a local Jsonb instance creation (JsonbBuilder.create())
+                        if (!analysis.hasLocalJsonbInstance && isLocalJsonbCreation(mi, binding)) {
+                            analysis.hasLocalJsonbInstance = true;
+                        }
                     }
                 }
             }
         }
 
         // Generate diagnostics for methods that use Jsonb, have thread sources, but no close
+        // ONLY for local Jsonb instances (not global/field instances)
         for (Map.Entry<MethodDeclaration, JsonbThreadSafetyAnalysis> entry : analysisMap.entrySet()) {
             MethodDeclaration method = entry.getKey();
             JsonbThreadSafetyAnalysis analysis = entry.getValue();
-            if (analysis.methodUsesJsonb && !analysis.hasClose && analysis.threadSourceCount > 0) {
+
+            // Only generate diagnostic if:
+            // 1. Method uses Jsonb
+            // 2. Method has thread sources
+            // 3. Method does NOT have close()
+            // 4. Jsonb instance is created LOCALLY in the method (not a global/field instance)
+            if (analysis.methodUsesJsonb && !analysis.hasClose &&
+                analysis.threadSourceCount > 0 && analysis.hasLocalJsonbInstance) {
                 Range range = JDTUtils.toRange(unit, method.getName().getStartPosition(),
                                                method.getName().getLength());
                 diagnostics.add(context.createDiagnostic(uri,
@@ -286,6 +282,46 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                                                          DiagnosticSeverity.Warning));
             }
         }
+    }
+
+    /**
+     * Helper method to get the fully qualified name of the declaring class from a method binding.
+     *
+     * @param binding the method binding
+     * @return the fully qualified class name, or null if not available
+     */
+    private String getDeclaringClassName(IMethodBinding binding) {
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        return declaringClass != null ? declaringClass.getQualifiedName() : null;
+    }
+
+    /**
+     * Checks if a method invocation creates a local Jsonb instance.
+     * Detects both JsonbBuilder.create() and JsonbBuilder.build() patterns.
+     * This distinguishes between local instances (which should be closed) and
+     * global/field instances (which should NOT be closed in individual methods).
+     *
+     * @param mi the method invocation to check
+     * @param binding the pre-resolved method binding (for performance)
+     * @return true if this creates a local Jsonb instance
+     */
+    private boolean isLocalJsonbCreation(MethodInvocation mi, IMethodBinding binding) {
+        String methodName = mi.getName().getIdentifier();
+
+        // Check if this is a create() or build() method
+        if (!methodName.equals(Constants.JSONB_CREATE_METHOD) &&
+            !methodName.equals(Constants.JSONB_BUILD_METHOD)) {
+            return false;
+        }
+
+        String fqName = getDeclaringClassName(binding);
+        if (fqName == null) {
+            return false;
+        }
+
+        // Check if it's JsonbBuilder.create() or JsonbBuilder.build()
+        return fqName.equals(Constants.JAKARTA_JSONB_BUILDER) ||
+               fqName.equals(Constants.JSONB_BUILDER_SHORT);
     }
 
     /**
@@ -301,12 +337,11 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             return false;
         }
 
-        ITypeBinding declaringClass = binding.getDeclaringClass();
-        if (declaringClass == null) {
+        String fqName = getDeclaringClassName(binding);
+        if (fqName == null) {
             return false;
         }
 
-        String fqName = declaringClass.getQualifiedName();
         return fqName.equals(Constants.JAKARTA_JSONB) ||
                fqName.equals(Constants.CLOSABLE_CLOSE) ||
                fqName.equals(Constants.AUTOCLOSABLE_CLOSE);
@@ -347,7 +382,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      */
     private boolean isThreadSource(String methodName, String fqName) {
         return Constants.THREAD_METHODS.contains(methodName) &&
-               Constants.THREAD_CLASSES.stream().anyMatch(fqName::contains);
+               Constants.THREAD_CLASSES.stream().anyMatch(threadClass -> fqName.equals(threadClass));
     }
 
     /**
