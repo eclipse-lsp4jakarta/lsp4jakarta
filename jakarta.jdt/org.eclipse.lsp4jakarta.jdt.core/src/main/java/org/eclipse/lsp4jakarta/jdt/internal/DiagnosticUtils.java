@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -251,16 +253,17 @@ public class DiagnosticUtils {
 
     /**
      * Returns matched Java element fully qualified names.
+     * This is the core implementation that accepts Collections for maximum flexibility.
      *
      * @param type the type representing the class
-     * @param javaElementNames Java element names
-     * @param javaElementFQNames given fully qualified name array
+     * @param javaElementNames Java element names collection (Set or List)
+     * @param javaElementFQNames given fully qualified name collection (Set or List)
      * @return matched Java element fully qualified names
      */
-    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
-                                                          String[] javaElementFQNames) {
-        return Stream.of(javaElementFQNames).filter(fqName -> {
-            boolean anyMatch = Stream.of(javaElementNames).anyMatch(name -> {
+    public static List<String> getMatchedJavaElementNames(IType type, Collection<String> javaElementNames,
+                                                          Collection<String> javaElementFQNames) {
+        return javaElementFQNames.stream().filter(fqName -> {
+            boolean anyMatch = javaElementNames.stream().anyMatch(name -> {
                 try {
                     return isMatchedJavaElement(type, name, fqName);
                 } catch (JavaModelException e) {
@@ -270,6 +273,20 @@ public class DiagnosticUtils {
             });
             return anyMatch;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns matched Java element fully qualified names.
+     * Convenience overload that accepts arrays and delegates to the Collection-based method.
+     *
+     * @param type the type representing the class
+     * @param javaElementNames Java element names array
+     * @param javaElementFQNames given fully qualified name array
+     * @return matched Java element fully qualified names
+     */
+    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
+                                                          String[] javaElementFQNames) {
+        return getMatchedJavaElementNames(type, Arrays.asList(javaElementNames), Arrays.asList(javaElementFQNames));
     }
 
     /**
