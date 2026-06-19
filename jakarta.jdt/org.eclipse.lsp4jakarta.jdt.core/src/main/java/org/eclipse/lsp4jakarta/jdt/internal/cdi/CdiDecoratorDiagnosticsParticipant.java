@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -42,7 +44,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
  */
-public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(CdiDecoratorDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -61,7 +65,7 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 validateDecorator(type, unit, uri, context, diagnostics);
             }
         } catch (JavaModelException e) {
-            // Log and continue - don't let exception propagate
+            LOGGER.log(Level.SEVERE, "Error occurred while validating decorator", e);
         }
 
         return diagnostics;
@@ -116,9 +120,7 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
             }
         }
 
-        int delegateCount = delegateElements.size();
-
-        reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics, delegateElements, delegateCount);
+        reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics, delegateElements, delegateElements.size());
     }
 
     /**
@@ -139,7 +141,7 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
         if (delegateCount == 0) {
             // No @Delegate found - report at class level
             Range range = PositionUtils.toNameRange(type, context.getUtils());
-            String message = Messages.getMessage("DecoratorWithInvalidDelegateCount");
+            String message = Messages.getMessage("MissingDelegateInDecorator");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidDecoratorDelegateInjectionPoints,
