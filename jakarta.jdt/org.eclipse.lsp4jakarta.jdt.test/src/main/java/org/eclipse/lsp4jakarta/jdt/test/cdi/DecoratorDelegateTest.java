@@ -195,6 +195,60 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // No diagnostics expected for valid decorator with method injection
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
-}
 
-// Made with Bob
+    /**
+     * Test that @Delegate without @Inject on fields, methods, and constructors triggers diagnostics.
+     *
+     * Expected: Error on each @Delegate that is not accompanied by @Inject.
+     */
+    @Test
+    public void testInvalidDelegateLocations() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/InvalidDelegateLocations.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Expected diagnostics for all three invalid @Delegate locations
+        // Line 16 (0-based: 15), field name "delegate" starts at column 27, ends at column 35
+        Diagnostic delegateFieldWithoutInjectDiagnostic = d(15, 27, 35,
+                                                            "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+                                                            DiagnosticSeverity.Error,
+                                                            "jakarta-cdi",
+                                                            "InvalidDelegateInjectionPoint");
+
+        // Line 33 (0-based: 32), parameter name "delegate" starts at column 53, ends at column 61
+        Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 53, 61,
+                                                                  "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+                                                                  DiagnosticSeverity.Error,
+                                                                  "jakarta-cdi",
+                                                                  "InvalidDelegateInjectionPoint");
+
+        // Line 52 (0-based: 51), parameter name "delegate" starts at column 74, ends at column 82
+        Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 74, 82,
+                                                                       "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+                                                                       DiagnosticSeverity.Error,
+                                                                       "jakarta-cdi",
+                                                                       "InvalidDelegateInjectionPoint");
+
+        // Additional diagnostics from other participants (CDI managed bean and DI)
+        // Line 52 (0-based: 51), constructor declaration - managed bean constructor issue
+        Diagnostic invalidManagedBeanConstructorDiagnostic = d(51, 11, 48,
+                                                               "The @Inject annotation must define a managed bean constructor that takes parameters, or the managed bean must resolve to having a no-arg constructor instead.",
+                                                               DiagnosticSeverity.Error,
+                                                               "jakarta-cdi",
+                                                               "InvalidManagedBeanWithInvalidConstructor");
+
+        // Line 89 (0-based: 88), parameter in valid constructor - DI warning
+        Diagnostic injectionPointConstructorBeanDiagnostic = d(88, 68, 76,
+                                                               "The parameter should define a constructor with no parameters or a constructor annotated with @Inject.",
+                                                               DiagnosticSeverity.Warning,
+                                                               "jakarta-di",
+                                                               "InjectionPointInvalidConstructorBean");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, delegateFieldWithoutInjectDiagnostic,
+                              delegateMethodParamWithoutInjectDiagnostic, delegateConstructorParamWithoutInjectDiagnostic,
+                              invalidManagedBeanConstructorDiagnostic, injectionPointConstructorBeanDiagnostic);
+    }
+}
