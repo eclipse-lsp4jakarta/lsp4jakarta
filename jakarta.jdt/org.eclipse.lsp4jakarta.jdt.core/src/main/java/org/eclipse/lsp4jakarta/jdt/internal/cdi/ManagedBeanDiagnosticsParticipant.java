@@ -391,7 +391,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             invalidParamsCheck(context, uri, unit, diagnostics, type, Constants.INJECT_FQ_NAME);
             // Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
             // They should only use @Dependent scope
-            validateinterceptorDecoratorScopes(context, uri, diagnostics, type, interceptorOrDecorator);
+            if (interceptorOrDecorator) {
+                validateinterceptorDecoratorScopes(context, uri, diagnostics, type);
+            }
             if (isManagedBean) {
 
                 // Produces and Disposes, Observes, ObservesAsync Annotations:
@@ -460,61 +462,58 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param uri the URI of the compilation unit
      * @param diagnostics the list to add diagnostic errors to
      * @param type the Java type being validated
-     * @param interceptorOrDecorator true if the type is annotated with @Interceptor or @Decorator
      * @throws JavaModelException if there is an error accessing Java model elements
      */
     private void validateinterceptorDecoratorScopes(JavaDiagnosticsContext context, String uri,
-                                                    List<Diagnostic> diagnostics, IType type, boolean interceptorOrDecorator) throws JavaModelException {
-        if (interceptorOrDecorator) {
-            List<String> foundInvalidScopes = new ArrayList<>();
+                                                    List<Diagnostic> diagnostics, IType type) throws JavaModelException {
+        List<String> foundInvalidScopes = new ArrayList<>();
 
-            // Check each annotation to see if it's an invalid scope
-            for (IAnnotation annotation : type.getAnnotations()) {
-                String annotationName = annotation.getElementName();
+        // Check each annotation to see if it's an invalid scope
+        for (IAnnotation annotation : type.getAnnotations()) {
+            String annotationName = annotation.getElementName();
 
-                // Skip @Interceptor, @Decorator, and @Dependent annotations - these are not scopes we're checking
-                String matchedSkip = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
-                                                                               new String[] {
-                                                                                              Constants.INTERCEPTOR_FQ_NAME,
-                                                                                              Constants.DECORATOR_FQ_NAME,
-                                                                                              Constants.DEPENDENT_FQ_NAME
-                                                                               });
-                if (matchedSkip != null) {
-                    continue;
-                }
+            // Skip @Interceptor, @Decorator, and @Dependent annotations - these are not scopes we're checking
+            String matchedSkip = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                           new String[] {
+                                                                                          Constants.INTERCEPTOR_FQ_NAME,
+                                                                                          Constants.DECORATOR_FQ_NAME,
+                                                                                          Constants.DEPENDENT_FQ_NAME
+                                                                           });
+            if (matchedSkip != null) {
+                continue;
+            }
 
-                // Check if it's a built-in invalid scope
-                String matchedBuiltInScopes = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
-                                                                                        Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
-                if (matchedBuiltInScopes != null) {
-                    foundInvalidScopes.add(matchedBuiltInScopes);
-                } else {
-                    // Get the fully qualified name for the annotation
-                    String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
-                    if (fqName != null) {
-                        try {
-                            IType annotationType = type.getJavaProject().findType(fqName);
-                            if (annotationType != null &&
-                                ManagedBean.isAnnotatedClass(annotationType, Constants.NORMAL_SCOPE_FQ_NAME)) {
+            // Check if it's a built-in invalid scope
+            String matchedBuiltInScopes = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                                    Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+            if (matchedBuiltInScopes != null) {
+                foundInvalidScopes.add(matchedBuiltInScopes);
+            } else {
+                // Get the fully qualified name for the annotation
+                String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
+                if (fqName != null) {
+                    try {
+                        IType annotationType = type.getJavaProject().findType(fqName);
+                        if (annotationType != null &&
+                            ManagedBean.isAnnotatedClass(annotationType, Constants.NORMAL_SCOPE_FQ_NAME)) {
 
-                                foundInvalidScopes.add(fqName);
-                                // no break — continue checking other annotations
-                            }
-                        } catch (JavaModelException e) {
-                            LOGGER.log(Level.WARNING,
-                                       "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
+                            foundInvalidScopes.add(fqName);
+                            // no break — continue checking other annotations
                         }
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.WARNING,
+                                   "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
                     }
                 }
             }
+        }
 
-            if (!foundInvalidScopes.isEmpty()) {
-                Range range = PositionUtils.toNameRange(type, context.getUtils());
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
-                                                         ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
-            }
+        if (!foundInvalidScopes.isEmpty()) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
+                                                     ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
         }
     }
 
