@@ -38,7 +38,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMultipleObserverParams,
     InvalidStatelessSessionBeanScope,
     InvalidProducerFieldWithNamedAnnotation,
-    InvalidDecoratorDelegateInjectionPoints;
+    InvalidDecoratorDelegateInjectionPoints,
+    InvalidDelegateInjectionPoint;
 
     /**
      * {@inheritDoc}
