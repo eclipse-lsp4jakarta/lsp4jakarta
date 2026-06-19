@@ -86,7 +86,7 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
 
         // Test diagnostic for wrong scope annotation
         Diagnostic wrongScope = d(11, 13, 44,
-                                  "A class annotated with @LdapIdentityStoreDefinition must be annotated with @ApplicationScoped, not @RequestScoped.",
+                                  "A class annotated with @LdapIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @RequestScoped.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
@@ -139,7 +139,7 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
 
         // Test diagnostic for wrong scope annotation
         Diagnostic wrongScope = d(11, 13, 48,
-                                  "A class annotated with @DatabaseIdentityStoreDefinition must be annotated with @ApplicationScoped, not @RequestScoped.",
+                                  "A class annotated with @DatabaseIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @RequestScoped.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
