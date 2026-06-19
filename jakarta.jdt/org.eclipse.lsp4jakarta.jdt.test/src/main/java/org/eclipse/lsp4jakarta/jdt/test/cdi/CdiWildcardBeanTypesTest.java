@@ -34,6 +34,12 @@ import org.junit.Test;
  *
  * According to CDI specification section 2.2.1:
  * "A parameterized type that contains a wildcard type parameter is not a legal bean type."
+ *
+ * Tests cover:
+ * - @Inject fields with wildcard types
+ * - @Inject method parameters with wildcard types
+ * - @Produces fields with wildcard types
+ * - @Produces methods with wildcard return types
  */
 public class CdiWildcardBeanTypesTest extends BaseJakartaTest {
 
@@ -108,10 +114,47 @@ public class CdiWildcardBeanTypesTest extends BaseJakartaTest {
                                                  "Wildcard types are not legal bean types. Injection points must use concrete parameterized types without wildcards (?, ? extends, ? super).",
                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
 
+        // Test expected diagnostics for @Inject methods with wildcard parameter types
+        Diagnostic injectMethodWildcard = d(120, 40, 44,
+                                            "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodExtendsWildcard = d(124, 62, 66,
+                                                   "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodSuperWildcard = d(128, 59, 63,
+                                                 "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodMapWildcard = d(132, 46, 49,
+                                               "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodNestedWildcard = d(136, 55, 58,
+                                                  "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodArrayWildcard = d(140, 43, 48,
+                                                 "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        Diagnostic injectMethodMultiDimArrayWildcard = d(144, 61, 66,
+                                                         "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
+        // Test for mixed parameters - only wildcard parameter should be flagged
+        Diagnostic injectMethodMixedParams = d(158, 67, 79,
+                                               "Wildcard types are not legal bean types. Injection method parameters must use concrete parameterized types without wildcards (?, ? extends, ? super).",
+                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidWildcardTypeInInjectField");
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
                               injectWildcard, injectExtendsWildcard, injectSuperWildcard, injectMapWildcard,
                               producerFieldWildcard, producerFieldExtendsWildcard,
                               producerMethodMapWildcard, producerMethodExtendsWildcard, producerMethodSuperWildcard, producerMethodArrayWildcard,
-                              injectNestedWildcard, injectDeeplyNestedWildcard, producerMethodNestedWildcard, injectNestedWildcardArray);
+                              injectNestedWildcard, injectDeeplyNestedWildcard, producerMethodNestedWildcard, injectNestedWildcardArray,
+                              injectMethodWildcard, injectMethodExtendsWildcard, injectMethodSuperWildcard,
+                              injectMethodMapWildcard, injectMethodNestedWildcard, injectMethodArrayWildcard,
+                              injectMethodMultiDimArrayWildcard, injectMethodMixedParams);
     }
 }

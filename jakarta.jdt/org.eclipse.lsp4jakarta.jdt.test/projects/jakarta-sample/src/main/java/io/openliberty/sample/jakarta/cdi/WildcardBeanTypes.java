@@ -115,4 +115,47 @@ public class WildcardBeanTypes {
     // Valid: Nested concrete types without wildcards
     @Inject
     Map<String, List<Integer>> nestedConcreteMap;
+
+    // Invalid: @Inject methods with wildcard parameter types
+    @Inject
+    public void setWildcardList(List<?> list) {
+    }
+
+    @Inject
+    public void setExtendsWildcardList(List<? extends Number> list) {
+    }
+
+    @Inject
+    public void setSuperWildcardList(List<? super Integer> list) {
+    }
+
+    @Inject
+    public void setWildcardMap(Map<String, ?> map) {
+    }
+
+    @Inject
+    public void setNestedWildcard(Map<String, List<?>> map) {
+    }
+
+    @Inject
+    public void setArrayWildcard(List<?>[] array) {
+    }
+
+    @Inject
+    public void setMultiDimensionalArrayWildcard(List<?>[][] array) {
+    }
+
+    // Valid: @Inject methods (no wildcards)
+    @Inject
+    public void setValidList(List<String> list) {
+    }
+
+    @Inject
+    public void setValidMap(Map<String, Integer> map) {
+    }
+
+    // Multiple parameters - only the wildcard ones should be flagged
+    @Inject
+    public void setMixedParameters(List<String> validList, List<?> wildcardList) {
+    }
 }

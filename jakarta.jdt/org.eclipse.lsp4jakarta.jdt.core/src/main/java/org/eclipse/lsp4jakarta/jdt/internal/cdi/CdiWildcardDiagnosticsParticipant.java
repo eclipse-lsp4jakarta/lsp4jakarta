@@ -41,7 +41,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * "A parameterized type that contains a wildcard type parameter is not a legal bean type."
  *
  * This applies to:
- * - Injection points (@Inject fields)
+ * - Injection points (@Inject fields and method parameters)
  * - Producer methods (@Produces methods)
  * - Producer fields (@Produces fields)
  * - Arrays whose component type contains wildcards
@@ -64,11 +64,11 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
-            // Check fields with @Inject annotation
+            // Check fields with @Inject and @Produces annotations
             for (IField field : type.getFields()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
 
-                // Check if field has @Inject annotation
+                // Use if-else since @Inject and @Produces don't appear on the same field
                 if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
                     String typeSignature = field.getTypeSignature();
                     if (containsWildcard(typeSignature)) {
@@ -81,10 +81,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  ErrorCode.InvalidWildcardTypeInInjectField,
                                                                  DiagnosticSeverity.Error));
                     }
-                }
-
-                // Check if field has @Produces annotation
-                if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
+                } else if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
                     String typeSignature = field.getTypeSignature();
                     if (containsWildcard(typeSignature)) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -99,11 +96,28 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
 
-            // Check methods with @Produces annotation
+            // Check methods with @Inject and @Produces annotations
             for (IMethod method : type.getMethods()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
-                if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
+                // Use if-else since @Inject and @Produces don't appear on the same method
+                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
+                    // Check method parameters for wildcard types
+                    String[] parameterTypes = method.getParameterTypes();
+                    for (int i = 0; i < parameterTypes.length; i++) {
+                        if (containsWildcard(parameterTypes[i])) {
+                            Range range = PositionUtils.toNameRange(method.getParameters()[i], context.getUtils());
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage("InvalidWildcardTypeInInjectMethod"),
+                                                                     range,
+                                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                                     null,
+                                                                     ErrorCode.InvalidWildcardTypeInInjectField,
+                                                                     DiagnosticSeverity.Error));
+                        }
+                    }
+                } else if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
+                    // Check return type for wildcard types
                     String returnTypeSignature = method.getReturnType();
                     if (containsWildcard(returnTypeSignature)) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
@@ -137,6 +151,12 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
     /**
      * Checks if a type signature contains a wildcard type parameter.
+     *
+     * This method recursively checks for wildcards in:
+     * - Direct wildcard types (?, ? extends T, ? super T)
+     * - Parameterized types with wildcard arguments (List<?>, Map<String, ?>)
+     * - Array types with wildcard component types (List<?>[], List<?>[][])
+     * - Nested generic types (Map<String, List<?>>)
      *
      * Wildcards in Java type signatures are represented as:
      * - '*' for unbounded wildcard (?)
