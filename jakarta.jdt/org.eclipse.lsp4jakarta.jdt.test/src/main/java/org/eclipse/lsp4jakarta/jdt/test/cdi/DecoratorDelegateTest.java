@@ -196,5 +196,3 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
-
-// Made with Bob
