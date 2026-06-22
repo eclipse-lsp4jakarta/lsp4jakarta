@@ -92,7 +92,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAbstractModifier,
     RemoveStaticModifier,
     // CDI
-    CDIRemoveNamedAnnotation;
+    CDIRemoveNamedAnnotation,
+    //EJB
+    EJBMessageDrivenImplementation;
 
     @Override
     public String getId() {
