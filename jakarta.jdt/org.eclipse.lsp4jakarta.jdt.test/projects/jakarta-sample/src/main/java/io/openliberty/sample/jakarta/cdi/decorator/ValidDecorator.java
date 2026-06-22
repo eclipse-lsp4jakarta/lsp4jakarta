@@ -24,5 +24,3 @@ public class ValidDecorator implements PaymentService {
         delegate.processPayment(amount);
     }
 }
-
-// Made with Bob
