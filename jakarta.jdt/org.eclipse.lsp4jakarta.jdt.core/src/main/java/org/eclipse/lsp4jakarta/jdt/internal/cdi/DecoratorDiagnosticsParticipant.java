@@ -101,7 +101,7 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
             if (!delegateOnField.isEmpty()) {
                 delegateElements.add(field);
                 // Validate that @Delegate on field is accompanied by @Inject
-                validateDelegateInjectionPoint(field, fieldAnnotations, type, uri, context, diagnostics);
+                validateDelegateInjectionPoint(field, field, fieldAnnotations, type, uri, context, diagnostics);
             }
         }
 
@@ -119,7 +119,8 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 if (!delegateOnParam.isEmpty()) {
                     delegateElements.add(parameter);
                     // Validate that @Delegate on parameter is on an @Inject method/constructor
-                    validateDelegateInjectionPoint(parameter, methodAnnotations, type, uri, context, diagnostics);
+                    // Report diagnostic on the method, not the parameter, so quickfix works
+                    validateDelegateInjectionPoint(method, parameter, methodAnnotations, type, uri, context, diagnostics);
                 }
             }
         }
@@ -170,7 +171,8 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
      * Validates that an element annotated with @Delegate is also annotated with @Inject
      * (for fields) or is on a method/constructor annotated with @Inject (for parameters).
      *
-     * @param element the field or parameter to validate
+     * @param diagnosticTarget the element where the diagnostic should be reported (field or method)
+     * @param delegateElement the field or parameter that has @Delegate annotation
      * @param annotations the element's or containing method's annotation names (already computed)
      * @param type the declaring type
      * @param uri the file URI
@@ -178,15 +180,17 @@ public class DecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticip
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private void validateDelegateInjectionPoint(IJavaElement element, String[] annotations, IType type, String uri,
+    private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget, IJavaElement delegateElement,
+                                                String[] annotations, IType type, String uri,
                                                 JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
         // Check if element or its containing method/constructor has @Inject annotation
         List<String> injectAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, annotations,
                                                                                     new String[] { Constants.INJECT_FQ_NAME });
 
         if (injectAnnotations.isEmpty()) {
-            // @Delegate without @Inject - report diagnostic
-            Range range = PositionUtils.toNameRange(element, context.getUtils());
+            // @Delegate without @Inject - report diagnostic on the target element
+            // For fields, target is the field itself; for parameters, target is the method
+            Range range = PositionUtils.toNameRange(diagnosticTarget, context.getUtils());
             String message = Messages.getMessage("InvalidDelegateInjectionPoint");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,

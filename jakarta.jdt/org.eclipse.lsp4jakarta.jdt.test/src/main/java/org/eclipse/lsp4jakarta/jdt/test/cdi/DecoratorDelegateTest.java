@@ -13,16 +13,23 @@
 
 package org.eclipse.lsp4jakarta.jdt.test.cdi;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -213,21 +220,21 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostics for all three invalid @Delegate locations
         // Line 16 (0-based: 15), field name "delegate" starts at column 27, ends at column 35
         Diagnostic delegateFieldWithoutInjectDiagnostic = d(15, 27, 35,
-                                                            "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+                                                            "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
                                                             DiagnosticSeverity.Error,
                                                             "jakarta-cdi",
                                                             "InvalidDelegateInjectionPoint");
 
-        // Line 33 (0-based: 32), parameter name "delegate" starts at column 53, ends at column 61
-        Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 53, 61,
-                                                                  "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+        // Line 33 (0-based: 32), method name "setDelegate" starts at column 16, ends at column 27
+        Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 16, 27,
+                                                                  "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
                                                                   DiagnosticSeverity.Error,
                                                                   "jakarta-cdi",
                                                                   "InvalidDelegateInjectionPoint");
 
-        // Line 52 (0-based: 51), parameter name "delegate" starts at column 74, ends at column 82
-        Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 74, 82,
-                                                                       "The @Delegate annotation must be used on an injected field, initializer method parameter, or bean constructor method parameter.",
+        // Line 52 (0-based: 51), constructor name "DelegateOnNonInjectedConstructorParam" starts at column 11, ends at column 48
+        Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 11, 48,
+                                                                       "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
                                                                        DiagnosticSeverity.Error,
                                                                        "jakarta-cdi",
                                                                        "InvalidDelegateInjectionPoint");
@@ -247,8 +254,26 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                                "jakarta-di",
                                                                "InjectionPointInvalidConstructorBean");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, delegateFieldWithoutInjectDiagnostic,
-                              delegateMethodParamWithoutInjectDiagnostic, delegateConstructorParamWithoutInjectDiagnostic,
-                              invalidManagedBeanConstructorDiagnostic, injectionPointConstructorBeanDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, injectionPointConstructorBeanDiagnostic,
+                              invalidManagedBeanConstructorDiagnostic, delegateConstructorParamWithoutInjectDiagnostic,
+                              delegateMethodParamWithoutInjectDiagnostic, delegateFieldWithoutInjectDiagnostic);
+
+        // Test code actions for field without @Inject
+        JakartaJavaCodeActionParams fieldCodeActionParams = createCodeActionParams(uri, delegateFieldWithoutInjectDiagnostic);
+        TextEdit fieldInjectEdit = te(14, 4, 14, 4, "@Inject\n\t");
+        CodeAction fieldInjectAction = ca(uri, "Insert @Inject", delegateFieldWithoutInjectDiagnostic, fieldInjectEdit);
+        assertJavaCodeAction(fieldCodeActionParams, IJDT_UTILS, fieldInjectAction);
+
+        // Test code actions for method parameter without @Inject
+        JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, delegateMethodParamWithoutInjectDiagnostic);
+        TextEdit methodInjectEdit = te(32, 4, 32, 4, "@Inject\n\t");
+        CodeAction methodInjectAction = ca(uri, "Insert @Inject", delegateMethodParamWithoutInjectDiagnostic, methodInjectEdit);
+        assertJavaCodeAction(methodCodeActionParams, IJDT_UTILS, methodInjectAction);
+
+        // Test code actions for constructor parameter without @Inject
+        JakartaJavaCodeActionParams constructorCodeActionParams = createCodeActionParams(uri, delegateConstructorParamWithoutInjectDiagnostic);
+        TextEdit constructorInjectEdit = te(51, 4, 51, 4, "@Inject\n\t");
+        CodeAction constructorInjectAction = ca(uri, "Insert @Inject", delegateConstructorParamWithoutInjectDiagnostic, constructorInjectEdit);
+        assertJavaCodeAction(constructorCodeActionParams, IJDT_UTILS, constructorInjectAction);
     }
 }
