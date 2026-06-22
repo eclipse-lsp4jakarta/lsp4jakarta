@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,21 +10,20 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.di;
+package org.eclipse.lsp4jakarta.jdt.core.java.codeaction;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveModifierConflictQuickFix;
 
 /**
- * Removes the static modifier from the declaring element.
+ * Removes the final modifier from the declaring element.
  */
-public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix {
+public class RemoveFinalModifierQuickFix extends RemoveModifierConflictQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveStaticModifierQuickFix() {
-        super(false, "static");
+    public RemoveFinalModifierQuickFix() {
+        super(false, "final");
     }
 
     /**
@@ -32,7 +31,7 @@ public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix
      */
     @Override
     public String getParticipantId() {
-        return RemoveStaticModifierQuickFix.class.getName();
+        return RemoveFinalModifierQuickFix.class.getName();
     }
 
     /**
@@ -40,6 +39,6 @@ public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix
      */
     @Override
     protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.DIRemoveStaticModifier;
+        return JakartaCodeActionId.RemoveFinalModifier;
     }
 }

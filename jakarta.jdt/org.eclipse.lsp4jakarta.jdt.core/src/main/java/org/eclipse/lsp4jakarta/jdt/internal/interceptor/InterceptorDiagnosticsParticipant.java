@@ -62,7 +62,6 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             int typeFlag = type.getFlags();
-            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.initialize();
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -71,10 +70,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("InvalidInterceptorAbstractClass", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorAnnotationOnAbstractClass, DiagnosticSeverity.Error));
                 } else {
-                    for (IMethod method : type.getMethods()) {
-                        // Checks if method is a constructor and has valid no-args constructor
-                        constructorInfo.mergeConstructorInfo(ConstructorInfoDiagnosticHelper.getConstructorInfo(method));
-                    }
+                    // Get constructor information
+                    ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+
                     // Conditions for checking missing public no-args constructor
                     if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
                         diagnostics.add(context.createDiagnostic(uri,

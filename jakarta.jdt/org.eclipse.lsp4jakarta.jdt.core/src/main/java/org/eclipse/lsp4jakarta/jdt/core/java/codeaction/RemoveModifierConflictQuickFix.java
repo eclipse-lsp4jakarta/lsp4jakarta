@@ -31,7 +31,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
-import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ModifyModifiersProposal;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
@@ -200,5 +200,5 @@ public abstract class RemoveModifierConflictQuickFix implements IJavaCodeActionP
      *
      * @return the id for this code action
      */
-    protected abstract ICodeActionId getCodeActionId();
+    protected abstract JakartaCodeActionId getCodeActionId();
 }

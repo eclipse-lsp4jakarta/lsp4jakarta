@@ -40,6 +40,7 @@ import org.eclipse.lsp4jakarta.commons.utils.JsonPropertyUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
@@ -82,6 +83,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         boolean hasConstructor; //To check for existence of explicit constructors
         boolean parentClassHasJsonbAnnotations = false; // Track if parent class has JSON-B annotations
         for (IType type : types) {
+            ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
             parentHasValidNoArgsConstructor = false;
             childHasValidNoArgsConstructor = false;
             missingParentNoArgsConstructor = false;
@@ -101,18 +103,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                             jonbMethods.add(method);
                     }
                 }
-                //Check whether the class has public or protected no args constructor
-                if (DiagnosticUtils.isConstructorMethod(method)) {
-                    hasConstructor = true;
-                    String[] params = method.getParameterTypes();
-                    int flags = method.getFlags();
-                    if (params.length == 0 && (Flags.isPublic(flags) || Flags.isProtected(flags))) { //Checks manually declared no-args constructor
-                        if (!isInnerClass)
-                            parentHasValidNoArgsConstructor = true;
-                        else
-                            childHasValidNoArgsConstructor = true;
-                    }
-                }
+            }
+            if (!isInnerClass) {
+                parentHasValidNoArgsConstructor = constructorInfo.hasValidPublicNoArgsConstructor()
+                                                  || constructorInfo.hasValidProtectedNoArgsConstructor();
+            } else {
+                childHasValidNoArgsConstructor = constructorInfo.hasValidPublicNoArgsConstructor()
+                                                 || constructorInfo.hasValidProtectedNoArgsConstructor();
             }
             if (jonbMethods.size() > Constants.MAX_METHOD_WITH_JSONBCREATOR) {
                 for (IMethod method : methods) {
@@ -161,9 +158,9 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             // Collect diagnostics for duplicate property names with fields annotated @JsonbProperty
             collectJsonbPropertyUniquenessDiagnostics(unit, uniquePropertyNames, context, uri, diagnostics, type);
             //Parent class conditions for checking missing no-args constructor
-            missingParentNoArgsConstructor = jsonbtypeParent && !parentHasValidNoArgsConstructor && hasConstructor;
+            missingParentNoArgsConstructor = jsonbtypeParent && !parentHasValidNoArgsConstructor && constructorInfo.hasConstructor();
             //Child class conditions for checking missing no-args constructor
-            missingChildNoArgsConstructor = jsonbtypeParent && !childHasValidNoArgsConstructor && hasConstructor;
+            missingChildNoArgsConstructor = jsonbtypeParent && !childHasValidNoArgsConstructor && constructorInfo.hasConstructor();
             //Generate Jsonb deseriazation diagnostics
             generateJsonbDeserializerDiagnostics(context, uri, diagnostics, jsonbtypeParent, isInnerClass,
                                                  missingParentNoArgsConstructor, missingChildNoArgsConstructor, type);
