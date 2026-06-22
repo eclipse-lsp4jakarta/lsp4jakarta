@@ -309,8 +309,8 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         }
 
         // Check if it's JsonbBuilder.create() or JsonbBuilder.build()
-        return fqName.equals(Constants.JAKARTA_JSONB_BUILDER) ||
-               fqName.equals(Constants.JSONB_BUILDER_SHORT);
+        // ASTUtils.getDeclaringClassName() always returns fully qualified names
+        return fqName.equals(Constants.JAKARTA_JSONB_BUILDER);
     }
 
     /**
