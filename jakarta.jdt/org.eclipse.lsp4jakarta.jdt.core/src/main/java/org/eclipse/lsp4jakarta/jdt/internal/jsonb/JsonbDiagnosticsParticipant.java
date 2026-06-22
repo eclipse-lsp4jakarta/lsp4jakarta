@@ -197,14 +197,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private void collectJsonbFromJsonNullParameterDiagnostics(ICompilationUnit unit, JavaDiagnosticsContext context,
                                                               String uri, List<Diagnostic> diagnostics) throws JavaModelException {
         List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
-        List<MethodInvocation> fromJsonInvocations = allMethodInvocations.stream().filter(mi -> {
-            try {
-                return isMatchedJsonbFromJson(unit, mi);
-            } catch (JavaModelException e) {
-                LOGGER.log(Level.INFO, "Unable to find invokations", e.getMessage());
-            }
-            return false;
-        }).collect(java.util.stream.Collectors.toList());
+        List<MethodInvocation> fromJsonInvocations = allMethodInvocations.stream().filter(mi -> isMatchedJsonbFromJson(mi)).collect(java.util.stream.Collectors.toList());
 
         for (MethodInvocation methodInvocation : fromJsonInvocations) {
             if (!methodInvocation.arguments().isEmpty()) {
@@ -226,16 +219,14 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     /**
      * Checks if the given method invocation is a call to Jsonb.fromJson().
      *
-     * @param unit the compilation unit
      * @param mi the method invocation
      * @return true if this is a fromJson() call on a Jsonb instance
-     * @throws JavaModelException if there's an error accessing the Java model
      */
-    private boolean isMatchedJsonbFromJson(ICompilationUnit unit, MethodInvocation mi) throws JavaModelException {
+    private boolean isMatchedJsonbFromJson(MethodInvocation mi) {
         if (!Constants.FROM_JSON_METHOD.equals(mi.getName().getIdentifier())) {
             return false;
         }
-        return ASTUtils.isMatchedTargetClass(unit, mi, Constants.JSONB_FROM_JSON_PACKAGE);
+        return ASTUtils.isMatchedTargetClass(mi, Constants.JSONB_FROM_JSON_PACKAGE);
     }
 
     /**
