@@ -122,7 +122,7 @@ public class InterceptorTest extends BaseJakartaTest {
 
         // Test diagnostic for missing @Delegate (from DecoratorDiagnosticsParticipant)
         Diagnostic noDelegateDiagnostic = d(7, 13, 47,
-                                            "A decorator must declare exactly one @Delegate injection point.",
+                                            "A decorator must declare exactly one injection point annotated with @Delegate.",
                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDecoratorDelegateInjectionPoints");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observesMethodDiagnostic, observesAsyncMethodDiagnostic, noDelegateDiagnostic);

@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
@@ -93,7 +94,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         }
 
         // Collect all @Delegate injection points
-        List<Object> delegateElements = new ArrayList<>();
+        List<IJavaElement> delegateElements = new ArrayList<>();
 
         // Check fields for @Delegate annotation
         IField[] fields = type.getFields();
@@ -135,7 +136,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private void reportInvalidDelegateCountDiagnostics(IType type, String uri, JavaDiagnosticsContext context,
-                                                       List<Diagnostic> diagnostics, List<Object> delegateElements,
+                                                       List<Diagnostic> diagnostics, List<IJavaElement> delegateElements,
                                                        int delegateCount) throws JavaModelException {
         // Report diagnostics based on delegate count
         if (delegateCount == 0) {
@@ -149,8 +150,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         } else if (delegateCount > 1) {
             // Multiple @Delegate found - report at each field/parameter level
             String message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
-            for (Object element : delegateElements) {
-                Range range = PositionUtils.toNameRange((org.eclipse.jdt.core.IJavaElement) element, context.getUtils());
+            for (IJavaElement element : delegateElements) {
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidDecoratorDelegateInjectionPoints,
