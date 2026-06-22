@@ -28,8 +28,8 @@ import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.MESSAGE_LISTENER;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.MESSAGE_LISTENER_FQ_NAME;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.MESSAGE_LISTENER;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.MESSAGE_LISTENER_FQ_NAME;
 
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ExtendedCodeAction;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.IJavaCodeActionParticipant;
@@ -77,6 +77,11 @@ public class EjbMessageDrivenImplementInterfaceQuickFix implements IJavaCodeActi
         CodeAction toResolve = context.getUnresolved();
         ASTNode node = context.getCoveredNode();
         ITypeBinding parentType = Bindings.getBindingOfParentType(node);
+
+        if (parentType == null) {
+            return toResolve;
+        }
+
         String label = getLabel(MESSAGE_LISTENER, parentType.getName());
 
         ChangeCorrectionProposal proposal = new ImplementInterfaceProposal(label, context.getCompilationUnit(), parentType, context.getASTRoot(), MESSAGE_LISTENER_FQ_NAME, 0);

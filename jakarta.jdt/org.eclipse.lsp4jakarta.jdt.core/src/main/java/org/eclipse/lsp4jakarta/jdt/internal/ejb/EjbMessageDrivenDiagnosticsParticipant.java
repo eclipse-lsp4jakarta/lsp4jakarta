@@ -23,10 +23,10 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.DIAGNOSTIC_CODE_MESSAGE;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.DIAGNOSTIC_SOURCE;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.MESSAGE_DRIVEN_FQ_NAME;
-import static org.eclipse.lsp4jakarta.jdt.core.ejb.Constants.MESSAGE_LISTENER_FQ_NAME;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.DIAGNOSTIC_CODE_MESSAGE;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.DIAGNOSTIC_SOURCE;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.MESSAGE_DRIVEN_FQ_NAME;
+import static org.eclipse.lsp4jakarta.jdt.core.ejb.EjbConstants.MESSAGE_LISTENER_FQ_NAME;
 
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;

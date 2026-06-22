@@ -15,7 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.core.ejb;
 /**
  * Constants for Jakarta Enterprise Beans (EJB) diagnostics.
  */
-public class Constants {
+public class EjbConstants {
 
     /* Annotations */
     public static final String MESSAGE_DRIVEN = "MessageDriven";

@@ -12,12 +12,7 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.test.ejb;
 
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
-import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.*;
 
 import java.util.Arrays;
 
