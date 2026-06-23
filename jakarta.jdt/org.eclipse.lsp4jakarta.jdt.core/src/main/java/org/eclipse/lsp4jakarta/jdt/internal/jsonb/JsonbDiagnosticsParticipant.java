@@ -219,44 +219,23 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         Map<MethodInvocation, IMethodBinding> bindingCache = new HashMap<>(allMethodInvocations.size());
 
         // Pre-resolve all bindings in one pass for performance
-        for (MethodInvocation mi : allMethodInvocations) {
-            IMethodBinding binding = mi.resolveMethodBinding();
+        for (MethodInvocation methodInvocation : allMethodInvocations) {
+            IMethodBinding binding = methodInvocation.resolveMethodBinding();
             if (binding != null) {
-                bindingCache.put(mi, binding);
+                bindingCache.put(methodInvocation, binding);
             }
         }
 
         // Analyze all method invocations and group by enclosing method
-        for (MethodInvocation mi : allMethodInvocations) {
-            MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(mi);
+        for (MethodInvocation methodInvocation : allMethodInvocations) {
+            MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(methodInvocation);
             if (enclosingMethod != null) {
                 JsonbThreadSafetyAnalysis analysis = analysisMap.computeIfAbsent(
                                                                                  enclosingMethod, k -> new JsonbThreadSafetyAnalysis());
 
-                IMethodBinding binding = bindingCache.get(mi);
+                IMethodBinding binding = bindingCache.get(methodInvocation);
                 if (binding != null) {
-                    String fqName = ASTUtils.getDeclaringClassName(mi);
-                    if (fqName != null) {
-                        // Check if this method uses Jsonb
-                        if (!analysis.methodUsesJsonb && fqName.equals(Constants.JAKARTA_JSONB)) {
-                            analysis.methodUsesJsonb = true;
-                        }
-
-                        // Check if this is a close() invocation
-                        if (!analysis.hasClose && isCloseInvocation(mi, binding)) {
-                            analysis.hasClose = true;
-                        }
-
-                        // Check if this is a thread source invocation
-                        if (isThreadSourceInvocation(mi, binding)) {
-                            analysis.threadSourceCount++;
-                        }
-
-                        // Check if this is a local Jsonb instance creation (JsonbBuilder.create())
-                        if (!analysis.hasLocalJsonbInstance && isLocalJsonbCreation(mi, binding)) {
-                            analysis.hasLocalJsonbInstance = true;
-                        }
-                    }
+                    getJsonbThreadClosableDetails(methodInvocation, analysis, binding);
                 }
             }
         }
@@ -285,16 +264,60 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     }
 
     /**
+     * Analyzes a method invocation to collect Jsonb-related closeable details for thread safety diagnostics.
+     *
+     * <p>This method updates the provided {@link JsonbThreadSafetyAnalysis} object by checking if the
+     * method invocation:
+     * <ul>
+     * <li>Uses Jsonb API (jakarta.json.bind.Jsonb)</li>
+     * <li>Creates a local Jsonb instance (JsonbBuilder.create() or build())</li>
+     * <li>Calls close() on a Jsonb instance</li>
+     * <li>Uses thread sources (ExecutorService, Thread, etc.)</li>
+     * </ul>
+     *
+     * <p>All checks are performed for each method invocation to ensure complete analysis,
+     * as Jsonb usage detection happens during the same iteration.
+     *
+     * @param methodInvocation the method invocation to analyze
+     * @param analysis the thread safety analysis object to update with findings
+     * @param binding the resolved method binding for type hierarchy checks
+     */
+    private void getJsonbThreadClosableDetails(MethodInvocation methodInvocation, JsonbThreadSafetyAnalysis analysis,
+                                               IMethodBinding binding) {
+        String fqName = ASTUtils.getDeclaringClassName(methodInvocation);
+        if (fqName != null) {
+            // Check if this method uses Jsonb
+            if (!analysis.methodUsesJsonb && fqName.equals(Constants.JAKARTA_JSONB)) {
+                analysis.methodUsesJsonb = true;
+            }
+
+            // Check if this is a local Jsonb instance creation (JsonbBuilder.create())
+            if (!analysis.hasLocalJsonbInstance && isLocalJsonbCreation(methodInvocation)) {
+                analysis.hasLocalJsonbInstance = true;
+            }
+
+            // Check if this is a close() invocation
+            if (!analysis.hasClose && isCloseInvocation(methodInvocation)) {
+                analysis.hasClose = true;
+            }
+
+            // Check if this is a thread source invocation
+            if (isThreadSourceInvocation(methodInvocation, binding)) {
+                analysis.threadSourceCount++;
+            }
+        }
+    }
+
+    /**
      * Checks if a method invocation creates a local Jsonb instance.
      * Detects both JsonbBuilder.create() and JsonbBuilder.build() patterns.
      * This distinguishes between local instances (which should be closed) and
      * global/field instances (which should NOT be closed in individual methods).
      *
      * @param mi the method invocation to check
-     * @param binding the pre-resolved method binding (for performance)
      * @return true if this creates a local Jsonb instance
      */
-    private boolean isLocalJsonbCreation(MethodInvocation mi, IMethodBinding binding) {
+    private boolean isLocalJsonbCreation(MethodInvocation mi) {
         String methodName = mi.getName().getIdentifier();
 
         // Check if this is a create() or build() method
@@ -317,10 +340,9 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
      * Checks if a method invocation is a close() call on Jsonb or related closeable types.
      *
      * @param mi the method invocation to check
-     * @param binding the pre-resolved method binding (for performance)
      * @return true if this is a close invocation on Jsonb, Closeable, or AutoCloseable
      */
-    private boolean isCloseInvocation(MethodInvocation mi, IMethodBinding binding) {
+    private boolean isCloseInvocation(MethodInvocation mi) {
         String name = mi.getName().getIdentifier();
         if (!name.equals(Constants.CLOSE_METHOD)) {
             return false;
@@ -386,13 +408,13 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         }
 
         // Check if implements thread-related interfaces
-        for (ITypeBinding iface : type.getInterfaces()) {
-            String ifaceName = iface.getQualifiedName();
+        for (ITypeBinding interfaceBinding : type.getInterfaces()) {
+            String ifaceName = interfaceBinding.getQualifiedName();
             if (Constants.THREAD_HIERARCHY_TYPES.contains(ifaceName)) {
                 return true;
             }
             // Recursively check interface hierarchy
-            if (isThreadRelatedType(iface)) {
+            if (isThreadRelatedType(interfaceBinding)) {
                 return true;
             }
         }
