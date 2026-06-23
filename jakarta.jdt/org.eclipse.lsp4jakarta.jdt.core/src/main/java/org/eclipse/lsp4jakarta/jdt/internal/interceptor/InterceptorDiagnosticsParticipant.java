@@ -70,9 +70,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
-                boolean isAbstract = Flags.isAbstract(typeFlag);
                 // Check 1: Validate if class is abstract
-                if (isAbstract) {
+                if (Flags.isAbstract(typeFlag)) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InvalidInterceptorAbstractClass", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorAnnotationOnAbstractClass, DiagnosticSeverity.Error));
@@ -281,7 +280,6 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException if there's an error accessing the Java model
      */
     private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
-        List<String> simpleAnnotationNames = annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.toList());
-        return String.join(", ", simpleAnnotationNames);
+        return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
     }
 }
