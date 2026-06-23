@@ -40,6 +40,6 @@ public class RemoveFinalModifierQuickFix extends RemoveModifierConflictQuickFix 
      */
     @Override
     protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.DIRemoveFinalModifier;
+        return JakartaCodeActionId.InterceptorRemoveFinalModifier;
     }
 }

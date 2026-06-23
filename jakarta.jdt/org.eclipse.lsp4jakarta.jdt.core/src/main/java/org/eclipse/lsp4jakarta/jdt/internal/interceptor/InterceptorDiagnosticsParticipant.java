@@ -44,7 +44,6 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-import org.eclipse.lsp4jakarta.jdt.internal.jsonb.ErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -68,7 +67,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             int typeFlag = type.getFlags();
-            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorType(type, unit);
+            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 boolean isAbstract = Flags.isAbstract(typeFlag);
