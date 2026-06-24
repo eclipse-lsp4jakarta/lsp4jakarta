@@ -12,16 +12,25 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ExtendedCodeAction;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationAttributeQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.InsertAnnotationAttributeProposal;
@@ -62,6 +71,21 @@ public class InsertNamedValueAttributeQuickFix extends InsertAnnotationAttribute
     }
 
     /**
+     * Override to provide custom label with annotation name.
+     */
+    @Override
+    public List<? extends CodeAction> getCodeActions(JavaCodeActionContext context, Diagnostic diagnostic,
+                                                     IProgressMonitor monitor) throws CoreException {
+        String label = Messages.getMessage("InsertAttributes", "value", "", "Named");
+        ExtendedCodeAction codeAction = new ExtendedCodeAction(label);
+        codeAction.setRelevance(0);
+        codeAction.setKind(CodeActionKind.QuickFix);
+        codeAction.setDiagnostics(Arrays.asList(diagnostic));
+        codeAction.setData(new CodeActionResolveData(context.getUri(), getParticipantId(), context.getParams().getRange(), null, context.getParams().isResourceOperationSupported(), context.getParams().isCommandConfigurationUpdateSupported(), getCodeActionId()));
+        return Collections.singletonList(codeAction);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Override to handle the case where @Named is on a method/constructor parameter.
@@ -85,7 +109,7 @@ public class InsertNamedValueAttributeQuickFix extends InsertAnnotationAttribute
         }
 
         if (annotation != null) {
-            String name = Messages.getMessage("InsertAttribute", "value");
+            String name = Messages.getMessage("InsertAttributes", "value", "", "Named");
             ChangeCorrectionProposal proposal = new InsertAnnotationAttributeProposal(name, context.getCompilationUnit(), annotation, 0, "value");
             try {
                 toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
