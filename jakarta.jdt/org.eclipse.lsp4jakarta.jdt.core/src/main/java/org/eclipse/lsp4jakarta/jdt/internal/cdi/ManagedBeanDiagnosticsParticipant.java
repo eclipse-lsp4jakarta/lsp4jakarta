@@ -296,6 +296,32 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidDependentScopeWithConditionalObserver,
                                                              DiagnosticSeverity.Error));
                 }
+
+                // Check for @Named annotation without value on non-field injection points
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#named_at_injection_point
+                // @Named on constructor/method parameters without value is a definition error
+                // Only field injection points can omit the value (field name is assumed)
+                if (DiagnosticUtils.isConstructorMethod(method) || isInjectMethod) {
+                    for (ILocalVariable param : method.getParameters()) {
+                        for (IAnnotation annotation : param.getAnnotations()) {
+                            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                                // Check if the @Named annotation has a value attribute
+                                String namedValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "value", String.class);
+                                if (namedValue == null || namedValue.trim().isEmpty()) {
+                                    // @Named without value on constructor/method parameter is invalid
+                                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                                    diagnostics.add(context.createDiagnostic(uri,
+                                                                             Messages.getMessage("NamedAnnotationWithoutValueOnNonFieldInjectionPoint"),
+                                                                             range,
+                                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                                             null,
+                                                                             ErrorCode.InvalidNamedAnnotationOnNonFieldInjectionPoint,
+                                                                             DiagnosticSeverity.Error));
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (isManagedBean && constructorMethods.size() > 0) {
