@@ -14,7 +14,9 @@
 package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -88,10 +90,22 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  DiagnosticSeverity.Error));
                     }
                 }
+                // Map to track methods by their interceptor annotation type for duplicate detection
+                Map<String, List<IMethod>> methodsByAnnotation = new HashMap<>();
+
                 for (IMethod method : type.getMethods()) {
                     // Validate interceptor method modifiers
                     validateInterceptorMethodModifiers(context, uri, diagnostics, type, method);
+
+                    // Collect methods by annotation type for duplicate detection
+                    List<String> interceptorAnnotations = getInterceptorMethodAnnotations(type, method);
+                    for (String annotationFqn : interceptorAnnotations) {
+                        methodsByAnnotation.computeIfAbsent(annotationFqn, k -> new ArrayList<>()).add(method);
+                    }
                 }
+
+                // Validate that only one method per interceptor annotation type exists
+                validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -270,6 +284,42 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         Range range = PositionUtils.toNameRange(method, context.getUtils());
         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                  annotationData, errorCode, severity));
+    }
+
+    /**
+     * Validates that only one method per interceptor annotation type exists in the class.
+     * According to Jakarta Interceptors specification, up to one interceptor method of each
+     * interceptor method type may be defined in the same class.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param methodsByAnnotation map of annotation FQN to list of methods with that annotation
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateUniqueInterceptorMethods(JavaDiagnosticsContext context, String uri,
+                                                  List<Diagnostic> diagnostics,
+                                                  Map<String, List<IMethod>> methodsByAnnotation) throws JavaModelException {
+        // Check for duplicates and create diagnostics for all occurrences after the first
+        for (Map.Entry<String, List<IMethod>> entry : methodsByAnnotation.entrySet()) {
+            List<IMethod> methods = entry.getValue();
+            if (methods.size() > 1) {
+                String annotationFqn = entry.getKey();
+                String annotationSimpleName = DiagnosticUtils.getSimpleName(annotationFqn);
+
+                // Report diagnostic for all duplicate methods (skip the first one)
+                for (int i = 1; i < methods.size(); i++) {
+                    IMethod method = methods.get(i);
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    String message = Messages.getMessage("InvalidMultipleInterceptorMethodsOfSameType",
+                                                         "@" + annotationSimpleName);
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidMultipleInterceptorMethodsOfSameType,
+                                                             DiagnosticSeverity.Error));
+                }
+            }
+        }
     }
 
     /**
