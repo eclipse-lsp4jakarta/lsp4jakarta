@@ -52,7 +52,7 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-
+import static java.util.stream.Collectors.toList;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
@@ -197,7 +197,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
     private void collectJsonbFromJsonNullParameterDiagnostics(ICompilationUnit unit, JavaDiagnosticsContext context,
                                                               String uri, List<Diagnostic> diagnostics) throws JavaModelException {
         List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
-        List<MethodInvocation> fromJsonInvocations = allMethodInvocations.stream().filter(mi -> isMatchedJsonbFromJson(mi)).collect(java.util.stream.Collectors.toList());
+        List<MethodInvocation> fromJsonInvocations = allMethodInvocations.stream().filter(mi -> isMatchedJsonbFromJson(mi)).collect(toList());
 
         for (MethodInvocation methodInvocation : fromJsonInvocations) {
             if (!methodInvocation.arguments().isEmpty()) {
