@@ -160,8 +160,6 @@ public class ASTUtils {
 
     /**
      * Checks if the declaring class name of a method invocation matches the expected fully qualified name.
-     * This overloaded version includes an optimization that checks if the expected class is imported
-     * before performing the full resolution, improving performance.
      *
      * @param mi the method invocation
      * @param expectedFQN the expected fully qualified class name to match against
