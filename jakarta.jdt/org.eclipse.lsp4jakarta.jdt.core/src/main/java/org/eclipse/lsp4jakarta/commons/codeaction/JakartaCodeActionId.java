@@ -94,7 +94,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveFinalModifier,
     RemoveAbstractModifier,
     RemoveStaticModifier,
-   //EJB
+    //EJB
     EJBMessageDrivenImplementation;
 
     @Override
