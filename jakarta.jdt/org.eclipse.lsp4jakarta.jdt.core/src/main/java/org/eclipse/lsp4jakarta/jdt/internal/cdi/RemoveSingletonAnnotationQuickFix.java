@@ -40,7 +40,7 @@ public class RemoveSingletonAnnotationQuickFix extends RemoveAnnotationConflictQ
      * {@inheritDoc}
      */
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveSingletonAnnotation;
     }
 }
