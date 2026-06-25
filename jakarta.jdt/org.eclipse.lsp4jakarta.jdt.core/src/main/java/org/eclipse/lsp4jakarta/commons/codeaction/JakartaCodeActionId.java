@@ -82,6 +82,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveScopeDeclarationAnnotationsButOne,
     CDIRemoveDependentScope,
     CDIReplaceScopeAnnotations,
+    // EJB
+    EJBInsertPublicCtrtToClass,
     CDIRemoveConditionalObserverAnnotations,
     CDIRemoveNotifyObserverAttribute,
     CDIRemoveObserverConflictParams,
