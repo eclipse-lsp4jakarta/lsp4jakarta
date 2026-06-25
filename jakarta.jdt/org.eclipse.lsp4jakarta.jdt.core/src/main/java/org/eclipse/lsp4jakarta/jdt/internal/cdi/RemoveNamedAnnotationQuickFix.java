@@ -40,7 +40,7 @@ public class RemoveNamedAnnotationQuickFix extends RemoveAnnotationConflictQuick
      * {@inheritDoc}
      */
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveNamedAnnotation;
     }
 }
