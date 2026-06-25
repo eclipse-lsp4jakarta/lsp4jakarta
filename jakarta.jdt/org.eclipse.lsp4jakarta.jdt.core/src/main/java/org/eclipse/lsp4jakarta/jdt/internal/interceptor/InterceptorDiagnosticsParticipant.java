@@ -314,8 +314,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         if (priorityAnnotation != null) {
             try {
-                Number priorityValue = DiagnosticUtils.getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
-                if (priorityValue != null && priorityValue.intValue() < 0) {
+                if (DiagnosticUtils.isNegativePriorityValue(priorityAnnotation)) {
                     Range range = PositionUtils.toNameRange(priorityAnnotation, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InvalidInterceptorNegativePriority"),
