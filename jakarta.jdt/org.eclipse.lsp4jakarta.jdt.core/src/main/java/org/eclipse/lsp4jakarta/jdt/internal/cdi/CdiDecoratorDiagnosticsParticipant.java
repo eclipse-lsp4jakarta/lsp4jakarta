@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IAnnotatable;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -95,33 +95,32 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
 
         // Collect all @Delegate injection points
         List<IJavaElement> delegateElements = new ArrayList<>();
-
-        // Check fields for @Delegate annotation
-        IField[] fields = type.getFields();
-        for (IField field : fields) {
-            String[] fieldAnnotations = Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-            List<String> delegateOnField = DiagnosticUtils.getMatchedJavaElementNames(type, fieldAnnotations,
-                                                                                      new String[] { Constants.DELEGATE_FQ_NAME });
-            if (!delegateOnField.isEmpty()) {
-                delegateElements.add(field);
-            }
+        collectDelegates(type.getFields(), type, delegateElements);
+        for (IMethod method : type.getMethods()) {
+            collectDelegates(method.getParameters(), type, delegateElements);
         }
-
-        // Check constructor and method parameters for @Delegate annotation
-        IMethod[] methods = type.getMethods();
-        for (IMethod method : methods) {
-            ILocalVariable[] parameters = method.getParameters();
-            for (ILocalVariable parameter : parameters) {
-                String[] paramAnnotations = Stream.of(parameter.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-                List<String> delegateOnParam = DiagnosticUtils.getMatchedJavaElementNames(type, paramAnnotations,
-                                                                                          new String[] { Constants.DELEGATE_FQ_NAME });
-                if (!delegateOnParam.isEmpty()) {
-                    delegateElements.add(parameter);
-                }
-            }
-        }
-
         reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics, delegateElements, delegateElements.size());
+    }
+
+    /**
+     * collectDelegates
+     * Helper method to collect delegates from any Java elements
+     *
+     * @param elements
+     * @param type
+     * @param delegateElements
+     * @throws JavaModelException
+     */
+    private void collectDelegates(IJavaElement[] elements, IType type, List<IJavaElement> delegateElements) throws JavaModelException {
+        for (IJavaElement element : elements) {
+            String[] annotations = Stream.of(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
+            if (!DiagnosticUtils.getMatchedJavaElementNames(
+                                                            type,
+                                                            annotations,
+                                                            new String[] { Constants.DELEGATE_FQ_NAME }).isEmpty()) {
+                delegateElements.add(element);
+            }
+        }
     }
 
     /**
