@@ -67,15 +67,11 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
         if (diagnosticData == null || diagnosticData.size() == 0) {
             return;
         }
-
         List<String> annotationsToRemove = IntStream.range(0, diagnosticData.size()).mapToObj(idx -> diagnosticData.get(idx).getAsString()).collect(Collectors.toList());
-
         // Format annotation names for display
         String formattedNames = formatAnnotationNames(annotationsToRemove);
-        String name = getCodeActionLabel(formattedNames);
-
         // Create code action
-        ExtendedCodeAction codeAction = new ExtendedCodeAction(name);
+        ExtendedCodeAction codeAction = new ExtendedCodeAction(getCodeActionLabel(formattedNames));
         codeAction.setRelevance(0);
         codeAction.setDiagnostics(Collections.singletonList(diagnostic));
         codeAction.setKind(CodeActionKind.QuickFix);
@@ -94,10 +90,7 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
     @Override
     public CodeAction resolveCodeAction(JavaCodeActionResolveContext context) {
         CodeAction toResolve = context.getUnresolved();
-
-        // Get the covered node and its binding
-        ASTNode node = context.getCoveredNode();
-        IBinding parentType = getBinding(node);
+        IBinding parentType = getBinding(context.getCoveredNode());
         ASTNode parentNode = context.getASTRoot().findDeclaringNode(parentType);
         IBinding classBinding = getBinding(parentNode);
 
@@ -110,10 +103,8 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
 
             // Format annotation names for display message
             String formattedNames = formatAnnotationNames(annotationsToRemove);
-            String name = getCodeActionLabel(formattedNames);
-
             // Create a proposal that replaces all annotations
-            ChangeCorrectionProposal proposal = new ReplaceAnnotationProposal(name, context.getCompilationUnit(), context.getASTRoot(), classBinding, 0, getAnnotations()[0], simpleNames);
+            ChangeCorrectionProposal proposal = new ReplaceAnnotationProposal(getCodeActionLabel(formattedNames), context.getCompilationUnit(), context.getASTRoot(), classBinding, 0, getAnnotations()[0], simpleNames);
 
             try {
                 toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
