@@ -66,6 +66,24 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                                                              Constants.SESSION_BEAN_ANNOTATIONS);
 
             if (!sessionBeanAnnotations.isEmpty()) {
+                // Check for @Interceptor or @Decorator annotations
+                List<String> invalidAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                             typeAnnotations,
+                                                                                             new String[] {
+                                                                                                            Constants.INTERCEPTOR_FQ_NAME,
+                                                                                                            Constants.DECORATOR_FQ_NAME
+                                                                                             });
+
+                if (!invalidAnnotations.isEmpty()) {
+                    String message = Messages.getMessage("SessionBeanWithInterceptorOrDecorator");
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.SessionBeanWithInterceptorOrDecorator,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Check for missing public no-arg constructor
                 ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
 
                 if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
