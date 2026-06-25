@@ -21,6 +21,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidInterceptorNoArgsConstructorMissing,
     InvalidInterceptorAnnotationOnAbstractClass,
     InvalidInterceptorMethodsProceedMissing,
+    InvalidInterceptorMethodAnnotationOnFinalMethod,
+    InvalidInterceptorMethodAnnotationOnAbstractMethod,
+    InvalidInterceptorMethodAnnotationOnStaticMethod,
     InvalidInterceptorNegativePriority;
 
     /**

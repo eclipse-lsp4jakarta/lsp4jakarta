@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,21 +10,22 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.di;
+package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
+import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveModifierConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertDefaultConstructorToClassQuickFix;
 
 /**
- * Removes the abstract modifier from the declaring element.
+ * Inserts a public no-argument constructor to the ejb session bean class.
  */
-public class RemoveAbstractModifierQuickFix extends RemoveModifierConflictQuickFix {
+public class InsertPublicNoArgConstructorQuickFix extends InsertDefaultConstructorToClassQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveAbstractModifierQuickFix() {
-        super(false, "abstract");
+    public InsertPublicNoArgConstructorQuickFix() {
+        super("public");
     }
 
     /**
@@ -32,14 +33,14 @@ public class RemoveAbstractModifierQuickFix extends RemoveModifierConflictQuickF
      */
     @Override
     public String getParticipantId() {
-        return RemoveAbstractModifierQuickFix.class.getName();
+        return InsertPublicNoArgConstructorQuickFix.class.getName();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.DIRemoveAbstractModifier;
+    protected ICodeActionId getCodeActionId() {
+        return JakartaCodeActionId.EJBInsertPublicCtrtToClass;
     }
 }

@@ -40,6 +40,8 @@ public class Constants {
 
     public static final Set<String> INTERCEPTOR_REFERENCES = Set.of(AROUND_INVOKE_FQ_NAME, AROUND_CONSTRUCT_FQ_NAME, AROUND_TIMEOUT_FQ_NAME);
 
+    public static final String[] LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS = { AROUND_CONSTRUCT_FQ_NAME, PRE_DESTROY_FQ_NAME, POST_CONSTRUCT_FQ_NAME };
+
     public static final String JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT = "jakarta.interceptor.InvocationContext";
 
     public static final String INTERCEPTORS_FQ_NAME = "jakarta.interceptor.Interceptors";
