@@ -322,6 +322,14 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.servlet.InsertExtendsClauseToExtendHttpServletQuickFix" />
    </extension>
    
+   <!-- EJB -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.ejb.EjbDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
+   </extension>
+   
    <!-- CDI -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
@@ -426,6 +434,24 @@
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.InterceptorDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnFinalMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnFinalMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.RemoveInterceptorMethodAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnAbstractMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnAbstractMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.RemoveInterceptorMethodAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnStaticMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-interceptor#InvalidInterceptorMethodAnnotationOnStaticMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.RemoveInterceptorMethodAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-interceptor#InvalidInterceptorAnnotationOnAbstractClass"
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
