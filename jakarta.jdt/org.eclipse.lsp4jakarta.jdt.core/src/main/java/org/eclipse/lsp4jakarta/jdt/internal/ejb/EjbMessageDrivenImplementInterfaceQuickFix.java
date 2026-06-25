@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
@@ -106,7 +107,7 @@ public class EjbMessageDrivenImplementInterfaceQuickFix implements IJavaCodeActi
     @SuppressWarnings("restriction")
     private String getLabel(String interfaceName, String className) {
         return Messages.getMessage("LetClassImplement",
-                                   org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels.getJavaElementName(className),
-                                   org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels.getJavaElementName(interfaceName));
+                                   BasicElementLabels.getJavaElementName(className),
+                                   BasicElementLabels.getJavaElementName(interfaceName));
     }
 }
