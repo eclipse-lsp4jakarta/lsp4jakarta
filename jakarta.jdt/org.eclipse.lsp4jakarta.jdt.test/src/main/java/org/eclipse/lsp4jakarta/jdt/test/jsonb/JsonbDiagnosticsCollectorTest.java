@@ -402,8 +402,8 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         String newText2 = "public JsonbDeserialization() {\n\t}\n\n\t";
         TextEdit te1 = te(6, 1, 6, 1, newText1);
         TextEdit te2 = te(6, 1, 6, 1, newText2);
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d1, te1);
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d1, te2);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d1, te1);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d1, te2);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
@@ -411,8 +411,8 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         String newText4 = "public Childclass() {\n		}\n		";
         TextEdit te3 = te(58, 2, 58, 2, newText3);
         TextEdit te4 = te(58, 2, 58, 2, newText4);
-        CodeAction ca3 = ca(uri, "Add a default 'protected' constructor to this class", d2, te3);
-        CodeAction ca4 = ca(uri, "Add a default 'public' constructor to this class", d2, te4);
+        CodeAction ca3 = ca(uri, "Add a no-arg protected constructor to this class", d2, te3);
+        CodeAction ca4 = ca(uri, "Add a no-arg public constructor to this class", d2, te4);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);

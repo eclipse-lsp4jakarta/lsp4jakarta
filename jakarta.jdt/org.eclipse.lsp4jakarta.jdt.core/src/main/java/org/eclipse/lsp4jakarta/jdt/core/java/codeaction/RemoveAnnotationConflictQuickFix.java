@@ -30,7 +30,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
-import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveAnnotationProposal;
 
@@ -220,5 +220,5 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
      *
      * @return the id for this code action
      */
-    protected abstract ICodeActionId getCodeActionId();
+    protected abstract JakartaCodeActionId getCodeActionId();
 }

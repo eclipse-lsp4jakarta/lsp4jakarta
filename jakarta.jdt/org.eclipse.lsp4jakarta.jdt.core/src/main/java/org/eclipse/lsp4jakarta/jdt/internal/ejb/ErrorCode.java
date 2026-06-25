@@ -8,28 +8,23 @@
 * SPDX-License-Identifier: EPL-2.0
 *
 * Contributors:
-*     IBM Corporation, Archana Iyer R - initial implementation
+*     IBM Corporation - initial API and implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
+
+package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 
 /**
- * Interceptor error codes.
+ * EJB error codes.
  */
 public enum ErrorCode implements IJavaErrorCode {
-    InvalidInterceptorNoArgsConstructorMissing,
-    InvalidInterceptorAnnotationOnAbstractClass,
-    InvalidInterceptorMethodsProceedMissing,
-    InvalidInterceptorMethodAnnotationOnFinalMethod,
-    InvalidInterceptorMethodAnnotationOnAbstractMethod,
-    InvalidInterceptorMethodAnnotationOnStaticMethod;
 
-    /**
-     * {@inheritDoc}
-     */
+    MissingPublicNoArgConstructor;
+
     @Override
     public String getCode() {
         return name();
     }
+
 }
