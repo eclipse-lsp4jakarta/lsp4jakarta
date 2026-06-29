@@ -214,26 +214,18 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
                                             ICompilationUnit unit) throws JavaModelException {
         List<MethodInvocation> allMethodInvocations = ASTUtils.getMethodInvocations(unit);
         Map<MethodDeclaration, JsonbThreadSafetyAnalysis> analysisMap = new HashMap<>();
-
-        // Cache binding resolutions to avoid repeated expensive lookups
         Map<MethodInvocation, IMethodBinding> bindingCache = new HashMap<>(allMethodInvocations.size());
-
-        // Pre-resolve all bindings in one pass for performance
-        for (MethodInvocation methodInvocation : allMethodInvocations) {
-            IMethodBinding binding = methodInvocation.resolveMethodBinding();
-            if (binding != null) {
-                bindingCache.put(methodInvocation, binding);
-            }
-        }
-
-        // Analyze all method invocations and group by enclosing method
         for (MethodInvocation methodInvocation : allMethodInvocations) {
             MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(methodInvocation);
             if (enclosingMethod != null) {
-                JsonbThreadSafetyAnalysis analysis = analysisMap.computeIfAbsent(
-                                                                                 enclosingMethod, k -> new JsonbThreadSafetyAnalysis());
-
+                JsonbThreadSafetyAnalysis analysis = analysisMap.computeIfAbsent(enclosingMethod, k -> new JsonbThreadSafetyAnalysis());
                 IMethodBinding binding = bindingCache.get(methodInvocation);
+                if (binding == null) {
+                    binding = methodInvocation.resolveMethodBinding();
+                    if (binding != null) {
+                        bindingCache.put(methodInvocation, binding);
+                    }
+                }
                 if (binding != null) {
                     getJsonbThreadClosableDetails(methodInvocation, analysis, binding);
                 }
@@ -245,7 +237,6 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
         for (Map.Entry<MethodDeclaration, JsonbThreadSafetyAnalysis> entry : analysisMap.entrySet()) {
             MethodDeclaration method = entry.getKey();
             JsonbThreadSafetyAnalysis analysis = entry.getValue();
-
             // Only generate diagnostic if:
             // 1. Method uses Jsonb
             // 2. Method has thread sources
