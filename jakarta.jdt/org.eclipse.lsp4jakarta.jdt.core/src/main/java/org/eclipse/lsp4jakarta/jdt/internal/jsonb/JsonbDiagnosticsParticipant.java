@@ -219,13 +219,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
             MethodDeclaration enclosingMethod = ASTUtils.getEnclosingMethod(methodInvocation);
             if (enclosingMethod != null) {
                 JsonbThreadSafetyAnalysis analysis = analysisMap.computeIfAbsent(enclosingMethod, k -> new JsonbThreadSafetyAnalysis());
-                IMethodBinding binding = bindingCache.get(methodInvocation);
-                if (binding == null) {
-                    binding = methodInvocation.resolveMethodBinding();
-                    if (binding != null) {
-                        bindingCache.put(methodInvocation, binding);
-                    }
-                }
+                IMethodBinding binding = bindingCache.computeIfAbsent(methodInvocation, mi -> mi.resolveMethodBinding());
                 if (binding != null) {
                     getJsonbThreadClosableDetails(methodInvocation, analysis, binding);
                 }
