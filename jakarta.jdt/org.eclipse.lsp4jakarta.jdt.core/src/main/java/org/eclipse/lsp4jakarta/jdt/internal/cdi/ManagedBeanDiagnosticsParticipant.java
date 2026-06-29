@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -308,7 +309,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                             if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
                                 // Check if the @Named annotation has a value attribute
                                 String namedValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "value", String.class);
-                                if (namedValue == null || namedValue.trim().isEmpty()) {
+                                if (StringUtils.isBlank(namedValue)) {
                                     // @Named without value on constructor/method parameter is invalid
                                     Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                                     diagnostics.add(context.createDiagnostic(uri,
