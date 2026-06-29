@@ -127,13 +127,15 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
      * @return Formatted string (e.g., "@ApplicationScoped and @RequestScoped" or "@ApplicationScoped, @RequestScoped and @SessionScoped")
      */
     protected String formatAnnotationNames(List<String> annotationFqNames) {
-        List<String> simpleNames = annotationFqNames.stream().map(fqName -> "@" + DiagnosticUtils.getSimpleName(fqName)).collect(Collectors.toList());
-
+        List<String> simpleNames = annotationFqNames.stream()
+            .map(fqName -> "@" + DiagnosticUtils.getSimpleName(fqName))
+            .collect(Collectors.toList());
+        
         int size = simpleNames.size();
         if (size <= 1) {
             return String.join("", simpleNames);
         }
-
+        
         String allButLast = String.join(", ", simpleNames.subList(0, size - 1));
         return allButLast + " and " + simpleNames.get(size - 1);
     }
