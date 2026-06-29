@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ReplaceAnnotationProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 import com.google.gson.JsonArray;
 
@@ -99,7 +100,7 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
 
         if (annotationsToRemove != null && !annotationsToRemove.isEmpty()) {
             // Extract simple names from fully qualified names for ReplaceAnnotationProposal
-            String[] simpleNames = annotationsToRemove.stream().map(fqName -> fqName.substring(fqName.lastIndexOf('.') + 1)).toArray(String[]::new);
+            String[] simpleNames = annotationsToRemove.stream().map(DiagnosticUtils::getSimpleName).toArray(String[]::new);
 
             // Format annotation names for display message
             String formattedNames = formatAnnotationNames(annotationsToRemove);
@@ -120,13 +121,23 @@ public abstract class ReplaceAnnotationsQuickFix extends InsertAnnotationMissing
 
     /**
      * Formats a list of fully qualified annotation names for display.
-     * Extracts simple names and joins them with commas, prefixed with @.
+     * Extracts simple names and joins them with commas and "and" before the last one, prefixed with @.
      *
      * @param annotationFqNames List of fully qualified annotation names
-     * @return Formatted string (e.g., "@ApplicationScoped, @RequestScoped")
+     * @return Formatted string (e.g., "@ApplicationScoped and @RequestScoped" or "@ApplicationScoped, @RequestScoped and @SessionScoped")
      */
     protected String formatAnnotationNames(List<String> annotationFqNames) {
-        return annotationFqNames.stream().map(fqName -> "@" + fqName.substring(fqName.lastIndexOf('.') + 1)).collect(Collectors.joining(", "));
+        List<String> simpleNames = annotationFqNames.stream()
+            .map(fqName -> "@" + DiagnosticUtils.getSimpleName(fqName))
+            .collect(Collectors.toList());
+        
+        int size = simpleNames.size();
+        if (size <= 1) {
+            return String.join("", simpleNames);
+        }
+        
+        String allButLast = String.join(", ", simpleNames.subList(0, size - 1));
+        return allButLast + " and " + simpleNames.get(size - 1);
     }
 
     /**

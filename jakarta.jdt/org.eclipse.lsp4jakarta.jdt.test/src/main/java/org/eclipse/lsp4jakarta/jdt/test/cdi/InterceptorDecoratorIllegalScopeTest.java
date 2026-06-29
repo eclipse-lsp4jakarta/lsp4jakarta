@@ -141,7 +141,7 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         // Test quickfix for interceptor with multiple scopes (line 54)
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, interceptorWithMultipleScopes);
         TextEdit replaceWithDependent3 = te(51, 0, 53, 14, "@Dependent\n@Interceptor");
-        CodeAction replaceAction3 = ca(uri, "Replace @ApplicationScoped, @SessionScoped with @Dependent", interceptorWithMultipleScopes, replaceWithDependent3);
+        CodeAction replaceAction3 = ca(uri, "Replace @ApplicationScoped and @SessionScoped with @Dependent", interceptorWithMultipleScopes, replaceWithDependent3);
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, replaceAction3);
 
         // Test quickfix for decorator with @ApplicationScoped (line 62)
@@ -153,7 +153,7 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         // Test quickfix for decorator with multiple scopes (line 75)
         JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, decoratorWithMultipleScopes);
         TextEdit replaceWithDependent5 = te(72, 0, 74, 19, "@Dependent\n@Decorator");
-        CodeAction replaceAction5 = ca(uri, "Replace @RequestScoped, @ConversationScoped with @Dependent", decoratorWithMultipleScopes, replaceWithDependent5);
+        CodeAction replaceAction5 = ca(uri, "Replace @RequestScoped and @ConversationScoped with @Dependent", decoratorWithMultipleScopes, replaceWithDependent5);
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, replaceAction5);
 
         // Test quickfix for interceptor with custom normal scope (line 83)
@@ -165,7 +165,7 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         // Test quickfix for interceptor with mixed scopes (line 96)
         JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, interceptorWithMixedScopes);
         TextEdit replaceWithDependent7 = te(93, 0, 95, 18, "@Dependent\n@Interceptor");
-        CodeAction replaceAction7 = ca(uri, "Replace @ApplicationScoped, @CustomNormalScope with @Dependent", interceptorWithMixedScopes, replaceWithDependent7);
+        CodeAction replaceAction7 = ca(uri, "Replace @ApplicationScoped and @CustomNormalScope with @Dependent", interceptorWithMixedScopes, replaceWithDependent7);
         assertJavaCodeAction(codeActionParams7, IJDT_UTILS, replaceAction7);
     }
 }
