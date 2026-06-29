@@ -16,6 +16,7 @@ package org.eclipse.lsp4jakarta.jdt.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -27,7 +28,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 public class ASTUtils {
 
@@ -180,5 +180,17 @@ public class ASTUtils {
             return null;
         }
         return declaringClass.getQualifiedName();
+    }
+
+    /**
+     * Method used to get method binding in a cache approach, if absent it computes, otherwise takes it from the Map.
+     *
+     * @param bindingCache
+     * @param methodInvocation
+     * @return
+     */
+    public static IMethodBinding getMethodBinding(Map<MethodInvocation, IMethodBinding> bindingCache,
+                                                  MethodInvocation methodInvocation) {
+        return bindingCache.computeIfAbsent(methodInvocation, mi -> mi.resolveMethodBinding());
     }
 }
