@@ -20,7 +20,11 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 public enum ErrorCode implements IJavaErrorCode {
     InvalidInterceptorNoArgsConstructorMissing,
     InvalidInterceptorAnnotationOnAbstractClass,
-    InvalidInterceptorMethodsProceedMissing;
+    InvalidInterceptorMethodsProceedMissing,
+    InvalidInterceptorMethodAnnotationOnFinalMethod,
+    InvalidInterceptorMethodAnnotationOnAbstractMethod,
+    InvalidInterceptorMethodAnnotationOnStaticMethod,
+    InvalidInterceptorNegativePriority;
 
     /**
      * {@inheritDoc}
