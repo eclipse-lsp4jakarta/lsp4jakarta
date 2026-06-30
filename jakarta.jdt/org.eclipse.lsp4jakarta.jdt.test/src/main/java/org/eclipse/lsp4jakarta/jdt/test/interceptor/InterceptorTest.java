@@ -598,6 +598,31 @@ public class InterceptorTest extends BaseJakartaTest {
     }
 
     @Test
+    public void invalidNegativePriorityInterceptorTest() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidNegativePriorityInterceptor.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics - there are two diagnostics on the @Priority annotation:
+        // 1. A warning from jakarta-annotations about negative priority values
+        // 2. An error from jakarta-interceptor about negative priority values (our implementation)
+        Diagnostic negativePriorityWarningAnnotation = d(6, 0, 15,
+                                                         "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
+                                                         DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
+
+        Diagnostic negativePriorityErrorInterceptor = d(6, 0, 15,
+                                                        "Interceptor priority values must not be negative. Negative values are reserved for future use by the specification.",
+                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNegativePriority");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, negativePriorityWarningAnnotation, negativePriorityErrorInterceptor);
+    }
+  
+    @Test
     public void testMultipleInterceptorMethodsOfSameType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
 
@@ -661,5 +686,4 @@ public class InterceptorTest extends BaseJakartaTest {
         // Assert NO diagnostics for valid code with one method per type
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
-
 }
