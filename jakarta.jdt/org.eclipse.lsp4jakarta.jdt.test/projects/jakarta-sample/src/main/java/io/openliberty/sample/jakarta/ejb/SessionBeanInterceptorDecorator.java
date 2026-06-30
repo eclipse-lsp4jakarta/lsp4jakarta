@@ -74,9 +74,7 @@ class ValidDecorator {
 
 // Valid: @Stateless without @Interceptor or @Decorator
 @Stateless
-class ValidStatelessBean {
+class ValidSessionBean {
     public void businessMethod() {
     }
 }
-
-// Made with Bob
