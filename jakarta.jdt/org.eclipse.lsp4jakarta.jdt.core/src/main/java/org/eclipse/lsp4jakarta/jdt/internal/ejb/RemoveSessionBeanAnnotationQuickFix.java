@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  * Removes the session bean annotation (@Stateless, @Stateful, or @Singleton)
@@ -66,7 +67,7 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
             List<String> presentAnnotations = new ArrayList<>();
 
             for (String annotation : getAnnotations()) {
-                if (hasAnnotation(typeBinding, annotation)) {
+                if (DiagnosticUtils.hasAnnotation(typeBinding, annotation)) {
                     presentAnnotations.add(annotation);
                 }
             }
@@ -77,22 +78,4 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
             }
         }
     }
-
-    /**
-     * Checks if the type has the specified annotation.
-     *
-     * @param typeBinding The type binding
-     * @param annotationFQN The fully qualified annotation name
-     * @return true if the annotation is present, false otherwise
-     */
-    private boolean hasAnnotation(ITypeBinding typeBinding, String annotationFQN) {
-        for (org.eclipse.jdt.core.dom.IAnnotationBinding annotation : typeBinding.getAnnotations()) {
-            if (annotation.getAnnotationType().getQualifiedName().equals(annotationFQN)) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
-
-// Made with Bob

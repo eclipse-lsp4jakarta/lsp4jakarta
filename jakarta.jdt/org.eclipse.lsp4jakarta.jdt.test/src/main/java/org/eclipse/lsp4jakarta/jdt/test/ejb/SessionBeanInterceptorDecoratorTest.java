@@ -48,52 +48,67 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         String uri = getJavaFileUri();
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        Diagnostic d1 = d(17, 6, 37,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Stateless with @Interceptor
+        Diagnostic statelessWithInterceptorDiagnostic = d(17, 6, 37,
+                                                          "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        Diagnostic d2 = d(25, 6, 35,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Stateless with @Decorator
+        Diagnostic statelessWithDecoratorDiagnostic = d(25, 6, 35,
+                                                        "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                        DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        Diagnostic d3 = d(36, 6, 36,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Stateful with @Interceptor
+        Diagnostic statefulWithInterceptorDiagnostic = d(36, 6, 36,
+                                                         "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                         DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        Diagnostic d4 = d(44, 6, 34,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Stateful with @Decorator
+        Diagnostic statefulWithDecoratorDiagnostic = d(44, 6, 34,
+                                                       "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                       DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        Diagnostic d5 = d(55, 6, 37,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Singleton with @Interceptor
+        Diagnostic singletonWithInterceptorDiagnostic = d(55, 6, 37,
+                                                          "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        Diagnostic d6 = d(63, 6, 35,
-                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+        // @Singleton with @Decorator
+        Diagnostic singletonWithDecoratorDiagnostic = d(63, 6, 35,
+                                                        "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                                        DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              statelessWithInterceptorDiagnostic,
+                              statelessWithDecoratorDiagnostic,
+                              statefulWithInterceptorDiagnostic,
+                              statefulWithDecoratorDiagnostic,
+                              singletonWithInterceptorDiagnostic,
+                              singletonWithDecoratorDiagnostic);
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit removeInterceptorEdit = te(15, 10, 16, 12, "");
-        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", d1, removeInterceptorEdit);
-        TextEdit removeStatelessEdit = te(14, 0, 16, 0, "");
-        CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", d1, removeStatelessEdit);
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeInterceptorAction, removeStatelessAction);
+        // Test code actions for @Stateless with @Interceptor
+        JakartaJavaCodeActionParams statelessInterceptorParams = createCodeActionParams(uri, statelessWithInterceptorDiagnostic);
+        TextEdit removeInterceptorFromStatelessEdit = te(15, 10, 16, 12, "");
+        CodeAction removeInterceptorFromStatelessAction = ca(uri, "Remove @Interceptor", statelessWithInterceptorDiagnostic, removeInterceptorFromStatelessEdit);
+        TextEdit removeStatelessWithInterceptorEdit = te(14, 0, 16, 0, "");
+        CodeAction removeStatelessWithInterceptorAction = ca(uri, "Remove @Stateless", statelessWithInterceptorDiagnostic, removeStatelessWithInterceptorEdit);
+        assertJavaCodeAction(statelessInterceptorParams, IJDT_UTILS, removeInterceptorFromStatelessAction, removeStatelessWithInterceptorAction);
 
-        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit removeStatelessEdit2 = te(23, 0, 24, 0, "");
-        CodeAction removeStatelessAction2 = ca(uri, "Remove @Stateless", d2, removeStatelessEdit2);
-        TextEdit removeDecoratorEdit = te(23, 10, 24, 10, "");
-        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", d2, removeDecoratorEdit);
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeDecoratorAction, removeStatelessAction2);
+        // Test code actions for @Stateless with @Decorator
+        JakartaJavaCodeActionParams statelessDecoratorParams = createCodeActionParams(uri, statelessWithDecoratorDiagnostic);
+        TextEdit removeStatelessWithDecoratorEdit = te(23, 0, 24, 0, "");
+        CodeAction removeStatelessWithDecoratorAction = ca(uri, "Remove @Stateless", statelessWithDecoratorDiagnostic, removeStatelessWithDecoratorEdit);
+        TextEdit removeDecoratorFromStatelessEdit = te(23, 10, 24, 10, "");
+        CodeAction removeDecoratorFromStatelessAction = ca(uri, "Remove @Decorator", statelessWithDecoratorDiagnostic, removeDecoratorFromStatelessEdit);
+        assertJavaCodeAction(statelessDecoratorParams, IJDT_UTILS, removeDecoratorFromStatelessAction, removeStatelessWithDecoratorAction);
 
-        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
-        TextEdit removeInterceptorEdit5 = te(53, 10, 54, 12, "");
-        CodeAction removeInterceptorAction5 = ca(uri, "Remove @Interceptor", d5, removeInterceptorEdit5);
-        TextEdit removeSingletonEdit = te(53, 0, 54, 0, "");
-        CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", d5, removeSingletonEdit);
-        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, removeInterceptorAction5, removeSingletonAction);
+        // Test code actions for @Singleton with @Interceptor
+        JakartaJavaCodeActionParams singletonInterceptorParams = createCodeActionParams(uri, singletonWithInterceptorDiagnostic);
+        TextEdit removeInterceptorFromSingletonEdit = te(53, 10, 54, 12, "");
+        CodeAction removeInterceptorFromSingletonAction = ca(uri, "Remove @Interceptor", singletonWithInterceptorDiagnostic, removeInterceptorFromSingletonEdit);
+        TextEdit removeSingletonWithInterceptorEdit = te(53, 0, 54, 0, "");
+        CodeAction removeSingletonWithInterceptorAction = ca(uri, "Remove @Singleton", singletonWithInterceptorDiagnostic, removeSingletonWithInterceptorEdit);
+        assertJavaCodeAction(singletonInterceptorParams, IJDT_UTILS, removeInterceptorFromSingletonAction, removeSingletonWithInterceptorAction);
     }
 
     private JakartaJavaDiagnosticsParams createDiagnosticsParams(String uri) {

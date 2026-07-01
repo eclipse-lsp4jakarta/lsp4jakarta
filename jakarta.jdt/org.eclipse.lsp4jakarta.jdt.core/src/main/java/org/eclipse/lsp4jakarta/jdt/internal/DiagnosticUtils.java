@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IImportContainer;
@@ -33,6 +34,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 
@@ -502,5 +504,21 @@ public class DiagnosticUtils {
     public static boolean isNegativePriorityValue(IAnnotation priorityAnnotation) throws JavaModelException {
         Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
         return value != null && value.intValue() < 0;
+    }
+
+    /**
+     * Checks if the type has the specified annotation.
+     *
+     * @param typeBinding The type binding
+     * @param annotationFQN The fully qualified annotation name
+     * @return true if the annotation is present, false otherwise
+     */
+    public static boolean hasAnnotation(ITypeBinding typeBinding, String annotationFQN) {
+        for (IAnnotationBinding annotation : typeBinding.getAnnotations()) {
+            if (annotation.getAnnotationType().getQualifiedName().equals(annotationFQN)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
