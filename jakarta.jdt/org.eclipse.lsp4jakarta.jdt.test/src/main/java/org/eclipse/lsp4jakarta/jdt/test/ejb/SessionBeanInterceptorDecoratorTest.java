@@ -48,7 +48,6 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         String uri = getJavaFileUri();
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        // All 6 invalid session beans should trigger diagnostics
         Diagnostic d1 = d(16, 6, 37,
                           "Session beans must not be annotated with @Interceptor or @Decorator.",
                           DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
@@ -74,96 +73,29 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
-    }
 
-    @Test
-    public void testRemoveStatelessAnnotationQuickFix() throws Exception {
-        String uri = getJavaFileUri();
-        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
-
-        Diagnostic diagnostic = d(16, 6, 37,
-                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                  DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
-
-        // Test quick fix to remove @Stateless annotation
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, diagnostic);
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
         TextEdit removeStatelessEdit = te(13, 0, 14, 0, "");
-        CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", diagnostic, removeStatelessEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeStatelessAction);
-    }
+        CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", d1, removeStatelessEdit);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeStatelessAction);
 
-    @Test
-    public void testRemoveInterceptorAnnotationQuickFix() throws Exception {
-        String uri = getJavaFileUri();
-        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
-
-        Diagnostic diagnostic = d(16, 6, 37,
-                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                  DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
-
-        // Test quick fix to remove @Interceptor annotation
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, diagnostic);
         TextEdit removeInterceptorEdit = te(14, 0, 15, 0, "");
-        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeInterceptorAction);
-    }
+        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", d1, removeInterceptorEdit);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeInterceptorAction);
 
-    @Test
-    public void testRemoveStatefulAnnotationQuickFix() throws Exception {
-        String uri = getJavaFileUri();
-        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
-
-        Diagnostic diagnostic = d(24, 6, 35,
-                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                  DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
-
-        // Test quick fix to remove @Stateful annotation (line 21 in the file, but 0-indexed so line 21 becomes 21)
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, diagnostic);
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
         TextEdit removeStatefulEdit = te(21, 0, 22, 0, "");
-        CodeAction removeStatefulAction = ca(uri, "Remove @Stateful", diagnostic, removeStatefulEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeStatefulAction);
-    }
+        CodeAction removeStatefulAction = ca(uri, "Remove @Stateful", d2, removeStatefulEdit);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeStatefulAction);
 
-    @Test
-    public void testRemoveDecoratorAnnotationQuickFix() throws Exception {
-        String uri = getJavaFileUri();
-        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
-
-        Diagnostic diagnostic = d(24, 6, 35,
-                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                  DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
-
-        // Test quick fix to remove @Decorator annotation (line 22 in the file)
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, diagnostic);
         TextEdit removeDecoratorEdit = te(22, 0, 23, 0, "");
-        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", diagnostic, removeDecoratorEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeDecoratorAction);
-    }
+        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", d2, removeDecoratorEdit);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeDecoratorAction);
 
-    @Test
-    public void testRemoveSingletonAnnotationQuickFix() throws Exception {
-        String uri = getJavaFileUri();
-        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
-
-        Diagnostic diagnostic = d(48, 6, 37,
-                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                  DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
-
-        // Test quick fix to remove @Singleton annotation (line 45 in the file)
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, diagnostic);
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
         TextEdit removeSingletonEdit = te(45, 0, 46, 0, "");
-        CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", diagnostic, removeSingletonEdit);
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeSingletonAction);
+        CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", d5, removeSingletonEdit);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, removeSingletonAction);
     }
 
     private JakartaJavaDiagnosticsParams createDiagnosticsParams(String uri) {
