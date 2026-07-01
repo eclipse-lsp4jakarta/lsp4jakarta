@@ -17,6 +17,8 @@ import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
 
 import java.util.Arrays;
 
+import com.google.gson.Gson;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
@@ -175,11 +177,16 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Test diagnostic for @Decorator scope annotation
+        // CDI diagnostic: Decorator must have @Delegate injection point
+        Diagnostic cdiDiagnostic = d(11, 13, 52,
+                                     "A decorator must declare exactly one injection point annotated with @Delegate.",
+                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidDecoratorDelegateInjectionPoints");
+
+        // Security diagnostic: @Decorator is treated as a scope annotation
         Diagnostic wrongScope = d(11, 13, 52,
                                   "A class annotated with @DatabaseIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, cdiDiagnostic, wrongScope);
     }
 }
