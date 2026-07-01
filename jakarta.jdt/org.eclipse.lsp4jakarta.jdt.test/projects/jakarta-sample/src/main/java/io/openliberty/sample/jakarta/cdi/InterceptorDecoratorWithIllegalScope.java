@@ -2,11 +2,13 @@ package io.openliberty.sample.jakarta.cdi;
 
 import jakarta.interceptor.Interceptor;
 import jakarta.decorator.Decorator;
+import jakarta.decorator.Delegate;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.ConversationScoped;
 import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 
 // ========== Valid Interceptors ==========
 
@@ -27,11 +29,17 @@ class ValidInterceptorWithNoScope {
 @Decorator
 @Dependent
 class ValidDecoratorWithDependent {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // Valid decorator with no scope (defaults to @Dependent)
 @Decorator
 class ValidDecoratorWithNoScope {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // ========== Invalid Interceptors with Built-in Normal Scopes ==========
@@ -61,12 +69,18 @@ class InterceptorWithMultipleIllegalScopes {
 @Decorator
 @ApplicationScoped
 class DecoratorWithApplicationScoped {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // Invalid decorator with @SessionScoped
 @Decorator
 @SessionScoped
 class DecoratorWithSessionScoped {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // Invalid decorator with multiple scopes including illegal ones
@@ -74,6 +88,9 @@ class DecoratorWithSessionScoped {
 @RequestScoped
 @ConversationScoped
 class DecoratorWithMultipleIllegalScopes {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // ========== Invalid Interceptors/Decorators with Custom Normal Scopes ==========
@@ -88,6 +105,9 @@ class InterceptorWithCustomNormalScope {
 @Decorator
 @CustomNormalScope
 class DecoratorWithCustomNormalScope {
+    @Inject
+    @Delegate
+    private Object delegate;
 }
 
 // Invalid interceptor with both built-in and custom normal scopes
@@ -102,4 +122,7 @@ class InterceptorWithMixedScopes {
 @ApplicationScoped
 @CustomNormalScope
 class DecoratorWithMixedScopes {
+    @Inject
+    @Delegate
+    private Object delegate;
 }

@@ -23,7 +23,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidInterceptorMethodsProceedMissing,
     InvalidInterceptorMethodAnnotationOnFinalMethod,
     InvalidInterceptorMethodAnnotationOnAbstractMethod,
-    InvalidInterceptorMethodAnnotationOnStaticMethod;
+    InvalidInterceptorMethodAnnotationOnStaticMethod,
+    InvalidInterceptorNegativePriority;
 
     /**
      * {@inheritDoc}
