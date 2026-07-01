@@ -485,4 +485,22 @@ public class DiagnosticUtils {
         }
         return null;
     }
+
+    /**
+     * Returns {@code true} if the given {@code @Priority} annotation carries a
+     * negative integer value.
+     *
+     * <p>Reads the {@code value} member and treats any {@link Number} whose
+     * {@link Number#intValue()} is less than zero as negative. Returns
+     * {@code false} when the member is absent, non-numeric, or a model error
+     * occurs.
+     *
+     * @param priorityAnnotation the {@code @Priority} annotation to inspect
+     * @return {@code true} if the priority value is negative; {@code false} otherwise
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean isNegativePriorityValue(IAnnotation priorityAnnotation) throws JavaModelException {
+        Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
+        return value != null && value.intValue() < 0;
+    }
 }

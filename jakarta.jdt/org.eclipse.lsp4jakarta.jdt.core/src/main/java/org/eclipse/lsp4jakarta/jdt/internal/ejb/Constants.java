@@ -26,8 +26,8 @@ public class Constants {
     public static final String DIAGNOSTIC_CODE_MISSING_PUBLIC_CONSTRUCTOR = "MissingPublicNoArgConstructor";
 
     public static final String[] SESSION_BEAN_ANNOTATIONS = {
-            STATELESS_FQ_NAME,
-            STATEFUL_FQ_NAME,
-            SINGLETON_FQ_NAME
+                                                              STATELESS_FQ_NAME,
+                                                              STATEFUL_FQ_NAME,
+                                                              SINGLETON_FQ_NAME
     };
 }
