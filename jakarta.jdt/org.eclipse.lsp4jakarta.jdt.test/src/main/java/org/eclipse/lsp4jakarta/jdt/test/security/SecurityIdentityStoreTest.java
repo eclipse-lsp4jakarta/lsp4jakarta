@@ -17,8 +17,6 @@ import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
 
 import java.util.Arrays;
 
-import com.google.gson.Gson;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
