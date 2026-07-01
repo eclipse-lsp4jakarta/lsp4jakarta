@@ -108,5 +108,3 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         return javaFile.getLocation().toFile().toURI().toString();
     }
 }
-
-// Made with Bob
