@@ -47,11 +47,16 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static org.eclipse.lsp4jakarta.jdt.internal.interceptor.Constants.PRIORITY_FQ_NAME;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
  */
 public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(InterceptorDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -87,6 +92,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorNoArgsConstructorMissing,
                                                                  DiagnosticSeverity.Error));
                     }
+                    // Check for negative priority value
+                    checkNegativePriority(type, unit, uri, diagnostics, context);
                 }
                 for (IMethod method : type.getMethods()) {
                     // Validate interceptor method modifiers
@@ -281,5 +288,45 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      */
     private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
         return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Checks if an interceptor class has a @Priority annotation with a negative value.
+     * According to Jakarta Interceptors 2.0 specification, negative priority values are
+     * reserved for future use and should not be used.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkNegativePriority(IType type, ICompilationUnit unit, String uri,
+                                       List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
+        IAnnotation priorityAnnotation = null;
+        for (IAnnotation annotation : type.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, PRIORITY_FQ_NAME)) {
+                priorityAnnotation = annotation;
+                break;
+            }
+        }
+
+        if (priorityAnnotation != null) {
+            try {
+                if (DiagnosticUtils.isNegativePriorityValue(priorityAnnotation)) {
+                    Range range = PositionUtils.toNameRange(priorityAnnotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidInterceptorNegativePriority"),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidInterceptorNegativePriority,
+                                                             DiagnosticSeverity.Error));
+                }
+            } catch (Exception e) {
+                // If we can't parse the priority value, skip this check and log a warning
+                LOGGER.log(Level.WARNING, "Unable to parse the priority value", e);
+            }
+        }
     }
 }
