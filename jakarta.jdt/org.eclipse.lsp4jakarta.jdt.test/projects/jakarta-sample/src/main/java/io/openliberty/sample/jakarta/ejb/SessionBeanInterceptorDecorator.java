@@ -5,6 +5,8 @@ import jakarta.ejb.Stateful;
 import jakarta.ejb.Singleton;
 import jakarta.interceptor.Interceptor;
 import jakarta.decorator.Decorator;
+import jakarta.decorator.Delegate;
+import jakarta.inject.Inject;
 
 /**
  * Test file for session beans with @Interceptor or @Decorator annotations
@@ -22,6 +24,9 @@ class InvalidStatelessWithInterceptor {
 @Stateless
 @Decorator
 class InvalidStatelessWithDecorator {
+    @Inject @Delegate
+    private Object delegate;
+    
     public void businessMethod() {
     }
 }
@@ -38,6 +43,9 @@ class InvalidStatefulWithInterceptor {
 @Stateful
 @Decorator
 class InvalidStatefulWithDecorator {
+    @Inject @Delegate
+    private Object delegate;
+    
     public void businessMethod() {
     }
 }
@@ -54,6 +62,9 @@ class InvalidSingletonWithInterceptor {
 @Singleton
 @Decorator
 class InvalidSingletonWithDecorator {
+    @Inject @Delegate
+    private Object delegate;
+    
     public void businessMethod() {
     }
 }
@@ -68,6 +79,9 @@ class ValidInterceptor {
 // Valid: @Decorator without session bean annotation
 @Decorator
 class ValidDecorator {
+    @Inject @Delegate
+    private Object delegate;
+    
     public void decorate() {
     }
 }
