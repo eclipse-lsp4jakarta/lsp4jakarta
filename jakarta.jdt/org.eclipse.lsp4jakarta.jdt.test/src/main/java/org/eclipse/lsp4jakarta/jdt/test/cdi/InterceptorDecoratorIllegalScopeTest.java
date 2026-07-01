@@ -126,45 +126,45 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
                               decoratorMultipleScopesDecl, decoratorWithMultipleScopes, interceptorWithCustomScope, decoratorWithCustomScope,
                               interceptorWithMixedScopes, decoratorWithMixedScopes);
 
-        // Test quickfix for interceptor with @ApplicationScoped (line 41)
+        // Test quickfix for interceptor with @ApplicationScoped (line 49)
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, interceptorWithAppScoped);
-        TextEdit replaceWithDependent1 = te(39, 0, 40, 18, "@Dependent\n@Interceptor");
+        TextEdit replaceWithDependent1 = te(47, 0, 48, 18, "@Dependent\n@Interceptor");
         CodeAction replaceAction1 = ca(uri, "Replace @ApplicationScoped with @Dependent", interceptorWithAppScoped, replaceWithDependent1);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, replaceAction1);
 
-        // Test quickfix for interceptor with @SessionScoped (line 47)
+        // Test quickfix for interceptor with @SessionScoped (line 55)
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, interceptorWithSessionScoped);
-        TextEdit replaceWithDependent2 = te(45, 0, 46, 14, "@Dependent\n@Interceptor");
+        TextEdit replaceWithDependent2 = te(53, 0, 54, 14, "@Dependent\n@Interceptor");
         CodeAction replaceAction2 = ca(uri, "Replace @SessionScoped with @Dependent", interceptorWithSessionScoped, replaceWithDependent2);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, replaceAction2);
 
-        // Test quickfix for interceptor with multiple scopes (line 54)
+        // Test quickfix for interceptor with multiple scopes (line 62)
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, interceptorWithMultipleScopes);
-        TextEdit replaceWithDependent3 = te(51, 0, 53, 14, "@Dependent\n@Interceptor");
+        TextEdit replaceWithDependent3 = te(59, 0, 61, 14, "@Dependent\n@Interceptor");
         CodeAction replaceAction3 = ca(uri, "Replace @ApplicationScoped and @SessionScoped with @Dependent", interceptorWithMultipleScopes, replaceWithDependent3);
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, replaceAction3);
 
-        // Test quickfix for decorator with @ApplicationScoped (line 62)
+        // Test quickfix for decorator with @ApplicationScoped (line 70)
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, decoratorWithAppScoped);
-        TextEdit replaceWithDependent4 = te(60, 0, 61, 18, "@Dependent\n@Decorator");
+        TextEdit replaceWithDependent4 = te(68, 0, 69, 18, "@Dependent\n@Decorator");
         CodeAction replaceAction4 = ca(uri, "Replace @ApplicationScoped with @Dependent", decoratorWithAppScoped, replaceWithDependent4);
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, replaceAction4);
 
-        // Test quickfix for decorator with multiple scopes (line 75)
+        // Test quickfix for decorator with multiple scopes (line 89)
         JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, decoratorWithMultipleScopes);
-        TextEdit replaceWithDependent5 = te(72, 0, 74, 19, "@Dependent\n@Decorator");
+        TextEdit replaceWithDependent5 = te(86, 0, 88, 19, "@Dependent\n@Decorator");
         CodeAction replaceAction5 = ca(uri, "Replace @RequestScoped and @ConversationScoped with @Dependent", decoratorWithMultipleScopes, replaceWithDependent5);
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, replaceAction5);
 
-        // Test quickfix for interceptor with custom normal scope (line 83)
+        // Test quickfix for interceptor with custom normal scope (line 100)
         JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, interceptorWithCustomScope);
-        TextEdit replaceWithDependent6 = te(81, 0, 82, 18, "@Dependent\n@Interceptor");
+        TextEdit replaceWithDependent6 = te(98, 0, 99, 18, "@Dependent\n@Interceptor");
         CodeAction replaceAction6 = ca(uri, "Replace @CustomNormalScope with @Dependent", interceptorWithCustomScope, replaceWithDependent6);
         assertJavaCodeAction(codeActionParams6, IJDT_UTILS, replaceAction6);
 
-        // Test quickfix for interceptor with mixed scopes (line 96)
+        // Test quickfix for interceptor with mixed scopes (line 116)
         JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, interceptorWithMixedScopes);
-        TextEdit replaceWithDependent7 = te(93, 0, 95, 18, "@Dependent\n@Interceptor");
+        TextEdit replaceWithDependent7 = te(113, 0, 115, 18, "@Dependent\n@Interceptor");
         CodeAction replaceAction7 = ca(uri, "Replace @ApplicationScoped and @CustomNormalScope with @Dependent", interceptorWithMixedScopes, replaceWithDependent7);
         assertJavaCodeAction(codeActionParams7, IJDT_UTILS, replaceAction7);
     }
