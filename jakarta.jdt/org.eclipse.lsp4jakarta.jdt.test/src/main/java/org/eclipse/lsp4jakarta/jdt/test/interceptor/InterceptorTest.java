@@ -49,10 +49,10 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics
-        Diagnostic noArgsConstructorMissingParent = d(5, 13, 31,
+        Diagnostic noArgsConstructorMissingParent = d(6, 13, 31,
                                                       "Missing Public NoArgsConstructor. Class InvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                                                       DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
-        Diagnostic noArgsConstructorMissingChild = d(32, 14, 37,
+        Diagnostic noArgsConstructorMissingChild = d(34, 14, 37,
                                                      "Missing Public NoArgsConstructor. Class InnerInvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                                                      DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
 
@@ -95,17 +95,17 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics for @Observes
-        Diagnostic observesMethodDiagnostic = d(13, 16, 30,
+        Diagnostic observesMethodDiagnostic = d(14, 16, 30,
                                                 "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
         // Test diagnostics for @ObservesAsync
-        Diagnostic observesAsyncMethodDiagnostic = d(18, 16, 35,
+        Diagnostic observesAsyncMethodDiagnostic = d(19, 16, 35,
                                                      "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
         // Test diagnostics for both @Observes and @ObservesAsync
-        Diagnostic observesBothMethodDiagnostic = d(23, 16, 34,
+        Diagnostic observesBothMethodDiagnostic = d(24, 16, 34,
                                                     "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
@@ -543,14 +543,50 @@ public class InterceptorTest extends BaseJakartaTest {
         // Test diagnostics - there are two diagnostics on the @Priority annotation:
         // 1. A warning from jakarta-annotations about negative priority values
         // 2. An error from jakarta-interceptor about negative priority values (our implementation)
-        Diagnostic negativePriorityWarningAnnotation = d(6, 0, 15,
+        Diagnostic negativePriorityWarningAnnotation = d(7, 0, 15,
                                                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
                                                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
 
-        Diagnostic negativePriorityErrorInterceptor = d(6, 0, 15,
+        Diagnostic negativePriorityErrorInterceptor = d(7, 0, 15,
                                                         "Interceptor priority values must not be negative. Negative values are reserved for future use by the specification.",
                                                         DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNegativePriority");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, negativePriorityWarningAnnotation, negativePriorityErrorInterceptor);
+    }
+
+    @Test
+    public void testInterceptorMissingBindingAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidInterceptorMissingBinding.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostic for interceptor without binding annotation
+        // Line 14: public class InvalidInterceptorMissingBinding {
+        // Position: "InvalidInterceptorMissingBinding" starts at column 13 (0-based)
+        Diagnostic missingBindingDiagnostic = d(13, 13, 45,
+                                                "An interceptor declared using @Interceptor must specify at least one interceptor binding annotation.",
+                                                DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMissingInterceptorBinding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingBindingDiagnostic);
+    }
+
+    @Test
+    public void testInterceptorWithValidBindingAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidInterceptorWithBinding.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test that valid interceptor with @Monitored binding does NOT trigger diagnostic
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
