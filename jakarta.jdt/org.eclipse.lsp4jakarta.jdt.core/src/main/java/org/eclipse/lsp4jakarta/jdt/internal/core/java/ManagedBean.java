@@ -13,9 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -345,6 +343,23 @@ public class ManagedBean {
     }
 
     /**
+     * Resolves an annotation to its IType representation.
+     *
+     * @param annotation the annotation to resolve
+     * @param type the type context for resolving the annotation
+     * @return the IType of the annotation, or null if it cannot be resolved
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private static IType resolveAnnotationType(IAnnotation annotation, IType type) throws JavaModelException {
+        String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
+        IJavaProject project = annotation.getJavaProject();
+        if (project == null || annotationFQ == null) {
+            return null;
+        }
+        return project.findType(annotationFQ);
+    }
+
+    /**
      * Checks if the given annotation is marked with a specific meta-annotation.
      *
      * @param annotation the annotation to check
@@ -358,24 +373,38 @@ public class ManagedBean {
      */
     public static boolean hasMetaAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu,
                                             String metaAnnotationFQN) throws JavaModelException {
-        String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-        IJavaProject project = annotation.getJavaProject();
-
-        if (project == null || annotationFQ == null) {
-            return false;
-        }
-
-        IType annotationType = project.findType(annotationFQ);
+        IType annotationType = resolveAnnotationType(annotation, type);
         if (annotationType == null) {
             return false;
         }
 
-        return Arrays.stream(annotationType.getAnnotations()).anyMatch(metaAnnotation -> {
-            try {
-                return DiagnosticUtils.isMatchedAnnotation(cu, metaAnnotation, metaAnnotationFQN);
-            } catch (JavaModelException e) {
-                return false;
-            }
-        });
+        return DiagnosticUtils.checkMatchedMetaAnnotation(metaAnnotationFQN, annotationType, cu);
     }
+
+    /**
+     * Checks if an annotation has a specific meta-annotation, using the annotation type's
+     * compilation unit for proper resolution. This method correctly resolves the compilation
+     * unit of the annotation type itself.
+     *
+     * @param annotation the annotation to check
+     * @param type the type context for resolving the annotation
+     * @param metaAnnotationFQN the fully qualified name of the meta-annotation to look for
+     * @return true if the annotation has the specified meta-annotation, false otherwise
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    public static boolean hasMetaAnnotationWithCorrectContext(IAnnotation annotation, IType type,
+                                                              String metaAnnotationFQN) throws JavaModelException {
+        IType annotationType = resolveAnnotationType(annotation, type);
+        if (annotationType == null) {
+            return false;
+        }
+        // Get the compilation unit of the annotation type itself
+        ICompilationUnit annotationCU = annotationType.getCompilationUnit();
+        if (annotationCU == null) {
+            return false;
+        }
+        // Check if the annotation type has the specified meta-annotation
+        return DiagnosticUtils.checkMatchedMetaAnnotation(metaAnnotationFQN, annotationType, annotationCU);
+    }
+
 }
