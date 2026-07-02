@@ -45,6 +45,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import java.util.logging.Level;
@@ -94,6 +95,10 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     }
                     // Check for negative priority value
                     checkNegativePriority(type, unit, uri, diagnostics, context);
+                    // Check for missing interceptor binding (only for classes with @Interceptor annotation)
+                    if (InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                        checkInterceptorBinding(type, unit, uri, diagnostics, context);
+                    }
                 }
                 for (IMethod method : type.getMethods()) {
                     // Validate interceptor method modifiers
@@ -327,6 +332,45 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // If we can't parse the priority value, skip this check and log a warning
                 LOGGER.log(Level.WARNING, "Unable to parse the priority value", e);
             }
+        }
+    }
+
+    /**
+     * Checks if an interceptor class has at least one interceptor binding annotation.
+     * According to Jakarta Interceptors 2.0 specification, an interceptor declared using
+     *
+     * @Interceptor must specify at least one interceptor binding annotation to enable
+     *              the container to match it with target components.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkInterceptorBinding(IType type, ICompilationUnit unit, String uri,
+                                         List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
+        boolean hasInterceptorBinding = false;
+        // Get all annotations on the interceptor class
+        IAnnotation[] annotations = type.getAnnotations();
+        for (IAnnotation annotation : annotations) {
+            // Check if this annotation is an interceptor binding
+            if (ManagedBean.hasMetaAnnotationWithCorrectContext(annotation, type,
+                                                                Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
+                hasInterceptorBinding = true;
+                break;
+            }
+        }
+        // If no interceptor binding found, create diagnostic
+        if (!hasInterceptorBinding) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidInterceptorMissingInterceptorBinding"),
+                                                     range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidInterceptorMissingInterceptorBinding,
+                                                     DiagnosticSeverity.Error));
         }
     }
 }
