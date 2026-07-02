@@ -117,15 +117,15 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      */
     private void processDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
                                  JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                 List<IJavaElement> delegateElements, String... reusableAnnotations) throws JavaModelException {
+                                 List<IJavaElement> delegateElements, String... methodAnnotations) throws JavaModelException {
 
         String[] annotations = (element instanceof IAnnotatable) ? Arrays.stream(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new) : new String[0];
 
         if (!DiagnosticUtils.getMatchedJavaElementNames(type, annotations,
                                                         new String[] { Constants.DELEGATE_FQ_NAME }).isEmpty()) {
             delegateElements.add(element);
-            validateDelegateInjectionPoint(owner, element,
-                                           reusableAnnotations.length > 0 ? reusableAnnotations : annotations,
+            validateDelegateInjectionPoint(owner,
+                                           methodAnnotations.length > 0 ? methodAnnotations : annotations,
                                            type, uri, context, diagnostics);
         }
     }
@@ -172,7 +172,6 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * (for fields) or is on a method/constructor annotated with @Inject (for parameters).
      *
      * @param diagnosticTarget the element where the diagnostic should be reported (field or method)
-     * @param delegateElement the field or parameter that has @Delegate annotation
      * @param annotations the element's or containing method's annotation names (already computed)
      * @param type the declaring type
      * @param uri the file URI
@@ -180,7 +179,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget, Object delegateElement,
+    private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget,
                                                 String[] annotations, IType type, String uri,
                                                 JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
         // Check if element or its containing method/constructor has @Inject annotation
