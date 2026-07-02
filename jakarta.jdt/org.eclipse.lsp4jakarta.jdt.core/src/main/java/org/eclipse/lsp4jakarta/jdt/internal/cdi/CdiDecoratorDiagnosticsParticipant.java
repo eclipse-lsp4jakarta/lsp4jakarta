@@ -94,7 +94,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             return;
         }
 
-        List<Object> delegateElements = new ArrayList<>();
+        List<IJavaElement> delegateElements = new ArrayList<>();
         for (IField field : type.getFields()) {
             processDelegate(type, field, field, uri, context, diagnostics, delegateElements);
         }
@@ -115,9 +115,9 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param owner The element to report diagnostics on (field or method).
      * @param element The actual element annotated with @Delegate.
      */
-    private void processDelegate(IType type, IJavaElement owner, Object element, String uri,
+    private void processDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
                                  JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                 List<Object> delegateElements, String... reusableAnnotations) throws JavaModelException {
+                                 List<IJavaElement> delegateElements, String... reusableAnnotations) throws JavaModelException {
 
         String[] annotations = (element instanceof IAnnotatable) ? Arrays.stream(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new) : new String[0];
 
@@ -142,7 +142,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private void reportInvalidDelegateCountDiagnostics(IType type, String uri, JavaDiagnosticsContext context,
-                                                       List<Diagnostic> diagnostics, List<Object> delegateElements,
+                                                       List<Diagnostic> diagnostics, List<IJavaElement> delegateElements,
                                                        int delegateCount) throws JavaModelException {
         // Report diagnostics based on delegate count
         if (delegateCount == 0) {
@@ -156,7 +156,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         } else if (delegateCount > 1) {
             // Multiple @Delegate found - report at each field/parameter level
             String message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
-            for (Object element : delegateElements) {
+            for (IJavaElement element : delegateElements) {
                 Range range = PositionUtils.toNameRange((IJavaElement) element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
