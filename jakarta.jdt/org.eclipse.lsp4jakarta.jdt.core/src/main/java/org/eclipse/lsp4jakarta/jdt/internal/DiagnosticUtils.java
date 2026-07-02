@@ -503,4 +503,24 @@ public class DiagnosticUtils {
         Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
         return value != null && value.intValue() < 0;
     }
+
+    /**
+     * Method checks if annotations have matched meta annotation
+     * 
+     * @param metaAnnotationFQN
+     * @param annotationType
+     * @param annotationCU
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean checkMatchedMetaAnnotation(String metaAnnotationFQN, IType annotationType,
+                                                       ICompilationUnit annotationCU) throws JavaModelException {
+        return Arrays.stream(annotationType.getAnnotations()).anyMatch(metaAnnotation -> {
+            try {
+                return DiagnosticUtils.isMatchedAnnotation(annotationCU, metaAnnotation, metaAnnotationFQN);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        });
+    }
 }
