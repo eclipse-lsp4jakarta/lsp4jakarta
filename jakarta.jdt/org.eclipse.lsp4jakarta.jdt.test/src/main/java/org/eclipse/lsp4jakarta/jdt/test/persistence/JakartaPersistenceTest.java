@@ -155,9 +155,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d);
         TextEdit te1 = te(8, 1, 8, 1, "protected EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te1);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d, te1);
         TextEdit te2 = te(8, 1, 8, 1, "public EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te2);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d, te2);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
     }

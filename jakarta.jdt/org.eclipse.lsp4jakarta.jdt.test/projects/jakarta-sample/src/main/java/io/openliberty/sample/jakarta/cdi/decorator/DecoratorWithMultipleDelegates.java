@@ -6,7 +6,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
 // Invalid: Decorator with multiple @Delegate injection points
-// Should trigger diagnostic: A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.
+// Should trigger diagnostic: A decorator must declare exactly one injection point annotated with @Delegate, but found 2.
 @Decorator
 @Dependent
 public class DecoratorWithMultipleDelegates implements PaymentService {

@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IAnnotatable;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -94,42 +94,33 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         }
 
         // Collect all @Delegate injection points
-        List<Object> delegateElements = new ArrayList<>();
-
-        // Check fields for @Delegate annotation
-        IField[] fields = type.getFields();
-        for (IField field : fields) {
-            String[] fieldAnnotations = Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-            List<String> delegateOnField = DiagnosticUtils.getMatchedJavaElementNames(type, fieldAnnotations,
-                                                                                      new String[] { Constants.DELEGATE_FQ_NAME });
-            if (!delegateOnField.isEmpty()) {
-                delegateElements.add(field);
-                // Validate that @Delegate on field is accompanied by @Inject
-                validateDelegateInjectionPoint(field, field, fieldAnnotations, type, uri, context, diagnostics);
-            }
+        List<IJavaElement> delegateElements = new ArrayList<>();
+        collectDelegates(type.getFields(), type, delegateElements);
+        for (IMethod method : type.getMethods()) {
+            collectDelegates(method.getParameters(), type, delegateElements);
         }
-
-        // Check constructor and method parameters for @Delegate annotation
-        IMethod[] methods = type.getMethods();
-        for (IMethod method : methods) {
-            // Get method annotations once for reuse
-            String[] methodAnnotations = Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-
-            ILocalVariable[] parameters = method.getParameters();
-            for (ILocalVariable parameter : parameters) {
-                String[] paramAnnotations = Stream.of(parameter.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-                List<String> delegateOnParam = DiagnosticUtils.getMatchedJavaElementNames(type, paramAnnotations,
-                                                                                          new String[] { Constants.DELEGATE_FQ_NAME });
-                if (!delegateOnParam.isEmpty()) {
-                    delegateElements.add(parameter);
-                    // Validate that @Delegate on parameter is on an @Inject method/constructor
-                    // Report diagnostic on the method, not the parameter, so quickfix works
-                    validateDelegateInjectionPoint(method, parameter, methodAnnotations, type, uri, context, diagnostics);
-                }
-            }
-        }
-
         reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics, delegateElements, delegateElements.size());
+    }
+
+    /**
+     * collectDelegates
+     * Helper method to collect delegates from any Java elements
+     *
+     * @param elements
+     * @param type
+     * @param delegateElements
+     * @throws JavaModelException
+     */
+    private void collectDelegates(IJavaElement[] elements, IType type, List<IJavaElement> delegateElements) throws JavaModelException {
+        for (IJavaElement element : elements) {
+            String[] annotations = Stream.of(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
+            if (!DiagnosticUtils.getMatchedJavaElementNames(
+                                                            type,
+                                                            annotations,
+                                                            new String[] { Constants.DELEGATE_FQ_NAME }).isEmpty()) {
+                delegateElements.add(element);
+            }
+        }
     }
 
     /**
@@ -144,7 +135,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private void reportInvalidDelegateCountDiagnostics(IType type, String uri, JavaDiagnosticsContext context,
-                                                       List<Diagnostic> diagnostics, List<Object> delegateElements,
+                                                       List<Diagnostic> diagnostics, List<IJavaElement> delegateElements,
                                                        int delegateCount) throws JavaModelException {
         // Report diagnostics based on delegate count
         if (delegateCount == 0) {
@@ -158,8 +149,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         } else if (delegateCount > 1) {
             // Multiple @Delegate found - report at each field/parameter level
             String message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
-            for (Object element : delegateElements) {
-                Range range = PositionUtils.toNameRange((IJavaElement) element, context.getUtils());
+            for (IJavaElement element : delegateElements) {
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidDecoratorDelegateInjectionPoints,
@@ -167,37 +158,5 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             }
         }
         // If delegateCount == 1, no diagnostic needed (valid case)
-    }
-
-    /**
-     * Validates that an element annotated with @Delegate is also annotated with @Inject
-     * (for fields) or is on a method/constructor annotated with @Inject (for parameters).
-     *
-     * @param diagnosticTarget the element where the diagnostic should be reported (field or method)
-     * @param delegateElement the field or parameter that has @Delegate annotation
-     * @param annotations the element's or containing method's annotation names (already computed)
-     * @param type the declaring type
-     * @param uri the file URI
-     * @param context the diagnostics context
-     * @param diagnostics the list to add diagnostics to
-     * @throws JavaModelException if an error occurs accessing the Java model
-     */
-    private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget, IJavaElement delegateElement,
-                                                String[] annotations, IType type, String uri,
-                                                JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
-        // Check if element or its containing method/constructor has @Inject annotation
-        List<String> injectAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, annotations,
-                                                                                    new String[] { Constants.INJECT_FQ_NAME });
-
-        if (injectAnnotations.isEmpty()) {
-            // @Delegate without @Inject - report diagnostic on the target element
-            // For fields, target is the field itself; for parameters, target is the method
-            Range range = PositionUtils.toNameRange(diagnosticTarget, context.getUtils());
-            String message = Messages.getMessage("InvalidDelegateInjectionPoint");
-            diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidDelegateInjectionPoint,
-                                                     DiagnosticSeverity.Error));
-        }
     }
 }

@@ -5,7 +5,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
 // Invalid: Decorator with no @Delegate injection point
-// Should trigger diagnostic: A decorator must declare exactly one @Delegate injection point.
+// Should trigger diagnostic: A decorator must declare exactly one injection point annotated with @Delegate.
 @Decorator
 @Dependent
 public class DecoratorWithNoDelegate implements PaymentService {

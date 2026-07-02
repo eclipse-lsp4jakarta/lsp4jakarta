@@ -64,14 +64,14 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostics on each @Delegate field
         // Line 16 (0-based: 15), field name "delegateA" starts at column 27, ends at column 36
         Diagnostic delegateADiagnostic = d(15, 27, 36,
-                                           "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                           "A decorator must declare exactly one injection point annotated with @Delegate, but found 2.",
                                            DiagnosticSeverity.Error,
                                            "jakarta-cdi",
                                            "InvalidDecoratorDelegateInjectionPoints");
 
         // Line 20 (0-based: 19), field name "delegateB" starts at column 27, ends at column 36
         Diagnostic delegateBDiagnostic = d(19, 27, 36,
-                                           "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                           "A decorator must declare exactly one injection point annotated with @Delegate, but found 2.",
                                            DiagnosticSeverity.Error,
                                            "jakarta-cdi",
                                            "InvalidDecoratorDelegateInjectionPoints");
@@ -96,7 +96,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostic on class name
         // Line 11 (0-based: 10), class name "DecoratorWithNoDelegate" starts at column 13, ends at column 36
         Diagnostic noDelegateDiagnostic = d(10, 13, 36,
-                                            "A decorator must declare exactly one @Delegate injection point.",
+                                            "A decorator must declare exactly one injection point annotated with @Delegate.",
                                             DiagnosticSeverity.Error,
                                             "jakarta-cdi",
                                             "InvalidDecoratorDelegateInjectionPoints");
@@ -121,14 +121,14 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostics on field and constructor parameter
         // Line 16 (0-based: 15), field name "delegateField" starts at column 27, ends at column 40
         Diagnostic fieldDelegateDiagnostic = d(15, 27, 40,
-                                               "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                               "A decorator must declare exactly one injection point annotated with @Delegate, but found 2.",
                                                DiagnosticSeverity.Error,
                                                "jakarta-cdi",
                                                "InvalidDecoratorDelegateInjectionPoints");
 
         // Line 21 (0-based: 20), parameter name "delegate" starts at column 64, ends at column 72
         Diagnostic paramDelegateDiagnostic = d(20, 64, 72,
-                                               "A decorator must declare exactly one @Delegate injection point. Found 2 @Delegate injection points.",
+                                               "A decorator must declare exactly one injection point annotated with @Delegate, but found 2.",
                                                DiagnosticSeverity.Error,
                                                "jakarta-cdi",
                                                "InvalidDecoratorDelegateInjectionPoints");
