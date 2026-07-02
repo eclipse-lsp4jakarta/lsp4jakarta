@@ -157,7 +157,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             // Multiple @Delegate found - report at each field/parameter level
             String message = Messages.getMessage("DecoratorWithMultipleDelegates", delegateCount);
             for (IJavaElement element : delegateElements) {
-                Range range = PositionUtils.toNameRange((IJavaElement) element, context.getUtils());
+                Range range = PositionUtils.toNameRange(element, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidDecoratorDelegateInjectionPoints,
