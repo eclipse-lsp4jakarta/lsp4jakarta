@@ -276,4 +276,55 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         CodeAction constructorInjectAction = ca(uri, "Insert @Inject", delegateConstructorParamWithoutInjectDiagnostic, constructorInjectEdit);
         assertJavaCodeAction(constructorCodeActionParams, IJDT_UTILS, constructorInjectAction);
     }
+    
+    /**
+     * Test that a decorator with delegate type that doesn't implement the decorated type triggers a diagnostic.
+     *
+     * Expected: Error on delegate field indicating type mismatch.
+     */
+    @Test
+    public void testDecoratorWithInvalidDelegateType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorDelegateTypeAssignability.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Expected diagnostic on InvalidDelegateType class
+        // Line 18 (0-based: 17), field name "delegate" starts at column 20, ends at column 28
+        Diagnostic invalidDelegateTypeDiagnostic = d(17, 20, 28,
+                                                     "The delegate type 'io.openliberty.sample.jakarta.cdi.decorator.Logger' must implement or extend to the decorator. Missing: io.openliberty.sample.jakarta.cdi.decorator.PaymentService",
+                                                     DiagnosticSeverity.Error,
+                                                     "jakarta-cdi",
+                                                     "InvalidDecoratorDelegateTypeAssignability");
+
+        // Expected diagnostic on InvalidDelegateTypePrimitive class
+        // Line 70 (0-based: 69), field name "delegate" starts at column 20, ends at column 28
+        Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(69, 20, 28,
+                                                              "The delegate type 'java.lang.String' must implement or extend to the decorator. Missing: io.openliberty.sample.jakarta.cdi.decorator.PaymentService",
+                                                              DiagnosticSeverity.Error,
+                                                              "jakarta-cdi",
+                                                              "InvalidDecoratorDelegateTypeAssignability");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidDelegateTypeDiagnostic, invalidDelegateTypePrimitiveDiagnostic);
+    }
+    
+    /**
+     * Test that a decorator with valid delegate type does NOT trigger a diagnostic.
+     *
+     * Expected: No diagnostics for valid delegate types.
+     */
+    @Test
+    public void testDecoratorWithValidDelegateType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/ValidDecorator.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected for valid decorator with matching delegate type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
