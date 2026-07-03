@@ -40,7 +40,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -273,7 +272,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (id != null) {
-            if (typeFQ != null && typeFQ.equals(Constants.UTIL_DATE)) {
+            if (Constants.UTIL_DATE.equals(typeFQ)) {
                 if (temporal != null) {
                     // Check value
                     IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
@@ -512,14 +511,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IMethod method = (IMethod) member;
             typeFQ = JDTTypeUtils.getResolvedResultTypeName(method);
             range = PositionUtils.toNameRange(method, context.getUtils());
-            if (candidate.equals(Constants.ID)) {
+            if (Constants.ID.equals(candidate)) {
                 isArrayType = JDTTypeUtils.isArray(method.getReturnType());
             }
         } else if (member instanceof IField) {
             IField field = (IField) member;
             typeFQ = JDTTypeUtils.getResolvedTypeName(field);
             range = PositionUtils.toNameRange(field, context.getUtils());
-            if (candidate.equals(Constants.ID)) {
+            if (Constants.ID.equals(candidate)) {
                 isArrayType = JDTTypeUtils.isArray(field.getTypeSignature());
             }
         } else {
@@ -530,14 +529,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             return;
         }
 
-        if (candidate.equals(Constants.ID)) {
+        if (Constants.ID.equals(candidate)) {
             if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidIdType"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidIdType, DiagnosticSeverity.Error));
             }
-        } else if (candidate.equals(Constants.VERSION)) {
+        } else if (Constants.VERSION.equals(candidate)) {
             if (!Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidVersionFieldOrPropertyType"),
