@@ -220,21 +220,21 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostics for all three invalid @Delegate locations
         // Line 16 (0-based: 15), field name "delegate" starts at column 27, ends at column 35
         Diagnostic delegateFieldWithoutInjectDiagnostic = d(15, 27, 35,
-                                                            "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
+                                                            "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor.",
                                                             DiagnosticSeverity.Error,
                                                             "jakarta-cdi",
                                                             "InvalidDelegateInjectionPoint");
 
         // Line 33 (0-based: 32), method name "setDelegate" starts at column 16, ends at column 27
         Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 16, 27,
-                                                                  "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
+                                                                  "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor.",
                                                                   DiagnosticSeverity.Error,
                                                                   "jakarta-cdi",
                                                                   "InvalidDelegateInjectionPoint");
 
         // Line 52 (0-based: 51), constructor name "DelegateOnNonInjectedConstructorParam" starts at column 11, ends at column 48
         Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 11, 48,
-                                                                       "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor. Using it anywhere else is invalid.",
+                                                                       "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor.",
                                                                        DiagnosticSeverity.Error,
                                                                        "jakarta-cdi",
                                                                        "InvalidDelegateInjectionPoint");

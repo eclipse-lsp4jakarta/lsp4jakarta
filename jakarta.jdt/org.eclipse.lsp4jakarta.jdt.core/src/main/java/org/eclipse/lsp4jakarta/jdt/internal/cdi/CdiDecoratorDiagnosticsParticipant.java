@@ -96,13 +96,13 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
 
         List<IJavaElement> delegateElements = new ArrayList<>();
         for (IField field : type.getFields()) {
-            processDelegate(type, field, field, uri, context, diagnostics, delegateElements);
+            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements);
         }
         for (IMethod method : type.getMethods()) {
             String[] methodAnnotations = Arrays.stream(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
 
             for (ILocalVariable parameter : method.getParameters()) {
-                processDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, methodAnnotations);
+                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, methodAnnotations);
             }
         }
         reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics,
@@ -115,9 +115,9 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param owner The element to report diagnostics on (field or method).
      * @param element The actual element annotated with @Delegate.
      */
-    private void processDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
-                                 JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                 List<IJavaElement> delegateElements, String... methodAnnotations) throws JavaModelException {
+    private void validateDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
+                                  JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
+                                  List<IJavaElement> delegateElements, String... methodAnnotations) throws JavaModelException {
 
         String[] annotations = (element instanceof IAnnotatable) ? Arrays.stream(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new) : new String[0];
 
