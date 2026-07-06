@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -37,6 +38,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -112,7 +114,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         }
         reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics,
                                               delegateElements, delegateElements.size());
-        
+
         // Validate delegate type assignability (Section 8.1.3 of CDI spec)
         if (delegateElements.size() == 1) {
             validateDelegateTypeAssignability(type, delegateElements.get(0), uri, context, diagnostics);
@@ -207,7 +209,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                      DiagnosticSeverity.Error));
         }
     }
-    
+
     /**
      * Validates that the delegate type implements or extends all decorated types of the decorator.
      *
@@ -228,46 +230,63 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            // Get the delegate type name using JDTTypeUtils
+            // Get the delegate type name
             String delegateTypeName = null;
             if (delegateElement instanceof IField) {
-                delegateTypeName = JDTTypeUtils.getResolvedTypeName((IField) delegateElement);
+                IField field = (IField) delegateElement;
+                delegateTypeName = JDTTypeUtils.getResolvedTypeName(field);
             } else if (delegateElement instanceof ILocalVariable) {
-                delegateTypeName = JDTTypeUtils.getResolvedTypeName((ILocalVariable) delegateElement);
+                ILocalVariable param = (ILocalVariable) delegateElement;
+                // For parameters, we need to get the type signature and resolve it
+                String typeSignature = param.getTypeSignature();
+                delegateTypeName = Signature.toString(typeSignature);
+                // Resolve the type name in the context of the decorator type
+                String[][] resolvedTypes = decoratorType.resolveType(delegateTypeName);
+                if (resolvedTypes != null && resolvedTypes.length > 0) {
+                    String packageName = resolvedTypes[0][0];
+                    String typeName = resolvedTypes[0][1];
+                    delegateTypeName = packageName.isEmpty() ? typeName : packageName + "." + typeName;
+                }
             }
-            
+
             if (delegateTypeName == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            
+
             // Resolve delegate type using ManagedBean utility
             IType delegateType = ManagedBean.getChildITypeByName(decoratorType, delegateTypeName);
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            
+
             // Get all decorated types (interfaces and superclasses of the decorator)
             List<String> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
                 return; // No decorated types to validate against
             }
-            
+
             // Check if delegate type implements/extends all decorated types
             List<String> missingTypes = new ArrayList<>();
             for (String decoratedTypeFQN : decoratedTypes) {
-                // Use ManagedBean.implementsExtends for checking
-                if (!ManagedBean.implementsExtends(delegateType, decoratedTypeFQN)) {
+                // Use TypeHierarchyUtils.inheritsFrom for checking (more efficient and robust)
+                if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
                     missingTypes.add(decoratedTypeFQN);
                 }
             }
-            
+
             // Report diagnostic if delegate type doesn't implement all decorated types
             if (!missingTypes.isEmpty()) {
                 Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-                String delegateTypeFQN = delegateType.getFullyQualifiedName();
-                String missingTypesStr = String.join(", ", missingTypes);
+                // Use simple class names for better readability
+                String delegateTypeSimpleName = delegateType.getElementName();
+                List<String> missingTypeSimpleNames = new ArrayList<>();
+                for (String fqn : missingTypes) {
+                    int lastDot = fqn.lastIndexOf('.');
+                    missingTypeSimpleNames.add(lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn);
+                }
+                String missingTypesStr = String.join(", ", missingTypeSimpleNames);
                 String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
-                                                    delegateTypeFQN, missingTypesStr);
+                                                     delegateTypeSimpleName, missingTypesStr);
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidDecoratorDelegateTypeAssignability,
@@ -277,7 +296,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             LOGGER.log(Level.WARNING, "Error validating delegate type assignability", e);
         }
     }
-    
+
     /**
      * Gets all decorated types of the decorator (interfaces and superclasses, excluding Object).
      *
@@ -287,7 +306,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      */
     private List<String> getDecoratedTypes(IType decoratorType) throws JavaModelException {
         List<String> decoratedTypes = new ArrayList<>();
-        
+
         // Get all interfaces implemented by the decorator
         String[] interfaceNames = decoratorType.getSuperInterfaceNames();
         for (String interfaceName : interfaceNames) {
@@ -296,7 +315,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 decoratedTypes.add(fqName);
             }
         }
-        
+
         // Get superclass (excluding java.lang.Object)
         String superclassName = decoratorType.getSuperclassName();
         if (superclassName != null && !superclassName.equals("Object")) {
@@ -305,7 +324,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 decoratedTypes.add(fqName);
             }
         }
-        
+
         return decoratedTypes;
     }
 }
