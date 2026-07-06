@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -36,7 +37,6 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
-import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -230,63 +230,26 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            // Get the delegate type name
             String delegateTypeName = null;
             if (delegateElement instanceof IField) {
-                IField field = (IField) delegateElement;
-                // Try to get resolved type name first
-                //delegateTypeName = JDTTypeUtils.getResolvedTypeName(field);
-
-                // If that fails, try alternative methods to get the type
-                if (delegateTypeName == null) {
-                    try {
-                        // Get the type signature and resolve it
-                        String typeSignature = field.getTypeSignature();
-                        if (typeSignature != null) {
-                            delegateTypeName = Signature.toString(typeSignature);
-                            // Resolve the type name in the context of the declaring type
-                            String[][] resolvedTypes = decoratorType.resolveType(delegateTypeName);
-                            if (resolvedTypes != null && resolvedTypes.length > 0) {
-                                String packageName = resolvedTypes[0][0];
-                                String typeName = resolvedTypes[0][1];
-                                delegateTypeName = packageName.isEmpty() ? typeName : packageName + "." + typeName;
-                            }
-                        }
-                    } catch (JavaModelException e) {
-                        LOGGER.log(Level.WARNING, "Could not resolve field type signature", e);
-                        return; // Cannot resolve type, skip validation
-                    }
-                }
+                String typeSignature = Signature.toString(((IField) delegateElement).getTypeSignature());
+                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, typeSignature);
             } else if (delegateElement instanceof ILocalVariable) {
-                ILocalVariable param = (ILocalVariable) delegateElement;
-                // For parameters, we need to get the type signature and resolve it
-                String typeSignature = param.getTypeSignature();
-                delegateTypeName = Signature.toString(typeSignature);
-                // Resolve the type name in the context of the decorator type
-                String[][] resolvedTypes = decoratorType.resolveType(delegateTypeName);
-                if (resolvedTypes != null && resolvedTypes.length > 0) {
-                    String packageName = resolvedTypes[0][0];
-                    String typeName = resolvedTypes[0][1];
-                    delegateTypeName = packageName.isEmpty() ? typeName : packageName + "." + typeName;
-                }
+                String simpleTypeName = Signature.toString(((ILocalVariable) delegateElement).getTypeSignature());
+                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleTypeName);
             }
-
             if (delegateTypeName == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-
-            // Resolve delegate type using ManagedBean utility
-            IType delegateType = ManagedBean.getChildITypeByName(decoratorType, delegateTypeName);
+            IType delegateType = decoratorType.getJavaProject().findType(delegateTypeName);
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-
             // Get all decorated types (interfaces and superclasses of the decorator)
             List<String> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
                 return; // No decorated types to validate against
             }
-
             // Check if delegate type implements/extends all decorated types
             List<String> missingTypes = new ArrayList<>();
             for (String decoratedTypeFQN : decoratedTypes) {
@@ -295,18 +258,12 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                     missingTypes.add(decoratedTypeFQN);
                 }
             }
-
             // Report diagnostic if delegate type doesn't implement all decorated types
             if (!missingTypes.isEmpty()) {
                 Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
                 // Use simple class names for better readability
                 String delegateTypeSimpleName = delegateType.getElementName();
-                List<String> missingTypeSimpleNames = new ArrayList<>();
-                for (String fqn : missingTypes) {
-                    int lastDot = fqn.lastIndexOf('.');
-                    missingTypeSimpleNames.add(lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn);
-                }
-                String missingTypesStr = String.join(", ", missingTypeSimpleNames);
+                String missingTypesStr = missingTypes.stream().map(DiagnosticUtils::getSimpleName).collect(Collectors.joining(", "));
                 String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
                                                      delegateTypeSimpleName, missingTypesStr);
                 diagnostics.add(context.createDiagnostic(uri, message, range,
@@ -337,7 +294,6 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 decoratedTypes.add(fqName);
             }
         }
-
         // Get superclass (excluding java.lang.Object)
         String superclassName = decoratorType.getSuperclassName();
         if (superclassName != null && !superclassName.equals("Object")) {
