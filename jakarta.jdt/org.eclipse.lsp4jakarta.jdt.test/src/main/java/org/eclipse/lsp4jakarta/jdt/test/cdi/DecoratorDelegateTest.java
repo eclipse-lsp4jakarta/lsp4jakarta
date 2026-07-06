@@ -52,7 +52,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: Error on each @Delegate field indicating 2 @Delegate injection points found.
      */
-    //@Test
+    @Test
     public void testDecoratorWithMultipleDelegateFields() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorWithMultipleDelegates.java"));
@@ -84,7 +84,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: Error on class name indicating no @Delegate injection point.
      */
-    //@Test
+    @Test
     public void testDecoratorWithNoDelegate() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorWithNoDelegate.java"));
@@ -109,7 +109,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: Error on field and parameter indicating 2 @Delegate injection points found.
      */
-    // @Test
+    @Test
     public void testDecoratorWithMixedDelegateInjectionPoints() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorWithMixedDelegates.java"));
@@ -148,7 +148,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: No diagnostics.
      */
-    // @Test
+    @Test
     public void testValidDecoratorWithDelegateField() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/ValidDecorator.java"));
@@ -166,7 +166,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: No diagnostics.
      */
-    //@Test
+    @Test
     public void testValidDecoratorWithDelegateOnConstructorParameter() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorWithDelegateOnConstructor.java"));
@@ -190,7 +190,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: No diagnostics.
      */
-    //@Test
+    @Test
     public void testValidDecoratorWithDelegateOnMethodParameter() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorWithDelegateOnMethod.java"));
@@ -208,7 +208,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: Error on each @Delegate that is not accompanied by @Inject.
      */
-    // @Test
+    @Test
     public void testInvalidDelegateLocations() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/InvalidDelegateLocations.java"));
@@ -282,7 +282,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: Error on delegate field indicating type mismatch.
      */
-    //@Test
+    @Test
     public void testDecoratorWithInvalidDelegateType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/DecoratorDelegateTypeAssignability.java"));
@@ -292,16 +292,16 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Expected diagnostic on InvalidDelegateType class
-        // Line 18 (0-based: 17), field name "delegate" starts at column 20, ends at column 28
-        Diagnostic invalidDelegateTypeDiagnostic = d(17, 20, 28,
+        // Line 18 (0-based: 17), field name "delegate" starts at column 19, ends at column 27
+        Diagnostic invalidDelegateTypeDiagnostic = d(17, 19, 27,
                                                      "The delegate type 'Logger' must implement or extend all decorated types. Missing: PaymentService",
                                                      DiagnosticSeverity.Error,
                                                      "jakarta-cdi",
                                                      "InvalidDecoratorDelegateTypeAssignability");
 
         // Expected diagnostic on InvalidDelegateTypePrimitive class
-        // Line 70 (0-based: 69), field name "delegate" starts at column 20, ends at column 28
-        Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(69, 20, 28,
+        // Line 72 (0-based: 71), field name "delegate" starts at column 19, ends at column 27
+        Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(71, 19, 27,
                                                               "The delegate type 'String' must implement or extend all decorated types. Missing: PaymentService",
                                                               DiagnosticSeverity.Error,
                                                               "jakarta-cdi",
@@ -315,7 +315,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
      *
      * Expected: No diagnostics for valid delegate types.
      */
-    //@Test
+    @Test
     public void testDecoratorWithValidDelegateType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/ValidDecorator.java"));

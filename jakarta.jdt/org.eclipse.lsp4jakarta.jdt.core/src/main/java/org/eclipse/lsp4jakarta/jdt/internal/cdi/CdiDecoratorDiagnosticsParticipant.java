@@ -234,7 +234,29 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             String delegateTypeName = null;
             if (delegateElement instanceof IField) {
                 IField field = (IField) delegateElement;
-                delegateTypeName = JDTTypeUtils.getResolvedTypeName(field);
+                // Try to get resolved type name first
+                //delegateTypeName = JDTTypeUtils.getResolvedTypeName(field);
+
+                // If that fails, try alternative methods to get the type
+                if (delegateTypeName == null) {
+                    try {
+                        // Get the type signature and resolve it
+                        String typeSignature = field.getTypeSignature();
+                        if (typeSignature != null) {
+                            delegateTypeName = Signature.toString(typeSignature);
+                            // Resolve the type name in the context of the declaring type
+                            String[][] resolvedTypes = decoratorType.resolveType(delegateTypeName);
+                            if (resolvedTypes != null && resolvedTypes.length > 0) {
+                                String packageName = resolvedTypes[0][0];
+                                String typeName = resolvedTypes[0][1];
+                                delegateTypeName = packageName.isEmpty() ? typeName : packageName + "." + typeName;
+                            }
+                        }
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.WARNING, "Could not resolve field type signature", e);
+                        return; // Cannot resolve type, skip validation
+                    }
+                }
             } else if (delegateElement instanceof ILocalVariable) {
                 ILocalVariable param = (ILocalVariable) delegateElement;
                 // For parameters, we need to get the type signature and resolve it
