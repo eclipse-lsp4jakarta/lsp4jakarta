@@ -84,10 +84,15 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             allAnnotations = type.getAnnotations();
 
             IAnnotation EntityAnnotation = null;
+            IAnnotation InheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
                                                          Constants.ENTITY)) {
                     EntityAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                         Constants.INHERITANCE)) {
+                    InheritanceAnnotation = annotation;
                 }
             }
 
@@ -195,6 +200,25 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 if (!versionMembers.isEmpty()) {
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
                 }
+
+                // Check @Inheritance is only on the root of the entity hierarchy 
+                if (InheritanceAnnotation != null && hasEntityAncestor(type)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InheritanceAnnotationOnNonRootEntity",
+                                                                                 type.getElementName()),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InheritanceAnnotationOnNonRootEntity,
+                                                             DiagnosticSeverity.Error));
+                }
+            } else if (InheritanceAnnotation != null) {
+                // Check @Inheritance on a class that does not have @Entity
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InheritanceAnnotationOnNonEntityClass"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InheritanceAnnotationOnNonEntityClass,
+                                                         DiagnosticSeverity.Error));
             }
         }
 
@@ -407,6 +431,40 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
 
+            superclass = hierarchy.getSuperclass(superclass);
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if any class in the full superclass chain of
+     * {@code type} carries {@code @Entity}.
+     *
+     * <p>Non-entity abstract classes are transparent to JPA (spec section 2.11.3),
+     * so the walk continues past them rather than stopping at the first gap.</p>
+     *
+     * @param type the class to inspect
+     * @return {@code true} if an {@code @Entity} ancestor was found
+     * @throws JavaModelException if the type hierarchy cannot be resolved
+     */
+    private boolean hasEntityAncestor(IType type) throws JavaModelException {
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType superclass = hierarchy.getSuperclass(type);
+
+        while (superclass != null
+               && !superclass.getFullyQualifiedName().equals(Constants.OBJECT)) {
+            try {
+                if (DiagnosticUtils.isMatchedAnnotation(
+                                                        superclass.getCompilationUnit(),
+                                                        superclass.getAnnotations(),
+                                                        Constants.ENTITY)) {
+                    return true;
+                }
+            } catch (JavaModelException e) {
+                LOGGER.warning("Could not inspect annotations on superclass "
+                               + superclass.getFullyQualifiedName() + ": " + e.getMessage());
+            }
             superclass = hierarchy.getSuperclass(superclass);
         }
 
