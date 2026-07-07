@@ -37,7 +37,7 @@ public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQu
     private String[] annotations = null;
 
     public RemoveNamedJPAAnnotationQuickFix() {
-        super("");
+        super(); // annotations are determined dynamically from diagnostic data
     }
 
     @Override
