@@ -631,4 +631,87 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    @Test
+    public void testInheritanceOnPlainClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceOnPlainClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic inheritanceOnPlainClassDiagnostic = d(7, 22, 45,
+                                                         "The @Inheritance annotation can only be used on a class annotated with @Entity. It must not be placed on a plain class or a @MappedSuperclass.",
+                                                         DiagnosticSeverity.Error, "jakarta-persistence", "InheritanceAnnotationOnNonEntityClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, inheritanceOnPlainClassDiagnostic);
+    }
+
+    @Test
+    public void testInheritanceOnMappedSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceOnMappedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic inheritanceOnMappedSuperclassDiagnostic = d(10, 22, 51,
+                                                               "The @Inheritance annotation can only be used on a class annotated with @Entity. It must not be placed on a plain class or a @MappedSuperclass.",
+                                                               DiagnosticSeverity.Error, "jakarta-persistence", "InheritanceAnnotationOnNonEntityClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, inheritanceOnMappedSuperclassDiagnostic);
+    }
+
+    @Test
+    public void testInheritanceOnValidEntityRoot() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceEntityRoot.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @Entity + @Inheritance with no @Entity ancestor — no diagnostic expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testInheritanceOnNonRootEntityDirectParent() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceOnNonRootEntityDirectParent.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic inheritanceOnNonRootEntityDirectParentDiagnostic = d(10, 13, 51,
+                                                                        "The @Inheritance annotation must be placed on the root of the entity class hierarchy. The class InheritanceOnNonRootEntityDirectParent has an @Entity ancestor in its superclass chain and is therefore not the root.",
+                                                                        DiagnosticSeverity.Error, "jakarta-persistence", "InheritanceAnnotationOnNonRootEntity");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, inheritanceOnNonRootEntityDirectParentDiagnostic);
+    }
+
+    @Test
+    public void testInheritanceOnNonRootEntityWithGap() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceOnNonRootEntityWithGap.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Full chain walk required: @Entity ancestor is hidden behind a non-entity abstract gap
+        Diagnostic inheritanceOnNonRootEntityWithGapDiagnostic = d(13, 13, 46,
+                                                                   "The @Inheritance annotation must be placed on the root of the entity class hierarchy. The class InheritanceOnNonRootEntityWithGap has an @Entity ancestor in its superclass chain and is therefore not the root.",
+                                                                   DiagnosticSeverity.Error, "jakarta-persistence", "InheritanceAnnotationOnNonRootEntity");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, inheritanceOnNonRootEntityWithGapDiagnostic);
+    }
+
 }
