@@ -97,6 +97,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 boolean isEntityClassFinal = false;
                 boolean hasPrimaryKey = false;
                 List<IMember> versionMembers = new ArrayList<>();
+                List<IMember> embeddedIdMembers = new ArrayList<>();
+                List<IMember> idMembers = new ArrayList<>();
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
@@ -118,6 +120,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // Check if any method has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, method.getAnnotations())) {
                         hasPrimaryKey = true;
+                    }
+
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(method);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        idMembers.add(method);
                     }
 
                     validatePKDateTemporal(type, method, diagnostics, context);
@@ -149,6 +159,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // Check if any field has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
                         hasPrimaryKey = true;
+                    }
+
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(field);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        idMembers.add(field);
                     }
 
                     validatePKDateTemporal(type, field, diagnostics, context);
@@ -190,6 +208,35 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
+                }
+
+                // Multiple @EmbeddedId annotations on the same entity
+                if (embeddedIdMembers.size() > 1) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MultipleEmbeddedIdAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MultipleEmbeddedIdAnnotations, DiagnosticSeverity.Error));
+                    }
+                }
+
+                // @Id and @EmbeddedId mixed on the same entity
+                if (!embeddedIdMembers.isEmpty() && !idMembers.isEmpty()) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
+                    for (IMember member : idMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
                 }
 
                 if (!versionMembers.isEmpty()) {
