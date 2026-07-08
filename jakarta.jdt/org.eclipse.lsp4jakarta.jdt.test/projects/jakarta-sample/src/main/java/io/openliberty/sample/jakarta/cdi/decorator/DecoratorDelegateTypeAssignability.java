@@ -77,6 +77,48 @@ class InvalidDelegateTypePrimitive implements PaymentService {
     }
 }
 
+/**
+ * Invalid: Delegate type on method parameter (Logger) doesn't implement the decorated type (PaymentService)
+ * Should trigger diagnostic: The delegate type must implement or extend to the decorator
+ */
+@Decorator
+@Dependent
+class InvalidDelegateTypeOnMethod implements PaymentService {
+    
+    private Logger delegate;
+    
+    @Inject
+    public void setDelegate(@Delegate Logger delegate) {  // Logger doesn't implement PaymentService
+        this.delegate = delegate;
+    }
+    
+    @Override
+    public void processPayment(double amount) {
+        // This won't work
+    }
+}
+
+/**
+ * Valid: Delegate type on method parameter (PaymentService) matches the decorated type
+ * Should NOT trigger diagnostic
+ */
+@Decorator
+@Dependent
+class ValidDelegateTypeOnMethod implements PaymentService {
+    
+    private PaymentService delegate;
+    
+    @Inject
+    public void setDelegate(@Delegate PaymentService delegate) {  // PaymentService implements PaymentService
+        this.delegate = delegate;
+    }
+    
+    @Override
+    public void processPayment(double amount) {
+        delegate.processPayment(amount);
+    }
+}
+
 // Helper class for testing
 class PaymentServiceImpl implements PaymentService {
     @Override

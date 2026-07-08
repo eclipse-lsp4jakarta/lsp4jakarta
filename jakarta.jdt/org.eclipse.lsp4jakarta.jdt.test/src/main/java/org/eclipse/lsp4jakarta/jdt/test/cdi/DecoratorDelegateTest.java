@@ -280,7 +280,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
     /**
      * Test that a decorator with delegate type that doesn't implement the decorated type triggers a diagnostic.
      *
-     * Expected: Error on delegate field indicating type mismatch.
+     * Expected: Error on delegate field and method parameter indicating type mismatch.
      */
     @Test
     public void testDecoratorWithInvalidDelegateType() throws Exception {
@@ -291,7 +291,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Expected diagnostic on InvalidDelegateType class
+        // Expected diagnostic on InvalidDelegateType class (field-level)
         // Line 18 (0-based: 17), field name "delegate" starts at column 19, ends at column 27
         Diagnostic invalidDelegateTypeDiagnostic = d(17, 19, 27,
                                                      "The delegate type 'Logger' must implement or extend all decorated types. Missing: PaymentService",
@@ -299,7 +299,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                      "jakarta-cdi",
                                                      "InvalidDecoratorDelegateTypeAssignability");
 
-        // Expected diagnostic on InvalidDelegateTypePrimitive class
+        // Expected diagnostic on InvalidDelegateTypePrimitive class (field-level)
         // Line 72 (0-based: 71), field name "delegate" starts at column 19, ends at column 27
         Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(71, 19, 27,
                                                               "The delegate type 'String' must implement or extend all decorated types. Missing: PaymentService",
@@ -307,7 +307,16 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                               "jakarta-cdi",
                                                               "InvalidDecoratorDelegateTypeAssignability");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidDelegateTypeDiagnostic, invalidDelegateTypePrimitiveDiagnostic);
+        // Expected diagnostic on InvalidDelegateTypeOnMethod class (method-level)
+        // Line 91 (0-based: 90), parameter name "delegate" starts at column 45, ends at column 53
+        Diagnostic invalidDelegateTypeOnMethodDiagnostic = d(90, 45, 53,
+                                                             "The delegate type 'Logger' must implement or extend all decorated types. Missing: PaymentService",
+                                                             DiagnosticSeverity.Error,
+                                                             "jakarta-cdi",
+                                                             "InvalidDecoratorDelegateTypeAssignability");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidDelegateTypeDiagnostic,
+                              invalidDelegateTypePrimitiveDiagnostic, invalidDelegateTypeOnMethodDiagnostic);
     }
 
     /**
