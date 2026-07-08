@@ -263,9 +263,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
                 // Use simple class names for better readability
                 String delegateTypeSimpleName = delegateType.getElementName();
-                String missingTypesStr = missingTypes.stream().map(DiagnosticUtils::getSimpleName).collect(Collectors.joining(", "));
                 String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
-                                                     delegateTypeSimpleName, missingTypesStr);
+                                                     delegateTypeSimpleName);
                 diagnostics.add(context.createDiagnostic(uri, message, range,
                                                          Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidDecoratorDelegateTypeAssignability,
