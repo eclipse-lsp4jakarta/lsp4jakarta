@@ -84,5 +84,3 @@ class PaymentServiceImpl implements PaymentService {
         // Implementation
     }
 }
-
-// Made with Bob
