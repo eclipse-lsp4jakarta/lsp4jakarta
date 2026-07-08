@@ -264,6 +264,12 @@
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#MultipleEmbeddedIdAnnotations"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#MixedIdentifierAnnotations"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
    </extension>
    
    <!-- WebSocket -->
