@@ -233,6 +233,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
+
                 // Generate diagnostics for mutually exclusive observes and observesAsync annotations
                 //
                 // see: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#
@@ -296,6 +297,20 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              null,
                                                              ErrorCode.InvalidDependentScopeWithConditionalObserver,
                                                              DiagnosticSeverity.Error));
+                }
+                // Check for @Disposes in interceptors/decorators
+                if (interceptorOrDecorator) {
+                    List<String> disposesParams = getDisposesParamNames(type, method);
+                    if (!disposesParams.isEmpty()) {
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        String paramNames = String.join(", ", disposesParams);
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod", paramNames),
+                                                                 methodRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
             }
 
@@ -425,6 +440,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                                  Constants.INVALID_PRODUCER_PARAMS_FQ);
                             if (Constants.DISPOSES_FQ_NAME.equals(matchedAnnotation)) {
                                 numDisposes++;
+
                             } else if (Constants.OBSERVES_FQ_NAME.equals(matchedAnnotation)
                                        || Constants.OBSERVES_ASYNC_FQ_NAME.equals(matchedAnnotation)) {
                                 invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation.getElementName()));
@@ -697,4 +713,27 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
     }
 
+    /**
+     * Get the names of all parameters annotated with @Disposes in a method.
+     *
+     * @param type the type being checked
+     * @param method the method to check
+     * @return list of parameter names that have @Disposes annotation
+     */
+    private List<String> getDisposesParamNames(IType type, IMethod method) {
+        List<String> paramNames = new ArrayList<>();
+        try {
+            for (ILocalVariable param : method.getParameters()) {
+                for (IAnnotation annotation : param.getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.DISPOSES_FQ_NAME)) {
+                        paramNames.add(param.getElementName());
+                        break;
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occurred while getting @Disposes parameter names", e);
+        }
+        return paramNames;
+    }
 }
