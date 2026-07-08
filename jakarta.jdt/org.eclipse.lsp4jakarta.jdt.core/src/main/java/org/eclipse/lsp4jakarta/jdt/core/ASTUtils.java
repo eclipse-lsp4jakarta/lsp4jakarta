@@ -170,6 +170,29 @@ public class ASTUtils {
         String qualifiedName = getDeclaringClassName(mi);
         return expectedFQN.equals(qualifiedName);
     }
+    
+    /**
+     * Retrieves the enclosing method declaration for a given AST node.
+     *
+     * <p>This method traverses up the Abstract Syntax Tree (AST) hierarchy starting from the
+     * given node, searching for the nearest ancestor that is a {@link MethodDeclaration}.
+     * This is useful for determining the method context in which a particular AST node exists.</p>
+     *
+     * @param node the AST node for which to find the enclosing method declaration
+     * @return the nearest enclosing {@link MethodDeclaration}, or {@code null} if the node
+     *         is not contained within any method (e.g., if it's a field declaration or
+     *         class-level element)
+     */
+    public static MethodDeclaration getEnclosingMethod(ASTNode node) {
+        ASTNode currentNode = node.getParent();
+        while (currentNode != null) {
+            if (currentNode instanceof MethodDeclaration) {
+                return (MethodDeclaration) currentNode;
+            }
+            currentNode = currentNode.getParent();
+        }
+        return null;
+    }
 
     /**
      * Method used to get method binding in a cache approach, if absent it computes, otherwise takes it from the Map.
