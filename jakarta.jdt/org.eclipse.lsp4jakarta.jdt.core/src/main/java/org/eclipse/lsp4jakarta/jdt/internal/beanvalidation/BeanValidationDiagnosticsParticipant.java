@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.beanvalidation;
 
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_FALSE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.ASSERT_TRUE;
-import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.BOOLEAN_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.CHAR_SEQUENCE_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MAX;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.DECIMAL_MIN;
@@ -32,16 +31,19 @@ import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NOT_
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_CHAR_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_AND_DECIMAL_WRAPPER_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NUMERIC_WRAPPER_TYPES;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.WRAPPER_TYPES_FQ;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PAST_OR_PRESENT;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PATTERN;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.POSITIVE_OR_ZERO;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.NON_CASCADABLE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.PRIMITIVE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_ANNOTATIONS;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SET_OF_DATE_TYPES;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.SIZE;
 import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.STRING_FQ;
+import static org.eclipse.lsp4jakarta.jdt.internal.beanvalidation.Constants.VALID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,12 +185,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             //The below block throws diagnostics if invalid element type is used with constraint annotations
             switch (matchedAnnotation) {
                 case ASSERT_FALSE, ASSERT_TRUE -> {
-                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
-                                                                                      getDataTypeName(type),
-                                                                                      new String[] { BOOLEAN_FQ });
                     String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
 
-                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BOOLEAN)) {
+                    if (!type.equals(Signature.SIG_BOOLEAN) && !getDataTypeName(type).equals("Boolean")) {
                         Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
@@ -271,6 +270,15 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                  DiagnosticSeverity.Error));
                     }
                 }
+                case VALID -> {
+                    if (!isCascadableType(declaringType, type)) {
+                        String message = Messages.getMessage("InvalidValidAnnotation");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidValidAnnotationOnNonCascadableType,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
                 default -> LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
             }
             //Throws invalid static element diagnostics if the element is static and has constraint annotations
@@ -327,6 +335,87 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                        || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
                        || doesITypeHaveSuperType(fieldType, Constants.MAP_FQ));
         }
+    }
+
+    /**
+     * isCascadableType
+     * This method checks whether a type is cascadable for @Valid annotation.
+     * Non-cascadable types include: primitives, primitive arrays, boxed types, String, and other simple types.
+     * Cascadable types include: complex objects, object arrays, collections, and maps.
+     *
+     * @param parentType the declaring type
+     * @param childTypeString the type signature to check
+     * @return true if the type is cascadable, false otherwise
+     * @throws CoreException
+     */
+    boolean isCascadableType(IType parentType, String childTypeString) throws CoreException {
+        // Check arrays: primitive arrays are NOT cascadable, object arrays are cascadable
+        if (isArrayType(childTypeString)) {
+            // Get the element type signature (remove the array bracket '[')
+            String elementTypeSignature = Signature.getElementType(childTypeString);
+            // If the element type is primitive, the array is not cascadable
+            if (PRIMITIVE_TYPES.contains(elementTypeSignature)) {
+                return false;
+            }
+            // Object arrays are cascadable
+            return true;
+        }
+
+        // Primitive types are not cascadable
+        if (PRIMITIVE_TYPES.contains(childTypeString)) {
+            return false;
+        }
+
+        String dataTypeName = getDataTypeName(childTypeString);
+
+        // Boxed primitive types are not cascadable - use fully qualified name check
+        String wrapperTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName,
+                                                                             WRAPPER_TYPES_FQ.toArray(new String[0]));
+        if (wrapperTypeFQName != null) {
+            return false;
+        }
+
+        // Check against known non-cascadable types
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName, NON_CASCADABLE_TYPES);
+
+        if (dataTypeFQName != null) {
+            return false;
+        }
+
+        // Enum types are not cascadable
+        // Try to resolve the type - ManagedBean.getChildITypeByName handles most cases via resolveType()
+        IType fieldType = ManagedBean.getChildITypeByName(parentType, dataTypeName);
+
+        // Fallback: For types in the same compilation unit that resolveType() might miss,
+        // check sibling types directly (e.g., inner classes, same-file classes)
+        if (fieldType == null && parentType != null) {
+            String simpleName = dataTypeName;
+            int lastSlash = dataTypeName.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                simpleName = dataTypeName.substring(lastSlash + 1);
+            }
+
+            IType[] types = parentType.getCompilationUnit().getAllTypes();
+            for (IType type : types) {
+                if (type.getElementName().equals(simpleName)) {
+                    fieldType = type;
+                    break;
+                }
+            }
+        }
+
+        if (fieldType != null && fieldType.isEnum()) {
+            return false;
+        }
+
+        // Collections and Maps are cascadable
+        if (fieldType != null && (doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ) ||
+                                  doesITypeHaveSuperType(fieldType, Constants.MAP_FQ))) {
+            return true;
+        }
+
+        // All other complex types (custom classes, etc.) are cascadable
+        return true;
     }
 
     private void checkStringOnly(JavaDiagnosticsContext context, String uri, IJavaElement element,

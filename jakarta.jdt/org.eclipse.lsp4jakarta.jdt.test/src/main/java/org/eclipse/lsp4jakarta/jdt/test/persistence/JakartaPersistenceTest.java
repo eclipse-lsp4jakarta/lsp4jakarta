@@ -155,9 +155,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d);
         TextEdit te1 = te(8, 1, 8, 1, "protected EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te1);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d, te1);
         TextEdit te2 = te(8, 1, 8, 1, "public EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te2);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d, te2);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
     }
@@ -553,6 +553,82 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                      DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyOnMethodsD1);
+    }
+
+    @Test
+    public void testVersionInvalidStringType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionInvalidString.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic invalidStringD1 = d(12, 19, 26,
+                                       "A field or property annotated with @Version must be of type int, Integer, short, Short, long, Long, or java.sql.Timestamp.",
+                                       DiagnosticSeverity.Error, "jakarta-persistence", "InvalidVersionFieldOrPropertyType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidStringD1);
+    }
+
+    @Test
+    public void testVersionValidIntType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionValidInt.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid int type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testVersionValidTimestampType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionValidTimestamp.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid java.sql.Timestamp type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testVersionMethodInvalidStringType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionMethodInvalidString.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic invalidStringD1 = d(14, 18, 28,
+                                       "A field or property annotated with @Version must be of type int, Integer, short, Short, long, Long, or java.sql.Timestamp.",
+                                       DiagnosticSeverity.Error, "jakarta-persistence", "InvalidVersionFieldOrPropertyType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidStringD1);
+    }
+
+    @Test
+    public void testVersionMethodValidLongType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionMethodValidLong.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid Long return type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
 }

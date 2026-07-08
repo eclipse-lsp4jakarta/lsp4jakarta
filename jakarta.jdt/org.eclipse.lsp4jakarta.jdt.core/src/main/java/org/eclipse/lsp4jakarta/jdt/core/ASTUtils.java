@@ -142,29 +142,6 @@ public class ASTUtils {
     }
 
     /**
-     * Retrieves the enclosing method declaration for a given AST node.
-     *
-     * <p>This method traverses up the Abstract Syntax Tree (AST) hierarchy starting from the
-     * given node, searching for the nearest ancestor that is a {@link MethodDeclaration}.
-     * This is useful for determining the method context in which a particular AST node exists.</p>
-     *
-     * @param node the AST node for which to find the enclosing method declaration
-     * @return the nearest enclosing {@link MethodDeclaration}, or {@code null} if the node
-     *         is not contained within any method (e.g., if it's a field declaration or
-     *         class-level element)
-     */
-    public static MethodDeclaration getEnclosingMethod(ASTNode node) {
-        ASTNode currentNode = node.getParent();
-        while (currentNode != null) {
-            if (currentNode instanceof MethodDeclaration) {
-                return (MethodDeclaration) currentNode;
-            }
-            currentNode = currentNode.getParent();
-        }
-        return null;
-    }
-
-    /**
      * Resolves the fully qualified class name of the declaring class for a method invocation.
      *
      * @param mi the method invocation
@@ -180,6 +157,18 @@ public class ASTUtils {
             return null;
         }
         return declaringClass.getQualifiedName();
+    }
+
+    /**
+     * Checks if the declaring class name of a method invocation matches the expected fully qualified name.
+     *
+     * @param mi the method invocation
+     * @param expectedFQN the expected fully qualified class name to match against
+     * @return true if the declaring class matches the expected FQN, false otherwise
+     */
+    public static boolean isMatchedTargetClass(MethodInvocation mi, String expectedFQN) {
+        String qualifiedName = getDeclaringClassName(mi);
+        return expectedFQN.equals(qualifiedName);
     }
 
     /**

@@ -25,6 +25,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidJsonBNoArgsConstructorMissing,
     InvalidJsonBNonStaticInnerClass,
     InvalidJsonBNonPublicProtectedStaticNestedClass,
+    InvalidJsonbFromJsonNullParameter,
     JsonbCloseableThreadSafety;
 
     /**

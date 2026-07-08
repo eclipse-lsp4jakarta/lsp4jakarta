@@ -50,6 +50,10 @@ public class Constants {
                                                                  JSONB_DATE_FORMAT, JSONB_NILLABLE, JSONB_NUMBER_FORMAT, JSONB_PROPERTY, JSONB_PROPERTY_ORDER,
                                                                  JSONB_TYPE_ADAPTER, JSONB_TYPE_DESERIALIZER, JSONB_TYPE_SERIALIZER, JSONB_VISIBILITY);
 
+    /* Jsonb fromJson constants */
+    public static final String JSONB_FROM_JSON_PACKAGE = "jakarta.json.bind.Jsonb";
+    public static final String FROM_JSON_METHOD = "fromJson";
+  
     // Individual thread-related type constants
     public static final String JAVA_LANG_THREAD = "java.lang.Thread";
     public static final String JAVA_LANG_RUNNABLE = "java.lang.Runnable";
