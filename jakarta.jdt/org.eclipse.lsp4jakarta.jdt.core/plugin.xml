@@ -369,6 +369,7 @@
    <!-- CDI -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -448,6 +449,9 @@
                   targetDiagnostic="jakarta-cdi#InvalidDisposerMethodParamAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInvalidDisposerConflictParamAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInterceptorOrDecoratorWithDisposerMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDependentScopeWithConditionalObserver"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDependentScopeQuickFix" />
       <codeAction kind="quickfix"
@@ -488,5 +492,10 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-interceptor#InvalidInterceptorAnnotationOnAbstractClass"
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
+   </extension>
+   
+   <!-- Security -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.security.SecurityIdentityStoreDiagnosticsParticipant" />
    </extension>
 </plugin>

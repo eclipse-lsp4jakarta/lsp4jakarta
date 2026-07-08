@@ -44,71 +44,71 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Interceptor with @ApplicationScoped (line 41)
-        Diagnostic interceptorWithAppScoped = d(41, 6, 38,
+        // Interceptor with @ApplicationScoped (line 49)
+        Diagnostic interceptorWithAppScoped = d(49, 6, 38,
                                                 "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         interceptorWithAppScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped")));
 
-        // Interceptor with @SessionScoped (line 47)
-        Diagnostic interceptorWithSessionScoped = d(47, 6, 34,
+        // Interceptor with @SessionScoped (line 55)
+        Diagnostic interceptorWithSessionScoped = d(55, 6, 34,
                                                     "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         interceptorWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
-        // Interceptor with multiple scopes (line 54) - TWO diagnostics
-        Diagnostic interceptorMultipleScopesDecl = d(54, 6, 42,
+        // Interceptor with multiple scopes (line 62) - TWO diagnostics
+        Diagnostic interceptorMultipleScopesDecl = d(62, 6, 42,
                                                      "Scope type annotations must be specified by a managed bean class at most once.",
                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         interceptorMultipleScopesDecl.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped", "jakarta.enterprise.context.ApplicationScoped")));
-        Diagnostic interceptorWithMultipleScopes = d(54, 6, 42,
+        Diagnostic interceptorWithMultipleScopes = d(62, 6, 42,
                                                      "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         interceptorWithMultipleScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped", "jakarta.enterprise.context.SessionScoped")));
 
-        // Decorator with @ApplicationScoped (line 62)
-        Diagnostic decoratorWithAppScoped = d(62, 6, 36,
+        // Decorator with @ApplicationScoped (line 70)
+        Diagnostic decoratorWithAppScoped = d(70, 6, 36,
                                               "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                               DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithAppScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped")));
 
-        // Decorator with @SessionScoped (line 68)
-        Diagnostic decoratorWithSessionScoped = d(68, 6, 32,
+        // Decorator with @SessionScoped (line 79)
+        Diagnostic decoratorWithSessionScoped = d(79, 6, 32,
                                                   "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
-        // Decorator with multiple scopes (line 75) - TWO diagnostics
-        Diagnostic decoratorMultipleScopesDecl = d(75, 6, 40,
+        // Decorator with multiple scopes (line 89) - TWO diagnostics
+        Diagnostic decoratorMultipleScopesDecl = d(89, 6, 40,
                                                    "Scope type annotations must be specified by a managed bean class at most once.",
                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         decoratorMultipleScopesDecl.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ConversationScoped", "jakarta.enterprise.context.RequestScoped")));
-        Diagnostic decoratorWithMultipleScopes = d(75, 6, 40,
+        Diagnostic decoratorWithMultipleScopes = d(89, 6, 40,
                                                    "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithMultipleScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped", "jakarta.enterprise.context.ConversationScoped")));
 
-        // Interceptor with custom normal scope (line 83)
-        Diagnostic interceptorWithCustomScope = d(83, 6, 38,
+        // Interceptor with custom normal scope (line 100)
+        Diagnostic interceptorWithCustomScope = d(100, 6, 38,
                                                   "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         interceptorWithCustomScope.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        // Decorator with custom normal scope (line 89)
-        Diagnostic decoratorWithCustomScope = d(89, 6, 36,
+        // Decorator with custom normal scope (line 106)
+        Diagnostic decoratorWithCustomScope = d(106, 6, 36,
                                                 "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithCustomScope.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        // Interceptor with mixed scopes (line 96) - Only ONE diagnostic (InvalidInterceptorOrDecorator)
-        Diagnostic interceptorWithMixedScopes = d(96, 6, 32,
+        // Interceptor with mixed scopes (line 116) - Only ONE diagnostic (InvalidInterceptorOrDecorator)
+        Diagnostic interceptorWithMixedScopes = d(116, 6, 32,
                                                   "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         interceptorWithMixedScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                                "io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        // Decorator with mixed scopes (line 103) - Only ONE diagnostic (InvalidInterceptorOrDecorator)
-        Diagnostic decoratorWithMixedScopes = d(103, 6, 30,
+        // Decorator with mixed scopes (line 123) - Only ONE diagnostic (InvalidInterceptorOrDecorator)
+        Diagnostic decoratorWithMixedScopes = d(123, 6, 30,
                                                 "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithMixedScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
