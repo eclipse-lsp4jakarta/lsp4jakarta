@@ -201,7 +201,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
                 }
 
-                // Check @Inheritance is only on the root of the entity hierarchy 
+                // Check @Inheritance is only on the root of the entity hierarchy
                 if (InheritanceAnnotation != null && hasEntityAncestor(type)) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
