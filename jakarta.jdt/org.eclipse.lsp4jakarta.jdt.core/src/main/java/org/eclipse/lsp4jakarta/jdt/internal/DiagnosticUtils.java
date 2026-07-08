@@ -506,7 +506,7 @@ public class DiagnosticUtils {
 
     /**
      * Method checks if annotations have matched meta annotation
-     * 
+     *
      * @param metaAnnotationFQN
      * @param annotationType
      * @param annotationCU
@@ -514,7 +514,7 @@ public class DiagnosticUtils {
      * @throws JavaModelException
      */
     public static boolean checkMatchedMetaAnnotation(String metaAnnotationFQN, IType annotationType,
-                                                       ICompilationUnit annotationCU) throws JavaModelException {
+                                                     ICompilationUnit annotationCU) throws JavaModelException {
         return Arrays.stream(annotationType.getAnnotations()).anyMatch(metaAnnotation -> {
             try {
                 return DiagnosticUtils.isMatchedAnnotation(annotationCU, metaAnnotation, metaAnnotationFQN);
