@@ -708,7 +708,7 @@ public class InterceptorTest extends BaseJakartaTest {
         // Position: "InvalidInterceptorMissingBinding" starts at column 13 (0-based)
         Diagnostic missingBindingDiagnostic = d(13, 13, 45,
                                                 "An interceptor declared using @Interceptor must specify at least one interceptor binding annotation.",
-                                                DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMissingInterceptorBinding");
+                                                DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorMissingInterceptorBinding");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingBindingDiagnostic);
     }

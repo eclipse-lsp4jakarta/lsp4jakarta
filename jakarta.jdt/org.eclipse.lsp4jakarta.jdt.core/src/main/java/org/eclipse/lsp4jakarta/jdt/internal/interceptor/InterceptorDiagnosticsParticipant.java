@@ -420,7 +420,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                      range,
                                                      Constants.DIAGNOSTIC_SOURCE,
                                                      ErrorCode.InvalidInterceptorMissingInterceptorBinding,
-                                                     DiagnosticSeverity.Error));
+                                                     DiagnosticSeverity.Warning));
         }
     }
 }
