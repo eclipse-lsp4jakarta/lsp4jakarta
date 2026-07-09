@@ -205,8 +205,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 if (InheritanceAnnotation != null && hasEntityAncestor(type)) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("InheritanceAnnotationOnNonRootEntity",
-                                                                                 type.getElementName()),
+                                                             Messages.getMessage("InheritanceAnnotationOnNonRootEntity"),
                                                              range, Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InheritanceAnnotationOnNonRootEntity,
                                                              DiagnosticSeverity.Error));
