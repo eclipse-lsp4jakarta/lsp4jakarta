@@ -701,4 +701,74 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaCodeAction(idFieldParams, IJDT_UTILS, removeIdFromIdAction);
     }
 
+    @Test
+    public void testMultipleEmbeddedIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMultipleEmbeddedIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on getId1() getter
+        Diagnostic firstEmbeddedIdDiagnostic = d(15, 24, 30,
+                                                 "An entity must not declare more than one @EmbeddedId annotation.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        // Diagnostic on getId2() getter
+        Diagnostic secondEmbeddedIdDiagnostic = d(20, 24, 30,
+                                                  "An entity must not declare more than one @EmbeddedId annotation.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstEmbeddedIdDiagnostic, secondEmbeddedIdDiagnostic);
+
+        // Quick fix: Remove @EmbeddedId from getId1
+        JakartaJavaCodeActionParams removeFirstEmbeddedIdParams = createCodeActionParams(uri, firstEmbeddedIdDiagnostic);
+        TextEdit removeFirstEmbeddedIdEdit = te(14, 4, 15, 4, "");
+        CodeAction removeFirstEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", firstEmbeddedIdDiagnostic, removeFirstEmbeddedIdEdit);
+        assertJavaCodeAction(removeFirstEmbeddedIdParams, IJDT_UTILS, removeFirstEmbeddedIdAction);
+
+        // Quick fix: Remove @EmbeddedId from getId2
+        JakartaJavaCodeActionParams removeSecondEmbeddedIdParams = createCodeActionParams(uri, secondEmbeddedIdDiagnostic);
+        TextEdit removeSecondEmbeddedIdEdit = te(19, 4, 20, 4, "");
+        CodeAction removeSecondEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", secondEmbeddedIdDiagnostic, removeSecondEmbeddedIdEdit);
+        assertJavaCodeAction(removeSecondEmbeddedIdParams, IJDT_UTILS, removeSecondEmbeddedIdAction);
+    }
+
+    @Test
+    public void testMixedIdentifiersOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMixedIdentifiersOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on @Id getter (getId)
+        Diagnostic mixedIdDiagnostic = d(16, 16, 21,
+                                         "@Id cannot be combined with @EmbeddedId in the same entity. Remove @Id annotation.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        // Diagnostic on @EmbeddedId getter (getCompositeId)
+        Diagnostic mixedEmbeddedIdDiagnostic = d(21, 24, 38,
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity. Remove @EmbeddedId annotation.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedIdDiagnostic, mixedEmbeddedIdDiagnostic);
+
+        // Quick fix on @Id getter (getId): only offers Remove @Id
+        JakartaJavaCodeActionParams idGetterParams = createCodeActionParams(uri, mixedIdDiagnostic);
+        TextEdit removeIdEdit = te(15, 4, 16, 4, "");
+        CodeAction removeIdAction = ca(uri, "Remove @Id", mixedIdDiagnostic, removeIdEdit);
+        assertJavaCodeAction(idGetterParams, IJDT_UTILS, removeIdAction);
+
+        // Quick fix on @EmbeddedId getter (getCompositeId): only offers Remove @EmbeddedId
+        JakartaJavaCodeActionParams embeddedIdGetterParams = createCodeActionParams(uri, mixedEmbeddedIdDiagnostic);
+        TextEdit removeEmbeddedIdEdit = te(20, 4, 21, 4, "");
+        CodeAction removeEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", mixedEmbeddedIdDiagnostic, removeEmbeddedIdEdit);
+        assertJavaCodeAction(embeddedIdGetterParams, IJDT_UTILS, removeEmbeddedIdAction);
+    }
+
 }
