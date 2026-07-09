@@ -328,7 +328,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                     // @Named without value on constructor/method parameter is invalid
                                     Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                                     diagnostics.add(context.createDiagnostic(uri,
-                                                                             Messages.getMessage("NamedAnnotationWithoutValueOnNonFieldInjectionPoint"),
+                                                                             Messages.getMessage("InvalidNamedAnnotationOnNonFieldInjectionPoint"),
                                                                              range,
                                                                              Constants.DIAGNOSTIC_SOURCE,
                                                                              null,
