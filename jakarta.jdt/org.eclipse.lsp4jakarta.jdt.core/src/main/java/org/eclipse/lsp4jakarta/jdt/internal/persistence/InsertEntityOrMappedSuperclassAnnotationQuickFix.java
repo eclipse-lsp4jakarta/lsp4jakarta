@@ -24,7 +24,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationMissingQ
 public class InsertEntityOrMappedSuperclassAnnotationQuickFix extends InsertAnnotationMissingQuickFix {
 
     public InsertEntityOrMappedSuperclassAnnotationQuickFix() {
-        super("jakarta.persistence.Entity", "jakarta.persistence.MappedSuperclass");
+        super(Constants.ENTITY, Constants.MAPPEDSUPERCLASS);
     }
 
     @Override

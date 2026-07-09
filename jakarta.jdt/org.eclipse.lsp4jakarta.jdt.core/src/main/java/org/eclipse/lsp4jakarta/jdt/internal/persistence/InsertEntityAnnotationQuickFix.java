@@ -23,7 +23,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationMissingQ
 public class InsertEntityAnnotationQuickFix extends InsertAnnotationMissingQuickFix {
 
     public InsertEntityAnnotationQuickFix() {
-        super("jakarta.persistence.Entity");
+        super(Constants.ENTITY);
     }
 
     @Override
