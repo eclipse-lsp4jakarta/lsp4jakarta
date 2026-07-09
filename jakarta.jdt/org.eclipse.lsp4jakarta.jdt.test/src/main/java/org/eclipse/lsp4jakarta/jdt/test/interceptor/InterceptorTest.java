@@ -626,7 +626,7 @@ public class InterceptorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, negativePriorityWarningAnnotation, negativePriorityErrorInterceptor);
     }
-  
+
     @Test
     public void testMultipleInterceptorMethodsOfSameType() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
