@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.lsp4j.Diagnostic;
@@ -66,13 +67,51 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                                                              Constants.SESSION_BEAN_ANNOTATIONS);
 
             if (!sessionBeanAnnotations.isEmpty()) {
-                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+                int typeFlags = type.getFlags();
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
 
+                // Check: class must be public
+                if (!Flags.isPublic(typeFlags)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("SessionBeanMustBePublic"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidModifierNotPublic,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Check: class must not be final
+                if (Flags.isFinal(typeFlags)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("SessionBeanMustNotBeFinal"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidModifierFinal,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Check: class must not be abstract
+                if (Flags.isAbstract(typeFlags)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("SessionBeanMustNotBeAbstract"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidModifierAbstract,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Check: class must be a top-level class (not nested/inner/anonymous/local)
+                if (type.isMember() || type.isAnonymous() || type.isLocal()) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("SessionBeanMustBeTopLevel"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidNotTopLevelClass,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Check: must have a public no-arg constructor (if any constructor is declared)
+                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
-                    String message = Messages.getMessage("SessionBeanNoArgConstructor");
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE,
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("SessionBeanNoArgConstructor"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.MissingPublicNoArgConstructor,
                                                              DiagnosticSeverity.Error));
                 }
