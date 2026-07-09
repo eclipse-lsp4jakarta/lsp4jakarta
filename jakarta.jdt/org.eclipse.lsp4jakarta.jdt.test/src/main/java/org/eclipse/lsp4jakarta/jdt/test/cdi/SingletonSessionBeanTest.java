@@ -61,40 +61,40 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         singletonWithRequestScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
         // Test case 2: @Singleton with @SessionScoped (line 17)
-        Diagnostic singletonWithSessionScoped = d(17, 6, 31,
+        Diagnostic singletonWithSessionScoped = d(17, 13, 38,
                                                   "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
         // Test case 6: @Singleton with @RequestScoped + @ApplicationScoped (line 41)
-        Diagnostic singletonWithRequestAndApplicationScoped = d(41, 6, 51,
+        Diagnostic singletonWithRequestAndApplicationScoped = d(41, 13, 58,
                                                                 "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithRequestAndApplicationScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                                              "jakarta.enterprise.context.RequestScoped")));
 
         // Test case 6 also triggers multiple scopes diagnostic
-        Diagnostic multipleScopesForRequestAndApplicationScoped = d(41, 6, 51,
+        Diagnostic multipleScopesForRequestAndApplicationScoped = d(41, 13, 58,
                                                                     "Scope type annotations must be specified by a managed bean class at most once.",
                                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         multipleScopesForRequestAndApplicationScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                                                  "jakarta.enterprise.context.RequestScoped")));
 
         // Test case 7: @Singleton with @SessionScoped + @Dependent (line 48)
-        Diagnostic singletonWithSessionAndDependent = d(48, 6, 43,
+        Diagnostic singletonWithSessionAndDependent = d(48, 13, 50,
                                                         "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionAndDependent.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.SessionScoped")));
 
         // Test case 7 also triggers multiple scopes diagnostic
-        Diagnostic multipleScopesForSessionAndDependent = d(48, 6, 43,
+        Diagnostic multipleScopesForSessionAndDependent = d(48, 13, 50,
                                                             "Scope type annotations must be specified by a managed bean class at most once.",
                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         multipleScopesForSessionAndDependent.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.SessionScoped")));
 
         // Test case 8: @Singleton with @ApplicationScoped + @Dependent (line 55)
         // This triggers the "multiple scopes" diagnostic since CDI beans can have at most one scope
-        Diagnostic singletonWithMultipleValidScopes = d(55, 6, 34,
+        Diagnostic singletonWithMultipleValidScopes = d(55, 13, 41,
                                                         "Scope type annotations must be specified by a managed bean class at most once.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         singletonWithMultipleValidScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.ApplicationScoped")));
@@ -129,7 +129,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         CodeAction removeSingletonAction2 = ca(uri, "Remove @Singleton", singletonWithSessionScoped, removeSingleton2);
 
         // Code action 2: Replace @Singleton and @SessionScoped with @Dependent and @Singleton
-        TextEdit replaceWithDependent2 = te(15, 0, 16, 14, "@Dependent\n@Singleton");
+        TextEdit replaceWithDependent2 = te(15, 0, 17, 0, "@Dependent\n@Singleton\n");
         CodeAction replaceWithDependentAction2 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionScoped, replaceWithDependent2);
 
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeSingletonAction2, replaceWithDependentAction2);
@@ -142,7 +142,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         CodeAction removeSingletonAction3 = ca(uri, "Remove @Singleton", singletonWithRequestAndApplicationScoped, removeSingleton3);
 
         // Code action 2: Replace with @Dependent (removes @Singleton, @RequestScoped and @ApplicationScoped, then adds @Dependent and @Singleton)
-        TextEdit replaceWithDependent3 = te(38, 0, 40, 18, "@Dependent\n@Singleton");
+        TextEdit replaceWithDependent3 = te(38, 0, 41, 0, "@Dependent\n@Singleton\n");
         CodeAction replaceWithDependentAction3 = ca(uri, "Replace current scope with @Dependent", singletonWithRequestAndApplicationScoped, replaceWithDependent3);
 
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeSingletonAction3, replaceWithDependentAction3);
@@ -155,7 +155,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         CodeAction removeSingletonAction4 = ca(uri, "Remove @Singleton", singletonWithSessionAndDependent, removeSingleton4);
 
         // Code action 2: Replace with @Dependent (removes @Singleton, @SessionScoped and @Dependent, then adds @Dependent and @Singleton)
-        TextEdit replaceWithDependent4 = te(45, 0, 47, 10, "@Dependent\n@Singleton");
+        TextEdit replaceWithDependent4 = te(45, 0, 48, 0, "@Dependent\n@Singleton\n");
         CodeAction replaceWithDependentAction4 = ca(uri, "Replace current scope with @Dependent", singletonWithSessionAndDependent, replaceWithDependent4);
 
         assertJavaCodeAction(codeActionParams4, IJDT_UTILS, removeSingletonAction4, replaceWithDependentAction4);

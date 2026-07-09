@@ -54,11 +54,11 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
                                                   "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
-        Diagnostic statelessWithSessionScoped = d(16, 6, 32,
+        Diagnostic statelessWithSessionScoped = d(16, 13, 39,
                                                   "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
-        Diagnostic statelessWithApplicationScoped = d(23, 6, 33,
+        Diagnostic statelessWithApplicationScoped = d(23, 13, 40,
                                                       "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
@@ -76,7 +76,7 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, statelessWithSessionScoped);
         TextEdit removeStateless2 = te(14, 0, 15, 0, "");
         CodeAction removeStatelessAction2 = ca(uri, "Remove @Stateless", statelessWithSessionScoped, removeStateless2);
-        TextEdit replaceWithDependent2 = te(14, 0, 15, 14, "@Dependent\n@Stateless");
+        TextEdit replaceWithDependent2 = te(14, 0, 16, 0, "@Dependent\n@Stateless\n");
         CodeAction replaceWithDependentAction2 = ca(uri, "Replace current scope with @Dependent", statelessWithSessionScoped, replaceWithDependent2);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeStatelessAction2, replaceWithDependentAction2);
 
@@ -84,7 +84,7 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, statelessWithApplicationScoped);
         TextEdit removeStateless3 = te(20, 0, 21, 0, "");
         CodeAction removeStatelessAction3 = ca(uri, "Remove @Stateless", statelessWithApplicationScoped, removeStateless3);
-        TextEdit replaceWithDependent3 = te(20, 0, 22, 14, "@Dependent\n@Stateless");
+        TextEdit replaceWithDependent3 = te(20, 0, 23, 0, "@Dependent\n@Stateless\n");
         CodeAction replaceWithDependentAction3 = ca(uri, "Replace current scope with @Dependent", statelessWithApplicationScoped, replaceWithDependent3);
         assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeStatelessAction3, replaceWithDependentAction3);
     }

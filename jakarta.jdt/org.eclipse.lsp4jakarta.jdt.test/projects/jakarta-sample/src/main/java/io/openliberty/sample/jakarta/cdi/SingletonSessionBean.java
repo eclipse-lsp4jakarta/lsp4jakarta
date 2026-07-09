@@ -15,43 +15,43 @@ public class SingletonSessionBean {
 // Test case 2: Singleton with invalid scope (SessionScoped) - should report error
 @Singleton
 @SessionScoped
-class SingletonWithSessionScope {
+public class SingletonWithSessionScope {
 }
 
 // Test case 3: Singleton with valid scope (ApplicationScoped) - should NOT report error
 @Singleton
 @ApplicationScoped
-class SingletonWithApplicationScope {
+public class SingletonWithApplicationScope {
 }
 
 // Test case 4: Singleton with valid scope (Dependent) - should NOT report error
 @Singleton
 @Dependent
-class SingletonWithDependent {
+public class SingletonWithDependent {
 }
 
 // Test case 5: Singleton with no scope - should NOT report error (uses default)
 @Singleton
-class SingletonWithNoScope {
+public class SingletonWithNoScope {
 }
 
 // Test case 6: Singleton with mixed valid and invalid scopes (RequestScoped + ApplicationScoped) - should report error
 @Singleton
 @RequestScoped
 @ApplicationScoped
-class SingletonWithMixedInvalidAndApplicationScoped {
+public class SingletonWithMixedInvalidAndApplicationScoped {
 }
 
 // Test case 7: Singleton with mixed valid and invalid scopes (SessionScoped + Dependent) - should report error
 @Singleton
 @SessionScoped
 @Dependent
-class SingletonWithMixedInvalidAndDependent {
+public class SingletonWithMixedInvalidAndDependent {
 }
 
 // Test case 8: Singleton with both valid scopes (ApplicationScoped + Dependent) - should NOT report error
 @Singleton
 @ApplicationScoped
 @Dependent
-class SingletonWithBothValidScopes {
+public class SingletonWithBothValidScopes {
 }
