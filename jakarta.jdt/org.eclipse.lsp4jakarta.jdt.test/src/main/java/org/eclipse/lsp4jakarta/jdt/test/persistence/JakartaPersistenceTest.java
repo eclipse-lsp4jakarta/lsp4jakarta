@@ -676,12 +676,12 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // Diagnostic on @EmbeddedId field (compositeId)
         Diagnostic mixedEmbeddedIdDiagnostic = d(13, 25, 36,
-                                                 "An entity must not use both @Id and @EmbeddedId. Use only one identifier strategy.",
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity. Remove @EmbeddedId annotation.",
                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         // Diagnostic on @Id field (id)
         Diagnostic mixedIdDiagnostic = d(10, 17, 19,
-                                         "An entity must not use both @Id and @EmbeddedId. Use only one identifier strategy.",
+                                         "@Id cannot be combined with @EmbeddedId in the same entity. Remove @Id annotation.",
                                          DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedEmbeddedIdDiagnostic, mixedIdDiagnostic);

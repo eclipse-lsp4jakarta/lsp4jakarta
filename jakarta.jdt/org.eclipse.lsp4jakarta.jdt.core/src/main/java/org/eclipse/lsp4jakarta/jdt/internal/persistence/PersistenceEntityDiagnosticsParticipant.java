@@ -143,19 +143,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateVersionFieldOrPropertyType(field, type, diagnostics, context);
                     }
 
-                    // If a field is static, we do not care about it, we care about all other field
-                    if (isStatic(field.getFlags())) {
-                        continue;
-                    }
-                    // If we find a non-static variable that is final, this is a problem
-                    if (isFinal(field.getFlags())) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("EntityNoFinalVariables"), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
-                                                                 ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
-                    }
-
                     // Check if any field has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
                         hasPrimaryKey = true;
@@ -167,6 +154,19 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     }
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
                         idMembers.add(field);
+                    }
+
+                    // If a field is static, we do not care about it beyond identity tracking above
+                    if (isStatic(field.getFlags())) {
+                        continue;
+                    }
+                    // If we find a non-static variable that is final, this is a problem
+                    if (isFinal(field.getFlags())) {
+                        Range range = PositionUtils.toNameRange(field, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("EntityNoFinalVariables"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
+                                                                 ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
 
                     validatePKDateTemporal(type, field, diagnostics, context);
@@ -222,18 +222,19 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
 
                 // @Id and @EmbeddedId mixed on the same entity
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14687
                 if (!embeddedIdMembers.isEmpty() && !idMembers.isEmpty()) {
                     for (IMember member : embeddedIdMembers) {
                         Range range = PositionUtils.toNameRange(member, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("MixedIdentifierAnnotations"), range,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsEmbeddedId"), range,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
                     }
                     for (IMember member : idMembers) {
                         Range range = PositionUtils.toNameRange(member, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("MixedIdentifierAnnotations"), range,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsId"), range,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
                     }
