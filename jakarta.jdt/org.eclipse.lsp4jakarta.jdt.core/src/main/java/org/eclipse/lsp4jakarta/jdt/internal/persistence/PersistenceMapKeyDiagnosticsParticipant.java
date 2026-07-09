@@ -185,11 +185,10 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
-
             if (hasMapKeyEnumeratedAnnotation) {
                 collectMapKeyEnumeratedDiagnostics(member, type, context, diagnostics);
             }
-            
+
             // Check for @MapKeyTemporal on non-temporal map key types
             if (hasMapKeyTemporalAnnotation) {
                 collectMapKeyTemporalDiagnostics(member, context, diagnostics);

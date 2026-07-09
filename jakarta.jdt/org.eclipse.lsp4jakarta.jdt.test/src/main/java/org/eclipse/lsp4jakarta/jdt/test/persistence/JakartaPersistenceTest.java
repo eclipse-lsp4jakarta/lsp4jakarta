@@ -691,7 +691,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
     }
-    
+
     @Test
     public void testMapKeyEnumeratedOnNonEnumKey() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
