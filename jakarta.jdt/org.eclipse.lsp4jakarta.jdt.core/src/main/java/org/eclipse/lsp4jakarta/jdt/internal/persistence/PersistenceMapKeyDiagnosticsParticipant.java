@@ -128,6 +128,8 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         boolean hasMapKeyAnnotation = false;
         boolean hasMapKeyClassAnnotation = false, hasTypeDiagnostics = false;
         boolean hasMapKeyEnumeratedAnnotation = false;
+        boolean hasMapKeyTemporalAnnotation = false;
+
         IAnnotation[] allAnnotations = null;
 
         // Go through each method/field to ensure they do not have both MapKey and MapKeyColumn Annotations
@@ -136,6 +138,8 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             hasMapKeyAnnotation = false;
             hasMapKeyClassAnnotation = false;
             hasMapKeyEnumeratedAnnotation = false;
+            hasMapKeyTemporalAnnotation = false;
+
             allAnnotations = null;
 
             if (member instanceof IMethod) {
@@ -158,6 +162,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                         hasMapKeyEnumeratedAnnotation = true;
                     }
                 }
+
+                // Check for @MapKeyTemporal annotation
+                String mapKeyTemporalMatch = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                                       new String[] { Constants.MAPKEYTEMPORAL });
+                if (mapKeyTemporalMatch != null) {
+                    hasMapKeyTemporalAnnotation = true;
+                }
             }
 
             if (hasMapKeyAnnotation) {
@@ -174,8 +185,15 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
+
             if (hasMapKeyEnumeratedAnnotation) {
                 collectMapKeyEnumeratedDiagnostics(member, type, context, diagnostics);
+            }
+            
+            // Check for @MapKeyTemporal on non-temporal map key types
+            if (hasMapKeyTemporalAnnotation) {
+                collectMapKeyTemporalDiagnostics(member, context, diagnostics);
+
             }
 
             // If we have multiple MapKeyJoinColumn annotations on a single method/field
@@ -184,6 +202,37 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
                                                     diagnostics);
             }
+        }
+    }
+
+    private void collectMapKeyTemporalDiagnostics(IMember member, JavaDiagnosticsContext context,
+                                                  List<Diagnostic> diagnostics) throws CoreException {
+
+        // Get the resolved type name of the field or method return type
+        String resolvedTypeName = null;
+        if (member instanceof IMethod) {
+            resolvedTypeName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+        } else if (member instanceof IField) {
+            resolvedTypeName = JDTTypeUtils.getResolvedTypeName((IField) member);
+        }
+
+        if (resolvedTypeName != null && JDTTypeUtils.isMap(resolvedTypeName)) {
+            // Extract all type arguments from the parameterized Map type
+            String[] typeArguments = JDTTypeUtils.getResolvedTypeArguments(member);
+            String mapKeyType = typeArguments != null && typeArguments.length > 0 ? typeArguments[0] : null;
+
+            // Check if the map key type is temporal (Date or Calendar)
+            boolean isTemporalType = Constants.UTIL_DATE.equals(mapKeyType)
+                                     || Constants.UTIL_CALENDAR.equals(mapKeyType);
+
+            if (!isTemporalType) {
+                Range range = PositionUtils.toNameRange(member, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("MapKeyTemporalNotOnTemporalType"), range, Constants.DIAGNOSTIC_SOURCE,
+                                                         null, ErrorCode.InvalidMapKeyTemporalOnNonTemporalType, DiagnosticSeverity.Error));
+
+            }
+
         }
     }
 
