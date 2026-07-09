@@ -402,8 +402,8 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         String newText2 = "public JsonbDeserialization() {\n\t}\n\n\t";
         TextEdit te1 = te(6, 1, 6, 1, newText1);
         TextEdit te2 = te(6, 1, 6, 1, newText2);
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d1, te1);
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d1, te2);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d1, te1);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d1, te2);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
@@ -411,8 +411,8 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         String newText4 = "public Childclass() {\n		}\n		";
         TextEdit te3 = te(58, 2, 58, 2, newText3);
         TextEdit te4 = te(58, 2, 58, 2, newText4);
-        CodeAction ca3 = ca(uri, "Add a default 'protected' constructor to this class", d2, te3);
-        CodeAction ca4 = ca(uri, "Add a default 'public' constructor to this class", d2, te4);
+        CodeAction ca3 = ca(uri, "Add a no-arg protected constructor to this class", d2, te3);
+        CodeAction ca4 = ca(uri, "Add a no-arg public constructor to this class", d2, te4);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
 
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
@@ -470,5 +470,44 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         // Assert both code actions are available
         // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
         assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeActionProtected, packagePrivateClassCodeActionPublic);
+    }
+
+    @Test
+    public void testJsonbFromJsonNullParameters() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbFromJsonNullParameter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test null first parameter with cast: jsonb.fromJson((String) null, Person.class)
+        Diagnostic nullFirstParamWithCast = d(47, 38, 51,
+                                              "The parameter of the fromJson() method must not be null.",
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test null second parameter: jsonb.fromJson(json, null)
+        Diagnostic nullSecondParam = d(57, 46, 50,
+                                       "The parameter of the fromJson() method must not be null.",
+                                       DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test both parameters null: jsonb.fromJson(null, null) - first null
+        Diagnostic nullBothParamsFirst = d(66, 40, 44,
+                                           "The parameter of the fromJson() method must not be null.",
+                                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test both parameters null: jsonb.fromJson(null, null) - second null
+        Diagnostic nullBothParamsSecond = d(66, 46, 50,
+                                            "The parameter of the fromJson() method must not be null.",
+                                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test null first parameter without cast: jsonb.fromJson(null, Person.class)
+        Diagnostic nullFirstParamNoCast = d(75, 38, 42,
+                                            "The parameter of the fromJson() method must not be null.",
+                                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nullFirstParamWithCast, nullSecondParam,
+                              nullBothParamsFirst, nullBothParamsSecond, nullFirstParamNoCast);
     }
 }

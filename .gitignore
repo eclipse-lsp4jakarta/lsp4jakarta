@@ -9,7 +9,7 @@ bin/
 .bin/
 target/
 .target/
-
+.bob/
 .DS_Store*
 
 .metadata

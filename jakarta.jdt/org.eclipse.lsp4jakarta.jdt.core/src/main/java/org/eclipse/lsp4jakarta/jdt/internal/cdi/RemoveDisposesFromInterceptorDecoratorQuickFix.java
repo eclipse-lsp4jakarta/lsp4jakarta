@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,21 +10,21 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.di;
+package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
+import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveModifierConflictQuickFix;
 
 /**
- * Removes the static modifier from the declaring element.
+ * Removes the @Disposes annotation from parameters in interceptor or decorator methods.
  */
-public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix {
+public class RemoveDisposesFromInterceptorDecoratorQuickFix extends RemoveMethodParamAnnotationQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveStaticModifierQuickFix() {
-        super(false, "static");
+    public RemoveDisposesFromInterceptorDecoratorQuickFix() {
+        super(Constants.DISPOSES_FQ_NAME);
     }
 
     /**
@@ -32,14 +32,14 @@ public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix
      */
     @Override
     public String getParticipantId() {
-        return RemoveStaticModifierQuickFix.class.getName();
+        return RemoveDisposesFromInterceptorDecoratorQuickFix.class.getName();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.DIRemoveStaticModifier;
+    protected ICodeActionId getCodeActionId() {
+        return JakartaCodeActionId.CDIRemoveDisposesFromInterceptorDecorator;
     }
 }

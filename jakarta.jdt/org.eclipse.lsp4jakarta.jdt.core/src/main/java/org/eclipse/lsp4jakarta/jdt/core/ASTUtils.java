@@ -139,4 +139,34 @@ public class ASTUtils {
         });
         return found.get();
     }
+
+    /**
+     * Resolves the fully qualified class name of the declaring class for a method invocation.
+     *
+     * @param mi the method invocation
+     * @return the fully qualified class name, or null if it cannot be resolved
+     */
+    public static String getDeclaringClassName(MethodInvocation mi) {
+        IMethodBinding binding = mi.resolveMethodBinding();
+        if (binding == null) {
+            return null;
+        }
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
+            return null;
+        }
+        return declaringClass.getQualifiedName();
+    }
+
+    /**
+     * Checks if the declaring class name of a method invocation matches the expected fully qualified name.
+     *
+     * @param mi the method invocation
+     * @param expectedFQN the expected fully qualified class name to match against
+     * @return true if the declaring class matches the expected FQN, false otherwise
+     */
+    public static boolean isMatchedTargetClass(MethodInvocation mi, String expectedFQN) {
+        String qualifiedName = getDeclaringClassName(mi);
+        return expectedFQN.equals(qualifiedName);
+    }
 }
