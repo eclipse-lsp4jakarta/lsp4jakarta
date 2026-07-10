@@ -51,32 +51,32 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         // @Stateless with @Interceptor
         Diagnostic statelessWithInterceptorDiagnostic = d(17, 6, 37,
                                                           "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         // @Stateless with @Decorator
         Diagnostic statelessWithDecoratorDiagnostic = d(25, 6, 35,
                                                         "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                        DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                        DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         // @Stateful with @Interceptor
         Diagnostic statefulWithInterceptorDiagnostic = d(36, 6, 36,
                                                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                         DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         // @Stateful with @Decorator
         Diagnostic statefulWithDecoratorDiagnostic = d(44, 6, 34,
                                                        "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                       DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                       DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         // @Singleton with @Interceptor
         Diagnostic singletonWithInterceptorDiagnostic = d(55, 6, 37,
                                                           "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                          DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         // @Singleton with @Decorator
         Diagnostic singletonWithDecoratorDiagnostic = d(63, 6, 35,
                                                         "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                        DiagnosticSeverity.Error, "jakarta-ejb", "SessionBeanWithInterceptorOrDecorator");
+                                                        DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
                               statelessWithInterceptorDiagnostic,

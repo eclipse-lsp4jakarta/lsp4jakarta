@@ -75,11 +75,11 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                                                              });
 
                 if (!invalidAnnotations.isEmpty()) {
-                    String message = Messages.getMessage("SessionBeanWithInterceptorOrDecorator");
+                    String message = Messages.getMessage("InvalidSessionBeanWithInterceptorOrDecorator");
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri, message, range,
                                                              Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.SessionBeanWithInterceptorOrDecorator,
+                                                             ErrorCode.InvalidSessionBeanWithInterceptorOrDecorator,
                                                              DiagnosticSeverity.Error));
                 }
 
