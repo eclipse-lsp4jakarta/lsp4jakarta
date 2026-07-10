@@ -256,14 +256,17 @@
                   targetDiagnostic="jakarta-persistence#InvalidMethodWithMultipleMPJCAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
        <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-persistence#InvalidFieldWithMultipleMPJCAnnotations"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
+                   targetDiagnostic="jakarta-persistence#InvalidFieldWithMultipleMPJCAnnotations"
+                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InserMapKeyJoinColumAnnotationAttributesQuickFix" />
        <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-persistence#MissingTemporalAnnotation"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertTemporalAnnotationQuickFix" />
+                   targetDiagnostic="jakarta-persistence#InvalidMapKeyTemporalOnNonTemporalType"
+                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyTemporalAnnotationQuickFix" />
        <codeAction kind="quickfix"
-                  targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
+                   targetDiagnostic="jakarta-persistence#MissingTemporalAnnotation"
+                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertTemporalAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                   targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
+                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
    </extension>
    
    <!-- WebSocket -->
