@@ -1,4 +1,4 @@
-package io.openliberty.sample.jakarta.ejb;
+package io.openliberty.sample.jakarta.ejb.classconstraints;
 
 import jakarta.ejb.Stateful;
 
