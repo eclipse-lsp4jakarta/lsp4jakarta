@@ -13,6 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
@@ -343,23 +344,6 @@ public class ManagedBean {
     }
 
     /**
-     * Resolves an annotation to its IType representation.
-     *
-     * @param annotation the annotation to resolve
-     * @param type the type context for resolving the annotation
-     * @return the IType of the annotation, or null if it cannot be resolved
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    private static IType resolveAnnotationType(IAnnotation annotation, IType type) throws JavaModelException {
-        String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-        IJavaProject project = annotation.getJavaProject();
-        if (project == null || annotationFQ == null) {
-            return null;
-        }
-        return project.findType(annotationFQ);
-    }
-
-    /**
      * Checks if the given annotation is marked with a specific meta-annotation.
      *
      * @param annotation the annotation to check
@@ -373,12 +357,11 @@ public class ManagedBean {
      */
     public static boolean hasMetaAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu,
                                             String metaAnnotationFQN) throws JavaModelException {
-        IType annotationType = resolveAnnotationType(annotation, type);
+        IType annotationType = getChildITypeByName(type, annotation.getElementName());
         if (annotationType == null) {
             return false;
         }
-
-        return DiagnosticUtils.checkMatchedMetaAnnotation(metaAnnotationFQN, annotationType, cu);
+        return DiagnosticUtils.isMatchedAnnotation(cu, annotationType.getAnnotations(), metaAnnotationFQN);
     }
 
     /**
@@ -394,7 +377,7 @@ public class ManagedBean {
      */
     public static boolean hasMetaAnnotationWithCorrectContext(IAnnotation annotation, IType type,
                                                               String metaAnnotationFQN) throws JavaModelException {
-        IType annotationType = resolveAnnotationType(annotation, type);
+        IType annotationType = getChildITypeByName(type, annotation.getElementName());
         if (annotationType == null) {
             return false;
         }
@@ -404,7 +387,7 @@ public class ManagedBean {
             return false;
         }
         // Check if the annotation type has the specified meta-annotation
-        return DiagnosticUtils.checkMatchedMetaAnnotation(metaAnnotationFQN, annotationType, annotationCU);
+        return DiagnosticUtils.isMatchedAnnotation(annotationCU, annotationType.getAnnotations(), metaAnnotationFQN);
     }
 
 }
