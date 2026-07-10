@@ -53,6 +53,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     MakeClassStatic,
     // Persistence
     PersistenceRemoveMapKeyAnnotation,
+    PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
     PersistenceInsertPublicCtrtToClass,
     PersistenceInsertProtectedCtrtToClass,
