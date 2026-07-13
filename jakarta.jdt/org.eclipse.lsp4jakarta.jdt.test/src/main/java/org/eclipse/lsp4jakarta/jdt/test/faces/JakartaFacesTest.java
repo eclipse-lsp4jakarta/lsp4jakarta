@@ -45,7 +45,7 @@ public class JakartaFacesTest extends BaseJakartaTest {
 
         // expected: diagnostic on class name (line 5, col 13..35)
         Diagnostic d = d(5, 13, 35,
-                         "Annotated classes with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
+                         "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
                          DiagnosticSeverity.Error, "jakarta-faces",
                          "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
 
