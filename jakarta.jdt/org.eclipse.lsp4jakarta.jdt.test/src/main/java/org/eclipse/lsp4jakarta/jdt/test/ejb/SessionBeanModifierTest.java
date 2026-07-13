@@ -165,9 +165,18 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
     // Valid: public, non-final, non-abstract, top-level — no diagnostics
     // -----------------------------------------------------------------------
     @Test
-    public void testValidSessionBeans() throws Exception {
-        String uri = getFileUri("ValidSessionBeans.java");
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS);
+    public void testValidStatelessBean() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("ValidStatelessBean.java")), IJDT_UTILS);
+    }
+
+    @Test
+    public void testValidStatefulBean() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("ValidStatefulBean.java")), IJDT_UTILS);
+    }
+
+    @Test
+    public void testValidSingletonBean() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("ValidSingletonBean.java")), IJDT_UTILS);
     }
 
     // -----------------------------------------------------------------------
