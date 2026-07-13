@@ -22,6 +22,7 @@
         <classifier>jar-with-dependencies</classifier>
     </artifactItem>
     ```
+1. Verify that the tycho-versions-plugin in `Release.Jenkinsfile` matches the version defined in `jakarta.jdt/pom.xml`. If there is a mismatch, update `Release.Jenkinsfile` to use the same Tycho version as defined in the POM.
 1. Commit these changes to the branch and push to the LSP4Jakarta github repository (not a fork) e.g. `git push --set-upstream origin release-0.2.3` where `origin` refers to LSP4Jakarta.
 1. In a browser open https://ci.eclipse.org/lsp4jakarta/, click on `log in` and authenticate using an Eclipse.org id. This brings you to the Dashboard.
 1. Click on the flow `LSP4Jakarta Release` 
@@ -32,22 +33,23 @@
 1. Click `Build`. Jenkins will update the rest of the version numbers on the build machine but will *not* commit them to git. Jenkins will build and publish the JDT plugin and language server jars to the Eclipse repositories.
 1. The Jenkins command will hang on the step `Push tag to git`. Click the small X on the current build in the left hand panel to cancel the rest of the build. Proceed with these steps to update the source with the current version number and then the snapshot version number for future development.
 1. Next we need to check the version number source changes into git. We should still be on the branch `release-0.2.3`. Set up the environment variables `VERSION` and `VERSION_SNAPSHOT`. E.g. `export VERSION=0.2.3` and `export VERSION_SNAPSHOT=0.2.4-SNAPSHOT`. These values must be the same as used in the Jenkins build earlier. We will use `VERSION_SNAPSHOT` later.
+1. Check and update tycho version before running the command.
 1. Execute locally these commands copied from Release.Jenkinsfile that update the version numbers in the source. Do not execute the build commands. E.g.
     ```
         cd jakarta.jdt 
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION
         ./mvnw versions:set-scm-tag -DnewTag=$VERSION
     ```
 1. For jakarta.ls 
     ```
         cd ../jakarta.ls
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION
         ./mvnw versions:set-scm-tag -DnewTag=$VERSION
     ```
 1. Finally, for jakarta.eclipse
     ```
         cd ../jakarta.eclipse
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION
         cd ..
     ```
 1. These changes should now be combined with the pom file changes performed above.
@@ -60,23 +62,24 @@
 1. Type the title and release notes and style them according to the precedents set in previous releases. 
 1. Select `Set as the latest release` and click `Publish release`
 1. Next, to set up the code base for the next release we will change the version number to indicate the next snapshot. 
-1. Create a new branch called `prepare-0.2.4`. Execute these commands as copied from Release.Jenkinsfile. These steps assume you still have `VERSION_SNAPSHOT` set from a previous step.
+1. Create a new branch called `prepare-0.2.4`. Execute these commands as copied from Release.Jenkinsfile. These steps assume you still have `VERSION_SNAPSHOT` set from a previous step. 
+1. Check and update tycho version before running the command.
 1. For jakarta.jdt
     ```
         cd jakarta.jdt
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION_SNAPSHOT
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION_SNAPSHOT
         ./mvnw versions:set-scm-tag -DnewTag=$VERSION_SNAPSHOT
     ````
 1. For jakarta.ls
     ```
         cd ../jakarta.ls
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION_SNAPSHOT
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION_SNAPSHOT
         ./mvnw versions:set-scm-tag -DnewTag=$VERSION_SNAPSHOT
     ```
 1. For jakarta.eclipse
     ```
         cd ../jakarta.eclipse
-        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=$VERSION_SNAPSHOT
+        ./mvnw -Dtycho.mode=maven org.eclipse.tycho:tycho-versions-plugin:<tycho-version>:set-version -DnewVersion=$VERSION_SNAPSHOT
         cd ..
     ```
 1. Manually edit the files `jakarta.ls/pom.xml` and `jakarta.eclipse/org.eclipse.lsp4jakarta.lsp4e.core/pom.xml` to use the new snapshot version as indicated at the beginning of these instructions.
