@@ -521,7 +521,7 @@ public class DiagnosticUtils {
         }
         return false;
     }
-    
+
     /**
      * Helper method to extract annotation names from a field.
      *
