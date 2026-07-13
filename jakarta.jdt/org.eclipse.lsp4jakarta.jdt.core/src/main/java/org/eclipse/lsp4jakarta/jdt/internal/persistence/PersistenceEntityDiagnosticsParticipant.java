@@ -85,60 +85,60 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         for (IType type : alltypes) {
             allAnnotations = type.getAnnotations();
 
-            IAnnotation EntityAnnotation = null;
-            IAnnotation MappedSuperclassAnnotation = null;
-            IAnnotation NamedEntityGraphAnnotation = null;
-            IAnnotation NamedEntityGraphsAnnotation = null;
-            IAnnotation NamedQueryAnnotation = null;
-            IAnnotation NamedQueriesAnnotation = null;
-            IAnnotation NamedNativeQueryAnnotation = null;
-            IAnnotation NamedNativeQueriesAnnotation = null;
+            IAnnotation entityAnnotation = null;
+            IAnnotation mappedSuperclassAnnotation = null;
+            IAnnotation namedEntityGraphAnnotation = null;
+            IAnnotation namedEntityGraphsAnnotation = null;
+            IAnnotation namedQueryAnnotation = null;
+            IAnnotation namedQueriesAnnotation = null;
+            IAnnotation namedNativeQueryAnnotation = null;
+            IAnnotation namedNativeQueriesAnnotation = null;
 
             for (IAnnotation annotation : allAnnotations) {
                 String elementName = annotation.getElementName();
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.ENTITY)) {
-                    EntityAnnotation = annotation;
+                    entityAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.MAPPEDSUPERCLASS)) {
-                    MappedSuperclassAnnotation = annotation;
+                    mappedSuperclassAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPH)) {
-                    NamedEntityGraphAnnotation = annotation;
+                    namedEntityGraphAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPHS)) {
-                    NamedEntityGraphsAnnotation = annotation;
+                    namedEntityGraphsAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERY)) {
-                    NamedQueryAnnotation = annotation;
+                    namedQueryAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERIES)) {
-                    NamedQueriesAnnotation = annotation;
+                    namedQueriesAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERY)) {
-                    NamedNativeQueryAnnotation = annotation;
+                    namedNativeQueryAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
-                    NamedNativeQueriesAnnotation = annotation;
+                    namedNativeQueriesAnnotation = annotation;
                 }
             }
 
-            boolean hasEntity = EntityAnnotation != null;
-            boolean hasMappedSuperclass = MappedSuperclassAnnotation != null;
+            boolean hasEntity = entityAnnotation != null;
+            boolean hasMappedSuperclass = mappedSuperclassAnnotation != null;
 
             // Validate named JPA annotations are on correct class types
-            validateNamedAnnotationPlacement(NamedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
+            validateNamedAnnotationPlacement(namedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
                                              hasEntity, "NamedEntityGraphOnNonEntityClass",
                                              ErrorCode.NamedEntityGraphOnNonEntityClass, uri, context, diagnostics);
-            validateNamedAnnotationPlacement(NamedEntityGraphsAnnotation, Constants.NAMEDENTITYGRAPHS,
+            validateNamedAnnotationPlacement(namedEntityGraphsAnnotation, Constants.NAMEDENTITYGRAPHS,
                                              hasEntity, "NamedEntityGraphsOnNonEntityClass",
                                              ErrorCode.NamedEntityGraphsOnNonEntityClass, uri, context, diagnostics);
-            validateNamedAnnotationPlacement(NamedQueryAnnotation, Constants.NAMEDQUERY,
+            validateNamedAnnotationPlacement(namedQueryAnnotation, Constants.NAMEDQUERY,
                                              hasEntity || hasMappedSuperclass, "NamedQueryOnInvalidClass",
                                              ErrorCode.NamedQueryOnInvalidClass, uri, context, diagnostics);
-            validateNamedAnnotationPlacement(NamedQueriesAnnotation, Constants.NAMEDQUERIES,
+            validateNamedAnnotationPlacement(namedQueriesAnnotation, Constants.NAMEDQUERIES,
                                              hasEntity || hasMappedSuperclass, "NamedQueriesOnInvalidClass",
                                              ErrorCode.NamedQueriesOnInvalidClass, uri, context, diagnostics);
-            validateNamedAnnotationPlacement(NamedNativeQueryAnnotation, Constants.NAMEDNATIVEQUERY,
+            validateNamedAnnotationPlacement(namedNativeQueryAnnotation, Constants.NAMEDNATIVEQUERY,
                                              hasEntity || hasMappedSuperclass, "NamedNativeQueryOnInvalidClass",
                                              ErrorCode.NamedNativeQueryOnInvalidClass, uri, context, diagnostics);
-            validateNamedAnnotationPlacement(NamedNativeQueriesAnnotation, Constants.NAMEDNATIVEQUERIES,
+            validateNamedAnnotationPlacement(namedNativeQueriesAnnotation, Constants.NAMEDNATIVEQUERIES,
                                              hasEntity || hasMappedSuperclass, "NamedNativeQueriesOnInvalidClass",
                                              ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
 
-            if (EntityAnnotation != null) {
+            if (entityAnnotation != null) {
                 // Get constructor information
                 ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;

@@ -34,8 +34,6 @@ import com.google.gson.JsonArray;
  */
 public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
 
-    private String[] annotations = null;
-
     public RemoveNamedJPAAnnotationQuickFix() {
         super(); // annotations are determined dynamically from diagnostic data
     }
@@ -59,16 +57,11 @@ public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQu
 
         // Receive diagnostic data, set from PersistenceEntityDiagnosticsParticipant
         JsonArray diagnosticData = (JsonArray) diagnostic.getData();
-        annotations = StreamSupport.stream(diagnosticData.spliterator(), false).map(e -> e.getAsString()).toArray(String[]::new);
+        String[] annotations = StreamSupport.stream(diagnosticData.spliterator(), false).map(e -> e.getAsString()).toArray(String[]::new);
 
         if (parentType != null) {
             createCodeAction(diagnostic, context, parentType, codeActions, annotations);
         }
         return codeActions;
-    }
-
-    @Override
-    public String[] getAnnotations() {
-        return annotations;
     }
 }
