@@ -41,6 +41,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidStatelessSessionBeanScope,
     InvalidProducerFieldWithNamedAnnotation,
     InvalidDecoratorDelegateInjectionPoints,
+    InvalidWildcardTypeInInjectField,
+    InvalidWildcardTypeInProducerMethod,
+    InvalidWildcardTypeInProducerField,
     InvalidNamedAnnotationOnNonFieldInjectionPoint;
 
     /**
