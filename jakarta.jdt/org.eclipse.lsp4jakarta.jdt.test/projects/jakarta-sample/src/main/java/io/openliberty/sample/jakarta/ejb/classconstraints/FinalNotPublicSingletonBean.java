@@ -2,9 +2,9 @@ package io.openliberty.sample.jakarta.ejb.classconstraints;
 
 import jakarta.ejb.Singleton;
 
-// Invalid: session bean class is final and not public.
+// Invalid: session bean class is declared final.
 @Singleton
-final class FinalNotPublicSingletonBean {
+public final class FinalNotPublicSingletonBean {
     public FinalNotPublicSingletonBean() {
     }
 }

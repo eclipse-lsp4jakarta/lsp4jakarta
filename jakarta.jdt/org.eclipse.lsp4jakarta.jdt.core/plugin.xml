@@ -328,6 +328,27 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierFinal"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierFinal"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierAbstract"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidModifierAbstract"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidNotTopLevelClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
    </extension>
    
    <!-- CDI -->

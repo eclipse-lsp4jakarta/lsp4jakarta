@@ -13,16 +13,23 @@
 
 package org.eclipse.lsp4jakarta.jdt.test.ejb;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -52,6 +59,15 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
                          "A session bean class must be declared public.",
                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
+
+        // Quickfixes: "Change modifier to public" sorts before "Remove @Stateless" alphabetically.
+        // ChangeModifierToPublicQuickFix inserts "\npublic" after the @Stateless token (col 10).
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, d);
+        TextEdit makePublic = te(5, 10, 5, 10, "\npublic");
+        TextEdit removeAnnotation = te(5, 0, 6, 0, "");
+        assertJavaCodeAction(params, IJDT_UTILS,
+                             ca(uri, "Change modifier to public", d, makePublic),
+                             ca(uri, "Remove @Stateless", d, removeAnnotation));
     }
 
     // -----------------------------------------------------------------------
@@ -66,40 +82,61 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
                          "A session bean class must not be declared final.",
                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierFinal");
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
+
+        // Quickfixes: "Remove @Stateless" sorts before "Remove the 'final' modifier" alphabetically.
+        // ModifyModifiersProposal removes " final" (col 6..12 = space + "final").
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, d);
+        TextEdit removeAnnotation = te(5, 0, 6, 0, "");
+        TextEdit removeFinal = te(6, 6, 6, 12, "");
+        assertJavaCodeAction(params, IJDT_UTILS,
+                             ca(uri, "Remove @Stateless", d, removeAnnotation),
+                             ca(uri, "Remove the 'final' modifier", d, removeFinal));
     }
 
     // -----------------------------------------------------------------------
-    // Invalid: abstract (also not public — two diagnostics)
-    // File line 6 (0-based): "abstract class AbstractStatefulBean {"
-    //   "abstract class " = 15 chars, name 20 chars → col 15..35
+    // Invalid: abstract only (class is public)
+    // File line 6 (0-based): "public abstract class AbstractStatefulBean {"
+    //   "public "(7) + "abstract "(9) + "class "(6) = 22 chars → col 22..42
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustNotBeAbstract() throws Exception {
         String uri = getFileUri("AbstractStatefulBean.java");
-        Diagnostic notPublic = d(6, 15, 35,
-                                 "A session bean class must be declared public.",
-                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
-        Diagnostic isAbstract = d(6, 15, 35,
+        Diagnostic isAbstract = d(6, 22, 42,
                                   "A session bean class must not be declared abstract.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierAbstract");
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, notPublic, isAbstract);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, isAbstract);
+
+        // Quickfixes: "Remove @Stateful" sorts before "Remove the 'abstract' modifier" alphabetically.
+        // ModifyModifiersProposal removes " abstract" (col 6..15 = space + "abstract").
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, isAbstract);
+        TextEdit removeAnnotation = te(5, 0, 6, 0, "");
+        TextEdit removeAbstract = te(6, 6, 6, 15, "");
+        assertJavaCodeAction(params, IJDT_UTILS,
+                             ca(uri, "Remove @Stateful", isAbstract, removeAnnotation),
+                             ca(uri, "Remove the 'abstract' modifier", isAbstract, removeAbstract));
     }
 
     // -----------------------------------------------------------------------
-    // Invalid: final and not public — two diagnostics
-    // File line 6 (0-based): "final class FinalNotPublicSingletonBean {"
-    //   "final class " = 12 chars, name 27 chars → col 12..39
+    // Invalid: final only (class is public)
+    // File line 6 (0-based): "public final class FinalNotPublicSingletonBean {"
+    //   "public final class " = 19 chars, name 27 chars → col 19..46
     // -----------------------------------------------------------------------
     @Test
-    public void testSessionBeanMustNotBeFinalAndMustBePublic() throws Exception {
+    public void testSessionBeanMustNotBeFinal_Singleton() throws Exception {
         String uri = getFileUri("FinalNotPublicSingletonBean.java");
-        Diagnostic notPublic = d(6, 12, 39,
-                                 "A session bean class must be declared public.",
-                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
-        Diagnostic isFinal = d(6, 12, 39,
+        Diagnostic isFinal = d(6, 19, 46,
                                "A session bean class must not be declared final.",
                                DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierFinal");
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, notPublic, isFinal);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, isFinal);
+
+        // Quickfixes: "Remove @Singleton" sorts before "Remove the 'final' modifier" alphabetically.
+        // ModifyModifiersProposal removes " final" (col 6..12 = space + "final").
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, isFinal);
+        TextEdit removeAnnotation = te(5, 0, 6, 0, "");
+        TextEdit removeFinal = te(6, 6, 6, 12, "");
+        assertJavaCodeAction(params, IJDT_UTILS,
+                             ca(uri, "Remove @Singleton", isFinal, removeAnnotation),
+                             ca(uri, "Remove the 'final' modifier", isFinal, removeFinal));
     }
 
     // -----------------------------------------------------------------------
@@ -107,6 +144,7 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
     // NestedSessionBeanWrapper.java line 12 (0-based):
     //   "    public class NestedStatefulBean {"
     //   col 17..35 (measured from actual test run)
+    // The @Stateful annotation is at line 11 (0-based), indented 4 spaces.
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustBeTopLevel() throws Exception {
@@ -115,6 +153,12 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
                          "A session bean class must be a top-level class.",
                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidNotTopLevelClass");
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
+
+        // Quickfix: remove the @Stateful annotation (indented, so range is 4-space-offset line)
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, d);
+        TextEdit removeAnnotation = te(11, 4, 12, 4, "");
+        assertJavaCodeAction(params, IJDT_UTILS,
+                             ca(uri, "Remove @Stateful", d, removeAnnotation));
     }
 
     // -----------------------------------------------------------------------
