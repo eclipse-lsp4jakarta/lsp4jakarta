@@ -27,6 +27,5 @@ public class EjbConstants {
 
     /* Diagnostic codes */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-ejb";
-    public static final String DIAGNOSTIC_CODE = "ImplementMessageListener";
     public static final String DIAGNOSTIC_CODE_MESSAGE = "MessageDrivenMustImplementMessageListener";
 }
