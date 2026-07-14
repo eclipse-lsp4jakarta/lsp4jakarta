@@ -54,7 +54,6 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     private static final Logger LOGGER = Logger.getLogger(PersistenceMapKeyDiagnosticsParticipant.class.getName());
-    final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     /**
      * {@inheritDoc}
@@ -254,7 +253,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (fqName != null) {
-            if (MAP_INTERFACE_FQDN.equals(fqName)) {
+            if (Constants.MAP_INTERFACE_FQDN.equals(fqName)) {
                 isMap = true;
             } else {
                 IType returnType = javaProject.findType(fqName);
@@ -262,7 +261,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
 
                 for (IType superInterface : interfaces) {
-                    if (MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
+                    if (Constants.MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
                         isMap = true;
                     }
                 }
@@ -390,13 +389,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         boolean isMap = false;
-        if (MAP_INTERFACE_FQDN.equals(fqName)) {
+        if (Constants.MAP_INTERFACE_FQDN.equals(fqName)) {
             isMap = true;
         } else {
             IType fieldType = javaProject.findType(fqName);
             if (fieldType != null) {
                 ITypeHierarchy hierarchy = fieldType.newTypeHierarchy(null);
-                isMap = Arrays.stream(hierarchy.getAllSuperInterfaces(fieldType)).map(IType::getFullyQualifiedName).anyMatch(MAP_INTERFACE_FQDN::equals);
+                isMap = Arrays.stream(hierarchy.getAllSuperInterfaces(fieldType)).map(IType::getFullyQualifiedName).anyMatch(Constants.MAP_INTERFACE_FQDN::equals);
             }
         }
 
@@ -405,7 +404,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             Range range = (member instanceof IMethod) ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
                                                                                                                                                     context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("MapKeyEnumeratedNotOnMapType"),
+                                                     Messages.getMessage("MapKeyEnumeratedOnNonMapType"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidMapKeyEnumeratedNotOnMapType,
                                                      DiagnosticSeverity.Error));

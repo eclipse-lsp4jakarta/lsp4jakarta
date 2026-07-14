@@ -703,14 +703,27 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic stringKeyOnMapField = d(19, 32, 48,
-                                           "`@MapKeyEnumerated` can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
                                            DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumKey");
 
         Diagnostic integerKeyOnMapField = d(24, 33, 53,
-                                            "`@MapKeyEnumerated` can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                            "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
                                             DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumKey");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, stringKeyOnMapField, integerKeyOnMapField);
+        Diagnostic rawMapKeyOnMapField = d(28, 16, 33,
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumKey");
+
+        Diagnostic wildcardKeyOnMapField = d(33, 27, 41,
+                                             "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                             DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumKey");
+
+        Diagnostic methodWithStringKeyMap = d(38, 31, 46,
+                                              "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumKey");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, stringKeyOnMapField, integerKeyOnMapField, rawMapKeyOnMapField,
+                              wildcardKeyOnMapField, methodWithStringKeyMap);
     }
 
     @Test
@@ -724,11 +737,11 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic listFieldAnnotated = d(19, 25, 30,
-                                          "`@MapKeyEnumerated` can only be applied to a field or property of type java.util.Map. It cannot be applied to a List, Set, or any other non-Map type.",
+                                          "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
 
         Diagnostic plainStringFieldAnnotated = d(23, 19, 23,
-                                                 "`@MapKeyEnumerated` can only be applied to a field or property of type java.util.Map. It cannot be applied to a List, Set, or any other non-Map type.",
+                                                 "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
                                                  DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, listFieldAnnotated, plainStringFieldAnnotated);

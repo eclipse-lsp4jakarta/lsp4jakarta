@@ -52,4 +52,5 @@ public class Constants {
     public static final String UTIL_DATE = "java.util.Date";
     public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
+    public static final String MAP_INTERFACE_FQDN = "java.util.Map";
 }

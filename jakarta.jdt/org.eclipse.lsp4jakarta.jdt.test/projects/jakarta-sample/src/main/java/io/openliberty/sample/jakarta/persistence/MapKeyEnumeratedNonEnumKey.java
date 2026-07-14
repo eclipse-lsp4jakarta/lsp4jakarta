@@ -23,6 +23,22 @@ public class MapKeyEnumeratedNonEnumKey {
     @ElementCollection
     @MapKeyEnumerated(EnumType.ORDINAL)
     private Map<Integer, String> priorityDescriptions;
+    
+    @ElementCollection
+    @MapKeyEnumerated(EnumType.STRING)
+    private Map roleDescriptions2;
+    
+    // Invalid: wildcard key — cannot guarantee it is an enum
+    @ElementCollection
+    @MapKeyEnumerated(EnumType.STRING)
+    private Map<?, String> wildcardKeyMap;
+    
+    // Invalid: method returns Map with non-enum key
+    @ElementCollection
+    @MapKeyEnumerated(EnumType.STRING)
+    public Map<String, String> getStringKeyMap() {
+        return this.roleDescriptions;
+    }
 
     public Long getId() { return id; }
 
