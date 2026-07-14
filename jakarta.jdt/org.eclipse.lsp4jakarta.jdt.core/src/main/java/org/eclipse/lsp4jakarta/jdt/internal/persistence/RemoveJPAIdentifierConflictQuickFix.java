@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.lsp4j.CodeAction;
@@ -60,9 +61,9 @@ public class RemoveJPAIdentifierConflictQuickFix extends RemoveAnnotationConflic
             // Collect annotation simple names actually present on this declaration
             List<String> presentSimpleNames = new ArrayList<>();
             for (Object modifier : ((BodyDeclaration) declaringNode).modifiers()) {
-                if (modifier instanceof org.eclipse.jdt.core.dom.Annotation) {
-                    org.eclipse.jdt.core.dom.Annotation ann = (org.eclipse.jdt.core.dom.Annotation) modifier;
-                    presentSimpleNames.add(ann.getTypeName().getFullyQualifiedName());
+                if (modifier instanceof Annotation) {
+                    Annotation annotation = (Annotation) modifier;
+                    presentSimpleNames.add(annotation.getTypeName().getFullyQualifiedName());
                 }
             }
 
