@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse LSP4Jakarta JDT Test Plugin (Incubation)
 Bundle-Vendor: Eclipse LSP4Jakarta
 Bundle-SymbolicName: org.eclipse.lsp4jakarta.jdt.test
-Bundle-Version: 0.2.6.qualifier
+Bundle-Version: 0.2.7.qualifier
 Automatic-Module-Name: org.eclipse.lsp4jakarta.jdt.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: org.junit,
@@ -18,9 +18,7 @@ Require-Bundle: org.junit,
  org.eclipse.m2e.core,
  org.eclipse.m2e.maven.runtime,
  org.eclipse.jdt.ls.core;resolution:=optional,
- org.eclipse.jdt.launching,
- org.eclipse.lsp4j.jsonrpc;bundle-version="[0.23.0,1.0.0)",
- org.eclipse.lsp4j;bundle-version="[0.23.0,1.0.0)"
+ org.eclipse.jdt.launching
 Bundle-ClassPath: .
 Import-Package: com.google.gson,
  org.apache.commons.io
