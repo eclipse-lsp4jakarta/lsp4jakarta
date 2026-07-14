@@ -737,12 +737,12 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // Diagnostic on @EmbeddedId field (compositeId)
         Diagnostic mixedEmbeddedIdDiagnostic = d(13, 25, 36,
-                                                 "@EmbeddedId cannot be combined with @Id in the same entity. Remove @EmbeddedId annotation.",
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         // Diagnostic on @Id field (id)
         Diagnostic mixedIdDiagnostic = d(10, 17, 19,
-                                         "@Id cannot be combined with @EmbeddedId in the same entity. Remove @Id annotation.",
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
                                          DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedEmbeddedIdDiagnostic, mixedIdDiagnostic);
@@ -809,12 +809,12 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         // Diagnostic on @Id getter (getId)
         Diagnostic mixedIdDiagnostic = d(16, 16, 21,
-                                         "@Id cannot be combined with @EmbeddedId in the same entity. Remove @Id annotation.",
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
                                          DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         // Diagnostic on @EmbeddedId getter (getCompositeId)
         Diagnostic mixedEmbeddedIdDiagnostic = d(21, 24, 38,
-                                                 "@EmbeddedId cannot be combined with @Id in the same entity. Remove @EmbeddedId annotation.",
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedIdDiagnostic, mixedEmbeddedIdDiagnostic);
