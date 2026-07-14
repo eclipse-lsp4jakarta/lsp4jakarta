@@ -347,20 +347,14 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
 
         // Priority is valid only for elements that are either classes or method parameters.
         if (element instanceof IType || element instanceof ILocalVariable) {
-            for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-                if ("value".equals(pair.getMemberName()) && pair.getValue() instanceof Integer) {
-                    int priority = (Integer) pair.getValue();
-                    if (priority < 0) {
-                        Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
-                        String diagnosticMessage = Messages.getMessage(
-                                                                       "PriorityShouldBeNonNegative");
-                        diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
-                                                                 annotationRange,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 ErrorCode.PriorityShouldBeNonNegative,
-                                                                 DiagnosticSeverity.Warning));
-                    }
-                }
+            if (DiagnosticUtils.isNegativePriorityValue(annotation)) {
+                Range annotationRange = PositionUtils.toNameRange(annotation, context.getUtils());
+                String diagnosticMessage = Messages.getMessage("PriorityShouldBeNonNegative");
+                diagnostics.add(context.createDiagnostic(uri, diagnosticMessage,
+                                                         annotationRange,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.PriorityShouldBeNonNegative,
+                                                         DiagnosticSeverity.Warning));
             }
         }
     }

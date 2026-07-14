@@ -14,7 +14,9 @@
 package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,11 +49,16 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static org.eclipse.lsp4jakarta.jdt.internal.interceptor.Constants.PRIORITY_FQ_NAME;
 
 /**
  * Interceptor diagnostic participant that manages the use of @Interceptor annotation.
  */
 public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(InterceptorDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -87,11 +94,25 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorNoArgsConstructorMissing,
                                                                  DiagnosticSeverity.Error));
                     }
+                    // Check for negative priority value
+                    checkNegativePriority(type, unit, uri, diagnostics, context);
                 }
+                // Map to track methods by their interceptor annotation type for duplicate detection
+                Map<String, List<IMethod>> methodsByAnnotation = new HashMap<>();
+
                 for (IMethod method : type.getMethods()) {
                     // Validate interceptor method modifiers
                     validateInterceptorMethodModifiers(context, uri, diagnostics, type, method);
+
+                    // Collect methods by annotation type for duplicate detection
+                    List<String> interceptorAnnotations = getInterceptorMethodAnnotations(type, method);
+                    for (String annotationFqn : interceptorAnnotations) {
+                        methodsByAnnotation.computeIfAbsent(annotationFqn, k -> new ArrayList<>()).add(method);
+                    }
                 }
+
+                // Validate that only one method per interceptor annotation type exists
+                validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -273,6 +294,42 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
+     * Validates that only one method per interceptor annotation type exists in the class.
+     * According to Jakarta Interceptors specification, up to one interceptor method of each
+     * interceptor method type may be defined in the same class.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param methodsByAnnotation map of annotation FQN to list of methods with that annotation
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateUniqueInterceptorMethods(JavaDiagnosticsContext context, String uri,
+                                                  List<Diagnostic> diagnostics,
+                                                  Map<String, List<IMethod>> methodsByAnnotation) throws JavaModelException {
+        // Check for duplicates and create diagnostics for all occurrences after the first
+        for (Map.Entry<String, List<IMethod>> entry : methodsByAnnotation.entrySet()) {
+            List<IMethod> methods = entry.getValue();
+            if (methods.size() > 1) {
+                String annotationFqn = entry.getKey();
+                String annotationSimpleName = DiagnosticUtils.getSimpleName(annotationFqn);
+
+                // Report diagnostic for all duplicate methods (skip the first one)
+                for (int i = 1; i < methods.size(); i++) {
+                    IMethod method = methods.get(i);
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    String message = Messages.getMessage("InvalidMultipleInterceptorMethodsOfSameType",
+                                                         "@" + annotationSimpleName);
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidMultipleInterceptorMethodsOfSameType,
+                                                             DiagnosticSeverity.Error));
+                }
+            }
+        }
+    }
+
+    /**
      * Converts a list of fully qualified annotation names to simple names.
      *
      * @param annotations the list of FQ annotation names
@@ -281,5 +338,45 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      */
     private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
         return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Checks if an interceptor class has a @Priority annotation with a negative value.
+     * According to Jakarta Interceptors 2.0 specification, negative priority values are
+     * reserved for future use and should not be used.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkNegativePriority(IType type, ICompilationUnit unit, String uri,
+                                       List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
+        IAnnotation priorityAnnotation = null;
+        for (IAnnotation annotation : type.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, PRIORITY_FQ_NAME)) {
+                priorityAnnotation = annotation;
+                break;
+            }
+        }
+
+        if (priorityAnnotation != null) {
+            try {
+                if (DiagnosticUtils.isNegativePriorityValue(priorityAnnotation)) {
+                    Range range = PositionUtils.toNameRange(priorityAnnotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidInterceptorNegativePriority"),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidInterceptorNegativePriority,
+                                                             DiagnosticSeverity.Error));
+                }
+            } catch (Exception e) {
+                // If we can't parse the priority value, skip this check and log a warning
+                LOGGER.log(Level.WARNING, "Unable to parse the priority value", e);
+            }
+        }
     }
 }
