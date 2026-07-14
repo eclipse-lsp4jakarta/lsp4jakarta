@@ -727,4 +727,65 @@ public class InterceptorTest extends BaseJakartaTest {
         // Test that valid interceptor with @Monitored binding does NOT trigger diagnostic
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testFinalClassAndMethodWithClassLevelInterceptorBinding() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidInterceptorModifiersOnClassMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 5: public final class InvalidInterceptorModifiersOnClassMethod {
+        Diagnostic finalClassDiagnostic = d(5, 19, 59,
+                                            "A component class that declares or inherits a class-level interceptor binding must not be declared final.",
+                                            DiagnosticSeverity.Error, "jakarta-interceptor",
+                                            "InvalidFinalInterceptorBindingClass");
+
+        // Line 7: \tpublic final void processPayment() { (non-static, non-private final - triggers diagnostic)
+        // Lines 11 and 14 (private final / static final) do NOT trigger diagnostics
+        Diagnostic finalMethodDiagnostic = d(7, 19, 33,
+                                             "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'processPayment'.",
+                                             DiagnosticSeverity.Error, "jakarta-interceptor",
+                                             "InvalidMethodOnInterceptorBindingClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, finalClassDiagnostic, finalMethodDiagnostic);
+    }
+
+    @Test
+    public void testFinalClassWithInterceptorBindingAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InterceptorBindingClassModifiers.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 28: final class InvalidFinalInterceptorBindingClass {
+        Diagnostic finalClassDiagnostic = d(28, 12, 47,
+                                            "A component class that declares or inherits a class-level interceptor binding must not be declared final.",
+                                            DiagnosticSeverity.Error, "jakarta-interceptor",
+                                            "InvalidFinalInterceptorBindingClass");
+
+        // Line 43: public final Object intercept(...) - non-static, non-private final method
+        Diagnostic finalInterceptDiagnostic = d(42, 24, 33,
+                                                "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'intercept'.",
+                                                DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                "InvalidMethodOnInterceptorBindingClass");
+
+        // Line 48: protected final void helper() - non-static, non-private final method
+        // private final (line 52) and static final (line 56) do NOT trigger diagnostics
+        Diagnostic finalHelperDiagnostic = d(47, 25, 31,
+                                             "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'helper'.",
+                                             DiagnosticSeverity.Error, "jakarta-interceptor",
+                                             "InvalidMethodOnInterceptorBindingClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              finalClassDiagnostic, finalInterceptDiagnostic, finalHelperDiagnostic);
+    }
 }
