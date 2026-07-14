@@ -424,7 +424,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                      DiagnosticSeverity.Warning));
         }
     }
-    
+
     /**
      * Checks constraints imposed by the Jakarta Interceptors 2.0 specification on a component
      * class that declares or inherits a class-level interceptor binding:
@@ -484,7 +484,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         return Stream.of(type.getAnnotations()).anyMatch(annotation -> {
             try {
                 return DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.INTERCEPTORS_FQ_NAME)
-                       || ManagedBean.hasMetaAnnotationWithCorrectContext(annotation, type, Constants.INTERCEPTOR_BINDING_FQ_NAME);
+                       || ManagedBean.hasMetaAnnotation(annotation, type, Constants.INTERCEPTOR_BINDING_FQ_NAME);
             } catch (JavaModelException e) {
                 LOGGER.log(Level.WARNING, "Unable to check class-level interceptor binding annotation", e);
                 return false;
