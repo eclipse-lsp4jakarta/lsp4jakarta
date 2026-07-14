@@ -44,12 +44,12 @@ public class JakartaFacesTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // expected: diagnostic on class name (line 5, col 13..35)
-        Diagnostic d = d(5, 13, 35,
-                         "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
-                         DiagnosticSeverity.Error, "jakarta-faces",
-                         "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
+        Diagnostic diagnostic = d(5, 13, 35,
+                                  "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
+                                  DiagnosticSeverity.Error, "jakarta-faces",
+                                  "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
     }
 
     @Test

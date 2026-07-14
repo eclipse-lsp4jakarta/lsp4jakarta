@@ -35,7 +35,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 /**
  * {@code @FacesValidator} annotation diagnostic participant.
  */
-public class FacesValidatorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+public class FacesDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /**
      * {@inheritDoc}
@@ -51,8 +51,7 @@ public class FacesValidatorDiagnosticsParticipant implements IJavaDiagnosticsPar
             return diagnostics;
         }
 
-        IType[] alltypes = unit.getAllTypes();
-        for (IType type : alltypes) {
+        for (IType type : unit.getAllTypes()) {
             IAnnotation[] allAnnotations = type.getAnnotations();
             boolean isFacesValidatorAnnotated = false;
 

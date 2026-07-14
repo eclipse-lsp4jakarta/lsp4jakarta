@@ -463,7 +463,7 @@
    
    <!-- Faces -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
-      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.faces.FacesValidatorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.faces.FacesDiagnosticsParticipant" />
    </extension>
 
    <!-- Security -->
