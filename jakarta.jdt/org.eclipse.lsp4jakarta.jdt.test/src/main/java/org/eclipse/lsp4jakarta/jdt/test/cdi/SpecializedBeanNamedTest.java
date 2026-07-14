@@ -64,7 +64,7 @@ public class SpecializedBeanNamedTest extends BaseJakartaTest {
     private static String msg(String className) {
         return "Specialized bean '" + className + "' must not declare an explicit bean name using @Named. The name is inherited from the bean it specializes.";
     }
-    
+
     @Test
     public void specializedBeanWithNamedAnnotation() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
