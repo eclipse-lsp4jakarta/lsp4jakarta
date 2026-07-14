@@ -30,12 +30,12 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflict
  *
  * Only offers removal of annotations that are actually present on the covered node.
  */
-public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
+public class RemoveJPAIdentifierConflictQuickFix extends RemoveAnnotationConflictQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveNamedJPAAnnotationQuickFix() {
+    public RemoveJPAIdentifierConflictQuickFix() {
         super(false, Constants.EMBEDDEDID, Constants.ID);
     }
 
@@ -84,7 +84,7 @@ public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQu
      */
     @Override
     public String getParticipantId() {
-        return RemoveNamedJPAAnnotationQuickFix.class.getName();
+        return RemoveJPAIdentifierConflictQuickFix.class.getName();
     }
 
     /**
@@ -92,6 +92,6 @@ public class RemoveNamedJPAAnnotationQuickFix extends RemoveAnnotationConflictQu
      */
     @Override
     protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.PersistenceRemoveNamedJPAAnnotation;
+        return JakartaCodeActionId.PersistenceRemoveJPAIdentifierConflict;
     }
 }
