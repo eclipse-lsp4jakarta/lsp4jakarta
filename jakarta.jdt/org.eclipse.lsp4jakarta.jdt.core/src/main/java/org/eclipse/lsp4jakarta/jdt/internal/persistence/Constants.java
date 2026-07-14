@@ -51,4 +51,7 @@ public class Constants {
     public static final String UTIL_DATE = "java.util.Date";
     public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
+    public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
+    public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
+    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "EXTENDED";
 }
