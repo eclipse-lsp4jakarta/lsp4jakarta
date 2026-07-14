@@ -388,9 +388,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     /**
      * Checks if an interceptor class has at least one interceptor binding annotation.
      * According to Jakarta Interceptors 2.0 specification, an interceptor declared using
-     *
-     * @Interceptor must specify at least one interceptor binding annotation to enable
-     *              the container to match it with target components.
+     * @Interceptor must specify at least one interceptor binding annotation to enable the container to match it with target components.
      *
      * @param type the type to check
      * @param unit the compilation unit
@@ -406,8 +404,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IAnnotation[] annotations = type.getAnnotations();
         for (IAnnotation annotation : annotations) {
             // Check if this annotation is an interceptor binding
-            if (ManagedBean.hasMetaAnnotationWithCorrectContext(annotation, type,
-                                                                Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
+            if (ManagedBean.hasMetaAnnotation(annotation, type,
+                                              Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
                 hasInterceptorBinding = true;
                 break;
             }
