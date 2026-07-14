@@ -366,8 +366,7 @@ public class ManagedBean {
 
     /**
      * Checks if an annotation has a specific meta-annotation, using the annotation type's
-     * compilation unit for proper resolution. This method correctly resolves the compilation
-     * unit of the annotation type itself.
+     * compilation unit for proper resolution.
      *
      * @param annotation the annotation to check
      * @param type the type context for resolving the annotation
@@ -375,8 +374,8 @@ public class ManagedBean {
      * @return true if the annotation has the specified meta-annotation, false otherwise
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    public static boolean hasMetaAnnotationWithCorrectContext(IAnnotation annotation, IType type,
-                                                              String metaAnnotationFQN) throws JavaModelException {
+    public static boolean hasMetaAnnotation(IAnnotation annotation, IType type,
+                                            String metaAnnotationFQN) throws JavaModelException {
         IType annotationType = getChildITypeByName(type, annotation.getElementName());
         if (annotationType == null) {
             return false;
