@@ -37,79 +37,173 @@ import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
 /**
- * Tests for session beans annotated with @Interceptor or @Decorator
+ * Tests for session beans annotated with @Interceptor or @Decorator.
+ * Each test method targets a single source file under the
+ * ejb/interceptordecorator sub-package.
  */
 public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
+    // -----------------------------------------------------------------------
+    // @Stateless + @Interceptor
+    // -----------------------------------------------------------------------
+
     @Test
-    public void testSessionBeanWithInterceptorOrDecorator() throws Exception {
-        String uri = getJavaFileUri();
+    public void testStatelessWithInterceptor() throws Exception {
+        String uri = getFileUri("InvalidStatelessWithInterceptor.java");
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        // @Stateless with @Interceptor
-        Diagnostic statelessWithInterceptorDiagnostic = d(17, 6, 37,
-                                                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+        // class InvalidStatelessWithInterceptor { — row 8, cols 6–37
+        Diagnostic diagnostic = d(8, 6, 37,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        // @Stateless with @Decorator
-        Diagnostic statelessWithDecoratorDiagnostic = d(25, 6, 35,
-                                                        "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                        DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
 
-        // @Stateful with @Interceptor
-        Diagnostic statefulWithInterceptorDiagnostic = d(36, 6, 36,
-                                                         "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
-
-        // @Stateful with @Decorator
-        Diagnostic statefulWithDecoratorDiagnostic = d(44, 6, 34,
-                                                       "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                       DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
-
-        // @Singleton with @Interceptor
-        Diagnostic singletonWithInterceptorDiagnostic = d(55, 6, 37,
-                                                          "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
-
-        // @Singleton with @Decorator
-        Diagnostic singletonWithDecoratorDiagnostic = d(63, 6, 35,
-                                                        "Session beans must not be annotated with @Interceptor or @Decorator.",
-                                                        DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
-                              statelessWithInterceptorDiagnostic,
-                              statelessWithDecoratorDiagnostic,
-                              statefulWithInterceptorDiagnostic,
-                              statefulWithDecoratorDiagnostic,
-                              singletonWithInterceptorDiagnostic,
-                              singletonWithDecoratorDiagnostic);
-
-        // Test code actions for @Stateless with @Interceptor
-        JakartaJavaCodeActionParams statelessInterceptorParams = createCodeActionParams(uri, statelessWithInterceptorDiagnostic);
-        TextEdit removeInterceptorFromStatelessEdit = te(15, 10, 16, 12, "");
-        CodeAction removeInterceptorFromStatelessAction = ca(uri, "Remove @Interceptor", statelessWithInterceptorDiagnostic, removeInterceptorFromStatelessEdit);
-        TextEdit removeStatelessWithInterceptorEdit = te(14, 0, 16, 0, "");
-        CodeAction removeStatelessWithInterceptorAction = ca(uri, "Remove @Stateless", statelessWithInterceptorDiagnostic, removeStatelessWithInterceptorEdit);
-        assertJavaCodeAction(statelessInterceptorParams, IJDT_UTILS, removeInterceptorFromStatelessAction, removeStatelessWithInterceptorAction);
-
-        // Test code actions for @Stateless with @Decorator
-        JakartaJavaCodeActionParams statelessDecoratorParams = createCodeActionParams(uri, statelessWithDecoratorDiagnostic);
-        TextEdit removeStatelessWithDecoratorEdit = te(23, 0, 24, 0, "");
-        CodeAction removeStatelessWithDecoratorAction = ca(uri, "Remove @Stateless", statelessWithDecoratorDiagnostic, removeStatelessWithDecoratorEdit);
-        TextEdit removeDecoratorFromStatelessEdit = te(23, 10, 24, 10, "");
-        CodeAction removeDecoratorFromStatelessAction = ca(uri, "Remove @Decorator", statelessWithDecoratorDiagnostic, removeDecoratorFromStatelessEdit);
-        assertJavaCodeAction(statelessDecoratorParams, IJDT_UTILS, removeDecoratorFromStatelessAction, removeStatelessWithDecoratorAction);
-
-        // Test code actions for @Singleton with @Interceptor
-        JakartaJavaCodeActionParams singletonInterceptorParams = createCodeActionParams(uri, singletonWithInterceptorDiagnostic);
-        TextEdit removeInterceptorFromSingletonEdit = te(53, 10, 54, 12, "");
-        CodeAction removeInterceptorFromSingletonAction = ca(uri, "Remove @Interceptor", singletonWithInterceptorDiagnostic, removeInterceptorFromSingletonEdit);
-        TextEdit removeSingletonWithInterceptorEdit = te(53, 0, 54, 0, "");
-        CodeAction removeSingletonWithInterceptorAction = ca(uri, "Remove @Singleton", singletonWithInterceptorDiagnostic, removeSingletonWithInterceptorEdit);
-        assertJavaCodeAction(singletonInterceptorParams, IJDT_UTILS, removeInterceptorFromSingletonAction, removeSingletonWithInterceptorAction);
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Interceptor: from end of @Stateless (row 6, col 10) to end of @Interceptor (row 7, col 12)
+        TextEdit removeInterceptorEdit = te(6, 10, 7, 12, "");
+        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
+        // Remove @Stateless: from start of @Stateless (row 6) to start of @Interceptor (row 7)
+        TextEdit removeStatelessEdit = te(6, 0, 7, 0, "");
+        CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", diagnostic, removeStatelessEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeStatelessAction);
     }
+
+    // -----------------------------------------------------------------------
+    // @Stateless + @Decorator
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testStatelessWithDecorator() throws Exception {
+        String uri = getFileUri("InvalidStatelessWithDecorator.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        // class InvalidStatelessWithDecorator { — row 10, cols 6–35
+        Diagnostic diagnostic = d(10, 6, 35,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Stateless: from start of @Stateless (row 8) to start of @Decorator (row 9)
+        TextEdit removeStatelessEdit = te(8, 0, 9, 0, "");
+        CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", diagnostic, removeStatelessEdit);
+        // Remove @Decorator: from end of @Stateless (row 8, col 10) to end of @Decorator (row 9, col 10)
+        TextEdit removeDecoratorEdit = te(8, 10, 9, 10, "");
+        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", diagnostic, removeDecoratorEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeDecoratorAction, removeStatelessAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateful + @Interceptor
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testStatefulWithInterceptor() throws Exception {
+        String uri = getFileUri("InvalidStatefulWithInterceptor.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        // class InvalidStatefulWithInterceptor { — row 8, cols 6–36
+        Diagnostic diagnostic = d(8, 6, 36,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Interceptor: from end of @Stateful (row 6, col 9) to end of @Interceptor (row 7, col 12)
+        TextEdit removeInterceptorEdit = te(6, 9, 7, 12, "");
+        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
+        // Remove @Stateful: from start of @Stateful (row 6) to start of @Interceptor (row 7)
+        TextEdit removeStatefulEdit = te(6, 0, 7, 0, "");
+        CodeAction removeStatefulAction = ca(uri, "Remove @Stateful", diagnostic, removeStatefulEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeStatefulAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateful + @Decorator
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testStatefulWithDecorator() throws Exception {
+        String uri = getFileUri("InvalidStatefulWithDecorator.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        // class InvalidStatefulWithDecorator { — row 10, cols 6–34
+        Diagnostic diagnostic = d(10, 6, 34,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Stateful: from start of @Stateful (row 8) to start of @Decorator (row 9)
+        TextEdit removeStatefulEdit = te(8, 0, 9, 0, "");
+        CodeAction removeStatefulAction = ca(uri, "Remove @Stateful", diagnostic, removeStatefulEdit);
+        // Remove @Decorator: from end of @Stateful (row 8, col 9) to end of @Decorator (row 9, col 10)
+        TextEdit removeDecoratorEdit = te(8, 9, 9, 10, "");
+        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", diagnostic, removeDecoratorEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeDecoratorAction, removeStatefulAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton + @Interceptor
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testSingletonWithInterceptor() throws Exception {
+        String uri = getFileUri("InvalidSingletonWithInterceptor.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        // class InvalidSingletonWithInterceptor { — row 8, cols 6–37
+        Diagnostic diagnostic = d(8, 6, 37,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Interceptor: from end of @Singleton (row 6, col 10) to end of @Interceptor (row 7, col 12)
+        TextEdit removeInterceptorEdit = te(6, 10, 7, 12, "");
+        CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
+        // Remove @Singleton: from start of @Singleton (row 6) to start of @Interceptor (row 7)
+        TextEdit removeSingletonEdit = te(6, 0, 7, 0, "");
+        CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", diagnostic, removeSingletonEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeSingletonAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton + @Decorator
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testSingletonWithDecorator() throws Exception {
+        String uri = getFileUri("InvalidSingletonWithDecorator.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        // class InvalidSingletonWithDecorator { — row 10, cols 6–35
+        Diagnostic diagnostic = d(10, 6, 35,
+                                  "Session beans must not be annotated with @Interceptor or @Decorator.",
+                                  DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
+        // Remove @Singleton: from start of @Singleton (row 8) to start of @Decorator (row 9)
+        TextEdit removeSingletonEdit = te(8, 0, 9, 0, "");
+        CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", diagnostic, removeSingletonEdit);
+        // Remove @Decorator: from end of @Singleton (row 8, col 10) to end of @Decorator (row 9, col 10)
+        TextEdit removeDecoratorEdit = te(8, 10, 9, 10, "");
+        CodeAction removeDecoratorAction = ca(uri, "Remove @Decorator", diagnostic, removeDecoratorEdit);
+        assertJavaCodeAction(params, IJDT_UTILS, removeDecoratorAction, removeSingletonAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
 
     private JakartaJavaDiagnosticsParams createDiagnosticsParams(String uri) {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -117,9 +211,10 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         return diagnosticsParams;
     }
 
-    private String getJavaFileUri() throws Exception {
+    private String getFileUri(String fileName) throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
-        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/ejb/SessionBeanInterceptorDecorator.java"));
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/ejb/interceptordecorator/" + fileName));
         return javaFile.getLocation().toFile().toURI().toString();
     }
 }
