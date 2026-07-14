@@ -40,7 +40,6 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidVersionFieldOrPropertyType,
     InvalidIdType;
 
-
     /**
      * {@inheritDoc}
      */
