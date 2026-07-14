@@ -9,8 +9,8 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <liberty.var.artifactId>${project.artifactId}</liberty.var.artifactId>
@@ -75,7 +75,7 @@
 		<dependency>
 			<groupId>jdk</groupId>
 			<artifactId>jrt-fs</artifactId>
-			<version>17</version>
+			<version>21</version>
 			<scope>system</scope>
 			<systemPath>${java.home}/lib/jrt-fs.jar</systemPath>
 		</dependency>
