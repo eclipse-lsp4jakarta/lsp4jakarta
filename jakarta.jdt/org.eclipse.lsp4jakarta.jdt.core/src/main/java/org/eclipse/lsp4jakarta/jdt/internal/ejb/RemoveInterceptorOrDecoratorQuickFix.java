@@ -17,7 +17,6 @@ import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
@@ -60,20 +59,17 @@ public class RemoveInterceptorOrDecoratorQuickFix extends RemoveAnnotationConfli
     protected void createCodeActions(Diagnostic diagnostic, JavaCodeActionContext context, IBinding parentType,
                                      List<CodeAction> codeActions) throws CoreException {
         // Only create code actions for the @Interceptor or @Decorator annotations that are actually present
-        if (parentType instanceof ITypeBinding) {
-            ITypeBinding typeBinding = (ITypeBinding) parentType;
-            List<String> presentAnnotations = new ArrayList<>();
+        List<String> presentAnnotations = new ArrayList<>();
 
-            for (String annotation : getAnnotations()) {
-                if (DiagnosticUtils.hasAnnotation(typeBinding, annotation)) {
-                    presentAnnotations.add(annotation);
-                }
+        for (String annotation : getAnnotations()) {
+            if (DiagnosticUtils.hasAnnotation(parentType, annotation)) {
+                presentAnnotations.add(annotation);
             }
+        }
 
-            // Create a code action for each present annotation
-            for (String annotation : presentAnnotations) {
-                createCodeAction(diagnostic, context, parentType, codeActions, annotation);
-            }
+        // Create a code action for each present annotation
+        for (String annotation : presentAnnotations) {
+            createCodeAction(diagnostic, context, parentType, codeActions, annotation);
         }
     }
 }

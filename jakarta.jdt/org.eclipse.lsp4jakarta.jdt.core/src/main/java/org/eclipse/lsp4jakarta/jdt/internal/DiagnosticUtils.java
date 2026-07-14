@@ -24,6 +24,9 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IImportContainer;
@@ -507,14 +510,25 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Checks if the type has the specified annotation.
+     * Checks if the given binding (class, field, or method) has the specified annotation.
      *
-     * @param typeBinding The type binding
+     * @param binding The binding — may be an {@link ITypeBinding}, {@link IVariableBinding},
+     *            or {@link IMethodBinding}
      * @param annotationFQN The fully qualified annotation name
      * @return true if the annotation is present, false otherwise
      */
-    public static boolean hasAnnotation(ITypeBinding typeBinding, String annotationFQN) {
-        for (IAnnotationBinding annotation : typeBinding.getAnnotations()) {
+    public static boolean hasAnnotation(IBinding binding, String annotationFQN) {
+        IAnnotationBinding[] annotations;
+        if (binding instanceof ITypeBinding) {
+            annotations = ((ITypeBinding) binding).getAnnotations();
+        } else if (binding instanceof IVariableBinding) {
+            annotations = ((IVariableBinding) binding).getAnnotations();
+        } else if (binding instanceof IMethodBinding) {
+            annotations = ((IMethodBinding) binding).getAnnotations();
+        } else {
+            return false;
+        }
+        for (IAnnotationBinding annotation : annotations) {
             if (annotation.getAnnotationType().getQualifiedName().equals(annotationFQN)) {
                 return true;
             }
