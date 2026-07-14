@@ -20,7 +20,10 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
  */
 public enum ErrorCode implements IJavaErrorCode {
 
-    MissingPublicNoArgConstructor;
+    MissingPublicNoArgConstructor,
+    InvalidSessionSyncMethodFinal,
+    InvalidSessionSyncMethodStatic,
+    InvalidSessionSyncMethodNonVoid;
 
     @Override
     public String getCode() {

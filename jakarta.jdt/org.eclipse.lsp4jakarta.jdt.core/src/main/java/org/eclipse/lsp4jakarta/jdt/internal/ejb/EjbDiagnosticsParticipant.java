@@ -19,8 +19,12 @@ import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -77,8 +81,91 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              DiagnosticSeverity.Error));
                 }
             }
+
+            // Validate session synchronization methods (@AfterBegin, @BeforeCompletion, @AfterCompletion)
+            validateSessionSyncMethods(context, uri, unit, type, diagnostics);
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that session synchronization methods on a type comply with the EJB spec:
+     * must not be final, must not be static, and must return void.
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param unit the compilation unit
+     * @param type the type to inspect
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    private void validateSessionSyncMethods(JavaDiagnosticsContext context, String uri,
+                                            ICompilationUnit unit, IType type,
+                                            List<Diagnostic> diagnostics) throws JavaModelException {
+        for (IMethod method : type.getMethods()) {
+            List<String> matchedAnnotations = getSessionSyncAnnotations(unit, type, method);
+            if (matchedAnnotations.isEmpty()) {
+                continue;
+            }
+
+            String annotationNames = getSimpleAnnotationNames(matchedAnnotations);
+            int flags = method.getFlags();
+
+            if (Flags.isFinal(flags)) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidSessionSyncMethodFinal", annotationNames),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidSessionSyncMethodFinal,
+                                                         DiagnosticSeverity.Error));
+            }
+
+            if (Flags.isStatic(flags)) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidSessionSyncMethodStatic", annotationNames),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidSessionSyncMethodStatic,
+                                                         DiagnosticSeverity.Error));
+            }
+
+            if (!"V".equals(method.getReturnType())) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidSessionSyncMethodNonVoid", annotationNames),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidSessionSyncMethodNonVoid,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * Returns the list of session synchronization annotation FQ names present on
+     * the given method.
+     *
+     * @param unit the compilation unit
+     * @param type the declaring type
+     * @param method the method to check
+     * @return matched session sync annotation FQ names, never null
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    private List<String> getSessionSyncAnnotations(ICompilationUnit unit, IType type,
+                                                   IMethod method) throws JavaModelException {
+        String[] methodAnnotationNames = Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
+        return DiagnosticUtils.getMatchedJavaElementNames(type, methodAnnotationNames,
+                                                          Constants.SESSION_SYNC_ANNOTATIONS);
+    }
+
+    /**
+     * Converts a list of fully qualified annotation names to a comma-separated
+     * string of simple names prefixed with {@code @}.
+     *
+     * @param annotations the FQ annotation names
+     * @return display string, e.g. "@AfterBegin"
+     */
+    private String getSimpleAnnotationNames(List<String> annotations) {
+        return annotations.stream().map(fq -> "@" + DiagnosticUtils.getSimpleName(fq)).distinct().collect(java.util.stream.Collectors.joining(", "));
     }
 }
