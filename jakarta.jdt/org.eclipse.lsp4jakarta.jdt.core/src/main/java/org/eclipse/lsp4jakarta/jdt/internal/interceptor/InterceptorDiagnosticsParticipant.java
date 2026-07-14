@@ -388,7 +388,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     /**
      * Checks if an interceptor class has at least one interceptor binding annotation.
      * According to Jakarta Interceptors 2.0 specification, an interceptor declared using
-     * @Interceptor must specify at least one interceptor binding annotation to enable the container to match it with target components.
+     * interceptor annotation must specify at least one interceptor binding annotation to
+     * enable the container to match it with target components.
      *
      * @param type the type to check
      * @param unit the compilation unit
