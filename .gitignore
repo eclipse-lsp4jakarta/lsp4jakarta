@@ -7,7 +7,6 @@ build/
 .out/
 bin/
 .bin/
-.bob/
 target/
 .target/
 .bob/
