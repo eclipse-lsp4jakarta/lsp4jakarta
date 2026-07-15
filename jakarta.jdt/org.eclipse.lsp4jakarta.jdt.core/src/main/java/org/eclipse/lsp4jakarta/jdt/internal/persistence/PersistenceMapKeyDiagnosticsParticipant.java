@@ -16,6 +16,7 @@ import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.Signature;
@@ -401,8 +402,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         // Not a Map — @MapKeyEnumerated is invalid on List, Set, or plain fields.
         if (!isMap) {
-            Range range = (member instanceof IMethod) ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
-                                                                                                                                                    context.getUtils());
+        	Range range = PositionUtils.toNameRange(member, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage("MapKeyEnumeratedOnNonMapType"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -431,13 +431,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
         } catch (JavaModelException e) {
-            JakartaCorePlugin.logException("Error while checking map key type for @MapKeyEnumerated", e);
+        	LOGGER.log(Level.SEVERE,"Error while checking map key type for @MapKeyEnumerated",e);           
             return;
         }
 
         if (!mapKeyIsEnum) {
-            Range range = (member instanceof IMethod) ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
-                                                                                                                                                    context.getUtils());
+        	Range range = PositionUtils.toNameRange(member, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage("MapKeyEnumeratedOnNonEnumKey"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
