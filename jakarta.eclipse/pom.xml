@@ -128,46 +128,6 @@
                 <tycho.test.platformArgs>-XstartOnFirstThread</tycho.test.platformArgs>
             </properties>
         </profile>
-        <profile>
-            <id>source-feature</id>
-            <activation>
-                <file>
-                    <exists>feature.xml</exists>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.eclipse.tycho</groupId>
-                        <artifactId>tycho-source-plugin</artifactId>
-                        <version>${tycho.version}</version>
-                        <executions>
-                            <execution>
-                                <id>feature-source</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>feature-source</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.eclipse.tycho</groupId>
-                        <artifactId>tycho-p2-plugin</artifactId>
-                        <version>${tycho.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-p2-metadata</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>p2-metadata</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
     <modules>
         <module>org.eclipse.lsp4jakarta.lsp4e.core</module>

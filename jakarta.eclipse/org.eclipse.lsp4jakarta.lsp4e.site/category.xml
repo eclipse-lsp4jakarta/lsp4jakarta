@@ -3,7 +3,4 @@
    <feature url="features/org.eclipse.lsp4jakarta.lsp4e.feature_0.0.0.jar" id="org.eclipse.lsp4jakarta.lsp4e.feature" version="0.0.0">
     <category name="org.eclipse.lsp4jakarta.lsp4e"/>
    </feature>
-   <feature url="features/org.eclipse.lsp4jakarta.lsp4e.feature.source_0.0.0.jar" id="org.eclipse.lsp4jakarta.lsp4e.feature.source" version="0.0.0">
-    <category name="org.eclipse.lsp4jakarta.lsp4e Developer Resources"/>
-   </feature>
 </site>
