@@ -74,10 +74,10 @@ public class PersistenceAttributeConverterDiagnosticsParticipant implements IJav
             if (isConverterAnnotated && !implementsAttributeConverter) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
-                                                          Messages.getMessage("ConverterMustImplementAttributeConverter"),
-                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                          ErrorCode.ConverterMustImplementAttributeConverter,
-                                                          DiagnosticSeverity.Error));
+                                                        Messages.getMessage("ConverterMustImplementAttributeConverter"),
+                                                        range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                        ErrorCode.ConverterMustImplementAttributeConverter,
+                                                        DiagnosticSeverity.Error));
             }
         }
 
