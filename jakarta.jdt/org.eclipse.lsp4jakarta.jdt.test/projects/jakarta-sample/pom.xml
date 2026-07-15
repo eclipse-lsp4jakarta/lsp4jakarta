@@ -75,7 +75,7 @@
 		<dependency>
 			<groupId>jdk</groupId>
 			<artifactId>jrt-fs</artifactId>
-			<version>21</version>
+			<version>17</version>
 			<scope>system</scope>
 			<systemPath>${java.home}/lib/jrt-fs.jar</systemPath>
 		</dependency>
