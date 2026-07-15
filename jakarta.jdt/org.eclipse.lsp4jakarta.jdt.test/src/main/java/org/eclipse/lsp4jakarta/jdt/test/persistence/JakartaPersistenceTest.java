@@ -741,6 +741,21 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     }
 
     @Test
+    public void testInheritanceOnRootEntityExtendsMappedSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InheritanceOnRootEntityExtendsMappedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @Entity + @Inheritance extending @MappedSuperclass — @MappedSuperclass is not
+        // @Entity so no @Entity ancestor exists in the chain — no diagnostic expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
     public void testInheritanceOnNonRootEntityDirectParent() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(

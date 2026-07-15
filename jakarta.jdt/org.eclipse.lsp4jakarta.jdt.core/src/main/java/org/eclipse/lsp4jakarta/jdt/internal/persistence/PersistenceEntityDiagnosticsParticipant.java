@@ -84,7 +84,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             allAnnotations = type.getAnnotations();
 
             IAnnotation EntityAnnotation = null;
-            IAnnotation InheritanceAnnotation = null;
+            IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
                                                          Constants.ENTITY)) {
@@ -92,7 +92,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
                                                          Constants.INHERITANCE)) {
-                    InheritanceAnnotation = annotation;
+                    inheritanceAnnotation = annotation;
                 }
             }
 
@@ -202,7 +202,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
 
                 // Check @Inheritance is only on the root of the entity hierarchy
-                if (InheritanceAnnotation != null && hasEntityAncestor(type)) {
+                if (inheritanceAnnotation != null && hasEntitySupertype(type)) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InheritanceAnnotationOnNonRootEntity"),
@@ -210,7 +210,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              ErrorCode.InheritanceAnnotationOnNonRootEntity,
                                                              DiagnosticSeverity.Error));
                 }
-            } else if (InheritanceAnnotation != null) {
+            } else if (inheritanceAnnotation != null) {
                 // Check @Inheritance on a class that does not have @Entity
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
@@ -447,12 +447,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @return {@code true} if an {@code @Entity} ancestor was found
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
-    private boolean hasEntityAncestor(IType type) throws JavaModelException {
+    private boolean hasEntitySupertype(IType type) throws JavaModelException {
         ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
         IType superclass = hierarchy.getSuperclass(type);
 
         while (superclass != null
-               && !superclass.getFullyQualifiedName().equals(Constants.OBJECT)) {
+               && !Constants.OBJECT.equals(superclass.getFullyQualifiedName())) {
+
             try {
                 if (DiagnosticUtils.isMatchedAnnotation(
                                                         superclass.getCompilationUnit(),
