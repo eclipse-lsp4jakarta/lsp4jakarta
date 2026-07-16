@@ -290,6 +290,22 @@ public class DiagnosticUtils {
     }
 
     /**
+     * Returns matched Java element fully qualified names.
+     * Convenience overload that accepts an {@link IAnnotation} array directly,
+     * extracting element names internally via {@link IAnnotation#getElementName()}.
+     *
+     * @param type the type representing the class
+     * @param annotations the annotations whose element names will be matched
+     * @param javaElementFQNames given fully qualified name array
+     * @return matched Java element fully qualified names
+     */
+    public static List<String> getMatchedJavaElementNames(IType type, IAnnotation[] annotations,
+                                                          String[] javaElementFQNames) {
+        List<String> names = Stream.of(annotations).map(IAnnotation::getElementName).collect(Collectors.toList());
+        return getMatchedJavaElementNames(type, names, Arrays.asList(javaElementFQNames));
+    }
+
+    /**
      * Returns true if the given fully qualified name ends with the given name and
      * false otherwise
      *

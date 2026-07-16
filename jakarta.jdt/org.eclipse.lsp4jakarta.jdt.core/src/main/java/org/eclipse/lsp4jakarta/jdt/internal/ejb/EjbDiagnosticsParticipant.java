@@ -15,12 +15,10 @@ package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
-import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -64,9 +62,8 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                 continue;
             }
 
-            String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
             List<String> sessionBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                             typeAnnotations,
+                                                                                             type.getAnnotations(),
                                                                                              Constants.SESSION_BEAN_ANNOTATIONS);
 
             if (!sessionBeanAnnotations.isEmpty()) {
@@ -91,7 +88,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /**
      * Validates that session synchronization methods on a type comply with the EJB spec:
-     * must not be final, must not be static, and must return void.
+     * must not be final, must not be static, must return void, and must declare the correct parameters.
      *
      * @param context the diagnostics context
      * @param uri the file URI
@@ -138,6 +135,32 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                          ErrorCode.InvalidSessionSyncMethodNonVoid,
                                                          DiagnosticSeverity.Error));
             }
+
+            // Validate @AfterBegin/@BeforeCompletion: no parameters allowed
+            boolean isNoParamAnnotation = !DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                      method.getAnnotations(),
+                                                                                      Constants.SESSION_SYNC_NO_PARAM_ANNOTATIONS).isEmpty();
+
+            if (isNoParamAnnotation && method.getNumberOfParameters() > 0) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidSessionSyncMethodNoParamAnnotation", annotationNames),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidSessionSyncMethodNoParamAnnotation,
+                                                         DiagnosticSeverity.Error));
+            }
+
+            // Validate @AfterCompletion: must have exactly one boolean parameter
+            if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(),
+                                                    Constants.AFTER_COMPLETION_FQ_NAME)
+                && !isValidAfterCompletionParams(unit, type, method)) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidAfterCompletionMethodParams"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidAfterCompletionMethodParams,
+                                                         DiagnosticSeverity.Error));
+            }
         }
     }
 
@@ -153,9 +176,30 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
      */
     private List<String> getSessionSyncAnnotations(ICompilationUnit unit, IType type,
                                                    IMethod method) throws JavaModelException {
-        String[] methodAnnotationNames = Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
-        return DiagnosticUtils.getMatchedJavaElementNames(type, methodAnnotationNames,
+        return DiagnosticUtils.getMatchedJavaElementNames(type, method.getAnnotations(),
                                                           Constants.SESSION_SYNC_ANNOTATIONS);
+    }
+
+    /**
+     * Returns true if the given {@code @AfterCompletion} method has exactly one
+     * {@code boolean} (or {@code Boolean}) parameter, as required by the EJB spec.
+     *
+     * @param unit the compilation unit
+     * @param type the declaring type
+     * @param method the method to check
+     * @return true if the parameter signature is valid
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    private boolean isValidAfterCompletionParams(ICompilationUnit unit, IType type,
+                                                 IMethod method) throws JavaModelException {
+        String[] paramTypes = method.getParameterTypes();
+        if (paramTypes.length != 1) {
+            return false;
+        }
+        // JDT type signature: "Z" = boolean, "QBoolean;" = java.lang.Boolean
+        String param = paramTypes[0];
+        return "Z".equals(param)
+               || DiagnosticUtils.isMatchedJavaElement(type, DiagnosticUtils.getDataTypeName(param), "java.lang.Boolean");
     }
 
     /**

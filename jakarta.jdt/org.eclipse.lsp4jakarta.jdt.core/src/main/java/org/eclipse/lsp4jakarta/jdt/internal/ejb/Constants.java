@@ -41,4 +41,10 @@ public class Constants {
                                                               BEFORE_COMPLETION_FQ_NAME,
                                                               AFTER_COMPLETION_FQ_NAME
     };
+
+    /** Annotations whose methods must declare no parameters. */
+    public static final String[] SESSION_SYNC_NO_PARAM_ANNOTATIONS = {
+                                                                       AFTER_BEGIN_FQ_NAME,
+                                                                       BEFORE_COMPLETION_FQ_NAME
+    };
 }

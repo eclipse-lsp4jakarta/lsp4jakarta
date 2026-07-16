@@ -23,7 +23,9 @@ public enum ErrorCode implements IJavaErrorCode {
     MissingPublicNoArgConstructor,
     InvalidSessionSyncMethodFinal,
     InvalidSessionSyncMethodStatic,
-    InvalidSessionSyncMethodNonVoid;
+    InvalidSessionSyncMethodNonVoid,
+    InvalidSessionSyncMethodNoParamAnnotation,
+    InvalidAfterCompletionMethodParams;
 
     @Override
     public String getCode() {
