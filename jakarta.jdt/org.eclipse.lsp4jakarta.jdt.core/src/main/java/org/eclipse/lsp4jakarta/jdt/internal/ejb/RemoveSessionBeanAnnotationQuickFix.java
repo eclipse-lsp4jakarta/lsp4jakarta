@@ -12,8 +12,9 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -59,16 +60,8 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
     @Override
     protected void createCodeActions(Diagnostic diagnostic, JavaCodeActionContext context, IBinding parentType,
                                      List<CodeAction> codeActions) throws CoreException {
-        // Only create code actions for the session bean annotations that are actually present
-        List<String> presentAnnotations = new ArrayList<>();
-
-        for (String annotation : getAnnotations()) {
-            if (DiagnosticUtils.hasAnnotation(parentType, annotation)) {
-                presentAnnotations.add(annotation);
-            }
-        }
-
-        // Create a code action for each present session bean annotation
+        // Only create a code action for each session bean annotation that is actually present
+        List<String> presentAnnotations = Arrays.stream(getAnnotations()).filter(annotation -> DiagnosticUtils.hasAnnotation(parentType, annotation)).collect(Collectors.toList());
         for (String annotation : presentAnnotations) {
             createCodeAction(diagnostic, context, parentType, codeActions, annotation);
         }

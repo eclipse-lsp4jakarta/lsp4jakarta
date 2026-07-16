@@ -528,12 +528,7 @@ public class DiagnosticUtils {
         } else {
             return false;
         }
-        for (IAnnotationBinding annotation : annotations) {
-            if (annotation.getAnnotationType().getQualifiedName().equals(annotationFQN)) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(annotations).anyMatch(annotation -> annotation.getAnnotationType().getQualifiedName().equals(annotationFQN));
     }
 
     /**
