@@ -447,29 +447,34 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @return {@code true} if an {@code @Entity} ancestor was found
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
-    private boolean hasEntitySupertype(IType type) throws JavaModelException {
-        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-        IType superclass = hierarchy.getSuperclass(type);
+	private boolean hasEntitySupertype(IType type) throws JavaModelException {
 
-        while (superclass != null
-               && !Constants.OBJECT.equals(superclass.getFullyQualifiedName())) {
+		// Collect all supertypes using the utility
+		Set<IType> hierarchy = new HashSet<>();
+		TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
 
-            try {
-                if (DiagnosticUtils.isMatchedAnnotation(
-                                                        superclass.getCompilationUnit(),
-                                                        superclass.getAnnotations(),
-                                                        Constants.ENTITY)) {
-                    return true;
-                }
-            } catch (JavaModelException e) {
-                LOGGER.warning("Could not inspect annotations on superclass "
-                               + superclass.getFullyQualifiedName() + ": " + e.getMessage());
-            }
-            superclass = hierarchy.getSuperclass(superclass);
-        }
+		for (IType superType : hierarchy) {
+			// Skip the type itself
+			if (superType.equals(type)) {
+				continue;
+			}
 
-        return false;
-    }
+			if (Constants.OBJECT.equals(superType.getFullyQualifiedName())) {
+				break;
+			}
+
+			try {
+				if (DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(), superType.getAnnotations(),
+						Constants.ENTITY)) {
+					return true;
+				}
+			} catch (JavaModelException e) {
+				LOGGER.warning("Could not inspect annotations on superclass " + superType.getFullyQualifiedName() + ": "
+						+ e.getMessage());
+			}
+		}
+		return false;
+	}
 
     /**
      * Check if the given annotations contain @Id or @EmbeddedId
