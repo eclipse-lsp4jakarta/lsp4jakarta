@@ -40,12 +40,10 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * Persistence diagnostic participant that validates the use of
  * @TableGenerator, @TableGenerators, @SequenceGenerator, @SequenceGenerators,
  * @SecondaryTable, and @SecondaryTables annotations.
- *
  * <p>@TableGenerator, @TableGenerators, @SequenceGenerator, and @SequenceGenerators
  * may appear on TYPE, METHOD, or FIELD elements.
  *
  * @SecondaryTable and @SecondaryTables may only appear on TYPE elements.
- *
  *                 <p>Validates that:
  *                 <ul>
  *                 <li>@TableGenerator must specify a non-empty 'name' attribute</li>
