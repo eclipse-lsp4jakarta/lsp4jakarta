@@ -53,11 +53,11 @@ public class JakartaPersistenceAttributeConverterTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = d(6, 13, 47,
-                         "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
-                         DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
+        Diagnostic converterMissingInterface = d(6, 13, 47,
+                                                  "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, converterMissingInterface);
     }
 
     /**
@@ -75,11 +75,11 @@ public class JakartaPersistenceAttributeConverterTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = d(6, 22, 44,
-                         "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
-                         DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
+        Diagnostic abstractConverterMissingInterface = d(6, 22, 44,
+                                                         "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
+                                                         DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, abstractConverterMissingInterface);
     }
 
     /**
