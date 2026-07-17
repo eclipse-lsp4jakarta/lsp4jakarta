@@ -29,6 +29,13 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
 
+    public static final String TABLEGENERATOR = "jakarta.persistence.TableGenerator";
+    public static final String TABLEGENERATORS = "jakarta.persistence.TableGenerators";
+    public static final String SEQUENCEGENERATOR = "jakarta.persistence.SequenceGenerator";
+    public static final String SEQUENCEGENERATORS = "jakarta.persistence.SequenceGenerators";
+    public static final String SECONDARYTABLE = "jakarta.persistence.SecondaryTable";
+    public static final String SECONDARYTABLES = "jakarta.persistence.SecondaryTables";
+
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
     public static final String OBJECT = "java.lang.Object";
