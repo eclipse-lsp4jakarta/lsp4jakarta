@@ -267,6 +267,8 @@
        <codeAction kind="quickfix"
                    targetDiagnostic="jakarta-persistence#InvalidValueInTemporalAnnotation"
                    class="org.eclipse.lsp4jakarta.jdt.internal.persistence.ChangeTemporalValueQuickFix" />
+
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceGeneratorDiagnosticsParticipant" />
    </extension>
    
    <!-- WebSocket -->
