@@ -83,18 +83,6 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              ErrorCode.InvalidSessionBeanWithInterceptorOrDecorator,
                                                              DiagnosticSeverity.Error));
                 }
-
-                // Check for missing public no-arg constructor
-                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
-
-                if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
-                    String message = Messages.getMessage("SessionBeanNoArgConstructor");
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.MissingPublicNoArgConstructor,
-                                                             DiagnosticSeverity.Error));
-                }
                 validateSessionBeanConstructor(type, context, uri, diagnostics);
                 validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
             }
