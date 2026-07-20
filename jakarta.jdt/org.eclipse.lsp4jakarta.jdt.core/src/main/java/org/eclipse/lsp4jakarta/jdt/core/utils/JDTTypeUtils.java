@@ -412,4 +412,23 @@ public class JDTTypeUtils {
         }
         return null;
     }
+
+    /**
+     * Returns the resolved fully qualified type name of a field or method member.
+     * For a field, returns the declared field type name.
+     * For a method, returns the method's return type name.
+     * Returns null if the member type cannot be resolved or the member is neither
+     * a field nor a method.
+     *
+     * @param member an {@link IField} or {@link IMethod}
+     * @return fully qualified type name, or null
+     */
+    public static String getResolvedMemberTypeName(IMember member) {
+        if (member instanceof IField) {
+            return getResolvedTypeName((IField) member);
+        } else if (member instanceof IMethod) {
+            return getResolvedResultTypeName((IMethod) member);
+        }
+        return null;
+    }
 }
