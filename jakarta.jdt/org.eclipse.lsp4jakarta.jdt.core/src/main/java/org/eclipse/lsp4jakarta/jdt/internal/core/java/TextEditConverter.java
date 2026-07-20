@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.stream.Collectors;
+import org.eclipse.lsp4j.SnippetTextEdit;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -26,6 +27,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.text.edits.CopySourceEdit;
 import org.eclipse.text.edits.CopyTargetEdit;
@@ -78,9 +80,14 @@ public class TextEditConverter extends TextEditVisitor {
     }
 
     public TextDocumentEdit convertToTextDocumentEdit(int version) {
-        VersionedTextDocumentIdentifier identifier = new VersionedTextDocumentIdentifier(version);
+        //Modified for jdtls API upgrade 1.0.0 version
+        VersionedTextDocumentIdentifier identifier = new VersionedTextDocumentIdentifier();
         identifier.setUri(uri);
-        return new TextDocumentEdit(identifier, this.convert());
+        identifier.setVersion(version);
+        TextDocumentEdit documentEdit = new TextDocumentEdit();
+        documentEdit.setTextDocument(identifier);
+        documentEdit.setEdits(this.convert().stream().map(Either::<org.eclipse.lsp4j.TextEdit, SnippetTextEdit> forLeft).collect(Collectors.toList()));
+        return documentEdit;
     }
 
     /*
