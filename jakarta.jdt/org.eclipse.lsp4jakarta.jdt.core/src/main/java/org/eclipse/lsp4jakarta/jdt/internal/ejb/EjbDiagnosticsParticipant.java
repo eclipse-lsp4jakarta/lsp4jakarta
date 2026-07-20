@@ -70,16 +70,8 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                                                              Constants.SESSION_BEAN_ANNOTATIONS);
 
             if (!sessionBeanAnnotations.isEmpty()) {
-                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
-
-                if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
-                    String message = Messages.getMessage("SessionBeanNoArgConstructor");
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.MissingPublicNoArgConstructor,
-                                                             DiagnosticSeverity.Error));
-                }
+                validateSessionBeanConstructor(type, context, uri, diagnostics);
+                validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
             }
 
             // Validate session synchronization methods (@AfterBegin, @BeforeCompletion, @AfterCompletion)
@@ -142,6 +134,29 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
     }
 
     /**
+     * Validates that the session bean has a valid public no-arg constructor.
+     *
+     * @param type the type to validate
+     * @param context the diagnostics context
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @throws CoreException if an error occurs
+     */
+    private void validateSessionBeanConstructor(IType type, JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics) throws CoreException {
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+
+        if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
+            String message = Messages.getMessage("SessionBeanNoArgConstructor");
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.MissingPublicNoArgConstructor,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
      * Returns the list of session synchronization annotation FQ names present on
      * the given method.
      *
@@ -167,5 +182,30 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
      */
     private String getSimpleAnnotationNames(List<String> annotations) {
         return annotations.stream().map(fq -> "@" + DiagnosticUtils.getSimpleName(fq)).distinct().collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    /**
+     * Validates that the session bean does not define or override the finalize() method.
+     *
+     * @param type the type to validate
+     * @param context the diagnostics context
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @throws CoreException if an error occurs
+     */
+    private void validateSessionBeanFinalizeMethod(IType type, JavaDiagnosticsContext context, String uri,
+                                                   List<Diagnostic> diagnostics) throws CoreException {
+        IMethod[] methods = type.getMethods();
+        for (IMethod method : methods) {
+            if (Constants.FINALIZE_METHOD_NAME.equals(method.getElementName())
+                && method.getNumberOfParameters() == 0) {
+                String message = Messages.getMessage("SessionBeanFinalizeMethod");
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.SessionBeanFinalizeMethod,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
     }
 }
