@@ -147,7 +147,7 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
      * Validates that the given annotation declares a non-empty {@code name} attribute.
      * <p>
      * A diagnostic is added to {@code diagnostics} if the {@code name} attribute is absent,
-     * {@code null}, or an empty string.
+     * {@code null}, an empty string, or contains only whitespace.
      * Uses {@link DiagnosticUtils#getAnnotationMemberValue} to retrieve the attribute value.
      *
      * @param annotation the annotation whose {@code name} attribute is checked
@@ -162,7 +162,7 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
                                        String uri, List<Diagnostic> diagnostics,
                                        String messageKey, ErrorCode errorCode) throws JavaModelException {
         String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
-        if (name == null || name.isEmpty()) {
+        if (name == null || name.trim().isEmpty()) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
