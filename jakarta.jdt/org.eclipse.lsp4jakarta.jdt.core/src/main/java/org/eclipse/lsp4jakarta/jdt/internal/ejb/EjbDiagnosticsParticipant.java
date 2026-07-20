@@ -106,16 +106,6 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              ErrorCode.InvalidNotTopLevelClass,
                                                              DiagnosticSeverity.Error));
                 }
-
-                // Check: must have a public no-arg constructor (if any constructor is declared)
-                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
-                if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("SessionBeanNoArgConstructor"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.MissingPublicNoArgConstructor,
-                                                             DiagnosticSeverity.Error));
-                }
                 validateSessionBeanConstructor(type, context, uri, diagnostics);
                 validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
             }
