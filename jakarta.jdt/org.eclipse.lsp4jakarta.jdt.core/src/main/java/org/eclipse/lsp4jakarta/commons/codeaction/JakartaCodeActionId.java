@@ -53,6 +53,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     MakeClassStatic,
     // Persistence
     PersistenceRemoveMapKeyAnnotation,
+    PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
     PersistenceInsertPublicCtrtToClass,
     PersistenceInsertProtectedCtrtToClass,
@@ -84,6 +85,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIReplaceScopeAnnotations,
     // EJB
     EJBInsertPublicCtrtToClass,
+    EJBRemoveFinalizeMethod,
     CDIRemoveConditionalObserverAnnotations,
     CDIRemoveNotifyObserverAttribute,
     CDIRemoveObserverConflictParams,

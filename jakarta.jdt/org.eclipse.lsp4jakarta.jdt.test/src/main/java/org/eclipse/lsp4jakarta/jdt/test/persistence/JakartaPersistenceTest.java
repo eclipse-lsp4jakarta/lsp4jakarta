@@ -631,4 +631,65 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    @Test
+    public void testMapKeyTemporalValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid @MapKeyTemporal usage
+        // with Date and Calendar map key types (including FQN)
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testMapKeyTemporalInvalid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalInvalid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @MapKeyTemporal on String map key
+        Diagnostic mapKeyTemporalOnStringD1 = d(18, 32, 44,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Integer map key
+        Diagnostic mapKeyTemporalOnIntegerD2 = d(23, 33, 46,
+                                                 "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Long map key
+        Diagnostic mapKeyTemporalOnLongD3 = d(28, 30, 40,
+                                              "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on getter with String map key
+        Diagnostic mapKeyTemporalOnGetterD4 = d(33, 31, 46,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on FQN String map key (should still be detected)
+        Diagnostic mapKeyTemporalOnFqnStringD5 = d(44, 42, 57,
+                                                   "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mapKeyTemporalOnStringD1, mapKeyTemporalOnIntegerD2,
+                              mapKeyTemporalOnLongD3, mapKeyTemporalOnGetterD4, mapKeyTemporalOnFqnStringD5);
+
+        // Test the quickfix for removing @MapKeyTemporal
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, mapKeyTemporalOnStringD1);
+        TextEdit te = te(17, 4, 18, 4, "");
+        CodeAction ca = ca(uri, "Remove @MapKeyTemporal", mapKeyTemporalOnStringD1, te);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+    }
+
 }
