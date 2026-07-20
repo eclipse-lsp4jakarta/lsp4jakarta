@@ -24,7 +24,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidModifierNotPublic,
     InvalidModifierFinal,
     InvalidModifierAbstract,
-    InvalidNotTopLevelClass;
+    InvalidNotTopLevelClass,
+    SessionBeanFinalizeMethod;
 
     @Override
     public String getCode() {
