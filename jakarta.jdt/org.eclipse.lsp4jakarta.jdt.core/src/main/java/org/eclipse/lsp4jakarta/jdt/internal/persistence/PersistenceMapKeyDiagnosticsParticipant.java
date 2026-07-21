@@ -402,7 +402,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         // Not a Map — @MapKeyEnumerated is invalid on List, Set, or plain fields.
         if (!isMap) {
-        	Range range = PositionUtils.toNameRange(member, context.getUtils());
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage("MapKeyEnumeratedOnNonMapType"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -431,16 +431,16 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
         } catch (JavaModelException e) {
-        	LOGGER.log(Level.SEVERE,"Error while checking map key type for @MapKeyEnumerated",e);           
+            LOGGER.log(Level.SEVERE, "Error while checking map key type for @MapKeyEnumerated", e);
             return;
         }
 
         if (!mapKeyIsEnum) {
-        	Range range = PositionUtils.toNameRange(member, context.getUtils());
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("MapKeyEnumeratedOnNonEnumKey"),
+                                                     Messages.getMessage("MapKeyEnumeratedOnNonEnumType"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidMapKeyEnumeratedOnNonEnumKey,
+                                                     ErrorCode.InvalidMapKeyEnumeratedOnNonEnumType,
                                                      DiagnosticSeverity.Error));
         }
     }
