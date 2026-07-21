@@ -25,7 +25,6 @@ import java.util.Arrays;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.TextEdit;
@@ -49,8 +48,6 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
 
     // -----------------------------------------------------------------------
     // Invalid: not public
-    // File line 6 (0-based): "class NotPublicStatelessBean {"
-    //   "class " = 6 chars, name 22 chars → col 6..28
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustBePublic() throws Exception {
@@ -72,8 +69,6 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
 
     // -----------------------------------------------------------------------
     // Invalid: final
-    // File line 6 (0-based): "public final class FinalStatelessBean {"
-    //   "public final class " = 19 chars, name 18 chars → col 19..37
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustNotBeFinal() throws Exception {
@@ -95,8 +90,6 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
 
     // -----------------------------------------------------------------------
     // Invalid: abstract only (class is public)
-    // File line 6 (0-based): "public abstract class AbstractStatefulBean {"
-    //   "public "(7) + "abstract "(9) + "class "(6) = 22 chars → col 22..42
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustNotBeAbstract() throws Exception {
@@ -118,8 +111,6 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
 
     // -----------------------------------------------------------------------
     // Invalid: final only (class is public)
-    // File line 6 (0-based): "public final class FinalNotPublicSingletonBean {"
-    //   "public final class " = 19 chars, name 27 chars → col 19..46
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustNotBeFinal_Singleton() throws Exception {
@@ -141,17 +132,13 @@ public class SessionBeanModifierTest extends BaseJakartaTest {
 
     // -----------------------------------------------------------------------
     // Invalid: not a top-level class
-    // NestedSessionBeanWrapper.java line 12 (0-based):
-    //   "    public class NestedStatefulBean {"
-    //   col 17..35 (measured from actual test run)
-    // The @Stateful annotation is at line 11 (0-based), indented 4 spaces.
     // -----------------------------------------------------------------------
     @Test
     public void testSessionBeanMustBeTopLevel() throws Exception {
         String uri = getFileUri("NestedSessionBeanWrapper.java");
         Diagnostic d = d(12, 17, 35,
                          "A session bean class must be a top-level class.",
-                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidNotTopLevelClass");
+                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidNonTopLevelClass");
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
 
         // Quickfix: remove the @Stateful annotation (indented, so range is 4-space-offset line)

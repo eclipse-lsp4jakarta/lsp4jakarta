@@ -24,7 +24,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidModifierNotPublic,
     InvalidModifierFinal,
     InvalidModifierAbstract,
-    InvalidNotTopLevelClass,
+    InvalidNonTopLevelClass,
     SessionBeanFinalizeMethod,
     ImplementMessageListener;
 

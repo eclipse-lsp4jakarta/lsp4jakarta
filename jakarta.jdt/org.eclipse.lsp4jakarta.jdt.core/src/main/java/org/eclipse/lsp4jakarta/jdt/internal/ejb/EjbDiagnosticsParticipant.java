@@ -103,7 +103,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("SessionBeanMustBeTopLevel"),
                                                              range, Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.InvalidNotTopLevelClass,
+                                                             ErrorCode.InvalidNonTopLevelClass,
                                                              DiagnosticSeverity.Error));
                 }
                 validateSessionBeanConstructor(type, context, uri, diagnostics);
