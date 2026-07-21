@@ -102,7 +102,10 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAbstractModifier,
     RemoveStaticModifier,
     //EJB
-    EJBMessageDrivenImplementation;
+    EJBMessageDrivenImplementation,
+    // Security
+    SecurityInsertApplicationScopedAnnotation,
+    SecurityReplaceWithApplicationScopedAnnotation;
 
     @Override
     public String getId() {

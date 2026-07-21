@@ -12,29 +12,39 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.test.security;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 /**
- * Tests for Jakarta Security Identity Store Definition diagnostics.
+ * Tests for Jakarta Security Identity Store Definition diagnostics and quickfixes.
  *
  * Validates that beans annotated with @LdapIdentityStoreDefinition or
  *
  * @DatabaseIdentityStoreDefinition comply with the Jakarta Security specification
- *                                  by having the required @ApplicationScoped scope annotation.
+ *                                  by having the required @ApplicationScoped scope annotation, and that the
+ *                                  appropriate quickfixes are offered to resolve violations.
  */
 public class SecurityIdentityStoreTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
@@ -71,6 +81,18 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
                                                 DiagnosticSeverity.Error, "jakarta-security", "MissingApplicationScopedOnIdentityStoreDefinition");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingApplicationScoped);
+
+        // Test quickfix: insert @ApplicationScoped (with import) before the class declaration.
+        // InsertAnnotationProposal produces a single edit spanning from the import section
+        // to just before the class declaration, replacing/adding the import and the annotation.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, missingApplicationScoped);
+        TextEdit insertAnnotation = te(2, 0, 4, 0,
+                                       "import jakarta.enterprise.context.ApplicationScoped;\n"
+                                                   + "import jakarta.security.enterprise.identitystore.LdapIdentityStoreDefinition;\n"
+                                                   + "\n"
+                                                   + "@ApplicationScoped\n");
+        CodeAction insertAction = ca(uri, "Insert @ApplicationScoped", missingApplicationScoped, insertAnnotation);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, insertAction);
     }
 
     @Test
@@ -88,8 +110,27 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         Diagnostic wrongScope = d(11, 13, 44,
                                   "A class annotated with @LdapIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @RequestScoped.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
+        wrongScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
+
+        // Test quickfix: replace @RequestScoped with @ApplicationScoped.
+        // ReplaceAnnotationProposal produces a single edit spanning from the import section
+        // to just before the class declaration, rewriting imports and removing the old annotation.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, wrongScope);
+        TextEdit replaceAnnotation = te(2, 0, 11, 0,
+                                        "import jakarta.enterprise.context.ApplicationScoped;\n"
+                                                     + "import jakarta.enterprise.context.RequestScoped;\n"
+                                                     + "import jakarta.security.enterprise.identitystore.LdapIdentityStoreDefinition;\n"
+                                                     + "\n"
+                                                     + "@ApplicationScoped\n"
+                                                     + "@LdapIdentityStoreDefinition(\n"
+                                                     + "    url = \"ldap://localhost:10389\",\n"
+                                                     + "    callerBaseDn = \"ou=caller,dc=jsr375,dc=net\",\n"
+                                                     + "    groupSearchBase = \"ou=group,dc=jsr375,dc=net\"\n"
+                                                     + ")\n");
+        CodeAction replaceAction = ca(uri, "Replace @RequestScoped with @ApplicationScoped", wrongScope, replaceAnnotation);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, replaceAction);
     }
 
     @Test
@@ -124,6 +165,18 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
                                                 DiagnosticSeverity.Error, "jakarta-security", "MissingApplicationScopedOnIdentityStoreDefinition");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingApplicationScoped);
+
+        // Test quickfix: insert @ApplicationScoped (with import) before the class declaration.
+        // InsertAnnotationProposal produces a single edit spanning from the import section
+        // to just before the class declaration, replacing/adding the import and the annotation.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, missingApplicationScoped);
+        TextEdit insertAnnotation = te(2, 0, 4, 0,
+                                       "import jakarta.enterprise.context.ApplicationScoped;\n"
+                                                   + "import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition;\n"
+                                                   + "\n"
+                                                   + "@ApplicationScoped\n");
+        CodeAction insertAction = ca(uri, "Insert @ApplicationScoped", missingApplicationScoped, insertAnnotation);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, insertAction);
     }
 
     @Test
@@ -141,8 +194,27 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         Diagnostic wrongScope = d(11, 13, 48,
                                   "A class annotated with @DatabaseIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @RequestScoped.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
+        wrongScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
+
+        // Test quickfix: replace @RequestScoped with @ApplicationScoped.
+        // ReplaceAnnotationProposal produces a single edit spanning from the import section
+        // to just before the class declaration, rewriting imports and removing the old annotation.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, wrongScope);
+        TextEdit replaceAnnotation = te(2, 0, 11, 0,
+                                        "import jakarta.enterprise.context.ApplicationScoped;\n"
+                                                     + "import jakarta.enterprise.context.RequestScoped;\n"
+                                                     + "import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition;\n"
+                                                     + "\n"
+                                                     + "@ApplicationScoped\n"
+                                                     + "@DatabaseIdentityStoreDefinition(\n"
+                                                     + "    dataSourceLookup = \"java:comp/DefaultDataSource\",\n"
+                                                     + "    callerQuery = \"select password from caller where name = ?\",\n"
+                                                     + "    groupsQuery = \"select group_name from caller_groups where caller_name = ?\"\n"
+                                                     + ")\n");
+        CodeAction replaceAction = ca(uri, "Replace @RequestScoped with @ApplicationScoped", wrongScope, replaceAnnotation);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, replaceAction);
     }
 
     @Test
@@ -160,6 +232,7 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         Diagnostic wrongScope = d(11, 13, 50,
                                   "A class annotated with @LdapIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @Interceptor.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
+        wrongScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.Interceptor")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongScope);
     }
@@ -184,6 +257,7 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         Diagnostic wrongScope = d(11, 13, 52,
                                   "A class annotated with @DatabaseIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
+        wrongScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.decorator.Decorator")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, cdiDiagnostic, wrongScope);
     }
