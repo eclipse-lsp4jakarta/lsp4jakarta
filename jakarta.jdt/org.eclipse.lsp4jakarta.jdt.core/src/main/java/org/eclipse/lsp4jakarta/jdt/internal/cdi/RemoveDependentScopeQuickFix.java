@@ -37,7 +37,7 @@ public class RemoveDependentScopeQuickFix extends RemoveAnnotationConflictQuickF
     }
 
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveDependentScope;
     }
 

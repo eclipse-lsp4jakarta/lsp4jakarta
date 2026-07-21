@@ -155,9 +155,9 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // test quick fixes
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d);
         TextEdit te1 = te(8, 1, 8, 1, "protected EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te1);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d, te1);
         TextEdit te2 = te(8, 1, 8, 1, "public EntityMissingConstructor() {\n\t}\n\n\t");
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te2);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d, te2);
 
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
     }
@@ -553,6 +553,143 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                      DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateVersionAnnotationInHierarchy");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, versionInHierarchyOnMethodsD1);
+    }
+
+    @Test
+    public void testVersionInvalidStringType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionInvalidString.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic invalidStringD1 = d(12, 19, 26,
+                                       "A field or property annotated with @Version must be of type int, Integer, short, Short, long, Long, or java.sql.Timestamp.",
+                                       DiagnosticSeverity.Error, "jakarta-persistence", "InvalidVersionFieldOrPropertyType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidStringD1);
+    }
+
+    @Test
+    public void testVersionValidIntType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionValidInt.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid int type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testVersionValidTimestampType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionValidTimestamp.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid java.sql.Timestamp type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testVersionMethodInvalidStringType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionMethodInvalidString.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic invalidStringD1 = d(14, 18, 28,
+                                       "A field or property annotated with @Version must be of type int, Integer, short, Short, long, Long, or java.sql.Timestamp.",
+                                       DiagnosticSeverity.Error, "jakarta-persistence", "InvalidVersionFieldOrPropertyType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidStringD1);
+    }
+
+    @Test
+    public void testVersionMethodValidLongType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/version/VersionMethodValidLong.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid Long return type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testMapKeyTemporalValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid @MapKeyTemporal usage
+        // with Date and Calendar map key types (including FQN)
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testMapKeyTemporalInvalid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalInvalid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @MapKeyTemporal on String map key
+        Diagnostic mapKeyTemporalOnStringD1 = d(18, 32, 44,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Integer map key
+        Diagnostic mapKeyTemporalOnIntegerD2 = d(23, 33, 46,
+                                                 "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Long map key
+        Diagnostic mapKeyTemporalOnLongD3 = d(28, 30, 40,
+                                              "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on getter with String map key
+        Diagnostic mapKeyTemporalOnGetterD4 = d(33, 31, 46,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on FQN String map key (should still be detected)
+        Diagnostic mapKeyTemporalOnFqnStringD5 = d(44, 42, 57,
+                                                   "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mapKeyTemporalOnStringD1, mapKeyTemporalOnIntegerD2,
+                              mapKeyTemporalOnLongD3, mapKeyTemporalOnGetterD4, mapKeyTemporalOnFqnStringD5);
+
+        // Test the quickfix for removing @MapKeyTemporal
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, mapKeyTemporalOnStringD1);
+        TextEdit te = te(17, 4, 18, 4, "");
+        CodeAction ca = ca(uri, "Remove @MapKeyTemporal", mapKeyTemporalOnStringD1, te);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
     }
 
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>org.eclipse.lsp4jakarta.lsp4e</artifactId>
+        <groupId>org.eclipse.lsp4jakarta</groupId>
+        <version>0.2.7-SNAPSHOT</version>
+    </parent>
+    <artifactId>org.eclipse.lsp4jakarta.lsp4e.feature.source</artifactId>
+    <packaging>eclipse-feature</packaging>
+    <name>Eclipse LSP4Jakarta LSP4E Feature Source</name>
+    <description>Eclipse LSP4Jakarta LSP4E Feature Source</description>
+    <organization>
+        <name>Eclipse LSP4Jakarta</name>
+        <url>https://github.com/eclipse/lsp4jakarta</url>
+    </organization>
+    <licenses>
+        <license>
+            <name>EPL-2.0</name>
+            <url>https://www.eclipse.org/legal/epl-2.0/</url>
+            <comments>Eclipse Public License 2.0</comments>
+        </license>
+    </licenses>
+</project>

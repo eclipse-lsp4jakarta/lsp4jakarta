@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,21 +10,22 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.di;
+package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
+import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveModifierConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
 
 /**
- * Removes the static modifier from the declaring element.
+ * Removes the @Named annotation from producer fields.
  */
-public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix {
+public class RemoveNamedAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveStaticModifierQuickFix() {
-        super(false, "static");
+    public RemoveNamedAnnotationQuickFix() {
+        super(false, Constants.NAMED_FQ_NAME);
     }
 
     /**
@@ -32,7 +33,7 @@ public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix
      */
     @Override
     public String getParticipantId() {
-        return RemoveStaticModifierQuickFix.class.getName();
+        return RemoveNamedAnnotationQuickFix.class.getName();
     }
 
     /**
@@ -40,6 +41,6 @@ public class RemoveStaticModifierQuickFix extends RemoveModifierConflictQuickFix
      */
     @Override
     protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.DIRemoveStaticModifier;
+        return JakartaCodeActionId.CDIRemoveNamedAnnotation;
     }
 }

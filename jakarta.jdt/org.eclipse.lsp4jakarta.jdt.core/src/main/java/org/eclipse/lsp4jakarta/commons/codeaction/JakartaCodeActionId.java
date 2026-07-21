@@ -36,16 +36,11 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAnnotationResource,
     RemoveResourceAnnotationAttribute,
     RemoveCheckedExceptions,
-    AnnotationRemoveStaticModifier,
     InsertSlashAnnotationValueAttribute,
     // Bean validation
     RemoveConstraintAnnotation,
-    BBRemoveStaticModifier,
     // Dependency injection
     DIRemoveInjectAnnotation,
-    DIRemoveFinalModifier,
-    DIRemoveAbstractModifier,
-    DIRemoveStaticModifier,
     DIRemoveScopeAttributes,
     // JSON-B
     JSONBRemoveJsonbCreatorAnnotation,
@@ -57,8 +52,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     JSONBInsertProtectedConstructorToClass,
     MakeClassStatic,
     // Persistence
-    PersistenceRemoveFinalModifier,
     PersistenceRemoveMapKeyAnnotation,
+    PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
     PersistenceInsertPublicCtrtToClass,
     PersistenceInsertProtectedCtrtToClass,
@@ -88,11 +83,26 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveScopeDeclarationAnnotationsButOne,
     CDIRemoveDependentScope,
     CDIReplaceScopeAnnotations,
+    // EJB
+    EJBInsertPublicCtrtToClass,
+    EJBRemoveFinalizeMethod,
     CDIRemoveConditionalObserverAnnotations,
     CDIRemoveNotifyObserverAttribute,
     CDIRemoveObserverConflictParams,
     CDIRemoveSingletonAnnotation,
-    CDIRemoveStatelessAnnotation;
+    CDIRemoveStatelessAnnotation,
+    CDIReplaceInvalidScopesWithDependent,
+    CDIRemoveDisposesFromInterceptorDecorator,
+    CDIRemoveNamedAnnotation,
+    CDIInsertNamedValueAttribute,
+    //Interceptor
+    InterceptorRemoveInterceptorMethodAnnotation,
+    // Common modifier quick fixes
+    RemoveFinalModifier,
+    RemoveAbstractModifier,
+    RemoveStaticModifier,
+    //EJB
+    EJBMessageDrivenImplementation;
 
     @Override
     public String getId() {

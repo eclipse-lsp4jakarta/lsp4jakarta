@@ -48,6 +48,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -91,33 +92,20 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (EntityAnnotation != null) {
-                // Define boolean requirements for the diagnostics
-                boolean hasPublicOrProtectedNoArgConstructor = false;
-                boolean hasArgConstructor = false;
+                // Get constructor information
+                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;
                 boolean hasPrimaryKey = false;
                 List<IMember> versionMembers = new ArrayList<>();
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
-
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
+                        validateVersionFieldOrPropertyType(method, type, diagnostics, context);
                     }
 
-                    if (DiagnosticUtils.isConstructorMethod(method)) {
-                        // We have found a method that is a constructor
-                        if (method.getNumberOfParameters() > 0) {
-                            hasArgConstructor = true;
-                            continue;
-                        }
-                        // Don't need to perform subtractions to check flags because eclipse notifies on
-                        // illegal constructor modifiers
-                        if (method.getFlags() != Flags.AccPublic && method.getFlags() != Flags.AccProtected)
-                            continue;
-                        hasPublicOrProtectedNoArgConstructor = true;
-                    }
                     // All Methods of this class should not be final
                     if (isFinal(method.getFlags())) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
@@ -142,6 +130,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
+                        validateVersionFieldOrPropertyType(field, type, diagnostics, context);
                     }
 
                     // If a field is static, we do not care about it, we care about all other field
@@ -176,7 +165,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     isEntityClassFinal = true;
 
                 // Create Diagnostics if needed
-                if (!hasPublicOrProtectedNoArgConstructor && hasArgConstructor) {
+                if (constructorInfo.hasParameterizedConstructor() &&
+                    !constructorInfo.hasValidPublicNoArgsConstructor() &&
+                    !constructorInfo.hasValidProtectedNoArgsConstructor()) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("EntityNoArgConstructor"), range,
@@ -490,6 +481,37 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         return false;
+    }
+
+    /**
+     * Validates that a field or method annotated with @Version has a supported type.
+     * Supported types are: int, Integer, short, Short, long, Long, java.sql.Timestamp
+     *
+     * @param member the field or method to validate
+     * @param type the containing type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateVersionFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                                    JavaDiagnosticsContext context) throws JavaModelException {
+        String typeFQ = null;
+        Range range = null;
+
+        if (member instanceof IMethod) {
+            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+        } else if (member instanceof IField) {
+            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
+            range = PositionUtils.toNameRange((IField) member, context.getUtils());
+        }
+
+        if (typeFQ != null && !Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage("InvalidVersionFieldOrPropertyType"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
+        }
     }
 
 }
