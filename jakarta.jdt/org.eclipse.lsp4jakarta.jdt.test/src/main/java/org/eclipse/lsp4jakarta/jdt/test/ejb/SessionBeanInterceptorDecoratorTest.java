@@ -202,6 +202,24 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
     }
 
     // -----------------------------------------------------------------------
+    // Negative tests — valid classes that should produce no diagnostics
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testValidInterceptorProducesNoDiagnostics() throws Exception {
+        String uri = getFileUri("ValidInterceptor.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testValidDecoratorProducesNoDiagnostics() throws Exception {
+        String uri = getFileUri("ValidDecorator.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 

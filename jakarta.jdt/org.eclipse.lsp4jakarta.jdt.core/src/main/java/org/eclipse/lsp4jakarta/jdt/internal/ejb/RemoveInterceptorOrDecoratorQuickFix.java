@@ -21,9 +21,9 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.CodeActionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
-import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  * Removes the @Interceptor or @Decorator annotation from a session bean class.
@@ -60,7 +60,7 @@ public class RemoveInterceptorOrDecoratorQuickFix extends RemoveAnnotationConfli
     protected void createCodeActions(Diagnostic diagnostic, JavaCodeActionContext context, IBinding parentType,
                                      List<CodeAction> codeActions) throws CoreException {
         // Only create a code action for each @Interceptor or @Decorator annotation that is actually present
-        List<String> presentAnnotations = Arrays.stream(getAnnotations()).filter(annotation -> DiagnosticUtils.hasAnnotation(parentType, annotation)).collect(Collectors.toList());
+        List<String> presentAnnotations = Arrays.stream(getAnnotations()).filter(annotation -> CodeActionUtils.hasAnnotation(parentType, annotation)).collect(Collectors.toList());
         for (String annotation : presentAnnotations) {
             createCodeAction(diagnostic, context, parentType, codeActions, annotation);
         }
