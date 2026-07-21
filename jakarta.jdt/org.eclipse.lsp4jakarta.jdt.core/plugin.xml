@@ -379,7 +379,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidStatelessSessionBeanScope"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveStatelessAnnotationQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidStatelessSessionBeanScope"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
@@ -397,7 +397,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertDefaultProtectedConstructorToMBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveSingletonAnnotationQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSingletonSessionBeanScope"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanQuickFix" />
