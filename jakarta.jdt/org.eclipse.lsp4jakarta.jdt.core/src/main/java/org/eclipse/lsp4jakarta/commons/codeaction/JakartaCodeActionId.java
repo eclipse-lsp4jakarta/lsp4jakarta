@@ -100,7 +100,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     // Common modifier quick fixes
     RemoveFinalModifier,
     RemoveAbstractModifier,
-    RemoveStaticModifier;
+    RemoveStaticModifier,
+    //EJB
+    EJBMessageDrivenImplementation;
 
     @Override
     public String getId() {
