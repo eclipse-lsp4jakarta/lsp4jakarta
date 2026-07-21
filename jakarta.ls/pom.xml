@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.lsp4jakarta</groupId>
     <artifactId>org.eclipse.lsp4jakarta.ls</artifactId>
-    <version>0.2.6-SNAPSHOT</version>
+    <version>0.2.7-SNAPSHOT</version>
     <name>Eclipse LSP4Jakarta Language Server</name>
     <description>Eclipse LSP4Jakarta Language Server</description>
     <organization>
@@ -17,7 +17,7 @@
         <connection>scm:git:git@github.com:eclipse/lsp4jakarta.git</connection>
         <developerConnection>scm:git:git@github.com:eclipse/lsp4jakarta.git</developerConnection>
         <url>git@github.com:eclipse/lsp4jakarta.git</url>
-        <tag>0.2.6-SNAPSHOT</tag>
+        <tag>0.2.7-SNAPSHOT</tag>
     </scm>
     <licenses>
         <license>
@@ -29,10 +29,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <tycho.version>4.0.10</tycho.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <lsp4j.version>0.23.1</lsp4j.version>
+        <tycho.version>5.0.2</tycho.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <lsp4j.version>1.0.0</lsp4j.version>
         <releases.repo.id>repo.eclipse.org</releases.repo.id>
         <releases.repo.url>https://repo.eclipse.org/content/repositories/lsp4jakarta-releases/</releases.repo.url>
         <snapshots.repo.id>repo.eclipse.org</snapshots.repo.id>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.eclipse.lsp4jakarta</groupId>
             <artifactId>org.eclipse.lsp4jakarta.jdt.core</artifactId>
-            <version>0.2.6-SNAPSHOT</version>
+            <version>0.2.7-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <pluginRepositories>
