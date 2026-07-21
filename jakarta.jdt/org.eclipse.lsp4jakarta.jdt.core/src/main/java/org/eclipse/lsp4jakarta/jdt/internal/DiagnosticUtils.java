@@ -503,4 +503,26 @@ public class DiagnosticUtils {
         Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
         return value != null && value.intValue() < 0;
     }
+
+    /**
+     * Helper method to extract annotation names from a field.
+     *
+     * @param field the field to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access field annotations
+     */
+    public static String[] getAnnotationNames(IField field) throws JavaModelException {
+        return Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Helper method to extract annotation names from a method.
+     *
+     * @param method the method to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access method annotations
+     */
+    public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
+        return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
 }
