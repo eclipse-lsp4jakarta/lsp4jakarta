@@ -23,7 +23,7 @@ Require-Bundle:
  org.apache.commons.lang3,
  com.google.gson,
  com.google.guava
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Export-Package: 

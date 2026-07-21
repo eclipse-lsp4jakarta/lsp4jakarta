@@ -18,7 +18,7 @@ Require-Bundle:
  org.eclipse.lsp4j.jsonrpc,
  org.eclipse.lsp4j,
  org.eclipse.lsp4jakarta.jdt.core
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: org.eclipse.lsp4jakarta.lsp4e.core
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: server/org.eclipse.lsp4jakarta.ls-jar-with-dependencies.jar,
