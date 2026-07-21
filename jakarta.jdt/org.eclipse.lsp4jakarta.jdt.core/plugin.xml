@@ -435,6 +435,9 @@
                   targetDiagnostic="jakarta-cdi#InvalidMultipleObserverParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveMultipleObserverParamsQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInterceptorOrDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ReplaceInvalidScopesWithDependentQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidProducerFieldWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedAnnotationQuickFix" />
       <codeAction kind="quickfix"
