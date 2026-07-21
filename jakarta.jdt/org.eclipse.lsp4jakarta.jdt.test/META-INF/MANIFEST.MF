@@ -5,9 +5,8 @@ Bundle-Vendor: Eclipse LSP4Jakarta
 Bundle-SymbolicName: org.eclipse.lsp4jakarta.jdt.test
 Bundle-Version: 0.2.7.qualifier
 Automatic-Module-Name: org.eclipse.lsp4jakarta.jdt.test
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.junit,
- org.apache.commons.io,
  org.eclipse.lsp4j,
  org.eclipse.lsp4j.jsonrpc,
  org.eclipse.jdt.core,

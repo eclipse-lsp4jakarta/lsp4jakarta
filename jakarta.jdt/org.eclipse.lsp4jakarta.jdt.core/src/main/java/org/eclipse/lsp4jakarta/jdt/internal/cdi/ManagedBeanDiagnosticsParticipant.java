@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -329,6 +330,32 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  Constants.DIAGNOSTIC_SOURCE,
                                                                  ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
                                                                  DiagnosticSeverity.Error));
+                    }
+                }
+
+                // Check for @Named annotation without value on non-field injection points
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#named_at_injection_point
+                // @Named on constructor/method parameters without value is a definition error
+                // Only field injection points can omit the value (field name is assumed)
+                if (DiagnosticUtils.isConstructorMethod(method) || isInjectMethod) {
+                    for (ILocalVariable param : method.getParameters()) {
+                        for (IAnnotation annotation : param.getAnnotations()) {
+                            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                                // Check if the @Named annotation has a value attribute
+                                String namedValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "value", String.class);
+                                if (StringUtils.isBlank(namedValue)) {
+                                    // @Named without value on constructor/method parameter is invalid
+                                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                                    diagnostics.add(context.createDiagnostic(uri,
+                                                                             Messages.getMessage("InvalidNamedAnnotationOnNonFieldInjectionPoint"),
+                                                                             range,
+                                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                                             null,
+                                                                             ErrorCode.InvalidNamedAnnotationOnNonFieldInjectionPoint,
+                                                                             DiagnosticSeverity.Error));
+                                }
+                            }
+                        }
                     }
                 }
             }
