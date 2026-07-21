@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -80,19 +81,59 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              DiagnosticSeverity.Error));
                 }
 
-                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
-
-                if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
-                    String message = Messages.getMessage("SessionBeanNoArgConstructor");
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE,
-                                                             ErrorCode.MissingPublicNoArgConstructor,
-                                                             DiagnosticSeverity.Error));
-                }
+                validateSessionBeanConstructor(type, context, uri, diagnostics);
+                validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
             }
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that the session bean has a valid public no-arg constructor.
+     *
+     * @param type the type to validate
+     * @param context the diagnostics context
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @throws CoreException if an error occurs
+     */
+    private void validateSessionBeanConstructor(IType type, JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics) throws CoreException {
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+
+        if (constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
+            String message = Messages.getMessage("SessionBeanNoArgConstructor");
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.MissingPublicNoArgConstructor,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Validates that the session bean does not define or override the finalize() method.
+     *
+     * @param type the type to validate
+     * @param context the diagnostics context
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @throws CoreException if an error occurs
+     */
+    private void validateSessionBeanFinalizeMethod(IType type, JavaDiagnosticsContext context, String uri,
+                                                   List<Diagnostic> diagnostics) throws CoreException {
+        IMethod[] methods = type.getMethods();
+        for (IMethod method : methods) {
+            if (Constants.FINALIZE_METHOD_NAME.equals(method.getElementName())
+                && method.getNumberOfParameters() == 0) {
+                String message = Messages.getMessage("SessionBeanFinalizeMethod");
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.SessionBeanFinalizeMethod,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
     }
 }
