@@ -510,4 +510,69 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nullFirstParamWithCast, nullSecondParam,
                               nullBothParamsFirst, nullBothParamsSecond, nullFirstParamNoCast);
     }
+  
+    @Test
+    public void JsonbLocalInstanceClosable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbLocalInstanceClosable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // INVALID SCENARIOS - Diagnostics SHOULD trigger for local Jsonb instances with threads but no close()
+
+        // localJsonbWithExecutorNoClose() - Local Jsonb with ExecutorService, no close()
+        Diagnostic localExecutorNoCloseDiag = d(18, 16, 45,
+                                                "Thread source detected in method localJsonbWithExecutorNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithCompletableFutureNoClose() - Local Jsonb with CompletableFuture, no close()
+        Diagnostic localCompletableFutureNoCloseDiag = d(29, 16, 54,
+                                                         "Thread source detected in method localJsonbWithCompletableFutureNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithThreadNoClose() - Local Jsonb with Thread, no close()
+        Diagnostic localThreadNoCloseDiag = d(39, 16, 43,
+                                              "Thread source detected in method localJsonbWithThreadNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                              DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithTryWithResources() - Try-with-resources (known limitation - false positive)
+        Diagnostic localTryWithResourcesDiag = d(68, 16, 46,
+                                                 "Thread source detected in method localJsonbWithTryWithResources, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // VALID SCENARIOS - No diagnostics expected:
+        // - localJsonbWithThreadsAndClose(): Has explicit close()
+        // - localJsonbWithoutThreads(): No threads used
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, localExecutorNoCloseDiag, localCompletableFutureNoCloseDiag,
+                              localThreadNoCloseDiag, localTryWithResourcesDiag);
+    }
+
+    @Test
+    public void JsonbGlobalInstanceClosableValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbGlobalInstanceClosableValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // ALL SCENARIOS - No diagnostics expected for global/field Jsonb instances
+        // Global and instance field Jsonb instances should NOT be closed in individual methods
+        // Therefore, no diagnostics should trigger even when threads are used without close()
+
+        // Test cases:
+        // - globalJsonbWithExecutor(): Global Jsonb with ExecutorService
+        // - globalJsonbWithCompletableFuture(): Global Jsonb with CompletableFuture
+        // - globalJsonbWithThread(): Global Jsonb with Thread
+        // - instanceFieldJsonbWithThreads(): Instance field Jsonb with threads
+        // - globalJsonbWithoutThreads(): Global Jsonb without threads
+        // - multipleOperationsWithGlobalJsonb(): Multiple operations with global Jsonb
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
