@@ -21,7 +21,7 @@ In the following sections, we document how to build and test using the Eclipse I
 
 ## Prerequisites
 
-[Java SE 17](https://adoptium.net/en-GB/marketplace/), [Maven](https://maven.apache.org/download.cgi), and [Eclipse](https://www.eclipse.org/downloads/) (Eclipse IDE for Enterprise Java and Web Developers is recommended) are required to build the Eclipse LSP4Jakarta project.
+[Java SE 21](https://adoptium.net/en-GB/marketplace/), [Maven](https://maven.apache.org/download.cgi), and [Eclipse](https://www.eclipse.org/downloads/) (Eclipse IDE for Enterprise Java and Web Developers is recommended) are required to build the Eclipse LSP4Jakarta project.
 
 Ensure the [Eclipse Plug-in Development Environment (PDE)](https://marketplace.eclipse.org/content/eclipse-pde-plug-development-environment) is installed in your Eclipse workspace.
 
@@ -46,7 +46,7 @@ The following instructions explain how to set up your Eclipse IDE workspace.
     <img src="/docs/images/building_project_explorer.png" alt="Eclipse project explorer" height="30%" width="30%"/>
 
 
-4. Ensure that the Java projects are being built with `JavaSE-17` (Right-click project --> "Properties" --> "Java Build Path" --> "Libraries")
+4. Ensure that the Java projects are being built with `JavaSE-21` (Right-click project --> "Properties" --> "Java Build Path" --> "Libraries")
 
 5. Configure the Java build path for the `org.eclipse.lsp4jakarta.lsp4e.core` project:
 
@@ -78,7 +78,7 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 &nbsp;- *Bundle 'org.apache.commons.lang3' cannot be resolved* in Eclipse workspace  
 &nbsp;Solution: [#46](https://github.com/eclipse/lsp4jakarta/issues/46)
 
-2. If during initial setup `mvn verify` returns errors or compilation failures, verify that you are using [JavaSE-17](https://www.oracle.com/ca-en/java/technologies/downloads/#java17). You may have to configure `$JAVA_HOME` variable and make sure it is pointing to the correct location.
+2. If during initial setup `mvn verify` returns errors or compilation failures, verify that you are using [JavaSE-21](https://www.oracle.com/ca-en/java/technologies/downloads/#java21). You may have to configure `$JAVA_HOME` variable and make sure it is pointing to the correct location.
 
 ## Run and Debug
 
