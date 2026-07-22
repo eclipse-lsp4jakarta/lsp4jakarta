@@ -162,7 +162,7 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
                                        String uri, List<Diagnostic> diagnostics,
                                        String messageKey, ErrorCode errorCode) throws JavaModelException {
         String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
