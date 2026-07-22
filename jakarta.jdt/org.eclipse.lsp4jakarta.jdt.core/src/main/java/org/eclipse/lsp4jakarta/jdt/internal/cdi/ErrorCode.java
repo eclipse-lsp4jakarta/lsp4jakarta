@@ -42,7 +42,11 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidProducerFieldWithNamedAnnotation,
     InvalidDecoratorDelegateInjectionPoints,
     InvalidDelegateInjectionPoint,
-    InvalidDecoratorDelegateTypeAssignability;
+    InvalidDecoratorDelegateTypeAssignability,
+    InvalidWildcardTypeInInjectField,
+    InvalidWildcardTypeInProducerMethod,
+    InvalidWildcardTypeInProducerField,
+    InvalidNamedAnnotationOnNonFieldInjectionPoint;
 
     /**
      * {@inheritDoc}
