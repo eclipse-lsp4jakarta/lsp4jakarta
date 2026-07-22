@@ -202,7 +202,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
 
                 // Check @Inheritance is only on the root of the entity hierarchy
-                if (inheritanceAnnotation != null && hasEntitySupertype(type)) {
+                if (inheritanceAnnotation != null && TypeHierarchyUtils.findSupertypeWithAnnotation(type, Constants.ENTITY) != null) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InheritanceAnnotationOnNonRootEntity"),
@@ -435,46 +435,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
         return false;
     }
-
-    /**
-     * Returns {@code true} if any class in the full superclass chain of
-     * {@code type} carries {@code @Entity}.
-     *
-     * <p>Non-entity abstract classes are transparent to JPA (spec section 2.11.3),
-     * so the walk continues past them rather than stopping at the first gap.</p>
-     *
-     * @param type the class to inspect
-     * @return {@code true} if an {@code @Entity} ancestor was found
-     * @throws JavaModelException if the type hierarchy cannot be resolved
-     */
-	private boolean hasEntitySupertype(IType type) throws JavaModelException {
-
-		// Collect all supertypes using the utility
-		Set<IType> hierarchy = new HashSet<>();
-		TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
-
-		for (IType superType : hierarchy) {
-			// Skip the type itself
-			if (superType.equals(type)) {
-				continue;
-			}
-
-			if (Constants.OBJECT.equals(superType.getFullyQualifiedName())) {
-				break;
-			}
-
-			try {
-				if (DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(), superType.getAnnotations(),
-						Constants.ENTITY)) {
-					return true;
-				}
-			} catch (JavaModelException e) {
-				LOGGER.warning("Could not inspect annotations on superclass " + superType.getFullyQualifiedName() + ": "
-						+ e.getMessage());
-			}
-		}
-		return false;
-	}
 
     /**
      * Check if the given annotations contain @Id or @EmbeddedId
