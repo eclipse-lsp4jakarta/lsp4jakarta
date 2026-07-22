@@ -331,11 +331,15 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#SessionBeanFinalizeMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveFinalizeMethodQuickFix" />
    </extension>
    
    <!-- CDI -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
@@ -431,8 +435,14 @@
                   targetDiagnostic="jakarta-cdi#InvalidMultipleObserverParams"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveMultipleObserverParamsQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidInterceptorOrDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ReplaceInvalidScopesWithDependentQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidProducerFieldWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
   </extension>
    
    <!-- Interceptor -->
@@ -460,9 +470,17 @@
                   targetDiagnostic="jakarta-interceptor#InvalidInterceptorAnnotationOnAbstractClass"
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
    </extension>
-   
+
    <!-- Security -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.security.SecurityIdentityStoreDiagnosticsParticipant" />
+   </extension>
+
+   <!-- EJB -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.ejb.EjbMessageDrivenDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#ImplementMessageListener"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.EjbMessageDrivenImplementInterfaceQuickFix" />
    </extension>
 </plugin>
