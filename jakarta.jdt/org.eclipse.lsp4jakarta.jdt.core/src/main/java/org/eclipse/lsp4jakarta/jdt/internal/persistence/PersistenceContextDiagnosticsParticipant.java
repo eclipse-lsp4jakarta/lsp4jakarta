@@ -21,6 +21,7 @@ import static org.eclipse.lsp4jakarta.jdt.internal.servlet.Constants.WEB_LISTENE
 import static org.eclipse.lsp4jakarta.jdt.internal.servlet.Constants.WEB_SERVLET_FQ_NAME;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -28,7 +29,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IMemberValuePair;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
@@ -77,30 +78,28 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
         }
 
         for (IType type : unit.getAllTypes()) {
+            // Check @PersistenceContext on the type itself
+            IAnnotation typeAnnotation = findPersistenceContextAnnotation(unit, type.getAnnotations());
+            if (typeAnnotation != null) {
+                checkAnnotation(context, uri, unit, type, PositionUtils.toNameRange(type, context.getUtils()),
+                                typeAnnotation, diagnostics);
+            }
+
+            // Check @PersistenceContext on fields
             for (IField field : type.getFields()) {
-                IAnnotation pcAnnotation = findPersistenceContextAnnotation(unit, type, field);
-                if (pcAnnotation == null) {
-                    continue;
+                IAnnotation fieldAnnotation = findPersistenceContextAnnotation(unit, field.getAnnotations());
+                if (fieldAnnotation != null) {
+                    checkAnnotation(context, uri, unit, type, PositionUtils.toNameRange(field, context.getUtils()),
+                                    fieldAnnotation, diagnostics);
                 }
+            }
 
-                Range range = PositionUtils.toNameRange(field, context.getUtils());
-
-                // Rule 1: the enclosing class must be a container-managed component.
-                if (!isManagedComponent(unit, type)) {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("PersistenceContextNotInManagedComponent"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.PersistenceContextNotInManagedComponent, DiagnosticSeverity.Error));
-                    continue;
-                }
-
-                // Rule 2: EXTENDED is only valid in a @Stateful EJB.
-                if (isExtendedContext(unit, type, pcAnnotation)
-                    && !DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), STATEFUL_FQ_NAME)) {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("ExtendedPersistenceContextInNonStatefulBean"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.ExtendedPersistenceContextInNonStatefulBean, DiagnosticSeverity.Error));
+            // Check @PersistenceContext on methods
+            for (IMethod method : type.getMethods()) {
+                IAnnotation methodAnnotation = findPersistenceContextAnnotation(unit, method.getAnnotations());
+                if (methodAnnotation != null) {
+                    checkAnnotation(context, uri, unit, type, PositionUtils.toNameRange(method, context.getUtils()),
+                                    methodAnnotation, diagnostics);
                 }
             }
         }
@@ -111,14 +110,39 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
     // Private helpers — delegating to existing shared infrastructure
     // -------------------------------------------------------------------------
 
-    /** Returns the {@code @PersistenceContext} annotation on the field, or {@code null}. */
-    private IAnnotation findPersistenceContextAnnotation(ICompilationUnit unit, IType type, IField field) throws JavaModelException {
-        for (IAnnotation annotation : field.getAnnotations()) {
-            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PERSISTENCE_CONTEXT)) {
-                return annotation;
-            }
+    /**
+     * Applies both diagnostic rules for a single {@code @PersistenceContext} occurrence.
+     */
+    private void checkAnnotation(JavaDiagnosticsContext context, String uri, ICompilationUnit unit, IType type,
+                                 Range range, IAnnotation pcAnnotation, List<Diagnostic> diagnostics) throws CoreException {
+        // Rule 1: the enclosing class must be a container-managed component.
+        if (!isManagedComponent(unit, type)) {
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("PersistenceContextNotInManagedComponent"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.PersistenceContextNotInManagedComponent, DiagnosticSeverity.Error));
+            return;
         }
-        return null;
+
+        // Rule 2: EXTENDED is only valid in a @Stateful EJB.
+        if (isExtendedContext(pcAnnotation)
+            && !DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), STATEFUL_FQ_NAME)) {
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("ExtendedPersistenceContextInNonStatefulBean"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.ExtendedPersistenceContextInNonStatefulBean, DiagnosticSeverity.Error));
+        }
+    }
+
+    /** Returns the {@code @PersistenceContext} annotation from the given array, or {@code null}. */
+    private IAnnotation findPersistenceContextAnnotation(ICompilationUnit unit, IAnnotation[] annotations) throws JavaModelException {
+        return Arrays.stream(annotations).filter(a -> {
+            try {
+                return DiagnosticUtils.isMatchedAnnotation(unit, a, Constants.PERSISTENCE_CONTEXT);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        }).findFirst().orElse(null);
     }
 
     /**
@@ -164,15 +188,8 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
      * Returns {@code true} if the {@code @PersistenceContext} annotation explicitly
      * sets {@code type = PersistenceContextType.EXTENDED}.
      */
-    private boolean isExtendedContext(ICompilationUnit unit, IType type, IAnnotation pcAnnotation) throws JavaModelException {
-        for (IMemberValuePair pair : pcAnnotation.getMemberValuePairs()) {
-            if ("type".equals(pair.getMemberName())) {
-                Object value = pair.getValue();
-                if (value instanceof String strValue) {
-                    return strValue.endsWith(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
-                }
-            }
-        }
-        return false;
+    private boolean isExtendedContext(IAnnotation pcAnnotation) throws JavaModelException {
+        String value = DiagnosticUtils.getAnnotationMemberValue(pcAnnotation, "type", String.class);
+        return value != null && value.endsWith(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
     }
 }

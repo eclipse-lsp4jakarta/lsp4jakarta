@@ -1013,4 +1013,106 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    /**
+     * Tests that {@code @PersistenceContext} at the <em>type</em> level on a plain (unmanaged)
+     * Java class produces a diagnostic.
+     *
+     * <p>{@code @PersistenceContext} carries {@code @Target({TYPE, METHOD, FIELD})}, so a
+     * type-level annotation is syntactically legal but still violates the spec rule that
+     * injection is only valid in container-managed components.
+     *
+     * <p>Spec ref: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a11791
+     */
+    @Test
+    public void persistenceContextOnTypeInPlainClassInvalid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/context/PersistenceContextOnTypeInPlainClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Class name "PersistenceContextOnTypeInPlainClass" is at 0-based line 8,
+        // starting at column 13 (after "public class "), length 36.
+        Diagnostic notInManagedComponentDiag = d(8, 13, 49,
+                                                 "@PersistenceContext can only be used in a container-managed component such as a CDI bean, EJB, or Servlet.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "PersistenceContextNotInManagedComponent");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notInManagedComponentDiag);
+    }
+
+    /**
+     * Tests that {@code @PersistenceContext} at the <em>type</em> level on a CDI
+     * {@code @RequestScoped} bean does NOT produce a diagnostic.
+     *
+     * <p>CDI-scoped beans are container-managed; type-level injection is valid there.
+     *
+     * <p>Spec ref: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a11791
+     */
+    @Test
+    public void persistenceContextOnTypeInCdiBeanValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/context/PersistenceContextOnTypeInCdiBeanValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — class is annotated with @RequestScoped (CDI managed bean)
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Tests that {@code @PersistenceContext} at the <em>method</em> level on a plain (unmanaged)
+     * Java class produces a diagnostic.
+     *
+     * <p>Setter injection via {@code @PersistenceContext} is syntactically legal but only valid
+     * inside container-managed components.
+     *
+     * <p>Spec ref: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a11791
+     */
+    @Test
+    public void persistenceContextOnMethodInPlainClassInvalid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/context/PersistenceContextOnMethodInPlainClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Method name "setEntityManager" is at 0-based line 13,
+        // starting at column 16 (after "    public void "), length 16.
+        Diagnostic notInManagedComponentDiag = d(13, 16, 32,
+                                                 "@PersistenceContext can only be used in a container-managed component such as a CDI bean, EJB, or Servlet.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "PersistenceContextNotInManagedComponent");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notInManagedComponentDiag);
+    }
+
+    /**
+     * Tests that {@code @PersistenceContext} at the <em>method</em> level on an EJB
+     * {@code @Stateless} session bean does NOT produce a diagnostic.
+     *
+     * <p>Setter injection is a standard container-managed injection pattern valid in any
+     * EJB session bean.
+     *
+     * <p>Spec ref: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a11791
+     */
+    @Test
+    public void persistenceContextOnMethodInStatelessValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/context/PersistenceContextOnMethodInStatelessValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — class is annotated with @Stateless (EJB session bean)
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
