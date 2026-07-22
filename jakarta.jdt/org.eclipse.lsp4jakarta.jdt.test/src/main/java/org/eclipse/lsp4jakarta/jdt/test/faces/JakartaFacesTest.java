@@ -65,4 +65,52 @@ public class JakartaFacesTest extends BaseJakartaTest {
         // expected: no diagnostics for a compliant class
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void facesValidatorInheritedValidatorImpl() throws Exception {
+        // The inherited implementation must be recognised, no diagnostic expected.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/faces/InheritedValidatorImpl.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void facesValidatorAbstractClassMissingInterface() throws Exception {
+        // Validator. Abstract classes are not exempt, diagnostic must be raised.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/faces/AbstractFacesValidator.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // expected: diagnostic on class name (line 9, col 22..44) — 0-based
+        Diagnostic diagnostic = d(9, 22, 44,
+                                   "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
+                                   DiagnosticSeverity.Error, "jakarta-faces",
+                                   "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+    }
+
+    @Test
+    public void facesValidatorRawValidatorInterface() throws Exception {
+        // Implementing raw Validator (without generic type parameter). Should NOT produce a diagnostic.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/faces/RawValidatorImpl.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
