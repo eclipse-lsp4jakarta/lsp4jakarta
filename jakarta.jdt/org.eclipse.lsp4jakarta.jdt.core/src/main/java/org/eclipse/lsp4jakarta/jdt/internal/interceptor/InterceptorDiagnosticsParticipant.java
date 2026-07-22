@@ -197,7 +197,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         int methodFlag = method.getFlags();
-        String annotationNames = getSimpleAnnotationNames(interceptorAnnotations);
+        String annotationNames = DiagnosticUtils.getSimpleAnnotationNames(interceptorAnnotations, "");
         JsonArray annotationData = (JsonArray) new Gson().toJsonTree(interceptorAnnotations);
         // Check for final modifier
         if (Flags.isFinal(methodFlag)) {
@@ -327,17 +327,6 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
         }
-    }
-
-    /**
-     * Converts a list of fully qualified annotation names to simple names.
-     *
-     * @param annotations the list of FQ annotation names
-     * @return comma-separated string of simple annotation names
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
-        return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
     }
 
     /**

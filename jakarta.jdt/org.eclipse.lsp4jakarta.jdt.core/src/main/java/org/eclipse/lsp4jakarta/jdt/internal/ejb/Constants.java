@@ -32,6 +32,9 @@ public class Constants {
 
     public static final String FINALIZE_METHOD_NAME = "finalize";
 
+    /** JVM return-type descriptor for {@code void}. */
+    public static final String VOID_RETURN_TYPE = "V";
+
     public static final String[] SESSION_BEAN_ANNOTATIONS = {
                                                               STATELESS_FQ_NAME,
                                                               STATEFUL_FQ_NAME,

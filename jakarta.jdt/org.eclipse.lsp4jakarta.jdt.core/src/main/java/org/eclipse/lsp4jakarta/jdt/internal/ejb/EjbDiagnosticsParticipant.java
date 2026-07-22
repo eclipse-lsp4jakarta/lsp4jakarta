@@ -83,7 +83,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /**
      * Validates that session synchronization methods on a type comply with the EJB spec:
-     * must not be final, must not be static, and must return void.
+     * must not be final, must not be static, and must be of type void.
      *
      * @param context the diagnostics context
      * @param uri the file URI
@@ -101,7 +101,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                 continue;
             }
 
-            String annotationNames = getSimpleAnnotationNames(matchedAnnotations);
+            String annotationNames = DiagnosticUtils.getSimpleAnnotationNames(matchedAnnotations, "@");
             int flags = method.getFlags();
 
             if (Flags.isFinal(flags)) {
@@ -122,7 +122,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                          DiagnosticSeverity.Error));
             }
 
-            if (!"V".equals(method.getReturnType())) {
+            if (!Constants.VOID_RETURN_TYPE.equals(method.getReturnType())) {
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("InvalidSessionSyncMethodNonVoid", annotationNames),
@@ -171,17 +171,6 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
         String[] methodAnnotationNames = Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
         return DiagnosticUtils.getMatchedJavaElementNames(type, methodAnnotationNames,
                                                           Constants.SESSION_SYNC_ANNOTATIONS);
-    }
-
-    /**
-     * Converts a list of fully qualified annotation names to a comma-separated
-     * string of simple names prefixed with {@code @}.
-     *
-     * @param annotations the FQ annotation names
-     * @return display string, e.g. "@AfterBegin"
-     */
-    private String getSimpleAnnotationNames(List<String> annotations) {
-        return annotations.stream().map(fq -> "@" + DiagnosticUtils.getSimpleName(fq)).distinct().collect(java.util.stream.Collectors.joining(", "));
     }
 
     /**
