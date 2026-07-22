@@ -13,6 +13,7 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -109,8 +110,10 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
         }
 
         String source = document.get();
+        List<int[]> pendingDeletes = new ArrayList<>();
 
-        for (ASTNode child : children) {
+        for (int i = 0; i < children.size(); i++) {
+            ASTNode child = children.get(i);
             if (!(child instanceof Annotation)) {
                 continue;
             }
@@ -135,46 +138,124 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                 lineStart--;
             }
 
-            // Find the end of the line containing this annotation.
+            // Find the end of the line containing this annotation (exclusive of \n).
             int lineEnd = annotEnd;
             while (lineEnd < source.length() && source.charAt(lineEnd) != '\n') {
                 lineEnd++;
             }
 
-            // Check whether the annotation is the only non-whitespace token on its line.
+            // Content before and after the annotation on the same line.
             String before = source.substring(lineStart, annotStart);
             String after = source.substring(annotEnd, lineEnd);
-            boolean aloneOnLine = before.trim().isEmpty() && after.trim().isEmpty();
+
+            boolean atLineEnd = after.trim().isEmpty();
 
             int deleteStart;
             int deleteEnd;
 
-            if (aloneOnLine) {
-                // Delete the entire line including its leading indentation and trailing newline,
-                // so no blank line is left behind.
-                deleteStart = lineStart;
-                deleteEnd = (lineEnd < source.length() && source.charAt(lineEnd) == '\n') ? lineEnd + 1 : lineEnd;
-            } else {
-                // The annotation shares its line with other tokens.
-                // Every annotation eats its trailing space (the separator after it).
-                // First token also eats leading indentation (deleteStart = lineStart).
-                // Later tokens start at annotStart since their preceding space was already
-                // consumed by the previous token's trailing-space range.
-                // Ranges are disjoint.
-                boolean atLineStart = before.trim().isEmpty();
-
-                deleteStart = atLineStart ? lineStart : annotStart;
+            if (!atLineEnd) {
+                // Case C: annotation shares its line with tokens that follow it
+                // (e.g. an inline annotation in a parameter list, or a leading
+                // annotation when siblings follow on the same line).
+                // Delete the annotation plus any immediately-following whitespace so
+                // the next token slides into place without a double-space.
+                deleteStart = annotStart;
                 deleteEnd = annotEnd;
-                // Eat one trailing space if one exists on the same line.
-                if (deleteEnd < lineEnd) {
-                    char c = source.charAt(deleteEnd);
-                    if (c == ' ' || c == '\t') {
-                        deleteEnd++;
+                while (deleteEnd < source.length()
+                        && (source.charAt(deleteEnd) == ' ' || source.charAt(deleteEnd) == '\t')) {
+                    deleteEnd++;
+                }
+            } else if (!before.trim().isEmpty()) {
+                // Case A: annotation is the last non-whitespace token on its line AND
+                // there are other non-whitespace tokens before it on the SAME line.
+                // Delete only the annotation (and any leading space absorbed by annotStart)
+                // up to but NOT including the \n, so the line break is preserved and the
+                // next line stays on its own line.
+                deleteStart = annotStart;
+                deleteEnd = lineEnd;   // stop before the \n — preserve the line break
+            } else {
+                // Case B: annotation is alone on its line (only whitespace before/after).
+                //
+                // ASTRewrite absorbs the preceding newline (backward) when ALL of:
+                //   - the declaring node is a field or type (not a method or parameter),
+                //   - this annotation is the last element in the modifiers list,
+                //   - the preceding line ends with non-whitespace content,
+                //   - no other annotation has been queued for deletion yet (sole removal).
+                //
+                // Otherwise absorb the following newline and next-line indent (forward).
+                int prevLineEnd = lineStart - 1; // offset of the '\n' before this line, or -1
+                boolean prevLineHasContent = false;
+                if (prevLineEnd >= 0) {
+                    // scan backward from \n to the start of the preceding line
+                    int scan = prevLineEnd - 1;
+                    while (scan >= 0 && source.charAt(scan) != '\n') {
+                        if (!Character.isWhitespace(source.charAt(scan))) {
+                            prevLineHasContent = true;
+                            break;
+                        }
+                        scan--;
                     }
+                    // If the preceding line is itself an annotation, do not absorb backward —
+                    // absorbing into another annotation's line would corrupt that annotation.
+                    if (prevLineHasContent) {
+                        int prevLineStart = prevLineEnd - 1;
+                        while (prevLineStart > 0 && source.charAt(prevLineStart - 1) != '\n') {
+                            prevLineStart--;
+                        }
+                        if (source.substring(prevLineStart, prevLineEnd).stripLeading().startsWith("@")) {
+                            prevLineHasContent = false;
+                        }
+                    }
+                }
+
+                // Backward is appropriate only when this is the sole annotation being
+                // removed in this call (i.e. no other delete has been queued yet).
+                // When multiple annotations are removed together, forward absorption
+                // for all of them produces adjacent ranges that merge cleanly.
+                boolean useBackward = (isField || isType)
+                        && i == children.size() - 1
+                        && prevLineHasContent
+                        && pendingDeletes.isEmpty();
+
+                if (useBackward) {
+                    // Absorb backward: delete '\n' + annotation (preceding line stays intact)
+                    deleteStart = prevLineEnd; // the '\n' ending the preceding line
+                    deleteEnd = annotEnd;
+                } else {
+                    // Absorb forward: delete annotation + '\n' + next-line indent
+                    deleteStart = annotStart;
+                    int nextLineStart = (lineEnd < source.length() && source.charAt(lineEnd) == '\n')
+                            ? lineEnd + 1 : lineEnd;
+                    int nextLineIndent = 0;
+                    while (nextLineStart + nextLineIndent < source.length()
+                            && (source.charAt(nextLineStart + nextLineIndent) == ' '
+                                    || source.charAt(nextLineStart + nextLineIndent) == '\t')) {
+                        nextLineIndent++;
+                    }
+                    deleteEnd = nextLineStart + nextLineIndent;
                 }
             }
 
-            editRoot.addChild(new DeleteEdit(deleteStart, deleteEnd - deleteStart));
+            pendingDeletes.add(new int[]{deleteStart, deleteEnd});
+        }
+
+        // Merge overlapping or adjacent DeleteEdits so that removing multiple
+        // consecutive annotations produces a single, non-overlapping edit.
+        pendingDeletes.sort((a, b) -> Integer.compare(a[0], b[0]));
+        int[] current = null;
+        for (int[] range : pendingDeletes) {
+            if (current == null) {
+                current = new int[]{range[0], range[1]};
+            } else if (range[0] <= current[1]) {
+                // overlapping or adjacent — extend
+                current[1] = Math.max(current[1], range[1]);
+            } else {
+                editRoot.addChild(new DeleteEdit(current[0], current[1] - current[0]));
+                current = new int[]{range[0], range[1]};
+            }
+        }
+        if (current != null) {
+            editRoot.addChild(new DeleteEdit(current[0], current[1] - current[0]));
         }
 
         // Rewrite imports if the import rewrite has accumulated changes.
