@@ -80,4 +80,45 @@ public class EmbeddedAnnotationTest extends BaseJakartaTest {
         // No diagnostic expected: AddressWithEmbedded is annotated with @Embeddable
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    /**
+     * A method annotated with @Embedded whose declared type does NOT carry @Embeddable
+     * must produce a diagnostic at the method name.
+     */
+    @Test
+    public void testEmbeddedMethodTypeNotAnnotatedWithEmbeddable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EmbeddedWithoutEmbeddableOnMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 19 (0-based: 18): "    public EmbeddedAddress getAddress() {"
+        // "getAddress" starts at col 27, ends at col 37
+        Diagnostic d = d(18, 27, 37,
+                         "The type 'EmbeddedAddress' used in the @Embedded field or property must be annotated with @Embeddable.",
+                         DiagnosticSeverity.Error, "jakarta-persistence", "EmbeddedTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+    }
+
+    /**
+     * A method annotated with @Embedded whose declared type IS annotated with @Embeddable
+     * must NOT produce a diagnostic.
+     */
+    @Test
+    public void testEmbeddedMethodTypeAnnotatedWithEmbeddable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EmbeddedWithEmbeddableOnMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostic expected: AddressWithEmbedded is annotated with @Embeddable
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
