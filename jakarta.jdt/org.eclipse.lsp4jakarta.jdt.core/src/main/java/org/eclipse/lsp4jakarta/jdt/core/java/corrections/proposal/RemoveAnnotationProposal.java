@@ -195,14 +195,19 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                         }
                         scan--;
                     }
-                    // If the preceding line is itself an annotation, do not absorb backward —
-                    // absorbing into another annotation's line would corrupt that annotation.
+                    // If the preceding line is an annotation or a comment, do not absorb
+                    // backward — absorbing into an annotation would corrupt it, and
+                    // absorbing into a comment would produce confusing output.
                     if (prevLineHasContent) {
                         int prevLineStart = prevLineEnd - 1;
                         while (prevLineStart > 0 && source.charAt(prevLineStart - 1) != '\n') {
                             prevLineStart--;
                         }
-                        if (source.substring(prevLineStart, prevLineEnd).stripLeading().startsWith("@")) {
+                        String prevLineContent = source.substring(prevLineStart, prevLineEnd).stripLeading();
+                        if (prevLineContent.startsWith("@")
+                                || prevLineContent.startsWith("//")
+                                || prevLineContent.startsWith("/*")
+                                || prevLineContent.startsWith("*")) {
                             prevLineHasContent = false;
                         }
                     }
