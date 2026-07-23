@@ -116,7 +116,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
         TextEdit te11 = te(35, 0, 36, 0, "");
         CodeAction ca11 = ca(uri, "Remove @RequestScoped", d1, te11);
-        TextEdit te12 = te(35, 14, 36, 14, "");
+        TextEdit te12 = te(36, 0, 37, 0, "");
         CodeAction ca12 = ca(uri, "Remove @SessionScoped", d1, te12);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca11, ca12);
 
