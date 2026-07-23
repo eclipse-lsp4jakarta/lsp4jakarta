@@ -13,6 +13,8 @@
 
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
+import java.util.Set;
+
 /**
  * Persistence diagnostic constants.
  */
@@ -25,10 +27,16 @@ public class Constants {
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
+    public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
     public static final String OBJECT = "java.lang.Object";
+    public static final String SQL_TIMESTAMP = "java.sql.Timestamp";
+
+    /* Valid @Version field types */
+    public static final Set<String> VALID_VERSION_TYPES = Set.of("int", "short", "long", "java.lang.Integer",
+                                                                 "java.lang.Short", "java.lang.Long", SQL_TIMESTAMP);
 
     /* Annotation Fields */
     public static final String NAME = "name";
@@ -41,5 +49,6 @@ public class Constants {
     public static final String[] SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS = { ID, TEMPORAL };
 
     public static final String UTIL_DATE = "java.util.Date";
+    public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
 }

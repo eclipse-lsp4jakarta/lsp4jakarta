@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
@@ -271,23 +272,25 @@ public class ManagedBean {
     }
 
     /**
-     * Returns true if the class represented by the input type object contains a default constructor or
-     * a constructor with the jakarta.inject.Inject annotation.
+     * Returns true if the class represented by the input type object contains a no-args constructor
+     * (with any access modifier) or a constructor with the jakarta.inject.Inject annotation.
      *
      * @param type The type object to check.
      *
-     * @return True if the class represented by the input type object contains a default constructor or
-     *         a constructor with the jakarta.inject.Inject annotation.
+     * @return True if the class represented by the input type object contains a no-args constructor
+     *         (regardless of access modifier) or a constructor with the jakarta.inject.Inject annotation.
      *
      * @throws JavaModelException
      */
     public static boolean containsValidConstructor(IType type) throws JavaModelException {
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+        // Check for no-args constructor
+        if (constructorInfo.hasNoArgsConstructor()) {
+            return true;
+        }
+        // Check for @Inject annotated constructor
         List<IMethod> constructors = getConstructors(type);
-
         for (IMethod constructor : constructors) {
-            if (constructor.getNumberOfParameters() == 0) {
-                return true;
-            }
             IAnnotation injectAnnotation = constructor.getAnnotation(INJECT_ANNOTATION);
             if (injectAnnotation != null && injectAnnotation.exists()) {
                 return true;

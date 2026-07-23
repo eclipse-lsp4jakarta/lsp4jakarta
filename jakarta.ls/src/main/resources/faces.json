@@ -1,4 +1,48 @@
 {
+	"Jakarta Faces - @FlowScoped": {
+		"prefix": "faces_flowscoped",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.faces.flow.FlowScoped;",
+			"import java.io.Serializable;",
+			"",
+			"/**",
+			" * Flow-scoped bean tied to a specific flow in Jakarta Faces.",
+			" * The @FlowScoped annotation ensures this bean is active only within the specified flow.",
+			" */",
+			"@FlowScoped(\"${2:basicFlow}\") // flow id must match your @FlowDefinition",
+			"public class ${TM_FILENAME_BASE} implements Serializable {",
+			"",
+			"\tprivate String value;",
+			"",
+			"\t/**",
+			"\t * Gets the value.",
+			"\t * ",
+			"\t * @return the current value",
+			"\t */",
+			"\tpublic String getValue() {",
+			"\t\treturn value;",
+			"\t}",
+			"",
+			"\t/**",
+			"\t * Sets the value.",
+			"\t * ",
+			"\t * @param value the value to set",
+			"\t */",
+			"\tpublic void setValue(String value) {",
+			"\t\tthis.value = value;",
+			"\t}",
+			"",
+			"\t// ${3:Add flow-specific methods here}",
+			"}"
+		],
+		"description": "Flow-scoped bean with @FlowScoped annotation",
+		"context": {
+			"type": "jakarta.faces.flow.FlowScoped",
+			"contentType": "class"
+		}
+	},
 	"Jakarta Faces - @FacesBehavior": {
 		"prefix": "faces_behavior",
 		"body": [

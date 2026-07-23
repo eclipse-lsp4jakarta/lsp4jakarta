@@ -14,6 +14,8 @@ package org.eclipse.lsp4jakarta.jdt.internal;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -251,16 +253,17 @@ public class DiagnosticUtils {
 
     /**
      * Returns matched Java element fully qualified names.
+     * This is the core implementation that accepts Collections for maximum flexibility.
      *
      * @param type the type representing the class
-     * @param javaElementNames Java element names
-     * @param javaElementFQNames given fully qualified name array
+     * @param javaElementNames Java element names collection (Set or List)
+     * @param javaElementFQNames given fully qualified name collection (Set or List)
      * @return matched Java element fully qualified names
      */
-    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
-                                                          String[] javaElementFQNames) {
-        return Stream.of(javaElementFQNames).filter(fqName -> {
-            boolean anyMatch = Stream.of(javaElementNames).anyMatch(name -> {
+    public static List<String> getMatchedJavaElementNames(IType type, Collection<String> javaElementNames,
+                                                          Collection<String> javaElementFQNames) {
+        return javaElementFQNames.stream().filter(fqName -> {
+            boolean anyMatch = javaElementNames.stream().anyMatch(name -> {
                 try {
                     return isMatchedJavaElement(type, name, fqName);
                 } catch (JavaModelException e) {
@@ -270,6 +273,20 @@ public class DiagnosticUtils {
             });
             return anyMatch;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns matched Java element fully qualified names.
+     * Convenience overload that accepts arrays and delegates to the Collection-based method.
+     *
+     * @param type the type representing the class
+     * @param javaElementNames Java element names array
+     * @param javaElementFQNames given fully qualified name array
+     * @return matched Java element fully qualified names
+     */
+    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
+                                                          String[] javaElementFQNames) {
+        return getMatchedJavaElementNames(type, Arrays.asList(javaElementNames), Arrays.asList(javaElementFQNames));
     }
 
     /**
@@ -467,5 +484,45 @@ public class DiagnosticUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns {@code true} if the given {@code @Priority} annotation carries a
+     * negative integer value.
+     *
+     * <p>Reads the {@code value} member and treats any {@link Number} whose
+     * {@link Number#intValue()} is less than zero as negative. Returns
+     * {@code false} when the member is absent, non-numeric, or a model error
+     * occurs.
+     *
+     * @param priorityAnnotation the {@code @Priority} annotation to inspect
+     * @return {@code true} if the priority value is negative; {@code false} otherwise
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean isNegativePriorityValue(IAnnotation priorityAnnotation) throws JavaModelException {
+        Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
+        return value != null && value.intValue() < 0;
+    }
+
+    /**
+     * Helper method to extract annotation names from a field.
+     *
+     * @param field the field to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access field annotations
+     */
+    public static String[] getAnnotationNames(IField field) throws JavaModelException {
+        return Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Helper method to extract annotation names from a method.
+     *
+     * @param method the method to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access method annotations
+     */
+    public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
+        return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
     }
 }
