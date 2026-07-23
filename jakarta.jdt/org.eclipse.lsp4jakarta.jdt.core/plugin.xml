@@ -344,6 +344,7 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiSpecializesDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />

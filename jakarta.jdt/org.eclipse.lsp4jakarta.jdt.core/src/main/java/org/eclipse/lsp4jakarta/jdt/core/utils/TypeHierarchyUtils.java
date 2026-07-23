@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.core.utils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.DefaultWorkingCopyOwner;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 
 /**
@@ -37,6 +39,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
  */
 @SuppressWarnings("restriction")
 public class TypeHierarchyUtils {
+
+    private static final Logger LOGGER = Logger.getLogger(TypeHierarchyUtils.class.getName());
 
     public static final int HAS_SUPERTYPE = 1;
 
@@ -162,5 +166,35 @@ public class TypeHierarchyUtils {
      */
     public static boolean inheritsFrom(IType fieldType, String superType) throws CoreException {
         return doesITypeHaveSuperType(fieldType, superType) == HAS_SUPERTYPE;
+    }
+
+    /**
+     * Returns {@code true} if the <em>direct</em> (immediate) superclass of
+     * {@code type} carries {@code annotationFQName}.
+     *
+     * <p>Only the single class named by {@link IType#getSuperclassName()} is
+     * inspected — grandparents and further ancestors are not considered.
+     * This is intentionally distinct from {@link #findSupertypeWithAnnotation},
+     * which walks the full hierarchy.</p>
+     *
+     * @param type the type whose direct superclass is checked
+     * @param annotationFQName the fully-qualified annotation name to look for
+     * @return {@code true} if the direct superclass carries the annotation;
+     *         {@code false} if there is no direct superclass, the superclass
+     *         cannot be resolved, or it does not carry the annotation
+     * @throws JavaModelException if the Java model cannot be accessed
+     */
+    public static boolean directSuperclassHasAnnotation(IType type, String annotationFQName) throws JavaModelException {
+        String superclassName = type.getSuperclassName();
+        if (superclassName == null) {
+            return false;
+        }
+        IType superclassType = ManagedBean.getChildITypeByName(type, superclassName);
+        if (superclassType == null) {
+            return false;
+        }
+        return DiagnosticUtils.isMatchedAnnotation(superclassType.getCompilationUnit(),
+                                                   superclassType.getAnnotations(),
+                                                   annotationFQName);
     }
 }
