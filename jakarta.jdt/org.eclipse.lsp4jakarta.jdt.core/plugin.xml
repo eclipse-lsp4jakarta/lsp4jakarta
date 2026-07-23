@@ -353,6 +353,9 @@
                   targetDiagnostic="jakarta-ejb#InvalidNonTopLevelClass"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#ConflictingSessionBeanAnnotations"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveConflictingSessionBeanAnnotationsQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#SessionBeanFinalizeMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveFinalizeMethodQuickFix" />
    </extension>

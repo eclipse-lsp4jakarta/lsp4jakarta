@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -34,6 +35,8 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+
+import com.google.gson.Gson;
 
 /**
  * EJB diagnostic participant that validates session beans.
@@ -106,6 +109,16 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              ErrorCode.InvalidNonTopLevelClass,
                                                              DiagnosticSeverity.Error));
                 }
+                if (sessionBeanAnnotations.size() > 1) {
+                    String annotationNames = sessionBeanAnnotations.stream().map(DiagnosticUtils::getSimpleName).map(name -> "@" + name).collect(Collectors.joining(", "));
+                    String message = Messages.getMessage("SessionBeanConflictingAnnotations", annotationNames);
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             (new Gson().toJsonTree(sessionBeanAnnotations)),
+                                                             ErrorCode.ConflictingSessionBeanAnnotations,
+                                                             DiagnosticSeverity.Error));
+                }
+
                 validateSessionBeanConstructor(type, context, uri, diagnostics);
                 validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
             }
