@@ -72,12 +72,61 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             IType[] types = unit.getAllTypes();
             for (IType type : types) {
                 validateDecorator(type, unit, uri, context, diagnostics);
+                validateNonDecoratorDelegates(type, unit, uri, context, diagnostics);
             }
         } catch (JavaModelException e) {
             LOGGER.log(Level.SEVERE, "Error occurred while validating decorator", e);
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that a non-decorator class has no injection points annotated with @Delegate.
+     *
+     * Per CDI 3.0 specification section 8.1:
+     * "If a bean class that is not a decorator has an injection point annotated @Delegate,
+     * the container automatically detects the problem and treats it as a definition error."
+     *
+     * @param type the type to validate
+     * @param unit the compilation unit
+     * @param uri the file URI
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private void validateNonDecoratorDelegates(IType type, ICompilationUnit unit, String uri,
+                                               JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        // Only applies to classes that are NOT decorators
+        if (DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.DECORATOR_FQ_NAME)) {
+            return;
+        }
+
+        String message = Messages.getMessage("DelegateOutsideDecorator");
+
+        // Check fields
+        for (IField field : type.getFields()) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.DELEGATE_FQ_NAME)) {
+                Range range = PositionUtils.toNameRange(field, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidDelegateOutsideDecorator,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+
+        // Check method and constructor parameters
+        for (IMethod method : type.getMethods()) {
+            for (ILocalVariable parameter : method.getParameters()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, parameter.getAnnotations(), Constants.DELEGATE_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(parameter, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDelegateOutsideDecorator,
+                                                             DiagnosticSeverity.Error));
+                }
+            }
+        }
     }
 
     /**

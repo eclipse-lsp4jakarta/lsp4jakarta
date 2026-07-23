@@ -444,6 +444,9 @@
                   targetDiagnostic="jakarta-cdi#InvalidDelegateInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDelegateOutsideDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDelegateAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
   </extension>
