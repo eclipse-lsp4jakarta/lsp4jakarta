@@ -148,17 +148,17 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         hasPrimaryKey = true;
                     }
 
+                    // If a field is static, we do not care about it further
+                    if (isStatic(field.getFlags())) {
+                        continue;
+                    }
+
                     // Track @EmbeddedId and @Id members for identifier conflict checks
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
                         embeddedIdMembers.add(field);
                     }
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
                         idMembers.add(field);
-                    }
-
-                    // If a field is static, we do not care about it beyond identity tracking above
-                    if (isStatic(field.getFlags())) {
-                        continue;
                     }
                     // If we find a non-static variable that is final, this is a problem
                     if (isFinal(field.getFlags())) {
