@@ -336,4 +336,110 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // No diagnostics expected for valid decorator with matching delegate type
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    /**
+     * Test that a non-decorator class with @Inject @Delegate field triggers a diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1: "If a bean class that is not a decorator has an injection
+     * point annotated @Delegate, the container automatically detects the problem and treats it
+     * as a definition error."
+     *
+     * Expected: Error on the @Delegate field in the non-decorator class.
+     */
+    @Test
+    public void testDelegateOutsideDecorator() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/NotADecorator.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 15 (0-based: 14), field name "service" starts at column 27, ends at column 34
+        Diagnostic delegateOutsideDecoratorDiagnostic = d(14, 27, 34,
+                                                          "Injection points annotated with @Delegate must be inside a class annotated with @Decorator.",
+                                                          DiagnosticSeverity.Error,
+                                                          "jakarta-cdi",
+                                                          "InvalidDelegateOutsideDecorator");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, delegateOutsideDecoratorDiagnostic);
+    }
+
+    /**
+     * Test that a non-decorator class with @Inject @Delegate on method/constructor
+     * parameters triggers a diagnostic on each invalid parameter.
+     *
+     * Expected: Error on each @Delegate parameter in the non-decorator class.
+     */
+    @Test
+    public void testDelegateOutsideDecoratorOnMethodAndConstructorParams() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/NotADecoratorWithMethodDelegate.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 14 (0-based: 13), initializer method parameter "service" at col 46-53
+        Diagnostic methodParamDiagnostic = d(13, 46, 53,
+                                             "Injection points annotated with @Delegate must be inside a class annotated with @Decorator.",
+                                             DiagnosticSeverity.Error,
+                                             "jakarta-cdi",
+                                             "InvalidDelegateOutsideDecorator");
+
+        // Line 19 (0-based: 18), constructor parameter "ps" at col 68-70
+        Diagnostic constructorParamDiagnostic = d(18, 68, 70,
+                                                  "Injection points annotated with @Delegate must be inside a class annotated with @Decorator.",
+                                                  DiagnosticSeverity.Error,
+                                                  "jakarta-cdi",
+                                                  "InvalidDelegateOutsideDecorator");
+
+        // DI participant also warns: the @Inject constructor has no no-arg counterpart
+        Diagnostic diConstructorDiagnostic = d(18, 68, 70,
+                                               "The parameter should define a constructor with no parameters or a constructor annotated with @Inject.",
+                                               DiagnosticSeverity.Warning,
+                                               "jakarta-di",
+                                               "InjectionPointInvalidConstructorBean");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              diConstructorDiagnostic, methodParamDiagnostic, constructorParamDiagnostic);
+    }
+
+    /**
+     * Test that a non-decorator class with @Inject fields but NO @Delegate does NOT
+     * trigger any InvalidDelegateOutsideDecorator diagnostic.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testNonDecoratorWithNoDelegate() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/NonDecoratorNoDelegates.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: @Delegate is absent, so no violation
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a valid @Decorator class with a single @Inject @Delegate field does
+     * NOT trigger any InvalidDelegateOutsideDecorator diagnostic.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testValidDecoratorDelegateNotFlaggedAsOutsideDecorator() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ValidDecoratorWithDelegate.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: @Delegate inside a @Decorator class is valid
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
