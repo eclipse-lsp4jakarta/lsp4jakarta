@@ -143,14 +143,23 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateVersionFieldOrPropertyType(field, type, diagnostics, context);
                     }
 
-                    // Check if any field has @Id or @EmbeddedId annotation
-                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
-                        hasPrimaryKey = true;
-                    }
-
                     // If a field is static, we do not care about it further
                     if (isStatic(field.getFlags())) {
                         continue;
+                    }
+
+                    // If we find a non-static variable that is final, this is a problem
+                    if (isFinal(field.getFlags())) {
+                        Range range = PositionUtils.toNameRange(field, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("EntityNoFinalVariables"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
+                                                                 ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
+                    }
+
+                    // Check if any field has @Id or @EmbeddedId annotation
+                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
+                        hasPrimaryKey = true;
                     }
 
                     // Track @EmbeddedId and @Id members for identifier conflict checks
@@ -159,14 +168,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     }
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
                         idMembers.add(field);
-                    }
-                    // If we find a non-static variable that is final, this is a problem
-                    if (isFinal(field.getFlags())) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("EntityNoFinalVariables"), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
-                                                                 ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
 
                     validatePKDateTemporal(type, field, diagnostics, context);
