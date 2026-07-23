@@ -124,7 +124,7 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                 continue;
             }
             ITypeBinding binding = annotation.resolveTypeBinding();
-            if (!binding.getQualifiedName().equals(matchingFqn)) {
+            if (binding == null || !binding.getQualifiedName().equals(matchingFqn)) {
                 continue;
             }
 
