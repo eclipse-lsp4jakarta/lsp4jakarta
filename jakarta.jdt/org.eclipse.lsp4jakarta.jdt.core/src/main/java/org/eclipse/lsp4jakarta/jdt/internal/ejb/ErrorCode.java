@@ -24,6 +24,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidSessionSyncMethodFinal,
     InvalidSessionSyncMethodStatic,
     InvalidSessionSyncMethodNonVoid,
+    ConflictingSessionBeanAnnotations,
     SessionBeanFinalizeMethod,
     ImplementMessageListener;
 

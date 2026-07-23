@@ -87,6 +87,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     EJBInsertPublicCtrtToClass,
     EJBChangeReturnTypeToVoidForSessionSyncMethod,
     EJBRemoveFinalizeMethod,
+    EJBRemoveConflictingSessionBeanAnnotations,
     CDIRemoveConditionalObserverAnnotations,
     CDIRemoveNotifyObserverAttribute,
     CDIRemoveObserverConflictParams,

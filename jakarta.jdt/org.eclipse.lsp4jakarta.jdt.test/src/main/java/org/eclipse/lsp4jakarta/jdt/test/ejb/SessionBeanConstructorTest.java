@@ -22,6 +22,8 @@ import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
+import com.google.gson.Gson;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
@@ -84,6 +86,66 @@ public class SessionBeanConstructorTest extends BaseJakartaTest {
     public void testInvalidSingletonBeanPrivate() throws Exception {
         assertMissingPublicNoArgConstructor("src/main/java/io/openliberty/sample/jakarta/ejb/InvalidSingletonBeanPrivate.java",
                                             40, "public InvalidSingletonBeanPrivate() {\n\t}\n\n\t");
+    }
+
+    @Test
+    public void testConflictingStatelessStateful() throws Exception {
+        String uri = getJavaFileUri("src/main/java/io/openliberty/sample/jakarta/ejb/InvalidConflictingStatelessStateful.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        Diagnostic conflictingDiagnostic = d(7, 13, 48,
+                                             "A class cannot be annotated with multiple session bean types: @Stateless, @Stateful.",
+                                             DiagnosticSeverity.Error, "jakarta-ejb", "ConflictingSessionBeanAnnotations");
+        conflictingDiagnostic.setData(new Gson().toJsonTree(Arrays.asList("jakarta.ejb.Stateless", "jakarta.ejb.Stateful")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, conflictingDiagnostic);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, conflictingDiagnostic);
+        TextEdit removeStatefulEdit = te(6, 0, 7, 0, "");
+        CodeAction keepStatelessAction = ca(uri, "Remove @Stateful", conflictingDiagnostic, removeStatefulEdit);
+        TextEdit removeStatelessEdit = te(5, 0, 6, 0, "");
+        CodeAction keepStatefulAction = ca(uri, "Remove @Stateless", conflictingDiagnostic, removeStatelessEdit);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, keepStatelessAction, keepStatefulAction);
+    }
+
+    @Test
+    public void testConflictingStatelessSingleton() throws Exception {
+        String uri = getJavaFileUri("src/main/java/io/openliberty/sample/jakarta/ejb/InvalidConflictingStatelessSingleton.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        Diagnostic conflictingDiagnostic = d(7, 13, 49,
+                                             "A class cannot be annotated with multiple session bean types: @Stateless, @Singleton.",
+                                             DiagnosticSeverity.Error, "jakarta-ejb", "ConflictingSessionBeanAnnotations");
+        conflictingDiagnostic.setData(new Gson().toJsonTree(Arrays.asList("jakarta.ejb.Stateless", "jakarta.ejb.Singleton")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, conflictingDiagnostic);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, conflictingDiagnostic);
+        TextEdit removeSingletonEdit = te(6, 0, 7, 0, "");
+        CodeAction keepStatelessAction = ca(uri, "Remove @Singleton", conflictingDiagnostic, removeSingletonEdit);
+        TextEdit removeStatelessEdit = te(5, 0, 6, 0, "");
+        CodeAction keepSingletonAction = ca(uri, "Remove @Stateless", conflictingDiagnostic, removeStatelessEdit);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, keepStatelessAction, keepSingletonAction);
+    }
+
+    @Test
+    public void testConflictingStatefulSingleton() throws Exception {
+        String uri = getJavaFileUri("src/main/java/io/openliberty/sample/jakarta/ejb/InvalidConflictingStatefulSingleton.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        Diagnostic conflictingDiagnostic = d(7, 13, 48,
+                                             "A class cannot be annotated with multiple session bean types: @Stateful, @Singleton.",
+                                             DiagnosticSeverity.Error, "jakarta-ejb", "ConflictingSessionBeanAnnotations");
+        conflictingDiagnostic.setData(new Gson().toJsonTree(Arrays.asList("jakarta.ejb.Stateful", "jakarta.ejb.Singleton")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, conflictingDiagnostic);
+
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, conflictingDiagnostic);
+        TextEdit removeSingletonEdit = te(6, 0, 7, 0, "");
+        CodeAction keepStatefulAction = ca(uri, "Remove @Singleton", conflictingDiagnostic, removeSingletonEdit);
+        TextEdit removeStatefulEdit = te(5, 0, 6, 0, "");
+        CodeAction keepSingletonAction = ca(uri, "Remove @Stateful", conflictingDiagnostic, removeStatefulEdit);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, keepStatefulAction, keepSingletonAction);
     }
 
     private void assertMissingPublicNoArgConstructor(String projectRelativePath, int endCharacter,
