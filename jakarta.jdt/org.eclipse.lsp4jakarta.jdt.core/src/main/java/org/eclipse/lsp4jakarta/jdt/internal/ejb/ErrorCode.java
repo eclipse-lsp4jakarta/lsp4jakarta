@@ -22,6 +22,7 @@ public enum ErrorCode implements IJavaErrorCode {
 
     MissingPublicNoArgConstructor,
     InvalidSessionBeanWithInterceptorOrDecorator,
+    ConflictingSessionBeanAnnotations,
     SessionBeanFinalizeMethod,
     ImplementMessageListener;
 
