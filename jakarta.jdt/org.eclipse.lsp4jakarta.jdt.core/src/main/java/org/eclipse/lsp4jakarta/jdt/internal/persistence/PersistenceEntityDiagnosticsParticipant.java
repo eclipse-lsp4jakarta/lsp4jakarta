@@ -205,8 +205,18 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
             if (isConverterAnnotated) {
-                String[] interfaces = { Constants.ATTRIBUTE_CONVERTER };
-                if (!DiagnosticUtils.doesImplementInterfaces(type, interfaces)) {
+                boolean implementsAttributeConverter = false;
+                for (String superInterfaceName : type.getSuperInterfaceNames()) {
+                    // getSuperInterfaceNames() returns the raw name as declared (e.g.
+                    // "AttributeConverter"), so strip any type parameters before matching.
+                    int typeParamStart = superInterfaceName.indexOf('<');
+                    String rawName = typeParamStart >= 0 ? superInterfaceName.substring(0, typeParamStart) : superInterfaceName;
+                    if (DiagnosticUtils.isMatchedJavaElement(type, rawName, Constants.ATTRIBUTE_CONVERTER)) {
+                        implementsAttributeConverter = true;
+                        break;
+                    }
+                }
+                if (!implementsAttributeConverter) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ConverterMustImplementAttributeConverter"),
