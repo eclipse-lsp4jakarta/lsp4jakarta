@@ -53,5 +53,5 @@ public class Constants {
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
     public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
     public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
-    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "EXTENDED";
+    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "PersistenceContextType.EXTENDED";
 }
