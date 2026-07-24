@@ -158,11 +158,9 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
         IAnnotation[] typeAnnotations = type.getAnnotations();
 
         // CDI scopes
-        for (IAnnotation annotation : typeAnnotations) {
-            for (String scope : SCOPE_FQ_NAMES) {
-                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, scope)) {
-                    return true;
-                }
+        for (String scope : SCOPE_FQ_NAMES) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, scope)) {
+                return true;
             }
         }
 
