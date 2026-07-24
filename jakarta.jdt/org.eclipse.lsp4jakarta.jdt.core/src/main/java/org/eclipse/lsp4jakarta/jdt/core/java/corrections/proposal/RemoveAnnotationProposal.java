@@ -16,6 +16,7 @@ package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -29,10 +30,10 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.TextEdit;
@@ -46,6 +47,8 @@ import org.eclipse.text.edits.TextEdit;
  *
  */
 public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
+    private static final Logger LOGGER = Logger.getLogger(RemoveAnnotationProposal.class.getName());
+
     private final CompilationUnit fInvocationNode;
     private final IBinding fBinding;
 
@@ -74,10 +77,8 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
 
     @Override
     protected void addEdits(IDocument document, TextEdit editRoot) throws CoreException {
-        // Call CUCorrectionProposal.addEdits() (empty default), not
-        // ASTRewriteCorrectionProposal.addEdits(), since we handle edits directly.
-        super.addEdits(document, editRoot);
-
+        // Do not call super.addEdits() — we handle all edits and import rewrites
+        // directly, bypassing the ASTRewrite machinery in the parent class.
         ASTNode declNode = this.declaringNode;
         ASTNode boundNode = fInvocationNode.findDeclaringNode(fBinding);
         CompilationUnit newRoot = fInvocationNode;
@@ -110,6 +111,9 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
         }
 
         String source = document.get();
+        // Detect the actual line delimiter used in this document (\n or \r\n).
+        String lineDelim = TextUtilities.getDefaultLineDelimiter(document);
+        char lineDelimEnd = lineDelim.charAt(lineDelim.length() - 1); // always '\n'
         List<int[]> pendingDeletes = new ArrayList<>();
 
         for (int i = 0; i < children.size(); i++) {
@@ -134,13 +138,13 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
 
             // Find the start of the line containing this annotation.
             int lineStart = annotStart;
-            while (lineStart > 0 && source.charAt(lineStart - 1) != '\n') {
+            while (lineStart > 0 && source.charAt(lineStart - 1) != lineDelimEnd) {
                 lineStart--;
             }
 
-            // Find the end of the line containing this annotation (exclusive of \n).
+            // Find the end of the line containing this annotation (exclusive of line delimiter).
             int lineEnd = annotEnd;
-            while (lineEnd < source.length() && source.charAt(lineEnd) != '\n') {
+            while (lineEnd < source.length() && source.charAt(lineEnd) != lineDelimEnd) {
                 lineEnd++;
             }
 
@@ -183,12 +187,12 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                 //   - no other annotation has been queued for deletion yet (sole removal).
                 //
                 // Otherwise absorb the following newline and next-line indent (forward).
-                int prevLineEnd = lineStart - 1; // offset of the '\n' before this line, or -1
+                int prevLineEnd = lineStart - 1; // offset of the line delimiter before this line, or -1
                 boolean prevLineHasContent = false;
                 if (prevLineEnd >= 0) {
-                    // scan backward from \n to the start of the preceding line
+                    // scan backward from line delimiter to the start of the preceding line
                     int scan = prevLineEnd - 1;
-                    while (scan >= 0 && source.charAt(scan) != '\n') {
+                    while (scan >= 0 && source.charAt(scan) != lineDelimEnd) {
                         if (!Character.isWhitespace(source.charAt(scan))) {
                             prevLineHasContent = true;
                             break;
@@ -200,7 +204,7 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                     // absorbing into a comment would produce confusing output.
                     if (prevLineHasContent) {
                         int prevLineStart = prevLineEnd - 1;
-                        while (prevLineStart > 0 && source.charAt(prevLineStart - 1) != '\n') {
+                        while (prevLineStart > 0 && source.charAt(prevLineStart - 1) != lineDelimEnd) {
                             prevLineStart--;
                         }
                         String prevLineContent = source.substring(prevLineStart, prevLineEnd).stripLeading();
@@ -227,9 +231,9 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                     deleteStart = prevLineEnd; // the '\n' ending the preceding line
                     deleteEnd = annotEnd;
                 } else {
-                    // Absorb forward: delete annotation + '\n' + next-line indent
+                    // Absorb forward: delete annotation + line delimiter + next-line indent
                     deleteStart = annotStart;
-                    int nextLineStart = (lineEnd < source.length() && source.charAt(lineEnd) == '\n')
+                    int nextLineStart = (lineEnd < source.length() && source.charAt(lineEnd) == lineDelimEnd)
                             ? lineEnd + 1 : lineEnd;
                     int nextLineIndent = 0;
                     while (nextLineStart + nextLineIndent < source.length()
@@ -242,6 +246,11 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
             }
 
             pendingDeletes.add(new int[]{deleteStart, deleteEnd});
+        }
+
+        if (pendingDeletes.isEmpty()) {
+            LOGGER.warning("RemoveAnnotationProposal: no matching annotations found to remove for "
+                    + Arrays.toString(annotations) + " on node " + declaringNode.getClass().getSimpleName());
         }
 
         // Merge overlapping or adjacent DeleteEdits so that removing multiple
@@ -270,15 +279,6 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                 editRoot.addChild(importEdit);
             }
         }
-    }
-
-    /**
-     * Not used — {@link #addEdits} handles everything directly to avoid
-     * ASTRewrite producing delete ranges that cross line boundaries.
-     */
-    @Override
-    protected ASTRewrite getRewrite() throws CoreException {
-        return null;
     }
 
     /**
