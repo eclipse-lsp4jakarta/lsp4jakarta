@@ -106,10 +106,6 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
         return diagnostics;
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers — delegating to existing shared infrastructure
-    // -------------------------------------------------------------------------
-
     /**
      * Applies both diagnostic rules for a single {@code @PersistenceContext} occurrence.
      */
@@ -188,6 +184,6 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
      */
     private boolean isExtendedContext(IAnnotation pcAnnotation) throws JavaModelException {
         String value = DiagnosticUtils.getAnnotationMemberValue(pcAnnotation, "type", String.class);
-        return value != null && value.endsWith(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
+        return value != null && value.equals(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
     }
 }
