@@ -63,19 +63,19 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
     public void testSingletonWithRequestScope() throws Exception {
         String uri = getFileUri("SingletonSessionBean.java");
 
-        Diagnostic d = d(9, 13, 33,
-                         "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
-                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
-        d.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
+        Diagnostic invalidScope = d(9, 13, 33,
+                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
+        invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
 
-        JakartaJavaCodeActionParams params = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");
         TextEdit replaceWithDependent = te(7, 0, 9, 0, "@Dependent\n@Singleton\n");
         assertJavaCodeAction(params, IJDT_UTILS,
-                             ca(uri, "Remove @Singleton", d, removeSingleton),
-                             ca(uri, "Replace current scope with @Dependent", d, replaceWithDependent));
+                             ca(uri, "Remove @Singleton", invalidScope, removeSingleton),
+                             ca(uri, "Replace current scope with @Dependent", invalidScope, replaceWithDependent));
     }
 
     // -----------------------------------------------------------------------
@@ -87,19 +87,19 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
     public void testSingletonWithSessionScope() throws Exception {
         String uri = getFileUri("SingletonWithSessionScope.java");
 
-        Diagnostic d = d(9, 13, 38,
-                         "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
-                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
-        d.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+        Diagnostic invalidScope = d(9, 13, 38,
+                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
+        invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, d);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
 
-        JakartaJavaCodeActionParams params = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");
         TextEdit replaceWithDependent = te(7, 0, 9, 0, "@Dependent\n@Singleton\n");
         assertJavaCodeAction(params, IJDT_UTILS,
-                             ca(uri, "Remove @Singleton", d, removeSingleton),
-                             ca(uri, "Replace current scope with @Dependent", d, replaceWithDependent));
+                             ca(uri, "Remove @Singleton", invalidScope, removeSingleton),
+                             ca(uri, "Replace current scope with @Dependent", invalidScope, replaceWithDependent));
     }
 
     // -----------------------------------------------------------------------
