@@ -96,6 +96,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveDisposesFromInterceptorDecorator,
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
+    CDIRemoveOrphanDisposesAnnotation,
     //Interceptor
     InterceptorRemoveInterceptorMethodAnnotation,
     // Common modifier quick fixes

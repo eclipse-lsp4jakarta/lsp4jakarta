@@ -446,6 +446,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveOrphanDisposesAnnotationQuickFix" />
   </extension>
    
    <!-- Interceptor -->
