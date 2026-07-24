@@ -184,6 +184,6 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
      */
     private boolean isExtendedContext(IAnnotation pcAnnotation) throws JavaModelException {
         String value = DiagnosticUtils.getAnnotationMemberValue(pcAnnotation, "type", String.class);
-        return value != null && value.equals(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
+        return value != null && value.endsWith(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
     }
 }
