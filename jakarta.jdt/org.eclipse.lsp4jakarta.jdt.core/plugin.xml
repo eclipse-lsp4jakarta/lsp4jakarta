@@ -228,7 +228,6 @@
    
    <!-- Persistence -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
-      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceAttributeConverterDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalMethodInEntityAnnotatedClass"

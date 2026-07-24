@@ -55,8 +55,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
- * Persistence diagnostic participant that manages the use of @Entity
- * annotations.
+ * Persistence diagnostic participant
  */
 public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -194,6 +193,26 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                 if (!versionMembers.isEmpty()) {
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
+                }
+            }
+
+            // @Converter: class must implement AttributeConverter
+            boolean isConverterAnnotated = false;
+            for (IAnnotation annotation : allAnnotations) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERTER)) {
+                    isConverterAnnotated = true;
+                    break;
+                }
+            }
+            if (isConverterAnnotated) {
+                String[] interfaces = { Constants.ATTRIBUTE_CONVERTER };
+                if (!DiagnosticUtils.doesImplementInterfaces(type, interfaces)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ConverterMustImplementAttributeConverter"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.ConverterMustImplementAttributeConverter,
+                                                             DiagnosticSeverity.Error));
                 }
             }
         }

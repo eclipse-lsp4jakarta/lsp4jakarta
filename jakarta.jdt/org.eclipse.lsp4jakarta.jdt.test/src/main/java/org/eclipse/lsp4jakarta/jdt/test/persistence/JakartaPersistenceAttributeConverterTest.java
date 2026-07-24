@@ -54,8 +54,8 @@ public class JakartaPersistenceAttributeConverterTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic converterMissingInterface = d(6, 13, 47,
-                                                  "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
-                                                  DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
+                                                 "A class annotated with @Converter must implement the jakarta.persistence.AttributeConverter interface.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "ConverterMustImplementAttributeConverter");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, converterMissingInterface);
     }
