@@ -29,6 +29,14 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
 
+    public static final String CONVERT = "jakarta.persistence.Convert";
+    public static final String CONVERTS = "jakarta.persistence.Converts";
+    public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
+    public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
+    public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
+    public static final String MANY_TO_MANY = "jakarta.persistence.ManyToMany";
+    public static final String ENUMERATED = "jakarta.persistence.Enumerated";
+
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
     public static final String OBJECT = "java.lang.Object";
@@ -41,6 +49,14 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
+    public static final String CONVERTER = "converter";
+    public static final String DISABLE_CONVERSION = "disableConversion";
+    public static final String ATTRIBUTE_NAME = "attributeName";
+
+    /* @Convert restricted-target annotations */
+    public static final String[] CONVERT_RESTRICTED_ANNOTATIONS = {
+                                                                    ID, VERSION, ONE_TO_ONE, ONE_TO_MANY, MANY_TO_ONE, MANY_TO_MANY, ENUMERATED, TEMPORAL
+    };
 
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-persistence";

@@ -692,4 +692,87 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
     }
 
+    @Test
+    public void convertAnnotationMissingConverterOrDisable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationMissingAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic convertDiagnostic = d(17, 19, 23,
+                                         "@Convert must specify either a converter class via the converter element or set disableConversion = true.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence",
+                                         "InvalidConvertAnnotationMissingConverterOrDisable");
+
+        // disableConversion = false is not equivalent to disableConversion = true
+        Diagnostic disableConversionDiagnostic = d(21, 19, 25,
+                                                   "@Convert must specify either a converter class via the converter element or set disableConversion = true.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence",
+                                                   "InvalidConvertAnnotationMissingConverterOrDisable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, convertDiagnostic, disableConversionDiagnostic);
+    }
+
+    @Test
+    public void convertAnnotationOnRestrictedTarget() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationOnRestrictedTarget.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic convertOnIDDiagnostic = d(16, 17, 19,
+                                             "@Convert must not be applied to an attribute annotated with @Id.",
+                                             DiagnosticSeverity.Error, "jakarta-persistence",
+                                             "InvalidConvertAnnotationOnRestrictedTarget");
+
+        Diagnostic convertOnVersionDiagnostic = d(21, 16, 23,
+                                                  "@Convert must not be applied to an attribute annotated with @Version.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence",
+                                                  "InvalidConvertAnnotationOnRestrictedTarget");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, convertOnIDDiagnostic, convertOnVersionDiagnostic);
+    }
+
+    @Test
+    public void convertAnnotationMultipleOnSameAttribute() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationMultiple.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic diagnostic = d(18, 19, 25,
+                                  "Multiple @Convert annotations on the same attribute are not supported.",
+                                  DiagnosticSeverity.Error, "jakarta-persistence",
+                                  "InvalidConvertAnnotationMultipleOnSameAttribute");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+    }
+
+    @Test
+    public void convertAnnotationValidUsageNoDiagnostics() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid usage — no diagnostics expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
