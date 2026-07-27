@@ -48,11 +48,33 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * Validates:
  * 1. A decorator must declare exactly one injection point annotated with @Delegate
  * 2. The delegate type must implement or extend all decorated types of the decorator
+ * with exactly the same type parameters
  *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#decorator_bean
  */
 public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /**
+     * Holds a decorated type's fully qualified name together with its raw
+     * (erased) type signature and its type-argument signatures as declared on
+     * the decorator's {@code implements} clause.
+     */
+    private static final class DecoratedTypeInfo {
+        /** Fully qualified name of the raw (erased) type, e.g. {@code "com.example.Processor"} */
+        final String fqName;
+        /**
+         * Type-argument signatures from the decorator's {@code implements} clause,
+         * e.g. {@code ["Ljava.lang.String;"]} for {@code implements Processor<String>}.
+         * Empty array when the decorated type is not parameterized.
+         */
+        final String[] typeArgs;
+
+        DecoratedTypeInfo(String fqName, String[] typeArgs) {
+            this.fqName = fqName;
+            this.typeArgs = typeArgs;
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger(CdiDecoratorDiagnosticsParticipant.class.getName());
 
@@ -225,7 +247,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Validates that the delegate type implements or extends all decorated types of the decorator.
+     * Validates that the delegate type implements or extends all decorated types of the decorator
+     * with exactly the same type parameters.
      *
      * Per CDI 3.0 specification section 8.1.3:
      * "The delegate type of a decorator must implement or extend every decorated type
@@ -244,14 +267,21 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            String delegateTypeName = null;
+            // Get the raw type signature of the delegate (used to resolve the IType)
+            String delegateRawTypeSig = null;
+            String delegateFullTypeSig = null;
             if (delegateElement instanceof IField) {
-                String typeSignature = Signature.toString(((IField) delegateElement).getTypeSignature());
-                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, typeSignature);
+                delegateFullTypeSig = ((IField) delegateElement).getTypeSignature();
             } else if (delegateElement instanceof ILocalVariable) {
-                String simpleTypeName = Signature.toString(((ILocalVariable) delegateElement).getTypeSignature());
-                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleTypeName);
+                delegateFullTypeSig = ((ILocalVariable) delegateElement).getTypeSignature();
             }
+            if (delegateFullTypeSig == null) {
+                return;
+            }
+            // Strip type arguments to get the raw erased type name for IType resolution
+            delegateRawTypeSig = Signature.getTypeErasure(delegateFullTypeSig);
+            String delegateSimpleName = Signature.toString(delegateRawTypeSig);
+            String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, delegateSimpleName);
             if (delegateTypeName == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
@@ -259,23 +289,30 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            // Get all decorated types (interfaces and superclasses of the decorator)
-            List<String> decoratedTypes = getDecoratedTypes(decoratorType);
+            // Extract type arguments from the delegate field/parameter signature
+            String[] delegateTypeArgs = Signature.getTypeArguments(delegateFullTypeSig);
+
+            // Get all decorated types (interfaces and superclasses of the decorator) with their signatures
+            List<DecoratedTypeInfo> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
                 return; // No decorated types to validate against
             }
-            // Check if delegate type implements/extends all decorated types
-            List<String> missingTypes = new ArrayList<>();
-            for (String decoratedTypeFQN : decoratedTypes) {
-                // Use TypeHierarchyUtils.inheritsFrom for checking (more efficient and robust)
-                if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
-                    missingTypes.add(decoratedTypeFQN);
+            // Check if delegate type implements/extends all decorated types (and with matching type params)
+            boolean hasError = false;
+            for (DecoratedTypeInfo decorated : decoratedTypes) {
+                if (!TypeHierarchyUtils.inheritsFrom(delegateType, decorated.fqName)) {
+                    // Delegate type does not implement/extend this decorated type at all
+                    hasError = true;
+                    break;
+                }
+                // Delegate type is assignable; now check type parameters match exactly
+                if (decorated.typeArgs.length > 0 && !typeArgsMatch(decorated.typeArgs, delegateTypeArgs)) {
+                    hasError = true;
+                    break;
                 }
             }
-            // Report diagnostic if delegate type doesn't implement all decorated types
-            if (!missingTypes.isEmpty()) {
+            if (hasError) {
                 Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-                // Use simple class names for better readability
                 String delegateTypeSimpleName = delegateType.getElementName();
                 String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
                                                      delegateTypeSimpleName);
@@ -290,29 +327,70 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Gets all decorated types of the decorator (interfaces and superclasses, excluding Object).
+     * Returns true when two type-argument signature arrays represent the same
+     * types, comparing element by element after erasing to their binary names.
      *
-     * @param decoratorType the decorator class
-     * @return list of decorated type fully qualified names
-     * @throws JavaModelException if an error occurs accessing the Java model
+     * <p>An empty {@code decoratedArgs} means the decorated type is raw/non-parameterized;
+     * in that case any delegate type args are considered matching (no constraint).
+     * If {@code delegateArgs} is empty but {@code decoratedArgs} is not, they do not match.
+     *
+     * @param decoratedArgs type arguments from the decorator's {@code implements} clause
+     * @param delegateArgs type arguments from the delegate field/parameter signature
+     * @return true if the arrays are element-wise equal after erasure
      */
-    private List<String> getDecoratedTypes(IType decoratorType) throws JavaModelException {
-        List<String> decoratedTypes = new ArrayList<>();
-
-        // Get all interfaces implemented by the decorator
-        String[] interfaceNames = decoratorType.getSuperInterfaceNames();
-        for (String interfaceName : interfaceNames) {
-            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, interfaceName);
-            if (fqName != null) {
-                decoratedTypes.add(fqName);
+    private boolean typeArgsMatch(String[] decoratedArgs, String[] delegateArgs) {
+        if (decoratedArgs.length == 0) {
+            return true; // Non-parameterized decorated type — no constraint on delegate type args
+        }
+        if (decoratedArgs.length != delegateArgs.length) {
+            return false;
+        }
+        for (int i = 0; i < decoratedArgs.length; i++) {
+            String erasedDecorated = Signature.getTypeErasure(decoratedArgs[i]);
+            String erasedDelegate = Signature.getTypeErasure(delegateArgs[i]);
+            if (!erasedDecorated.equals(erasedDelegate)) {
+                return false;
             }
         }
+        return true;
+    }
+
+    /**
+     * Gets all decorated types of the decorator (interfaces and superclasses, excluding Object)
+     * together with their type-argument signatures as declared on the {@code implements} clause.
+     *
+     * @param decoratorType the decorator class
+     * @return list of {@link DecoratedTypeInfo} objects with FQN and type arguments
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private List<DecoratedTypeInfo> getDecoratedTypes(IType decoratorType) throws JavaModelException {
+        List<DecoratedTypeInfo> decoratedTypes = new ArrayList<>();
+
+        // Use getSuperInterfaceTypeSignatures() to preserve generic type arguments
+        String[] interfaceTypeSigs = decoratorType.getSuperInterfaceTypeSignatures();
+        for (String sig : interfaceTypeSigs) {
+            // Extract type arguments from the signature (empty array when non-parameterized)
+            String[] typeArgs = Signature.getTypeArguments(sig);
+            // Resolve the raw (erased) interface name to its fully-qualified name
+            String rawSig = Signature.getTypeErasure(sig);
+            String simpleName = Signature.toString(rawSig);
+            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleName);
+            if (fqName != null) {
+                decoratedTypes.add(new DecoratedTypeInfo(fqName, typeArgs));
+            }
+        }
+
         // Get superclass (excluding java.lang.Object)
-        String superclassName = decoratorType.getSuperclassName();
-        if (superclassName != null && !superclassName.equals("Object")) {
-            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, superclassName);
-            if (fqName != null && !fqName.equals("java.lang.Object")) {
-                decoratedTypes.add(fqName);
+        String superclassSig = decoratorType.getSuperclassTypeSignature();
+        if (superclassSig != null) {
+            String rawSig = Signature.getTypeErasure(superclassSig);
+            String simpleName = Signature.toString(rawSig);
+            if (!simpleName.equals("Object") && !simpleName.equals("java.lang.Object")) {
+                String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleName);
+                if (fqName != null && !fqName.equals("java.lang.Object")) {
+                    String[] typeArgs = Signature.getTypeArguments(superclassSig);
+                    decoratedTypes.add(new DecoratedTypeInfo(fqName, typeArgs));
+                }
             }
         }
 
