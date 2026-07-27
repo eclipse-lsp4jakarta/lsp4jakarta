@@ -280,12 +280,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             }
             // Strip type arguments to get the raw erased type name for IType resolution
             delegateRawTypeSig = Signature.getTypeErasure(delegateFullTypeSig);
-            String delegateSimpleName = Signature.toString(delegateRawTypeSig);
-            String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, delegateSimpleName);
-            if (delegateTypeName == null) {
-                return; // Cannot resolve delegate type, skip validation
-            }
-            IType delegateType = decoratorType.getJavaProject().findType(delegateTypeName);
+            IType delegateType = ManagedBean.getChildITypeByName(decoratorType,
+                                                                 Signature.toString(delegateRawTypeSig));
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
@@ -365,34 +361,33 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     private List<DecoratedTypeInfo> getDecoratedTypes(IType decoratorType) throws JavaModelException {
         List<DecoratedTypeInfo> decoratedTypes = new ArrayList<>();
 
-        // Use getSuperInterfaceTypeSignatures() to preserve generic type arguments
-        String[] interfaceTypeSigs = decoratorType.getSuperInterfaceTypeSignatures();
-        for (String sig : interfaceTypeSigs) {
-            // Extract type arguments from the signature (empty array when non-parameterized)
-            String[] typeArgs = Signature.getTypeArguments(sig);
-            // Resolve the raw (erased) interface name to its fully-qualified name
-            String rawSig = Signature.getTypeErasure(sig);
-            String simpleName = Signature.toString(rawSig);
-            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleName);
-            if (fqName != null) {
-                decoratedTypes.add(new DecoratedTypeInfo(fqName, typeArgs));
-            }
+        for (String sig : decoratorType.getSuperInterfaceTypeSignatures()) {
+            addDecoratedType(sig, decoratorType, decoratedTypes);
         }
 
-        // Get superclass (excluding java.lang.Object)
         String superclassSig = decoratorType.getSuperclassTypeSignature();
         if (superclassSig != null) {
-            String rawSig = Signature.getTypeErasure(superclassSig);
-            String simpleName = Signature.toString(rawSig);
-            if (!simpleName.equals("Object") && !simpleName.equals("java.lang.Object")) {
-                String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleName);
-                if (fqName != null && !fqName.equals("java.lang.Object")) {
-                    String[] typeArgs = Signature.getTypeArguments(superclassSig);
-                    decoratedTypes.add(new DecoratedTypeInfo(fqName, typeArgs));
-                }
-            }
+            addDecoratedType(superclassSig, decoratorType, decoratedTypes);
         }
 
         return decoratedTypes;
+    }
+
+    /**
+     * Resolves a type signature to its fully-qualified name and adds a
+     * {@link DecoratedTypeInfo} entry to {@code list}, unless the type resolves
+     * to {@code java.lang.Object} or cannot be resolved.
+     *
+     * @param sig type signature (possibly parameterized) from the decorator's hierarchy
+     * @param decoratorType the decorator class used as the resolution context
+     * @param list the list to add to
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private void addDecoratedType(String sig, IType decoratorType, List<DecoratedTypeInfo> list) throws JavaModelException {
+        String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType,
+                                                               Signature.toString(Signature.getTypeErasure(sig)));
+        if (fqName != null && !fqName.equals("java.lang.Object")) {
+            list.add(new DecoratedTypeInfo(fqName, Signature.getTypeArguments(sig)));
+        }
     }
 }
