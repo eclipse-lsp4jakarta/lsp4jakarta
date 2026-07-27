@@ -33,6 +33,8 @@ public class Constants {
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
 
+    public static final String JAVA_LANG_OBJECT_FQ_NAME = "java.lang.Object";
+
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
     public static final String DIAGNOSTIC_CODE = "InvalidManagedBeanAnnotation";
     public static final String DIAGNOSTIC_CODE_SCOPEDECL = "InvalidScopeDecl";

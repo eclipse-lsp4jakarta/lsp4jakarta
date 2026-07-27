@@ -13,6 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -267,53 +268,38 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            // Get the raw type signature of the delegate (used to resolve the IType)
-            String delegateRawTypeSig = null;
-            String delegateFullTypeSig = null;
-            if (delegateElement instanceof IField) {
-                delegateFullTypeSig = ((IField) delegateElement).getTypeSignature();
-            } else if (delegateElement instanceof ILocalVariable) {
-                delegateFullTypeSig = ((ILocalVariable) delegateElement).getTypeSignature();
-            }
+            String delegateFullTypeSig = delegateElement instanceof IField ? ((IField) delegateElement).getTypeSignature() : delegateElement instanceof ILocalVariable ? ((ILocalVariable) delegateElement).getTypeSignature() : null;
             if (delegateFullTypeSig == null) {
                 return;
             }
-            // Strip type arguments to get the raw erased type name for IType resolution
-            delegateRawTypeSig = Signature.getTypeErasure(delegateFullTypeSig);
+
             IType delegateType = ManagedBean.getChildITypeByName(decoratorType,
-                                                                 Signature.toString(delegateRawTypeSig));
+                                                                 Signature.toString(Signature.getTypeErasure(delegateFullTypeSig)));
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            // Extract type arguments from the delegate field/parameter signature
-            String[] delegateTypeArgs = Signature.getTypeArguments(delegateFullTypeSig);
 
-            // Get all decorated types (interfaces and superclasses of the decorator) with their signatures
             List<DecoratedTypeInfo> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
                 return; // No decorated types to validate against
             }
+
+            String[] delegateTypeArgs = Signature.getTypeArguments(delegateFullTypeSig);
             Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
             String delegateTypeSimpleName = delegateType.getElementName();
-            // Check each decorated type: must be assignable AND have matching type parameters
+
             for (DecoratedTypeInfo decorated : decoratedTypes) {
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decorated.fqName)) {
-                    // Delegate type does not implement/extend this decorated type at all
-                    String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
-                                                         delegateTypeSimpleName);
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidDecoratorDelegateTypeAssignability,
-                                                             DiagnosticSeverity.Error));
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeSimpleName),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeAssignability, DiagnosticSeverity.Error));
                 } else if (decorated.typeArgs.length > 0 && !typeArgsMatch(decorated.typeArgs, delegateTypeArgs)) {
-                    // Delegate type is assignable but type parameters differ — spec-mandated definition error
-                    String decoratedSimpleName = decorated.fqName.contains(".") ? decorated.fqName.substring(decorated.fqName.lastIndexOf('.') + 1) : decorated.fqName;
-                    String message = Messages.getMessage("InvalidDecoratorDelegateTypeParamMismatch",
-                                                         delegateTypeSimpleName, decoratedSimpleName);
-                    diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                             Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidDecoratorDelegateTypeParamMismatch,
-                                                             DiagnosticSeverity.Error));
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidDecoratorDelegateTypeParamMismatch",
+                                                                                 delegateTypeSimpleName, DiagnosticUtils.getSimpleName(decorated.fqName)),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeParamMismatch, DiagnosticSeverity.Error));
                 }
             }
         } catch (CoreException e) {
@@ -322,32 +308,21 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Returns true when two type-argument signature arrays represent the same
-     * types, comparing element by element after erasing to their binary names.
+     * Returns true when two type-argument signature arrays represent the same types,
+     * comparing element by element after erasing to their binary names.
      *
      * <p>An empty {@code decoratedArgs} means the decorated type is raw/non-parameterized;
      * in that case any delegate type args are considered matching (no constraint).
-     * If {@code delegateArgs} is empty but {@code decoratedArgs} is not, they do not match.
      *
      * @param decoratedArgs type arguments from the decorator's {@code implements} clause
      * @param delegateArgs type arguments from the delegate field/parameter signature
      * @return true if the arrays are element-wise equal after erasure
      */
     private boolean typeArgsMatch(String[] decoratedArgs, String[] delegateArgs) {
-        if (decoratedArgs.length == 0) {
-            return true; // Non-parameterized decorated type — no constraint on delegate type args
-        }
-        if (decoratedArgs.length != delegateArgs.length) {
-            return false;
-        }
-        for (int i = 0; i < decoratedArgs.length; i++) {
-            String erasedDecorated = Signature.getTypeErasure(decoratedArgs[i]);
-            String erasedDelegate = Signature.getTypeErasure(delegateArgs[i]);
-            if (!erasedDecorated.equals(erasedDelegate)) {
-                return false;
-            }
-        }
-        return true;
+        return decoratedArgs.length == 0
+               || (decoratedArgs.length == delegateArgs.length
+                   && Arrays.equals(decoratedArgs, delegateArgs,
+                                    (a, b) -> Signature.getTypeErasure(a).equals(Signature.getTypeErasure(b)) ? 0 : 1));
     }
 
     /**
@@ -386,7 +361,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     private void addDecoratedType(String sig, IType decoratorType, List<DecoratedTypeInfo> list) throws JavaModelException {
         String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType,
                                                                Signature.toString(Signature.getTypeErasure(sig)));
-        if (fqName != null && !fqName.equals("java.lang.Object")) {
+        if (fqName != null && !fqName.equals(Constants.JAVA_LANG_OBJECT_FQ_NAME)) {
             list.add(new DecoratedTypeInfo(fqName, Signature.getTypeArguments(sig)));
         }
     }
