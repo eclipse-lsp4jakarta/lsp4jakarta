@@ -442,4 +442,112 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // No diagnostics expected: @Delegate inside a @Decorator class is valid
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    /**
+     * Test that a decorator whose delegate type has a mismatched generic type parameter
+     * triggers an InvalidDecoratorDelegateTypeAssignability diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3:
+     * "The delegate type of a decorator must implement or extend every decorated type
+     * with exactly the same type parameters."
+     *
+     * Example: @Decorator class LoggingDecorator implements Processor<String> but the
+     * delegate field is Processor<Object> — type parameter mismatch, definition error.
+     *
+     * Expected: Error on the delegate field.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    private Processor<Object> delegate;"
+        // field name "delegate" starts at column 30, ends at column 38
+        Diagnostic typeParamMismatchDiagnostic = d(20, 30, 38,
+                                                   "The delegate type 'Processor' must implement or extend all decorated types.",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDecoratorDelegateTypeAssignability");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose delegate type has the exact same generic type parameter
+     * as the decorated type does NOT trigger a diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — matching type parameters is valid.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> delegate matches Processor<String> decorated type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has a mismatched generic
+     * type parameter triggers an InvalidDecoratorDelegateTypeAssignability diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — type parameter mismatch on an initializer method
+     * delegate is also a definition error.
+     *
+     * Example: @Decorator class implements Processor<String> but the @Inject method parameter
+     * is Processor<Object> — definition error.
+     *
+     * Expected: Error on the delegate method parameter.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    public void setDelegate(@Delegate Processor<Object> delegate) {"
+        // parameter name "delegate" starts at column 56, ends at column 64
+        Diagnostic typeParamMismatchDiagnostic = d(20, 56, 64,
+                                                   "The delegate type 'Processor' must implement or extend all decorated types.",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDecoratorDelegateTypeAssignability");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has the exact same generic
+     * type parameter as the decorated type does NOT trigger a diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — matching type parameters on an initializer method
+     * delegate is valid.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> parameter matches Processor<String> decorated type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
