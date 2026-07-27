@@ -332,6 +332,9 @@
                   targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#ConflictingSessionBeanAnnotations"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveConflictingSessionBeanAnnotationsQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#SessionBeanFinalizeMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveFinalizeMethodQuickFix" />
    </extension>
