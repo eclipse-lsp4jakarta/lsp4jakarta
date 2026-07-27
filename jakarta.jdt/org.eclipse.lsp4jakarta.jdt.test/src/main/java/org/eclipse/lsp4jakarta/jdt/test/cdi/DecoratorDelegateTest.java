@@ -468,10 +468,10 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Line 21 (0-based: 20): "    private Processor<Object> delegate;"
         // field name "delegate" starts at column 30, ends at column 38
         Diagnostic typeParamMismatchDiagnostic = d(20, 30, 38,
-                                                   "The delegate type 'Processor' must implement or extend all decorated types.",
+                                                   "The delegate type 'Processor' does not implement or extend the decorated type 'Processor' with exactly the same type parameters.",
                                                    DiagnosticSeverity.Error,
                                                    "jakarta-cdi",
-                                                   "InvalidDecoratorDelegateTypeAssignability");
+                                                   "InvalidDecoratorDelegateTypeParamMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
     }
@@ -521,10 +521,10 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Line 21 (0-based: 20): "    public void setDelegate(@Delegate Processor<Object> delegate) {"
         // parameter name "delegate" starts at column 56, ends at column 64
         Diagnostic typeParamMismatchDiagnostic = d(20, 56, 64,
-                                                   "The delegate type 'Processor' must implement or extend all decorated types.",
+                                                   "The delegate type 'Processor' does not implement or extend the decorated type 'Processor' with exactly the same type parameters.",
                                                    DiagnosticSeverity.Error,
                                                    "jakarta-cdi",
-                                                   "InvalidDecoratorDelegateTypeAssignability");
+                                                   "InvalidDecoratorDelegateTypeParamMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
     }

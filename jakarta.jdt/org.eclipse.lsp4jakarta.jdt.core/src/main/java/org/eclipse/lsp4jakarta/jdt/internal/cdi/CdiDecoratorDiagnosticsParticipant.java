@@ -297,29 +297,28 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             if (decoratedTypes.isEmpty()) {
                 return; // No decorated types to validate against
             }
-            // Check if delegate type implements/extends all decorated types (and with matching type params)
-            boolean hasError = false;
+            Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
+            String delegateTypeSimpleName = delegateType.getElementName();
+            // Check each decorated type: must be assignable AND have matching type parameters
             for (DecoratedTypeInfo decorated : decoratedTypes) {
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decorated.fqName)) {
                     // Delegate type does not implement/extend this decorated type at all
-                    hasError = true;
-                    break;
+                    String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
+                                                         delegateTypeSimpleName);
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeAssignability,
+                                                             DiagnosticSeverity.Error));
+                } else if (decorated.typeArgs.length > 0 && !typeArgsMatch(decorated.typeArgs, delegateTypeArgs)) {
+                    // Delegate type is assignable but type parameters differ — spec-mandated definition error
+                    String decoratedSimpleName = decorated.fqName.contains(".") ? decorated.fqName.substring(decorated.fqName.lastIndexOf('.') + 1) : decorated.fqName;
+                    String message = Messages.getMessage("InvalidDecoratorDelegateTypeParamMismatch",
+                                                         delegateTypeSimpleName, decoratedSimpleName);
+                    diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeParamMismatch,
+                                                             DiagnosticSeverity.Error));
                 }
-                // Delegate type is assignable; now check type parameters match exactly
-                if (decorated.typeArgs.length > 0 && !typeArgsMatch(decorated.typeArgs, delegateTypeArgs)) {
-                    hasError = true;
-                    break;
-                }
-            }
-            if (hasError) {
-                Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-                String delegateTypeSimpleName = delegateType.getElementName();
-                String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
-                                                     delegateTypeSimpleName);
-                diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidDecoratorDelegateTypeAssignability,
-                                                         DiagnosticSeverity.Error));
             }
         } catch (CoreException e) {
             LOGGER.log(Level.WARNING, "Error validating delegate type assignability", e);
