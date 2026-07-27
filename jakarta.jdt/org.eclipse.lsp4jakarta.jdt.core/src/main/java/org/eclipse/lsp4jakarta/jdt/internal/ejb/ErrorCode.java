@@ -16,12 +16,13 @@ package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 
 /**
- * EJB error codes.
+ * Jakarta Enterprise Beans error codes.
  */
 public enum ErrorCode implements IJavaErrorCode {
 
     MissingPublicNoArgConstructor,
-    SessionBeanFinalizeMethod;
+    SessionBeanFinalizeMethod,
+    ImplementMessageListener;
 
     @Override
     public String getCode() {
