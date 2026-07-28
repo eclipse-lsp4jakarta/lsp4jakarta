@@ -115,28 +115,41 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
     private void validateAnnotation(IAnnotation annotation, IType type, JavaDiagnosticsContext context,
                                     String uri, List<Diagnostic> diagnostics) {
         try {
-            String name = annotation.getElementName();
-            if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.TABLEGENERATOR)) {
-                validateNameAttribute(annotation, context, uri, diagnostics,
-                                      "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SEQUENCEGENERATOR)) {
-                validateNameAttribute(annotation, context, uri, diagnostics,
-                                      "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SECONDARYTABLE)) {
-                validateNameAttribute(annotation, context, uri, diagnostics,
-                                      "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.TABLEGENERATORS)) {
-                validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                             "TableGeneratorsMissingTableGeneratorMapping", ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
-                                             "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SEQUENCEGENERATORS)) {
-                validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                             "SequenceGeneratorsMissingSequenceGeneratorMapping", ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
-                                             "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SECONDARYTABLES)) {
-                validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                             "SecondaryTablesMissingSecondaryTableMapping", ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
-                                             "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
+            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                                 Constants.GENERATOR_ANNOTATIONS);
+            if (matchedAnnotation == null) {
+                return;
+            }
+            switch (matchedAnnotation) {
+                case Constants.TABLEGENERATOR:
+                    validateNameAttribute(annotation, context, uri, diagnostics,
+                                          "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCEGENERATOR:
+                    validateNameAttribute(annotation, context, uri, diagnostics,
+                                          "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARYTABLE:
+                    validateNameAttribute(annotation, context, uri, diagnostics,
+                                          "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                case Constants.TABLEGENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 "TableGeneratorsMissingTableGeneratorMapping", ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
+                                                 "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCEGENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 "SequenceGeneratorsMissingSequenceGeneratorMapping", ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
+                                                 "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARYTABLES:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 "SecondaryTablesMissingSecondaryTableMapping", ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
+                                                 "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                default:
+                    break;
             }
         } catch (JavaModelException e) {
             LOGGER.log(Level.WARNING, "Error while validating persistence generator annotations", e);
@@ -161,8 +174,8 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
     private void validateNameAttribute(IAnnotation annotation, JavaDiagnosticsContext context,
                                        String uri, List<Diagnostic> diagnostics,
                                        String messageKey, ErrorCode errorCode) throws JavaModelException {
-        String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
-        if (name == null || name.isBlank()) {
+        String mappingNameValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
+        if (mappingNameValue == null || mappingNameValue.isBlank()) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
@@ -194,8 +207,8 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
                                               String uri, List<Diagnostic> diagnostics,
                                               String emptyMappingMsgKey, ErrorCode emptyMappingCode,
                                               String emptyNameMappingMsgKey, ErrorCode emptyNameMappingCode) throws JavaModelException {
-        Object value = DiagnosticUtils.getAnnotationMemberValue(annotation, "value", Object.class);
-        boolean isEmpty = (value == null) || (value instanceof Object[] && ((Object[]) value).length == 0);
+        Object mappingArrayValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, Object.class);
+        boolean isEmpty = (mappingArrayValue == null) || (mappingArrayValue instanceof Object[] && ((Object[]) mappingArrayValue).length == 0);
         if (isEmpty) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(emptyMappingMsgKey),
@@ -203,7 +216,7 @@ public class PersistenceGeneratorDiagnosticsParticipant implements IJavaDiagnost
                                                      null, emptyMappingCode, DiagnosticSeverity.Error));
             return;
         }
-        Object[] nested = (value instanceof Object[]) ? (Object[]) value : new Object[] { value };
+        Object[] nested = (mappingArrayValue instanceof Object[]) ? (Object[]) mappingArrayValue : new Object[] { mappingArrayValue };
         for (Object obj : nested) {
             if (obj instanceof IAnnotation) {
                 validateNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingMsgKey, emptyNameMappingCode);

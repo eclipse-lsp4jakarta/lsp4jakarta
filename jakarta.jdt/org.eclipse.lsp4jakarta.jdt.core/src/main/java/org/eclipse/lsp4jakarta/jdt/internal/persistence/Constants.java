@@ -36,6 +36,12 @@ public class Constants {
     public static final String SECONDARYTABLE = "jakarta.persistence.SecondaryTable";
     public static final String SECONDARYTABLES = "jakarta.persistence.SecondaryTables";
 
+    public static final String[] GENERATOR_ANNOTATIONS = {
+                                                           TABLEGENERATOR, TABLEGENERATORS, SEQUENCEGENERATOR, SEQUENCEGENERATORS, SECONDARYTABLE, SECONDARYTABLES
+    };
+
+    public static final String VALUE = "value";
+
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
     public static final String OBJECT = "java.lang.Object";
