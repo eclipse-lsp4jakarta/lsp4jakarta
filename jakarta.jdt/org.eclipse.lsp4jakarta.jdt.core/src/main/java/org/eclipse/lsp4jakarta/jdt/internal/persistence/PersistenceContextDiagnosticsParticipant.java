@@ -21,8 +21,9 @@ import static org.eclipse.lsp4jakarta.jdt.internal.servlet.Constants.WEB_LISTENE
 import static org.eclipse.lsp4jakarta.jdt.internal.servlet.Constants.WEB_SERVLET_FQ_NAME;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -62,6 +63,12 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * </ol>
  */
 public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final List<String> MANAGED_COMPONENT_ANNOTATIONS = Stream.of(
+                                                                                SCOPE_FQ_NAMES.stream(),
+                                                                                Stream.of(SESSION_BEAN_ANNOTATIONS),
+                                                                                Stream.of(WEB_SERVLET_FQ_NAME, WEBFILTER_FQ_NAME, WEB_LISTENER_FQ_NAME)).flatMap(
+                                                                                                                                                                 stream -> stream).collect(Collectors.toUnmodifiableList());
 
     /**
      * {@inheritDoc}
@@ -132,13 +139,16 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
 
     /** Returns the {@code @PersistenceContext} annotation from the given array, or {@code null}. */
     private IAnnotation findPersistenceContextAnnotation(ICompilationUnit unit, IAnnotation[] annotations) throws JavaModelException {
-        return Arrays.stream(annotations).filter(a -> {
-            try {
-                return DiagnosticUtils.isMatchedAnnotation(unit, a, Constants.PERSISTENCE_CONTEXT);
-            } catch (JavaModelException e) {
-                return false;
+        if (!DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.PERSISTENCE_CONTEXT)) {
+            return null;
+        }
+
+        for (IAnnotation annotation : annotations) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.PERSISTENCE_CONTEXT)) {
+                return annotation;
             }
-        }).findFirst().orElse(null);
+        }
+        return null;
     }
 
     /**
@@ -153,29 +163,14 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
     private boolean isManagedComponent(ICompilationUnit unit, IType type) throws CoreException {
         IAnnotation[] typeAnnotations = type.getAnnotations();
 
-        // CDI scopes
-        for (String scope : SCOPE_FQ_NAMES) {
-            if (DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, scope)) {
-                return true;
+        return MANAGED_COMPONENT_ANNOTATIONS.stream().anyMatch(fqn -> {
+            try {
+                return DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, fqn);
+            } catch (JavaModelException e) {
+                return false;
             }
-        }
-
-        // EJB session beans
-        for (String ejbFqn : SESSION_BEAN_ANNOTATIONS) {
-            if (DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, ejbFqn)) {
-                return true;
-            }
-        }
-
-        // Servlet component annotations
-        if (DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, WEB_SERVLET_FQ_NAME)
-            || DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, WEBFILTER_FQ_NAME)
-            || DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotations, WEB_LISTENER_FQ_NAME)) {
-            return true;
-        }
-
-        // Subclass of HttpServlet
-        return TypeHierarchyUtils.doesITypeHaveSuperType(type, HTTP_SERVLET_FQ_NAME) == TypeHierarchyUtils.HAS_SUPERTYPE;
+        })
+               || TypeHierarchyUtils.doesITypeHaveSuperType(type, HTTP_SERVLET_FQ_NAME) == TypeHierarchyUtils.HAS_SUPERTYPE;
     }
 
     /**
@@ -184,6 +179,6 @@ public class PersistenceContextDiagnosticsParticipant implements IJavaDiagnostic
      */
     private boolean isExtendedContext(IAnnotation pcAnnotation) throws JavaModelException {
         String value = DiagnosticUtils.getAnnotationMemberValue(pcAnnotation, "type", String.class);
-        return value != null && value.equals(Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED);
+        return Constants.PERSISTENCE_CONTEXT_TYPE_EXTENDED.equals(value);
     }
 }
