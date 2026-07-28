@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
@@ -55,6 +56,42 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
 
     private static final Logger LOGGER = Logger.getLogger(PersistenceMappingDiagnosticsParticipant.class.getName());
 
+    // -----------------------------------------------------------------------
+    // Message key bundles — one per annotation family
+    // -----------------------------------------------------------------------
+
+    /** Message keys and constants for {@code @AttributeOverride} validation. */
+    private static final OverrideAnnotationDescriptor ATTRIBUTE_OVERRIDE_DESCRIPTOR = new OverrideAnnotationDescriptor(Constants.ATTRIBUTE_OVERRIDE, Constants.ATTRIBUTE_OVERRIDES, "value", ErrorCode.InvalidAttributeOverrideName, "AttributeOverrideNameNotFound", "AttributeOverrideDotNotationInvalid", "AttributeOverrideMissingMapPrefix");
+
+    /** Message keys and constants for {@code @AssociationOverride} validation. */
+    private static final OverrideAnnotationDescriptor ASSOCIATION_OVERRIDE_DESCRIPTOR = new OverrideAnnotationDescriptor(Constants.ASSOCIATION_OVERRIDE, Constants.ASSOCIATION_OVERRIDES, "value", ErrorCode.InvalidAssociationOverrideName, "AssociationOverrideNameNotFound", "AssociationOverrideDotNotationInvalid", "AssociationOverrideMissingMapPrefix");
+
+    /**
+     * Bundles all annotation-family-specific constants needed to drive generic
+     * override-name validation. This keeps the validation logic entirely free of
+     * annotation-family names.
+     */
+    private static final class OverrideAnnotationDescriptor {
+        final String singleFqn; // e.g. "jakarta.persistence.AttributeOverride"
+        final String containerFqn; // e.g. "jakarta.persistence.AttributeOverrides"
+        final String containerMember; // container's value element name (always "value")
+        final IJavaErrorCode errorCode;
+        final String msgNotFound; // message key: simple name not found
+        final String msgDotInvalid; // message key: dot-notation segment missing
+        final String msgMapPrefix; // message key: missing map key/value prefix
+
+        OverrideAnnotationDescriptor(String singleFqn, String containerFqn, String containerMember,
+                                     IJavaErrorCode errorCode, String msgNotFound, String msgDotInvalid, String msgMapPrefix) {
+            this.singleFqn = singleFqn;
+            this.containerFqn = containerFqn;
+            this.containerMember = containerMember;
+            this.errorCode = errorCode;
+            this.msgNotFound = msgNotFound;
+            this.msgDotInvalid = msgDotInvalid;
+            this.msgMapPrefix = msgMapPrefix;
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -70,17 +107,20 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
         }
 
         for (IType type : unit.getAllTypes()) {
-            // 1. Validate class-level @AttributeOverride / @AttributeOverrides
-            validateAttributeOverridesOnType(type, unit, context, diagnostics);
+            // 1. Validate class-level override annotations
+            validateOverridesOnType(type, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
+            validateOverridesOnType(type, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
 
-            // 2. Validate field-level @AttributeOverride / @AttributeOverrides
+            // 2. Validate field-level override annotations
             for (IField field : type.getFields()) {
-                validateAttributeOverridesOnMember(field, type, unit, context, diagnostics);
+                validateOverridesOnMember(field, type, unit, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
+                validateOverridesOnMember(field, type, unit, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
             }
 
-            // 3. Validate method-level @AttributeOverride / @AttributeOverrides (property-based access)
+            // 3. Validate method-level override annotations (property-based access)
             for (IMethod method : type.getMethods()) {
-                validateAttributeOverridesOnMember(method, type, unit, context, diagnostics);
+                validateOverridesOnMember(method, type, unit, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
+                validateOverridesOnMember(method, type, unit, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
             }
         }
 
@@ -92,24 +132,25 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     // -----------------------------------------------------------------------
 
     /**
-     * Validates {@code @AttributeOverride} / {@code @AttributeOverrides} annotations
-     * placed directly on a type. The {@code name} must resolve against a field
-     * declared anywhere in the {@code @MappedSuperclass} supertype chain.
+     * Validates single and container override annotations placed directly on a type.
+     * The {@code name} must resolve against a field declared anywhere in the
+     * {@code @MappedSuperclass} supertype chain.
      */
-    private void validateAttributeOverridesOnType(IType type, ICompilationUnit unit,
-                                                  JavaDiagnosticsContext context,
-                                                  List<Diagnostic> diagnostics) throws CoreException {
+    private void validateOverridesOnType(IType type,
+                                         OverrideAnnotationDescriptor desc,
+                                         JavaDiagnosticsContext context,
+                                         List<Diagnostic> diagnostics) throws CoreException {
         for (IAnnotation annotation : type.getAnnotations()) {
-            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ATTRIBUTE_OVERRIDE)) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.singleFqn)) {
                 String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
                 if (name != null) {
-                    validateNameAgainstSuperclassChain(name, annotation, type, context, diagnostics);
+                    validateNameAgainstSuperclassChain(name, annotation, type, desc, context, diagnostics);
                 }
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ATTRIBUTE_OVERRIDES)) {
-                for (IAnnotation nested : getNestedAttributeOverrides(annotation)) {
+            } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.containerFqn)) {
+                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
-                        validateNameAgainstSuperclassChain(name, nested, type, context, diagnostics);
+                        validateNameAgainstSuperclassChain(name, nested, type, desc, context, diagnostics);
                     }
                 }
             }
@@ -122,6 +163,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      */
     private void validateNameAgainstSuperclassChain(String name, IAnnotation annotation,
                                                     IType type,
+                                                    OverrideAnnotationDescriptor desc,
                                                     JavaDiagnosticsContext context,
                                                     List<Diagnostic> diagnostics) throws CoreException {
         try {
@@ -130,12 +172,12 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                 Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                 String targetTypeName = resolveSuperclassChainName(type);
                 diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                         Messages.getMessage("AttributeOverrideNameNotFound", name, targetTypeName),
+                                                         Messages.getMessage(desc.msgNotFound, name, targetTypeName),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidAttributeOverrideName, DiagnosticSeverity.Error));
+                                                         desc.errorCode, DiagnosticSeverity.Error));
             }
         } catch (JavaModelException e) {
-            LOGGER.warning("Error validating @AttributeOverride name on type: " + e.getMessage());
+            LOGGER.warning("Error validating override name on type: " + e.getMessage());
         }
     }
 
@@ -156,7 +198,8 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                 break;
             }
             boolean isMappedSuperclass = DiagnosticUtils.isMatchedJavaElement(
-                                                                              superType, superType.getElementName().isEmpty() ? superclassName : superType.getElementName(),
+                                                                              superType,
+                                                                              superType.getElementName().isEmpty() ? superclassName : superType.getElementName(),
                                                                               Constants.MAPPEDSUPERCLASS);
             // fall back to annotation scan when simple name check fails
             if (!isMappedSuperclass) {
@@ -180,15 +223,16 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     // -----------------------------------------------------------------------
 
     /**
-     * Validates {@code @AttributeOverride} / {@code @AttributeOverrides} placed on a field
-     * or getter method (property-based access). Handles {@code @Embedded} members (resolve
-     * against the embeddable type) and map {@code @ElementCollection} members (require
-     * {@code "key."} or {@code "value."} prefix).
+     * Validates single and container override annotations placed on a field or getter
+     * method. Handles {@code @Embedded} members (resolve against the embeddable type)
+     * and map {@code @ElementCollection} members (require {@code "key."} or
+     * {@code "value."} prefix). Works for both field-based and property-based access.
      */
-    private void validateAttributeOverridesOnMember(IMember member, IType declaringType,
-                                                    ICompilationUnit unit,
-                                                    JavaDiagnosticsContext context,
-                                                    List<Diagnostic> diagnostics) throws CoreException {
+    private void validateOverridesOnMember(IMember member, IType declaringType,
+                                           ICompilationUnit unit,
+                                           OverrideAnnotationDescriptor desc,
+                                           JavaDiagnosticsContext context,
+                                           List<Diagnostic> diagnostics) throws CoreException {
         IAnnotation[] annotations = DiagnosticUtils.getAnnotations(member);
         boolean hasEmbedded = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.EMBEDDED);
         boolean hasElementCollection = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.ELEMENT_COLLECTION);
@@ -198,16 +242,16 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
         }
 
         for (IAnnotation annotation : annotations) {
-            if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), Constants.ATTRIBUTE_OVERRIDE)) {
+            if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.singleFqn)) {
                 String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
                 if (name != null) {
-                    validateNameOnMember(name, annotation, member, declaringType, hasElementCollection, context, diagnostics);
+                    validateNameOnMember(name, annotation, member, declaringType, hasElementCollection, desc, context, diagnostics);
                 }
-            } else if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), Constants.ATTRIBUTE_OVERRIDES)) {
-                for (IAnnotation nested : getNestedAttributeOverrides(annotation)) {
+            } else if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.containerFqn)) {
+                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
-                        validateNameOnMember(name, nested, member, declaringType, hasElementCollection, context, diagnostics);
+                        validateNameOnMember(name, nested, member, declaringType, hasElementCollection, desc, context, diagnostics);
                     }
                 }
             }
@@ -217,28 +261,28 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     /**
      * Dispatches member-level name validation to the appropriate handler based on
      * whether the member is a map {@code @ElementCollection} or a plain {@code @Embedded}.
-     * Works for both {@link IField} (field-based access) and {@link IMethod} (property-based access).
      */
     private void validateNameOnMember(String name, IAnnotation annotation, IMember member,
                                       IType declaringType, boolean isElementCollection,
+                                      OverrideAnnotationDescriptor desc,
                                       JavaDiagnosticsContext context,
                                       List<Diagnostic> diagnostics) throws CoreException {
         try {
             String typeName = member instanceof IMethod ? JDTTypeUtils.getResolvedResultTypeName((IMethod) member) : JDTTypeUtils.getResolvedTypeName((IField) member);
 
             if (isElementCollection && JDTTypeUtils.isMap(typeName)) {
-                validateNameOnMapElementCollection(name, annotation, member, declaringType, context, diagnostics);
+                validateNameOnMapElementCollection(name, annotation, member, declaringType, desc, context, diagnostics);
             } else {
                 // @Embedded member — resolve against the embeddable type
                 if (typeName != null) {
                     IType embeddableType = JDTTypeUtils.findType(declaringType.getJavaProject(), typeName);
                     if (embeddableType != null) {
-                        validateNameAgainstType(name, name, annotation, embeddableType, context, diagnostics);
+                        validateNameAgainstType(name, name, annotation, embeddableType, desc, context, diagnostics);
                     }
                 }
             }
         } catch (JavaModelException e) {
-            LOGGER.warning("Error validating @AttributeOverride name on member: " + e.getMessage());
+            LOGGER.warning("Error validating override name on member: " + e.getMessage());
         }
     }
 
@@ -249,19 +293,21 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      */
     private void validateNameOnMapElementCollection(String name, IAnnotation annotation, IMember member,
                                                     IType declaringType,
+                                                    OverrideAnnotationDescriptor desc,
                                                     JavaDiagnosticsContext context,
                                                     List<Diagnostic> diagnostics) throws CoreException {
-        if (!name.startsWith(Constants.ATTRIBUTE_OVERRIDE_KEY_PREFIX) && !name.startsWith(Constants.ATTRIBUTE_OVERRIDE_VALUE_PREFIX)) {
+        if (!name.startsWith(Constants.ATTRIBUTE_OVERRIDE_KEY_PREFIX)
+            && !name.startsWith(Constants.ATTRIBUTE_OVERRIDE_VALUE_PREFIX)) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("AttributeOverrideMissingMapPrefix", name),
+                                                     Messages.getMessage(desc.msgMapPrefix, name),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidAttributeOverrideName, DiagnosticSeverity.Error));
+                                                     desc.errorCode, DiagnosticSeverity.Error));
             return;
         }
 
         String[] typeArgs = JDTTypeUtils.getResolvedTypeArguments(member);
-        // For map generics we get key and value pairs type
+        // For map generics we get key and value type pair
         if (typeArgs == null || typeArgs.length < 2) {
             return; // cannot resolve — skip
         }
@@ -278,7 +324,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
 
         IType targetType = JDTTypeUtils.findType(declaringType.getJavaProject(), targetTypeName);
         if (targetType != null) {
-            validateNameAgainstType(suffix, suffix, annotation, targetType, context, diagnostics);
+            validateNameAgainstType(suffix, suffix, annotation, targetType, desc, context, diagnostics);
         }
     }
 
@@ -292,22 +338,24 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      *
      * @param fullName the original full name from the annotation (used in error messages)
      * @param name the remaining name segment(s) to resolve against {@code targetType}
+     * @param desc the annotation family descriptor supplying message keys and error code
      */
     private void validateNameAgainstType(String fullName, String name, IAnnotation annotation,
                                          IType targetType,
+                                         OverrideAnnotationDescriptor desc,
                                          JavaDiagnosticsContext context,
                                          List<Diagnostic> diagnostics) throws CoreException {
         int dotIndex = name.indexOf('.');
         if (dotIndex == -1) {
-            // Simple field lookup — if this is a nested call, use dot-notation error message
+            // Simple field lookup
             if (!hasField(targetType, name)) {
                 Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                String message = fullName.equals(name) ? Messages.getMessage("AttributeOverrideNameNotFound", name,
-                                                                             targetType.getElementName()) : Messages.getMessage("AttributeOverrideDotNotationInvalid", fullName,
-                                                                                                                                name, targetType.getElementName());
+                String message = fullName.equals(name) ? Messages.getMessage(desc.msgNotFound, name,
+                                                                             targetType.getElementName()) : Messages.getMessage(desc.msgDotInvalid, fullName, name,
+                                                                                                                                targetType.getElementName());
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          message, range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidAttributeOverrideName, DiagnosticSeverity.Error));
+                                                         desc.errorCode, DiagnosticSeverity.Error));
             }
         } else {
             // Dot-notation: resolve first segment, recurse on remainder
@@ -316,16 +364,16 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             if (!hasField(targetType, firstSegment)) {
                 Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                 diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                         Messages.getMessage("AttributeOverrideDotNotationInvalid", fullName, firstSegment, targetType.getElementName()),
+                                                         Messages.getMessage(desc.msgDotInvalid, fullName, firstSegment, targetType.getElementName()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidAttributeOverrideName, DiagnosticSeverity.Error));
+                                                         desc.errorCode, DiagnosticSeverity.Error));
             } else {
                 IField nestedField = targetType.getField(firstSegment);
                 String nestedTypeName = JDTTypeUtils.getResolvedTypeName(nestedField);
                 if (nestedTypeName != null) {
                     IType nestedType = JDTTypeUtils.findType(targetType.getJavaProject(), nestedTypeName);
                     if (nestedType != null) {
-                        validateNameAgainstType(fullName, remainder, annotation, nestedType, context, diagnostics);
+                        validateNameAgainstType(fullName, remainder, annotation, nestedType, desc, context, diagnostics);
                     }
                 }
             }
@@ -376,13 +424,16 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     }
 
     /**
-     * Extracts the nested {@code @AttributeOverride} annotations from an
-     * {@code @AttributeOverrides} container annotation's {@code value} attribute.
+     * Extracts the nested single override annotations from a container annotation's
+     * {@code value} attribute (handles both single-element and array values).
+     *
+     * @param container the container annotation (e.g. {@code @AttributeOverrides})
+     * @param memberName the member element name holding the nested annotations (always "value")
      */
-    private List<IAnnotation> getNestedAttributeOverrides(IAnnotation container) throws JavaModelException {
+    private List<IAnnotation> getNestedOverrides(IAnnotation container, String memberName) throws JavaModelException {
         List<IAnnotation> result = new ArrayList<>();
         for (IMemberValuePair pair : container.getMemberValuePairs()) {
-            if ("value".equals(pair.getMemberName())) {
+            if (memberName.equals(pair.getMemberName())) {
                 Object val = pair.getValue();
                 if (val instanceof Object[]) {
                     for (Object item : (Object[]) val) {
