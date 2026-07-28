@@ -37,7 +37,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     // -----------------------------------------------------------------------
-    // Valid cases — no diagnostic expected
+    // @AttributeOverride — Valid cases
     // -----------------------------------------------------------------------
 
     /**
@@ -132,7 +132,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
     }
 
     // -----------------------------------------------------------------------
-    // Invalid cases — diagnostic expected
+    // @AttributeOverride - Invalid cases
     // -----------------------------------------------------------------------
 
     /**
@@ -258,5 +258,194 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
                                             DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAttributeOverrideName");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, cityMissingMapPrefix);
+    }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverride — valid cases
+    // -----------------------------------------------------------------------
+
+    /**
+     * Valid: @AssociationOverride on @Embedded field with name="manager" which exists in Department.
+     */
+    @Test
+    public void validAssociationEmbeddableOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidEmbeddableOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Valid: class-level @AssociationOverride with name="supervisor" which exists in Person.
+     */
+    @Test
+    public void validAssociationSuperclassOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidSuperclassOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Valid: @AssociationOverrides container — both "supervisor" and "id" exist in Person.
+     */
+    @Test
+    public void validAssociationContainerOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidContainerOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Valid: name="teamLead" resolves to NamedPerson.teamLead (depth-2 MappedSuperclass chain).
+     */
+    @Test
+    public void validAssociationDeepChainOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidDeepChainOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Valid: dot-notation name="subDept.coordinator" — "subDept" in DepartmentWithTeam,
+     * "coordinator" in SubTeam.
+     */
+    @Test
+    public void validAssociationDotNotationOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidDotNotationOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverride — invalid cases
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: name="director" does not exist in Department (only "manager" and "lead").
+     * Diagnostic fires on the @AssociationOverride annotation.
+     */
+    @Test
+    public void invalidAssociationEmbeddableOverride_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmbeddableOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 28 (0-based 27): @AssociationOverride(name = "director", joinColumns = @JoinColumn(name = "DIR_ID"))
+        Diagnostic directorNotInDepartment = d(27, 4, 87,
+                                               "The name \"director\" in @AssociationOverride does not match any declared field or property in \"Department\".",
+                                               DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, directorNotInDepartment);
+    }
+
+    /**
+     * Invalid: name="mentor" does not exist in Person (only "supervisor" and "id").
+     * Diagnostic fires on the class-level @AssociationOverride annotation.
+     */
+    @Test
+    public void invalidAssociationSuperclassOverride_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidSuperclassOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based 20): @AssociationOverride(name = "mentor", joinColumns = @JoinColumn(name = "MENTOR_ID"))
+        Diagnostic mentorNotInPerson = d(20, 0, 84,
+                                         "The name \"mentor\" in @AssociationOverride does not match any declared field or property in \"Person\".",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mentorNotInPerson);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides container with "supervisor" (valid) and "mentor" (invalid — not in Person).
+     * Diagnostic fires on the "mentor" entry only.
+     */
+    @Test
+    public void invalidAssociationContainerOneEntry_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidContainerOneEntry.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 24 (0-based 23): @AssociationOverride(name = "mentor", joinColumns = @JoinColumn(name = "MENTOR_ID"))
+        Diagnostic mentorNotInPerson = d(23, 4, 88,
+                                         "The name \"mentor\" in @AssociationOverride does not match any declared field or property in \"Person\".",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mentorNotInPerson);
+    }
+
+    /**
+     * Invalid: dot-notation "subDept.owner" — first segment "subDept" exists in
+     * DepartmentWithTeam, but second segment "owner" does not exist in SubTeam.
+     */
+    @Test
+    public void invalidAssociationDotNotationSecondSegment_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidDotNotationSecondSegment.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 29 (0-based 28): @AssociationOverride(name = "subDept.owner", joinColumns = @JoinColumn(name = "OWNER_ID"))
+        Diagnostic ownerNotInSubTeam = d(28, 4, 94,
+                                         "The name \"subDept.owner\" in @AssociationOverride cannot be resolved: \"owner\" does not exist in \"SubTeam\".",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, ownerNotInSubTeam);
+    }
+
+    /**
+     * Invalid: dot-notation "division.coordinator" — first segment "division" does not exist
+     * in DepartmentWithTeam at all.
+     */
+    @Test
+    public void invalidAssociationDotNotationFirstSegment_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidDotNotationFirstSegment.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 29 (0-based 28): @AssociationOverride(name = "division.coordinator", joinColumns = @JoinColumn(name = "COORD_ID"))
+        Diagnostic divisionNotInDepartmentWithTeam = d(28, 4, 101,
+                                                       "The name \"division.coordinator\" in @AssociationOverride cannot be resolved: \"division\" does not exist in \"DepartmentWithTeam\".",
+                                                       DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, divisionNotInDepartmentWithTeam);
     }
 }
