@@ -451,7 +451,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveOrphanDisposesAnnotationQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
   </extension>
    
    <!-- Interceptor -->

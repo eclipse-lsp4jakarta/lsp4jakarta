@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -795,18 +796,16 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 continue;
 
             // Find the sole @Disposes param; skip if there are 0 or >1 (>1 is a separate error).
-            ILocalVariable disposesParam = null;
-            for (ILocalVariable param : method.getParameters()) {
-                if (hasAnnotation(type, param.getAnnotations(), Constants.DISPOSES_FQ_NAME)) {
-                    if (disposesParam != null) {
-                        disposesParam = null;
-                        break;
-                    } // >1 found
-                    disposesParam = param;
+            List<ILocalVariable> disposesParams = Arrays.stream(method.getParameters()).filter(p -> {
+                try {
+                    return hasAnnotation(type, p.getAnnotations(), Constants.DISPOSES_FQ_NAME);
+                } catch (JavaModelException e) {
+                    return false;
                 }
-            }
-            if (disposesParam == null)
+            }).collect(Collectors.toList());
+            if (disposesParams.size() != 1)
                 continue;
+            ILocalVariable disposesParam = disposesParams.get(0);
 
             String erasedFqn = resolveTypeSignature(type, disposesParam.getTypeSignature());
             if (erasedFqn != null && !producerTypes.contains(erasedFqn)) {

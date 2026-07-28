@@ -111,4 +111,45 @@ public class OrphanDisposerTest extends BaseJakartaTest {
         CodeAction removeDisposesAction = ca(uri, "Remove the '@Disposes' modifier from parameter 'conn'", orphanDiag, removeDisposes);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeDisposesAction);
     }
+
+    /**
+     * A class that produces type {@code Connection} but whose disposer targets a
+     * different type {@code Session} must be flagged as an orphan — the producer and
+     * disposer types do not match.
+     */
+    @Test
+    public void orphanDisposerWhenProducerAndDisposerTypesDoNotMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/CrossTypeOrphanDisposer.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // CrossTypeOrphanDisposer.java — cleanupSession() is at line 22 (1-based) = index 21 (0-based).
+        // Method name "cleanupSession" starts at column 16, ends at column 30.
+        Diagnostic orphanDiag = d(21, 16, 30,
+                                  "A disposer method must have a corresponding producer method or producer field in the same class. The @Disposes parameter type 'Session' has no matching @Produces method or field in this class.",
+                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidOrphanDisposerMethod");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, orphanDiag);
+    }
+
+    /**
+     * A class with multiple producers of different types where the disposer targets
+     * exactly one of those types (via a {@code @Produces} field) must produce
+     * no {@code InvalidOrphanDisposerMethod} diagnostic.
+     */
+    @Test
+    public void orphanDisposerNoDiagnosticWhenOneOfMultipleProducersMatchesDisposer() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/MultiProducerDisposer.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No orphan-disposer diagnostic expected — the @Produces Session field matches the disposer.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
