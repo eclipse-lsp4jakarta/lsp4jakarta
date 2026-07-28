@@ -29,6 +29,8 @@ public class Constants {
     public static final String ELEMENT_COLLECTION = "jakarta.persistence.ElementCollection";
     public static final String ATTRIBUTE_OVERRIDE = "jakarta.persistence.AttributeOverride";
     public static final String ATTRIBUTE_OVERRIDES = "jakarta.persistence.AttributeOverrides";
+    public static final String ASSOCIATION_OVERRIDE = "jakarta.persistence.AssociationOverride";
+    public static final String ASSOCIATION_OVERRIDES = "jakarta.persistence.AssociationOverrides";
 
     /* @ElementCollection map prefix constants */
     public static final String ATTRIBUTE_OVERRIDE_VALUE_PREFIX = "value.";
