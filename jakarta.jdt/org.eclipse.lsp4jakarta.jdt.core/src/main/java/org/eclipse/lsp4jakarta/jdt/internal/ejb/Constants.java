@@ -21,9 +21,13 @@ public class Constants {
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
     public static final String STATEFUL_FQ_NAME = "jakarta.ejb.Stateful";
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
+    public static final String INTERCEPTOR_FQ_NAME = "jakarta.interceptor.Interceptor";
+    public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-ejb";
     public static final String DIAGNOSTIC_CODE_MISSING_PUBLIC_CONSTRUCTOR = "MissingPublicNoArgConstructor";
+
+    public static final String FINALIZE_METHOD_NAME = "finalize";
 
     public static final String[] SESSION_BEAN_ANNOTATIONS = {
                                                               STATELESS_FQ_NAME,

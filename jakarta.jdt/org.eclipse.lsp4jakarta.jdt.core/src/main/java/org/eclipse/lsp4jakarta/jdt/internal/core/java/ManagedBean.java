@@ -15,7 +15,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -346,6 +345,11 @@ public class ManagedBean {
 
     /**
      * Checks if the given annotation is marked with a specific meta-annotation.
+     * While checking for meta-annotation, it gets the type of annotation passed
+     * and sees if it has source file or not. If not (.class), it uses the passed compilation unit
+     * for checking matched annotation. If it has source file, it calculates the compilation unit
+     * of the source type and passes it to check matched annotation. This way it resolves the
+     * identification of meta annotation if it exists as either .class or .java file.
      *
      * @param annotation the annotation to check
      * @param type the type context for resolving the annotation
@@ -358,24 +362,15 @@ public class ManagedBean {
      */
     public static boolean hasMetaAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu,
                                             String metaAnnotationFQN) throws JavaModelException {
-        String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-        IJavaProject project = annotation.getJavaProject();
-
-        if (project == null || annotationFQ == null) {
-            return false;
-        }
-
-        IType annotationType = project.findType(annotationFQ);
+        IType annotationType = getChildITypeByName(type, annotation.getElementName());
         if (annotationType == null) {
             return false;
         }
-
-        return Arrays.stream(annotationType.getAnnotations()).anyMatch(metaAnnotation -> {
-            try {
-                return DiagnosticUtils.isMatchedAnnotation(cu, metaAnnotation, metaAnnotationFQN);
-            } catch (JavaModelException e) {
-                return false;
-            }
-        });
+        // Use the annotation type's own compilation unit for source types, fall back to the provided cu for binary types.
+        ICompilationUnit annotationCU = annotationType.isBinary() ? cu : annotationType.getCompilationUnit();
+        if (annotationCU == null) {
+            return false;
+        }
+        return DiagnosticUtils.isMatchedAnnotation(annotationCU, annotationType.getAnnotations(), metaAnnotationFQN);
     }
 }
