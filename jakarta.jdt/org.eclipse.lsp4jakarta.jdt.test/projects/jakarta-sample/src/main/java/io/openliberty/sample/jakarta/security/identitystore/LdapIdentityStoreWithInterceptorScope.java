@@ -1,5 +1,6 @@
 package io.openliberty.sample.jakarta.security.identitystore;
 
+import io.openliberty.sample.jakarta.interceptor.Monitored;
 import jakarta.interceptor.Interceptor;
 import jakarta.security.enterprise.identitystore.LdapIdentityStoreDefinition;
 
@@ -8,6 +9,7 @@ import jakarta.security.enterprise.identitystore.LdapIdentityStoreDefinition;
     callerBaseDn = "ou=caller,dc=jsr375,dc=net",
     groupSearchBase = "ou=group,dc=jsr375,dc=net"
 )
+@Monitored
 @Interceptor
 public class LdapIdentityStoreWithInterceptorScope {
     // Invalid: Has @Interceptor instead of @ApplicationScoped
