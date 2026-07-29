@@ -229,7 +229,7 @@ public class SecurityIdentityStoreTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostic for @Interceptor scope annotation
-        Diagnostic wrongScope = d(11, 13, 50,
+        Diagnostic wrongScope = d(13, 13, 50,
                                   "A class annotated with @LdapIdentityStoreDefinition must be annotated with @ApplicationScoped, instead of @Interceptor.",
                                   DiagnosticSeverity.Error, "jakarta-security", "InvalidScopeOnIdentityStoreDefinition");
         wrongScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.Interceptor")));

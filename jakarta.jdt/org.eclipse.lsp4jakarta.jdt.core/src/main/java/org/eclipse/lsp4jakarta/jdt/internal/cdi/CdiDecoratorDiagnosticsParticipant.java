@@ -1,29 +1,30 @@
 /*******************************************************************************
-* Copyright (c) 2026 IBM Corporation and others.
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License v. 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* SPDX-License-Identifier: EPL-2.0
-*
-* Contributors:
-*     IBM Corporation - initial implementation
-*******************************************************************************/
+ * Copyright (c) 2026 IBM Corporation and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     IBM Corporation - initial implementation
+ *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -82,44 +83,45 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private void validateDecorator(IType type, ICompilationUnit unit, String uri, JavaDiagnosticsContext context,
-                                   List<Diagnostic> diagnostics) throws JavaModelException {
-        // Check if the type is annotated with @Decorator
-        String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
-        List<String> decoratorAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                       new String[] { Constants.DECORATOR_FQ_NAME });
+    private void validateDecorator(IType type, ICompilationUnit unit, String uri,
+                                   JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
 
-        if (decoratorAnnotations.isEmpty()) {
+        if (!DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.DECORATOR_FQ_NAME)) {
             return;
         }
 
-        // Collect all @Delegate injection points
         List<IJavaElement> delegateElements = new ArrayList<>();
-        collectDelegates(type.getFields(), type, delegateElements);
-        for (IMethod method : type.getMethods()) {
-            collectDelegates(method.getParameters(), type, delegateElements);
+        for (IField field : type.getFields()) {
+            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements);
         }
-        reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics, delegateElements, delegateElements.size());
+        for (IMethod method : type.getMethods()) {
+            IAnnotation[] methodAnnotations = method.getAnnotations();
+
+            for (ILocalVariable parameter : method.getParameters()) {
+                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, methodAnnotations);
+            }
+        }
+        reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics,
+                                              delegateElements, delegateElements.size());
     }
 
     /**
-     * collectDelegates
-     * Helper method to collect delegates from any Java elements
+     * Unified delegate processing for fields and parameters.
      *
-     * @param elements
-     * @param type
-     * @param delegateElements
-     * @throws JavaModelException
+     * @param owner The element to report diagnostics on (field or method).
+     * @param element The actual element annotated with @Delegate.
      */
-    private void collectDelegates(IJavaElement[] elements, IType type, List<IJavaElement> delegateElements) throws JavaModelException {
-        for (IJavaElement element : elements) {
-            String[] annotations = Stream.of(((IAnnotatable) element).getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
-            if (!DiagnosticUtils.getMatchedJavaElementNames(
-                                                            type,
-                                                            annotations,
-                                                            new String[] { Constants.DELEGATE_FQ_NAME }).isEmpty()) {
-                delegateElements.add(element);
-            }
+    private void validateDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
+                                  JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
+                                  List<IJavaElement> delegateElements, IAnnotation... methodAnnotations) throws JavaModelException {
+
+        IAnnotation[] annotations = (element instanceof IAnnotatable) ? ((IAnnotatable) element).getAnnotations() : new IAnnotation[0];
+
+        if (DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.DELEGATE_FQ_NAME)) {
+            delegateElements.add(element);
+            validateDelegateInjectionPoint(owner,
+                                           methodAnnotations.length > 0 ? methodAnnotations : annotations,
+                                           type, uri, context, diagnostics);
         }
     }
 
@@ -158,5 +160,33 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             }
         }
         // If delegateCount == 1, no diagnostic needed (valid case)
+    }
+
+    /**
+     * Validates that an element annotated with @Delegate is also annotated with @Inject
+     * (for fields) or is on a method/constructor annotated with @Inject (for parameters).
+     *
+     * @param diagnosticTarget the element where the diagnostic should be reported (field or method)
+     * @param annotations the element's or containing method's annotations
+     * @param type the declaring type
+     * @param uri the file URI
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget,
+                                                IAnnotation[] annotations, IType type, String uri,
+                                                JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        // Check if element or its containing method/constructor has @Inject annotation
+        if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.INJECT_FQ_NAME)) {
+            // @Delegate without @Inject - report diagnostic on the target element
+            // For fields, target is the field itself; for parameters, target is the method
+            Range range = PositionUtils.toNameRange(diagnosticTarget, context.getUtils());
+            String message = Messages.getMessage("InvalidDelegateInjectionPoint");
+            diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidDelegateInjectionPoint,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 }
