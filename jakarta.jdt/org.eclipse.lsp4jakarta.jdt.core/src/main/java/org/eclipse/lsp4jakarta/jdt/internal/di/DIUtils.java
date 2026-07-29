@@ -12,12 +12,10 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.di;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -49,22 +47,8 @@ public class DIUtils {
             }
         });
         if (!hasBuiltInQualifier) {
-            String annotationFQ = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-            IJavaProject project = annotation.getJavaProject();
-            if (project != null && annotationFQ != null) {
-                IType customAnnotationType = project.findType(annotationFQ);
-                ICompilationUnit customClassCompilerUnit = customAnnotationType.getCompilationUnit();
-                if (customAnnotationType != null) {
-                    return Arrays.stream(customAnnotationType.getAnnotations()).anyMatch(customQualifier -> {
-                        try {
-                            return DiagnosticUtils.isMatchedAnnotation(customClassCompilerUnit, customQualifier, QUALIFIER_META);
-                        } catch (JavaModelException e) {
-                            LOGGER.log(Level.INFO, "Unable to fetch qualifier information", e.getMessage());
-                            return false;
-                        }
-                    });
-                }
-            }
+            // Check if it's a custom qualifier by looking for @Qualifier meta-annotation
+            return ManagedBean.hasMetaAnnotation(annotation, type, unit, QUALIFIER_META);
         }
         return hasBuiltInQualifier;
     }

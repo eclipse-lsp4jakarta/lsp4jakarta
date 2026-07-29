@@ -21,6 +21,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 public enum ErrorCode implements IJavaErrorCode {
 
     MissingPublicNoArgConstructor,
+    InvalidSessionBeanWithInterceptorOrDecorator,
+    ConflictingSessionBeanAnnotations,
     SessionBeanFinalizeMethod,
     ImplementMessageListener;
 
