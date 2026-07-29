@@ -55,18 +55,18 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidStatelessWithInterceptor { — row 8, cols 6–37
-        Diagnostic diagnostic = d(8, 6, 37,
+        Diagnostic diagnostic = d(10, 6, 37,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
-        // Remove @Interceptor: from end of @Stateless (row 6, col 10) to end of @Interceptor (row 7, col 12)
-        TextEdit removeInterceptorEdit = te(6, 10, 7, 12, "");
+        // Remove @Interceptor: from end of @Stateless (row 7, col 10) to end of @Interceptor (row 8, col 12)
+        TextEdit removeInterceptorEdit = te(8, 0, 9, 0, "");
         CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
         // Remove @Stateless: from start of @Stateless (row 6) to start of @Interceptor (row 7)
-        TextEdit removeStatelessEdit = te(6, 0, 7, 0, "");
+        TextEdit removeStatelessEdit = te(7, 0, 8, 0, "");
         CodeAction removeStatelessAction = ca(uri, "Remove @Stateless", diagnostic, removeStatelessEdit);
         assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeStatelessAction);
     }
@@ -107,7 +107,7 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidStatefulWithInterceptor { — row 8, cols 6–36
-        Diagnostic diagnostic = d(8, 6, 36,
+        Diagnostic diagnostic = d(10, 6, 36,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
@@ -115,10 +115,10 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Interceptor: from end of @Stateful (row 6, col 9) to end of @Interceptor (row 7, col 12)
-        TextEdit removeInterceptorEdit = te(6, 9, 7, 12, "");
+        TextEdit removeInterceptorEdit = te(8, 0, 9, 0, "");
         CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
         // Remove @Stateful: from start of @Stateful (row 6) to start of @Interceptor (row 7)
-        TextEdit removeStatefulEdit = te(6, 0, 7, 0, "");
+        TextEdit removeStatefulEdit = te(7, 0, 8, 0, "");
         CodeAction removeStatefulAction = ca(uri, "Remove @Stateful", diagnostic, removeStatefulEdit);
         assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeStatefulAction);
     }
@@ -159,18 +159,18 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidSingletonWithInterceptor { — row 8, cols 6–37
-        Diagnostic diagnostic = d(8, 6, 37,
+        Diagnostic diagnostic = d(10, 6, 37,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
-        // Remove @Interceptor: from end of @Singleton (row 6, col 10) to end of @Interceptor (row 7, col 12)
-        TextEdit removeInterceptorEdit = te(6, 10, 7, 12, "");
+        // Remove @Interceptor: from end of @Singleton (row 8, col 10) to end of @Interceptor (row 9, col 12)
+        TextEdit removeInterceptorEdit = te(8, 0, 9, 0, "");
         CodeAction removeInterceptorAction = ca(uri, "Remove @Interceptor", diagnostic, removeInterceptorEdit);
-        // Remove @Singleton: from start of @Singleton (row 6) to start of @Interceptor (row 7)
-        TextEdit removeSingletonEdit = te(6, 0, 7, 0, "");
+        // Remove @Singleton: from start of @Singleton (row 8) to start of @Interceptor (row 9)
+        TextEdit removeSingletonEdit = te(7, 0, 8, 0, "");
         CodeAction removeSingletonAction = ca(uri, "Remove @Singleton", diagnostic, removeSingletonEdit);
         assertJavaCodeAction(params, IJDT_UTILS, removeInterceptorAction, removeSingletonAction);
     }
