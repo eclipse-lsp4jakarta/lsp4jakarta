@@ -56,11 +56,11 @@ public class EmbeddedAnnotationTest extends BaseJakartaTest {
 
         // Line 14 (0-based: 13): "    private EmbeddedAddress address;"
         // "address" starts at col 28, ends at col 35
-        Diagnostic d = d(13, 28, 35,
-                         "The type 'EmbeddedAddress' used in the @Embedded field or property must be annotated with @Embeddable.",
-                         DiagnosticSeverity.Error, "jakarta-persistence", "EmbeddedTypeNotAnnotatedWithEmbeddable");
+        Diagnostic embeddedFieldNotEmbeddableD = d(13, 28, 35,
+                                                   "The type 'EmbeddedAddress' used in the @Embedded field or property must be annotated with @Embeddable.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "EmbeddedTypeNotAnnotatedWithEmbeddable");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, embeddedFieldNotEmbeddableD);
     }
 
     /**
@@ -97,11 +97,11 @@ public class EmbeddedAnnotationTest extends BaseJakartaTest {
 
         // Line 19 (0-based: 18): "    public EmbeddedAddress getAddress() {"
         // "getAddress" starts at col 27, ends at col 37
-        Diagnostic d = d(18, 27, 37,
-                         "The type 'EmbeddedAddress' used in the @Embedded field or property must be annotated with @Embeddable.",
-                         DiagnosticSeverity.Error, "jakarta-persistence", "EmbeddedTypeNotAnnotatedWithEmbeddable");
+        Diagnostic embeddedMethodNotEmbeddableD = d(18, 27, 37,
+                                                    "The type 'EmbeddedAddress' used in the @Embedded field or property must be annotated with @Embeddable.",
+                                                    DiagnosticSeverity.Error, "jakarta-persistence", "EmbeddedTypeNotAnnotatedWithEmbeddable");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, embeddedMethodNotEmbeddableD);
     }
 
     /**
