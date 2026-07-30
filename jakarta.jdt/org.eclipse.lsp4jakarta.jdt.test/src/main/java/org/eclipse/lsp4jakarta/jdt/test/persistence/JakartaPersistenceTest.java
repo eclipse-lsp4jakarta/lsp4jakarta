@@ -631,4 +631,138 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    @Test
+    public void testMapKeyTemporalValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid @MapKeyTemporal usage
+        // with Date and Calendar map key types (including FQN)
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testMapKeyTemporalInvalid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyTemporalInvalid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @MapKeyTemporal on String map key
+        Diagnostic mapKeyTemporalOnStringD1 = d(18, 32, 44,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Integer map key
+        Diagnostic mapKeyTemporalOnIntegerD2 = d(23, 33, 46,
+                                                 "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on Long map key
+        Diagnostic mapKeyTemporalOnLongD3 = d(28, 30, 40,
+                                              "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on getter with String map key
+        Diagnostic mapKeyTemporalOnGetterD4 = d(33, 31, 46,
+                                                "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        // Invalid: @MapKeyTemporal on FQN String map key (should still be detected)
+        Diagnostic mapKeyTemporalOnFqnStringD5 = d(44, 42, 57,
+                                                   "@MapKeyTemporal can only be used when the map key type is java.util.Date or java.util.Calendar.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyTemporalOnNonTemporalType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mapKeyTemporalOnStringD1, mapKeyTemporalOnIntegerD2,
+                              mapKeyTemporalOnLongD3, mapKeyTemporalOnGetterD4, mapKeyTemporalOnFqnStringD5);
+
+        // Test the quickfix for removing @MapKeyTemporal
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, mapKeyTemporalOnStringD1);
+        TextEdit te = te(17, 4, 18, 4, "");
+        CodeAction ca = ca(uri, "Remove @MapKeyTemporal", mapKeyTemporalOnStringD1, te);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, ca);
+    }
+
+    @Test
+    public void testInvalidIdType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InvalidIdType.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: Custom class type (line 18: private CustomType customId;)
+        Diagnostic customTypeD1 = d(17, 23, 31,
+                                    "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                    DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: UUID type (line 22: private UUID uuidId;)
+        Diagnostic uuidTypeD2 = d(21, 17, 23,
+                                  "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                  DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Collection type (line 26: private List<String> listId;)
+        Diagnostic listTypeD3 = d(25, 25, 31,
+                                  "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                  DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Set type (line 29: private Set<String> setId;)
+        Diagnostic setTypeD4 = d(28, 24, 29,
+                                 "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Map type (line 32: private Map<String, String> mapId;)
+        Diagnostic mapTypeD5 = d(31, 32, 37,
+                                 "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Object type (line 36: private Object objectId;)
+        Diagnostic objectTypeD6 = d(35, 19, 27,
+                                    "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                    DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Array type (line 40: private int[] arrayId;)
+        Diagnostic arrayTypeD7 = d(39, 18, 25,
+                                   "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                   DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Getter with CustomType return type (line 51: public CustomType getCustomId())
+        Diagnostic customTypeGetterD8 = d(50, 22, 33,
+                                          "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        // Invalid: Getter with UUID return type (line 57: public UUID getUuidId())
+        Diagnostic uuidTypeGetterD9 = d(56, 16, 25,
+                                        "The @Id annotation must use a valid identifier type (primitives, wrapper types, String, Date types, BigDecimal, or BigInteger).",
+                                        DiagnosticSeverity.Error, "jakarta-persistence", "InvalidIdType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, customTypeD1, uuidTypeD2, listTypeD3,
+                              setTypeD4, mapTypeD5, objectTypeD6, arrayTypeD7, customTypeGetterD8, uuidTypeGetterD9);
+    }
+
+    @Test
+    public void testValidIdTypes() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ValidIdTypes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced for valid @Id types
+        // This includes primitives, wrapper types, String, Date types, BigDecimal, and BigInteger
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
