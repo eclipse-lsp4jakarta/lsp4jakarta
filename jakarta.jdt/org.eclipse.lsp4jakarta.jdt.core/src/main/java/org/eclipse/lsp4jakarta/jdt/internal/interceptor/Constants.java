@@ -53,4 +53,7 @@ public class Constants {
     /* @Priority */
     public static final String PRIORITY_FQ_NAME = "jakarta.annotation.Priority";
 
+    /* @InterceptorBinding */
+    public static final String INTERCEPTOR_BINDING_FQ_NAME = "jakarta.interceptor.InterceptorBinding";
+
 }

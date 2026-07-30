@@ -26,16 +26,15 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
 
 /**
- * Removes the session bean annotation (@Stateless, @Stateful, or @Singleton)
- * from a class that is also annotated with @Interceptor or @Decorator.
+ * Removes the @Interceptor or @Decorator annotation from a session bean class.
  */
-public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
+public class RemoveInterceptorOrDecoratorQuickFix extends RemoveAnnotationConflictQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveSessionBeanAnnotationQuickFix() {
-        super(Constants.STATELESS_FQ_NAME, Constants.STATEFUL_FQ_NAME, Constants.SINGLETON_FQ_NAME);
+    public RemoveInterceptorOrDecoratorQuickFix() {
+        super(Constants.INTERCEPTOR_FQ_NAME, Constants.DECORATOR_FQ_NAME);
     }
 
     /**
@@ -43,7 +42,7 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
      */
     @Override
     public String getParticipantId() {
-        return RemoveSessionBeanAnnotationQuickFix.class.getName();
+        return RemoveInterceptorOrDecoratorQuickFix.class.getName();
     }
 
     /**
@@ -51,7 +50,7 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
      */
     @Override
     protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.EJBRemoveSessionBeanAnnotation;
+        return JakartaCodeActionId.EJBRemoveInterceptorOrDecorator;
     }
 
     /**
@@ -60,7 +59,7 @@ public class RemoveSessionBeanAnnotationQuickFix extends RemoveAnnotationConflic
     @Override
     protected void createCodeActions(Diagnostic diagnostic, JavaCodeActionContext context, IBinding parentType,
                                      List<CodeAction> codeActions) throws CoreException {
-        // Only create a code action for each session bean annotation that is actually present
+        // Only create a code action for each @Interceptor or @Decorator annotation that is actually present
         List<String> presentAnnotations = Arrays.stream(getAnnotations()).filter(annotation -> CodeActionUtils.hasAnnotation(parentType, annotation)).collect(Collectors.toList());
         for (String annotation : presentAnnotations) {
             createCodeAction(diagnostic, context, parentType, codeActions, annotation);
