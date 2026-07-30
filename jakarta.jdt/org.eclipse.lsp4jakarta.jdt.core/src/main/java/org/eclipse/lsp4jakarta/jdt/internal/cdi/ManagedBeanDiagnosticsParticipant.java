@@ -811,8 +811,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             if (erasedFqn != null && !producerTypes.contains(erasedFqn)) {
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("InvalidOrphanDisposerMethod",
-                                                                             Signature.getSignatureSimpleName(disposesParam.getTypeSignature())),
+                                                         Messages.getMessage("InvalidOrphanDisposerMethod"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InvalidOrphanDisposerMethod, DiagnosticSeverity.Error));
             }

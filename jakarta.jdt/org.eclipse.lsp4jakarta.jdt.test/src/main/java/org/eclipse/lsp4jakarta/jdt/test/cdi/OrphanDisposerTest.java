@@ -98,7 +98,7 @@ public class OrphanDisposerTest extends BaseJakartaTest {
         // OrphanDisposer.java — cleanup() is at line 12 (1-based) = line index 11 (0-based).
         // Method name "cleanup" starts at column 16, ends at column 23.
         Diagnostic orphanDiag = d(11, 16, 23,
-                                  "A disposer method must have a corresponding producer method or producer field in the same class. The @Disposes parameter type 'Connection' has no matching @Produces method or field in this class.",
+                                  "A disposer method must have a corresponding producer method or producer field in the same class.",
                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidOrphanDisposerMethod");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, orphanDiag);
@@ -129,7 +129,7 @@ public class OrphanDisposerTest extends BaseJakartaTest {
         // CrossTypeOrphanDisposer.java — cleanupSession() is at line 22 (1-based) = index 21 (0-based).
         // Method name "cleanupSession" starts at column 16, ends at column 30.
         Diagnostic orphanDiag = d(21, 16, 30,
-                                  "A disposer method must have a corresponding producer method or producer field in the same class. The @Disposes parameter type 'Session' has no matching @Produces method or field in this class.",
+                                  "A disposer method must have a corresponding producer method or producer field in the same class.",
                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidOrphanDisposerMethod");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, orphanDiag);
