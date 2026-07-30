@@ -448,4 +448,86 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, divisionNotInDepartmentWithTeam);
     }
+
+    // -----------------------------------------------------------------------
+    // @AttributeOverride — method-level (property-based access)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Valid: @AttributeOverride on a property-based getter with name="city" which exists in Address.
+     */
+    @Test
+    public void validPropertyBasedAttributeOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/ValidPropertyBasedOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Invalid: @AttributeOverride on a property-based getter with name="zipcode" which does
+     * not exist in Address (only "street" and "city").
+     * Diagnostic fires on the @AttributeOverride annotation on the getter.
+     */
+    @Test
+    public void invalidPropertyBasedAttributeOverride_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/InvalidPropertyBasedOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 30 (0-based 29): @AttributeOverride(name = "zipcode", column = @Column(name = "ADDR_ZIP"))
+        Diagnostic zipcodeNotInAddress = d(29, 4, 77,
+                                           "The name \"zipcode\" in @AttributeOverride does not match any declared field or property in \"Address\".",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAttributeOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, zipcodeNotInAddress);
+    }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverride — method-level (property-based access)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Valid: @AssociationOverride on a property-based getter with name="manager" which exists in Department.
+     */
+    @Test
+    public void validPropertyBasedAssociationOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidPropertyBasedOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Invalid: @AssociationOverride on a property-based getter with name="director" which does
+     * not exist in Department (only "manager" and "lead").
+     * Diagnostic fires on the @AssociationOverride annotation on the getter.
+     */
+    @Test
+    public void invalidPropertyBasedAssociationOverride_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidPropertyBasedOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 30 (0-based 29): @AssociationOverride(name = "director", joinColumns = @JoinColumn(name = "DIR_ID"))
+        Diagnostic directorNotInDepartment = d(29, 4, 87,
+                                               "The name \"director\" in @AssociationOverride does not match any declared field or property in \"Department\".",
+                                               DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAssociationOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, directorNotInDepartment);
+    }
 }
