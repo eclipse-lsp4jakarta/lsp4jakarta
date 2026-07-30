@@ -41,7 +41,6 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidIdType,
     InvalidAttributeOverrideName,
     InvalidAssociationOverrideName;
-    
 
     /**
      * {@inheritDoc}
