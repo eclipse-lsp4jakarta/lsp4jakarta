@@ -107,7 +107,7 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                                                              Messages.getMessage("SessionBeanMustBeTopLevel"),
                                                              range, Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidNonTopLevelClass,
-                                                                                                                        DiagnosticSeverity.Error));
+                                                             DiagnosticSeverity.Error));
                 }
                 // Check for @Interceptor or @Decorator annotations
                 List<String> invalidAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
