@@ -350,6 +350,7 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiObserverMethodDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -455,6 +456,12 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEvent" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEventContext" />
   </extension>
    
    <!-- Interceptor -->
