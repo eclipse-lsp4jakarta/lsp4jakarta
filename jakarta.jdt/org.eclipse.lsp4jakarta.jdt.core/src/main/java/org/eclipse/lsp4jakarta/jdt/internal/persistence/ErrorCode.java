@@ -38,8 +38,10 @@ public enum ErrorCode implements IJavaErrorCode {
     DuplicateVersionAnnotationInHierarchy,
     InvalidMapKeyTemporalOnNonTemporalType,
     InvalidVersionFieldOrPropertyType,
+    InvalidIdType,
     InvalidAttributeOverrideName,
     InvalidAssociationOverrideName;
+    
 
     /**
      * {@inheritDoc}
