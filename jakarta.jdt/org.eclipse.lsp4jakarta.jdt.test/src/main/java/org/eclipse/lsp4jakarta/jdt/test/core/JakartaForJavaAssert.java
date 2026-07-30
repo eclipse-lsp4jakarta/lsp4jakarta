@@ -26,10 +26,12 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.SnippetTextEdit;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
@@ -88,9 +90,12 @@ public class JakartaForJavaAssert {
             ca.setTitle(replaceNewLineCharacters(ca.getTitle()));
             List<Either<TextDocumentEdit, ResourceOperation>> tdes = ca.getEdit().getDocumentChanges();
             for (Either<TextDocumentEdit, ResourceOperation> tde : tdes) {
-                List<TextEdit> tes = tde.getLeft().getEdits();
-                for (TextEdit te : tes) {
-                    te.setNewText(replaceNewLineCharacters(te.getNewText()));
+                //Modified for jdtls API upgrade 1.0.0 version
+                List<Either<TextEdit, SnippetTextEdit>> tes = tde.getLeft().getEdits();
+                for (Either<TextEdit, SnippetTextEdit> te : tes) {
+                    if (te.isLeft()) {
+                        te.getLeft().setNewText(replaceNewLineCharacters(te.getLeft().getNewText()));
+                    }
                 }
             }
         }
@@ -107,10 +112,11 @@ public class JakartaForJavaAssert {
         CodeAction codeAction = new CodeAction();
         codeAction.setTitle(title);
         codeAction.setDiagnostics(Arrays.asList(d));
-
-        VersionedTextDocumentIdentifier versionedTextDocumentIdentifier = new VersionedTextDocumentIdentifier(uri, 0);
-
-        TextDocumentEdit textDocumentEdit = new TextDocumentEdit(versionedTextDocumentIdentifier, Arrays.asList(te));
+        //Modified for jdtls API upgrade 1.0.0 version
+        VersionedTextDocumentIdentifier versionedTextDocumentIdentifier = new VersionedTextDocumentIdentifier();
+        versionedTextDocumentIdentifier.setUri(uri);
+        versionedTextDocumentIdentifier.setVersion(0);
+        TextDocumentEdit textDocumentEdit = new TextDocumentEdit(versionedTextDocumentIdentifier, Arrays.stream(te).map(Either::<TextEdit, SnippetTextEdit> forLeft).collect(Collectors.toList()));
         WorkspaceEdit workspaceEdit = new WorkspaceEdit(Arrays.asList(Either.forLeft(textDocumentEdit)));
         workspaceEdit.setChanges(Collections.emptyMap());
         codeAction.setEdit(workspaceEdit);
@@ -195,7 +201,7 @@ public class JakartaForJavaAssert {
         List<Diagnostic> received = actual;
         final boolean filterMessage;
         if (expected != null && !expected.isEmpty()
-            && (expected.get(0).getMessage() == null || expected.get(0).getMessage().isEmpty())) {
+            && isEmptyMessage(expected.get(0).getMessage())) {
             filterMessage = true;
         } else {
             filterMessage = false;
@@ -228,6 +234,58 @@ public class JakartaForJavaAssert {
      * @return new string without '\r' for new lines
      */
     public static String replaceNewLineCharacters(String source) {
-        return source.replaceAll("\r\n", "\n");
+        return source == null ? null : source.replaceAll("\r\n", "\n");
     }
+
+    /**
+     * Added for jdtls API upgrade 1.0.0 version
+     * Normalizes line endings in a diagnostic message represented as either plain
+     * text or markup content.
+     * <p>
+     * This keeps test comparisons stable across platforms by converting Windows
+     * CRLF line endings to LF while preserving the original {@link Either} shape.
+     *
+     * @param source the diagnostic message to normalize
+     * @return a normalized message with LF line endings, or {@code null} if the
+     *         input is {@code null}
+     */
+    public static Either<String, MarkupContent> replaceNewLineCharacters(Either<String, MarkupContent> source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isLeft()) {
+            return Either.forLeft(replaceNewLineCharacters(source.getLeft()));
+        }
+        MarkupContent markup = source.getRight();
+        if (markup == null) {
+            return Either.forRight(null);
+        }
+        MarkupContent normalized = new MarkupContent();
+        normalized.setKind(markup.getKind());
+        normalized.setValue(replaceNewLineCharacters(markup.getValue()));
+        return Either.forRight(normalized);
+    }
+
+    /**
+     * Added for jdtls API upgrade 1.0.0 version
+     * Returns whether the given diagnostic message is effectively empty.
+     * <p>
+     * A message is considered empty when it is {@code null}, when its plain-text
+     * value is empty, or when its markup-content value is empty.
+     *
+     * @param message the diagnostic message to inspect
+     * @return {@code true} if the message is absent or empty; {@code false}
+     *         otherwise
+     */
+    public static boolean isEmptyMessage(Either<String, MarkupContent> message) {
+        if (message == null) {
+            return true;
+        }
+        if (message.isLeft()) {
+            return message.getLeft() == null || message.getLeft().isEmpty();
+        }
+        MarkupContent markup = message.getRight();
+        return markup == null || markup.getValue() == null || markup.getValue().isEmpty();
+    }
+
 }

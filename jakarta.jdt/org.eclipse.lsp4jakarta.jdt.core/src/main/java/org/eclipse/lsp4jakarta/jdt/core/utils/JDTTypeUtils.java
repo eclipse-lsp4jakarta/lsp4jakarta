@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 /**
@@ -291,9 +292,7 @@ public class JDTTypeUtils {
         int end = fieldTypeName.lastIndexOf(">");
         String keyValue = fieldTypeName.substring(start, end);
         int index = keyValue.indexOf(',');
-        return new String[] {
-                              keyValue.substring(0, index), keyValue.substring(index + 1, keyValue.length())
-        };
+        return new String[] { keyValue.substring(0, index), keyValue.substring(index + 1, keyValue.length()) };
     }
 
     public static boolean isPrimitiveType(String valueClass) {
@@ -368,10 +367,22 @@ public class JDTTypeUtils {
     }
 
     /**
+     * Returns true if the 'type' signature is an Array
+     *
+     * @param type - Signature type of field or method
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isArray(String type) throws JavaModelException {
+        return Signature.getArrayCount(type) > 0;
+    }
+
+    /**
      * Returns the resolved type arguments for a parameterized type.
      *
      * @param member the field or method
-     * @return array of fully qualified type argument names, or null if not a parameterized type
+     * @return array of fully qualified type argument names, or null if not a
+     *         parameterized type
      */
     public static String[] getResolvedTypeArguments(IMember member) {
         try {
@@ -411,5 +422,6 @@ public class JDTTypeUtils {
             return null;
         }
         return null;
+
     }
 }
