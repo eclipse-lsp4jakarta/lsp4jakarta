@@ -20,6 +20,7 @@ import jakarta.interceptor.AroundTimeout;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
+@Monitored
 @Interceptor
 public class ValidInterceptorOneMethodPerType {
 

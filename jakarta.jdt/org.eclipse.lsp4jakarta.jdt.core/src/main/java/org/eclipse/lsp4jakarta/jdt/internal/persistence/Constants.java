@@ -14,6 +14,8 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Persistence diagnostic constants.
@@ -45,6 +47,25 @@ public class Constants {
     /* Valid @Version field types */
     public static final Set<String> VALID_VERSION_TYPES = Set.of("int", "short", "long", "java.lang.Integer",
                                                                  "java.lang.Short", "java.lang.Long", SQL_TIMESTAMP);
+
+    /*
+     * Valid @Id field types - Jakarta Persistence 3.0 specification section a14827
+     */
+    public static final Set<String> PRIMITIVES = Set.of("int", "long", "short", "byte", "char", "boolean", "float",
+                                                        "double");
+
+    public static final Set<String> WRAPPER_TYPES = Set.of("java.lang.Integer", "java.lang.Long", "java.lang.Short",
+                                                           "java.lang.Byte", "java.lang.Character", "java.lang.Boolean", "java.lang.Float", "java.lang.Double");
+
+    public static final Set<String> DATE_TYPES = Set.of("java.util.Date", "java.sql.Date");
+
+    public static final Set<String> BIG_NUMBER_TYPES = Set.of("java.math.BigDecimal", "java.math.BigInteger");
+
+    public static final String STRING_TYPE = "java.lang.String";
+
+    /* Combined set of all valid @Id types */
+    public static final Set<String> VALID_ID_TYPES = Stream.of(PRIMITIVES, WRAPPER_TYPES, DATE_TYPES, BIG_NUMBER_TYPES,
+                                                               Set.of(STRING_TYPE)).flatMap(Set::stream).collect(Collectors.toUnmodifiableSet());
 
     /* Annotation Fields */
     public static final String NAME = "name";
