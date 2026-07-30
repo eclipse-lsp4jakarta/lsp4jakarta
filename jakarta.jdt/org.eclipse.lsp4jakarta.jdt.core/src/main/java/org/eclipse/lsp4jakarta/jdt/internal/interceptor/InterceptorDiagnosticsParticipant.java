@@ -407,8 +407,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IAnnotation[] annotations = type.getAnnotations();
         for (IAnnotation annotation : annotations) {
             // Check if this annotation is an interceptor binding
-            if (ManagedBean.hasMetaAnnotation(annotation, type,
-                                              Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
+            if (ManagedBean.hasMetaAnnotation(annotation, type, unit, Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
                 hasInterceptorBinding = true;
                 break;
             }

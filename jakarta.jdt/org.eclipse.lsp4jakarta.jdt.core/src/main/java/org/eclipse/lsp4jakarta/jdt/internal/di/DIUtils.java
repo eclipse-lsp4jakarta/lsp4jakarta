@@ -48,7 +48,7 @@ public class DIUtils {
         });
         if (!hasBuiltInQualifier) {
             // Check if it's a custom qualifier by looking for @Qualifier meta-annotation
-            return ManagedBean.hasMetaAnnotation(annotation, type, QUALIFIER_META);
+            return ManagedBean.hasMetaAnnotation(annotation, type, unit, QUALIFIER_META);
         }
         return hasBuiltInQualifier;
     }

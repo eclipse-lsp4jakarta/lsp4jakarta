@@ -345,6 +345,11 @@ public class ManagedBean {
 
     /**
      * Checks if the given annotation is marked with a specific meta-annotation.
+     * While checking for meta-annotation, it gets the type of annotation passed
+     * and sees if it has source file or not. If not (.class), it uses the passed compilation unit
+     * for checking matched annotation. If it has source file, it calculates the compilation unit
+     * of the source type and passes it to check matched annotation. This way it resolves the
+     * identification of meta annotation if it exists as either .class or .java file.
      *
      * @param annotation the annotation to check
      * @param type the type context for resolving the annotation
@@ -361,32 +366,11 @@ public class ManagedBean {
         if (annotationType == null) {
             return false;
         }
-        return DiagnosticUtils.isMatchedAnnotation(cu, annotationType.getAnnotations(), metaAnnotationFQN);
-    }
-
-    /**
-     * Checks if an annotation has a specific meta-annotation, using the annotation type's
-     * compilation unit for proper resolution.
-     *
-     * @param annotation the annotation to check
-     * @param type the type context for resolving the annotation
-     * @param metaAnnotationFQN the fully qualified name of the meta-annotation to look for
-     * @return true if the annotation has the specified meta-annotation, false otherwise
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    public static boolean hasMetaAnnotation(IAnnotation annotation, IType type,
-                                            String metaAnnotationFQN) throws JavaModelException {
-        IType annotationType = getChildITypeByName(type, annotation.getElementName());
-        if (annotationType == null) {
-            return false;
-        }
-        // Get the compilation unit of the annotation type itself
-        ICompilationUnit annotationCU = annotationType.getCompilationUnit();
+        // Use the annotation type's own compilation unit for source types, fall back to the provided cu for binary types.
+        ICompilationUnit annotationCU = annotationType.isBinary() ? cu : annotationType.getCompilationUnit();
         if (annotationCU == null) {
             return false;
         }
-        // Check if the annotation type has the specified meta-annotation
         return DiagnosticUtils.isMatchedAnnotation(annotationCU, annotationType.getAnnotations(), metaAnnotationFQN);
     }
-
 }
