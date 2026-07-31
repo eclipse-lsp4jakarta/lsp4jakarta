@@ -53,7 +53,7 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test expected diagnostic
-        Diagnostic disposerDiag = d(15, 16, 23,
+        Diagnostic disposerDiag = d(17, 16, 23,
                                     "Interceptors and Decorators cannot have methods with parameter(s) 'conn' annotated with @Disposes.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithDisposerMethod");
 
@@ -61,7 +61,7 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
 
         // Test quickfix
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, disposerDiag);
-        TextEdit removeDisposes = te(15, 24, 15, 34, "");
+        TextEdit removeDisposes = te(17, 24, 17, 34, "");
         CodeAction removeDisposesAction = ca(uri, "Remove the '@Disposes' modifier from parameter 'conn'", disposerDiag, removeDisposes);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeDisposesAction);
     }
