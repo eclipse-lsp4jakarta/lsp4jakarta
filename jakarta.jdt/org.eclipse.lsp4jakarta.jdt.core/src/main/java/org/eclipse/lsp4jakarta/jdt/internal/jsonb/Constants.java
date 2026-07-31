@@ -53,7 +53,7 @@ public class Constants {
     /* Jsonb fromJson constants */
     public static final String JSONB_FROM_JSON_PACKAGE = "jakarta.json.bind.Jsonb";
     public static final String FROM_JSON_METHOD = "fromJson";
-  
+
     // Individual thread-related type constants
     public static final String JAVA_LANG_THREAD = "java.lang.Thread";
     public static final String JAVA_LANG_RUNNABLE = "java.lang.Runnable";
