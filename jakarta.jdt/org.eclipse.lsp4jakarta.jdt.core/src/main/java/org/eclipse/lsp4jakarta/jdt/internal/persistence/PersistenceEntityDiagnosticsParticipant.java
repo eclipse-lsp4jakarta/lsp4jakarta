@@ -576,29 +576,29 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 return;
             }
             switch (matchedAnnotation) {
-                case Constants.TABLEGENERATOR:
+                case Constants.TABLE_GENERATOR:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
                                                    "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
                     break;
-                case Constants.SEQUENCEGENERATOR:
+                case Constants.SEQUENCE_GENERATOR:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
                                                    "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
                     break;
-                case Constants.SECONDARYTABLE:
+                case Constants.SECONDARY_TABLE:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
                                                    "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
                     break;
-                case Constants.TABLEGENERATORS:
+                case Constants.TABLE_GENERATORS:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
                                                  "TableGeneratorsMissingTableGeneratorMapping", ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
                                                  "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
                     break;
-                case Constants.SEQUENCEGENERATORS:
+                case Constants.SEQUENCE_GENERATORS:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
                                                  "SequenceGeneratorsMissingSequenceGeneratorMapping", ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
                                                  "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
                     break;
-                case Constants.SECONDARYTABLES:
+                case Constants.SECONDARY_TABLES:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
                                                  "SecondaryTablesMissingSecondaryTableMapping", ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
                                                  "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
