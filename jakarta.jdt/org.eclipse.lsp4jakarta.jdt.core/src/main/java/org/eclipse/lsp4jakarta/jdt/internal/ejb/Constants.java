@@ -21,6 +21,8 @@ public class Constants {
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
     public static final String STATEFUL_FQ_NAME = "jakarta.ejb.Stateful";
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
+    public static final String INTERCEPTOR_FQ_NAME = "jakarta.interceptor.Interceptor";
+    public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
 
     /* Session synchronization annotation constants */
     public static final String AFTER_BEGIN_FQ_NAME = "jakarta.ejb.AfterBegin";

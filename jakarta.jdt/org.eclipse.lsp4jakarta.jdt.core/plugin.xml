@@ -341,6 +341,12 @@
                   targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNonVoid"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.ChangeReturnTypeToVoidForSessionSyncMethodQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionBeanWithInterceptorOrDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveSessionBeanAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionBeanWithInterceptorOrDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveInterceptorOrDecoratorQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#ConflictingSessionBeanAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveConflictingSessionBeanAnnotationsQuickFix" />
       <codeAction kind="quickfix"
