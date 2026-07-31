@@ -30,6 +30,8 @@ public class Constants {
     public static final String OBSERVES_ASYNC_FQ_NAME = "jakarta.enterprise.event.ObservesAsync";
     public static final String DEPENDENT_FQ_NAME = "jakarta.enterprise.context.Dependent";
     public static final String APPLICATION_SCOPED_FQ_NAME = "jakarta.enterprise.context.ApplicationScoped";
+    public static final String SESSION_SCOPED_FQ_NAME = "jakarta.enterprise.context.SessionScoped";
+    public static final String CONVERSATION_SCOPED_FQ_NAME = "jakarta.enterprise.context.ConversationScoped";
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
 
@@ -47,6 +49,10 @@ public class Constants {
     public static final String DIAGNOSTIC_CODE_INVALID_DISPOSES_PARAM = "RemoveDisposesOrConflictedAnnotations";
     // Meta-annotation that defines normal scopes
     public static final String NORMAL_SCOPE_FQ_NAME = "jakarta.enterprise.context.NormalScope";
+    // Built-in passivating scopes (CDI 3.0 §6.6.4 — @NormalScope(passivating=true))
+    public static final String[] BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES = { SESSION_SCOPED_FQ_NAME, CONVERSATION_SCOPED_FQ_NAME };
+    // Serializable interface required by passivation-capable beans (CDI 3.0 §6.6.4)
+    public static final String SERIALIZABLE_FQ_NAME = "java.io.Serializable";
 
     public static final String DIAGNOSTIC_CODE_REDUNDANT_DISPOSES = "RemoveExtraDisposes";
     public static final String[] INVALID_INITIALIZER_PARAMS_FQ = { DISPOSES_FQ_NAME, OBSERVES_FQ_NAME,

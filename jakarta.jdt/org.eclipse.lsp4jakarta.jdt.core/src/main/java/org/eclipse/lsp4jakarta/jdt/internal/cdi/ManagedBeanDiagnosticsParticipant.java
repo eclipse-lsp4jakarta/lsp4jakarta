@@ -43,6 +43,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -421,6 +422,13 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
+
+                // A managed bean in a passivating scope must implement Serializable.
+                // CDI 3.0 §6.6.4: Passivating scopes must be declared @NormalScope(passivating=true).
+                // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
+                // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
+                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type, unit);
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
@@ -497,6 +505,109 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that a managed bean in a passivating scope implements {@code java.io.Serializable}.
+     *
+     * <p>CDI 3.0 §6.6.4: A passivating scope requires beans with that scope to be passivation
+     * capable. A managed bean is passivation capable if and only if the bean class is serializable.
+     * Passivating scopes must be declared {@code @NormalScope(passivating=true)}. The built-in
+     * passivating scopes are {@code @SessionScoped} and {@code @ConversationScoped}. Custom
+     * passivating scopes — user-defined annotations meta-annotated with
+     * {@code @NormalScope(passivating=true)} — are also detected.
+     *
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the Java type being validated
+     * @param unit the compilation unit
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private void validatePassivatingScopeWithoutSerializable(JavaDiagnosticsContext context, String uri,
+                                                             List<Diagnostic> diagnostics, IType type,
+                                                             ICompilationUnit unit) throws JavaModelException {
+        if (!hasPassivatingScope(type, unit)) {
+            return;
+        }
+
+        // Bean has a passivating scope — must implement java.io.Serializable.
+        try {
+            if (TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.SERIALIZABLE_FQ_NAME) != TypeHierarchyUtils.HAS_SUPERTYPE) {
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("ManagedBeanInPassivatingScopeWithoutSerializable"),
+                                                         range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidPassivatingScopedBeanWithoutSerializable,
+                                                         DiagnosticSeverity.Error));
+            }
+        } catch (CoreException e) {
+            LOGGER.log(Level.WARNING, "Error checking Serializable hierarchy for: " + type.getElementName(), e);
+        }
+    }
+
+    /**
+     * Returns {@code true} if the given type carries a passivating scope annotation.
+     *
+     * <p>Checks both built-in passivating scopes ({@code @SessionScoped},
+     * {@code @ConversationScoped}) and custom scopes whose annotation type is
+     * meta-annotated with {@code @NormalScope(passivating=true)}.
+     *
+     * @param type the Java type being validated
+     * @param unit the compilation unit
+     * @return {@code true} if any passivating scope annotation is present
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private boolean hasPassivatingScope(IType type, ICompilationUnit unit) throws JavaModelException {
+        for (IAnnotation annotation : type.getAnnotations()) {
+            // Check built-in passivating scopes: @SessionScoped and @ConversationScoped
+            if (DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                         Constants.BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES) != null) {
+                return true;
+            }
+
+            // Check custom passivating scopes: annotations meta-annotated with @NormalScope(passivating=true)
+            if (isCustomPassivatingScope(annotation, type, unit)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if the given annotation is a custom passivating scope —
+     * i.e. its annotation type is meta-annotated with {@code @NormalScope(passivating=true)}.
+     *
+     * <p>Resolves the annotation's fully qualified name once, looks up its type, and
+     * inspects its {@code @NormalScope} meta-annotation for the {@code passivating}
+     * attribute. This avoids the redundant type-resolution that would result from
+     * calling {@code ManagedBean.hasMetaAnnotation} and then re-resolving the type
+     * to read the attribute value.
+     *
+     * @param annotation the annotation present on the bean class
+     * @param type the Java type being validated (used for name resolution)
+     * @param unit the compilation unit (used for import-aware matching)
+     * @return {@code true} if the annotation represents a custom passivating scope
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private boolean isCustomPassivatingScope(IAnnotation annotation, IType type,
+                                             ICompilationUnit unit) throws JavaModelException {
+        String fqName = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
+        if (fqName == null) {
+            return false;
+        }
+        IType annotationType = type.getJavaProject().findType(fqName);
+        if (annotationType == null) {
+            return false;
+        }
+        for (IAnnotation metaAnnotation : annotationType.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedAnnotation(unit, metaAnnotation, Constants.NORMAL_SCOPE_FQ_NAME)) {
+                return Boolean.TRUE.equals(
+                    DiagnosticUtils.getAnnotationMemberValue(metaAnnotation, "passivating", Boolean.class));
+            }
+        }
+        return false;
     }
 
     /**
