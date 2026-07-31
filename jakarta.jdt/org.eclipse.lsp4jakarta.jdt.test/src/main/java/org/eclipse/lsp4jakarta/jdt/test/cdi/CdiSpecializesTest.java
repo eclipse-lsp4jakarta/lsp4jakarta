@@ -60,7 +60,7 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         // Line 24 (1-based) = line 23 (0-based)
         // class name "SpecializesWithNonBeanSuperclass" starts at col 13, ends at col 45
         Diagnostic unscopedSuperclassDiagnostic = d(23, 13, 45,
-                                                    "A bean annotated with @Specializes must directly extend the bean class of another CDI scope managed bean (e.g., @ApplicationScoped, @RequestScoped, @Dependent etc).",
+                                                    "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
                                                     DiagnosticSeverity.Error,
                                                     "jakarta-cdi",
                                                     "InvalidSpecializesAnnotationOnNonBeanSuperclass");
@@ -110,7 +110,7 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         // Line 26 (1-based) = line 25 (0-based)
         // "SpecializesWithGrandparentBeanOnly" starts at col 13, ends at col 47 (34 chars)
         Diagnostic scopedGrandparentOnlyDiagnostic = d(25, 13, 47,
-                                                       "A bean annotated with @Specializes must directly extend the bean class of another CDI scope managed bean (e.g., @ApplicationScoped, @RequestScoped, @Dependent etc).",
+                                                       "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
                                                        DiagnosticSeverity.Error,
                                                        "jakarta-cdi",
                                                        "InvalidSpecializesAnnotationOnNonBeanSuperclass");
