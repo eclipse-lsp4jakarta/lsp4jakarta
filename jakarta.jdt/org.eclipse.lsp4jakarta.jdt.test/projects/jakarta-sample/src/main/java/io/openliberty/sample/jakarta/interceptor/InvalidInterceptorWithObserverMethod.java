@@ -4,6 +4,7 @@ import jakarta.interceptor.Interceptor;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.ObservesAsync;
 
+@Monitored
 @Interceptor
 public class InvalidInterceptorWithObserverMethod {
 
