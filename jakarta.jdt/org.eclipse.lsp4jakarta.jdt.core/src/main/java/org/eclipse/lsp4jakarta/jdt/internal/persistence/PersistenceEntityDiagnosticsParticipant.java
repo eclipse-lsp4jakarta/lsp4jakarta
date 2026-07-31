@@ -553,7 +553,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
     }
-    
+
     /**
      * Validates that a field or method annotated with @Embedded references a type
      * that is annotated with @Embeddable.
@@ -592,6 +592,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
-    }    
+    }
 
 }
