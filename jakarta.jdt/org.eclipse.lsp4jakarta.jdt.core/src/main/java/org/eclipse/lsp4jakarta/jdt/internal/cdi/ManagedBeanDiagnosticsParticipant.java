@@ -579,35 +579,19 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Returns {@code true} if the given annotation is a custom passivating scope —
      * i.e. its annotation type is meta-annotated with {@code @NormalScope(passivating=true)}.
      *
-     * <p>Resolves the annotation's fully qualified name once, looks up its type, and
-     * inspects its {@code @NormalScope} meta-annotation for the {@code passivating}
-     * attribute. This avoids the redundant type-resolution that would result from
-     * calling {@code ManagedBean.hasMetaAnnotation} and then re-resolving the type
-     * to read the attribute value.
+     * <p>Delegates entirely to {@link ManagedBean#getMetaAnnotationMemberValue}, which
+     * handles type resolution, CU selection, and attribute reading in one call.
      *
      * @param annotation the annotation present on the bean class
      * @param type the Java type being validated (used for name resolution)
-     * @param unit the compilation unit (used for import-aware matching)
+     * @param unit the compilation unit (used for import-aware matching of binary types)
      * @return {@code true} if the annotation represents a custom passivating scope
      * @throws JavaModelException if there is an error accessing Java model elements
      */
     private boolean isCustomPassivatingScope(IAnnotation annotation, IType type,
                                              ICompilationUnit unit) throws JavaModelException {
-        String fqName = ManagedBean.getFullyQualifiedClassName(type, annotation.getElementName());
-        if (fqName == null) {
-            return false;
-        }
-        IType annotationType = type.getJavaProject().findType(fqName);
-        if (annotationType == null) {
-            return false;
-        }
-        for (IAnnotation metaAnnotation : annotationType.getAnnotations()) {
-            if (DiagnosticUtils.isMatchedAnnotation(unit, metaAnnotation, Constants.NORMAL_SCOPE_FQ_NAME)) {
-                return Boolean.TRUE.equals(
-                    DiagnosticUtils.getAnnotationMemberValue(metaAnnotation, "passivating", Boolean.class));
-            }
-        }
-        return false;
+        return Boolean.TRUE.equals(ManagedBean.getMetaAnnotationMemberValue(
+            annotation, type, unit, Constants.NORMAL_SCOPE_FQ_NAME, Constants.NORMAL_SCOPE_PASSIVATING_ATTR, Boolean.class));
     }
 
     /**

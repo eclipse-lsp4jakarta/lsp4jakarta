@@ -373,4 +373,45 @@ public class ManagedBean {
         }
         return DiagnosticUtils.isMatchedAnnotation(annotationCU, annotationType.getAnnotations(), metaAnnotationFQN);
     }
+
+    /**
+     * Returns the value of a named member on a specific meta-annotation that is
+     * present on the given annotation's type, or {@code null} if the meta-annotation
+     * is absent, the member is missing, or the type cannot be resolved.
+     *
+     * <p>Uses {@link #hasMetaAnnotation} as a pre-flight check, then applies the
+     * same CU-selection logic (annotation type's own CU for source types, the
+     * provided {@code cu} for binary types) when reading the attribute value.
+     *
+     * @param <T>               the expected type of the member value
+     * @param annotation        the annotation present on the bean class
+     * @param type              the Java type being validated (used for name resolution)
+     * @param cu                the compilation unit (fallback for binary annotation types)
+     * @param metaAnnotationFQN the fully qualified name of the meta-annotation to find
+     * @param memberName        the name of the member whose value to return
+     * @param memberType        the expected type class of the member value
+     * @return the member value, or {@code null} if not found
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    public static <T> T getMetaAnnotationMemberValue(IAnnotation annotation, IType type, ICompilationUnit cu,
+                                                     String metaAnnotationFQN, String memberName,
+                                                     Class<T> memberType) throws JavaModelException {
+        if (!hasMetaAnnotation(annotation, type, cu, metaAnnotationFQN)) {
+            return null;
+        }
+        IType annotationType = getChildITypeByName(type, annotation.getElementName());
+        if (annotationType == null) {
+            return null;
+        }
+        ICompilationUnit annotationCU = annotationType.isBinary() ? cu : annotationType.getCompilationUnit();
+        if (annotationCU == null) {
+            return null;
+        }
+        for (IAnnotation metaAnnotation : annotationType.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedAnnotation(annotationCU, metaAnnotation, metaAnnotationFQN)) {
+                return DiagnosticUtils.getAnnotationMemberValue(metaAnnotation, memberName, memberType);
+            }
+        }
+        return null;
+    }
 }
