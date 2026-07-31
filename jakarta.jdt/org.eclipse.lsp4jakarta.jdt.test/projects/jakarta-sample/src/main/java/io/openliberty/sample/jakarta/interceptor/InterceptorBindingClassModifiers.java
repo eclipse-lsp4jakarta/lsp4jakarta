@@ -39,13 +39,17 @@ final class InvalidFinalInterceptorBindingClass {
 @Interceptor
 class InvalidMethodsOnInterceptorBindingClass {
 
-    // ERROR: public final method
+    // ERROR: public final method (non-static, non-private)
     public final Object intercept(InvocationContext ctx) throws Exception {
         return ctx.proceed();
     }
 
-    // ERROR: protected final method
-    protected final void helper() {
+    // ERROR: protected final method (non-static, non-private)
+    protected final void protectedHelper() {
+    }
+
+    // ERROR: package-private (default) final method (non-static, non-private)
+    final void packagePrivateHelper() {
     }
 
     // Valid: private final method is permitted
@@ -53,7 +57,19 @@ class InvalidMethodsOnInterceptorBindingClass {
     }
 
     // Valid: public static final method is permitted
-    public static final void staticHelper() {
+    public static final void publicStaticHelper() {
+    }
+
+    // Valid: protected static final method is permitted
+    protected static final void protectedStaticHelper() {
+    }
+
+    // Valid: package-private static final method is permitted
+    static final void packageStaticHelper() {
+    }
+
+    // Valid: private static final method is permitted
+    private static final void privateStaticHelper() {
     }
 }
 
@@ -65,5 +81,13 @@ class ValidInterceptorBindingClassModifiers {
     @AroundInvoke
     public Object intercept(InvocationContext ctx) throws Exception {
         return ctx.proceed();
+    }
+
+    // Valid: public non-final method
+    public void publicHelper() {
+    }
+
+    // Valid: public static non-final method
+    public static void publicStaticNonFinalHelper() {
     }
 }
