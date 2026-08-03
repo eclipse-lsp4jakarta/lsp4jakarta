@@ -117,6 +117,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                new String[] { Constants.INJECT_FQ_NAME }).size() > 0) {
                     // Check method parameters for wildcard types and bare type variables
                     String[] parameterTypes = method.getParameterTypes();
+                    Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                     for (int i = 0; i < parameterTypes.length; i++) {
                         String paramSig = parameterTypes[i];
                         Range paramRange = PositionUtils.toNameRange(method.getParameters()[i], context.getUtils());
@@ -128,10 +129,13 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                      ErrorCode.InvalidWildcardTypeInInjectField,
                                                                      DiagnosticSeverity.Error));
                         } else if (!typeParamNames.isEmpty() && isBareTypeVariable(paramSig, typeParamNames)) {
-                            // Rule: a bare type variable (T or T[]) is not a legal bean type
+                            // Rule: a bare type variable (T or T[]) is not a legal bean type.
+                            // Diagnostic is placed on the method name so RemoveAnnotationConflictQuickFix
+                            // can resolve the @Inject annotation on the method.
+                            String paramName = method.getParameters()[i].getElementName();
                             diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("InvalidBareTypeVariableInInjectMethodParam"),
-                                                                     paramRange,
+                                                                     Messages.getMessage("InvalidBareTypeVariableInInjectMethodParam", paramName),
+                                                                     methodRange,
                                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                                      ErrorCode.InvalidBareTypeVariableInInjectMethodParam,
                                                                      DiagnosticSeverity.Error));

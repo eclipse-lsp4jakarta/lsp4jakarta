@@ -52,8 +52,7 @@ public class BareTypeVariableInjectBean<T> {
     public void setBareTypeArray(T[] values) {
     }
 
-    // Valid: parameterized type with type variable (List<T>) is flagged by a different rule
-    // (only if scope is not @Dependent — but here @Dependent is used so no error expected)
+    // Valid: parameterized type with type variable (List<T>)
     @Inject
     List<T> genericList;
 
