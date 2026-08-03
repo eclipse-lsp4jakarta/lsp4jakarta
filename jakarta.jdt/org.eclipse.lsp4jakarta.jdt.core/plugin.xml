@@ -349,6 +349,7 @@
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiRawEventTypeDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
@@ -458,7 +459,10 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSpecializedBeanWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />
-  </extension>
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationFromRawEventQuickFix" />
+   </extension>
    
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
