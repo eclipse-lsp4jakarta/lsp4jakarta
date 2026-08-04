@@ -563,7 +563,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         for (IAnnotation annotation : type.getAnnotations()) {
             // Check built-in passivating scopes: @SessionScoped and @ConversationScoped
             if (DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                         Constants.BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES) != null) {
+                                                          Constants.BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES) != null) {
                 return true;
             }
 
@@ -591,7 +591,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
     private boolean isCustomPassivatingScope(IAnnotation annotation, IType type,
                                              ICompilationUnit unit) throws JavaModelException {
         return Boolean.TRUE.equals(ManagedBean.getMetaAnnotationMemberValue(
-            annotation, type, unit, Constants.NORMAL_SCOPE_FQ_NAME, Constants.NORMAL_SCOPE_PASSIVATING_ATTR, Boolean.class));
+                                                                            annotation, type, unit, Constants.NORMAL_SCOPE_FQ_NAME, Constants.NORMAL_SCOPE_PASSIVATING_ATTR,
+                                                                            Boolean.class));
     }
 
     /**

@@ -66,6 +66,10 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
 
+        Diagnostic singletonWithSessionScopedMissingSerializable = d(17, 6, 31,
+                                                                     "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
         // Test case 6: @Singleton with @RequestScoped + @ApplicationScoped (line 41)
         Diagnostic singletonWithRequestAndApplicationScoped = d(41, 6, 51,
                                                                 "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
@@ -86,6 +90,10 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         singletonWithSessionAndDependent.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent", "jakarta.enterprise.context.SessionScoped")));
 
+        Diagnostic singletonWithSessionAndDependentMissingSerializable = d(48, 6, 43,
+                                                                           "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
         // Test case 7 also triggers multiple scopes diagnostic
         Diagnostic multipleScopesForSessionAndDependent = d(48, 6, 43,
                                                             "Scope type annotations must be specified by a managed bean class at most once.",
@@ -102,10 +110,12 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
                               singletonWithRequestScoped,
                               singletonWithSessionScoped,
+                              singletonWithSessionScopedMissingSerializable,
                               singletonWithRequestAndApplicationScoped,
                               multipleScopesForRequestAndApplicationScoped,
                               singletonWithSessionAndDependent,
                               multipleScopesForSessionAndDependent,
+                              singletonWithSessionAndDependentMissingSerializable,
                               singletonWithMultipleValidScopes);
 
         // Test code actions for singletonWithRequestScoped
