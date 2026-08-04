@@ -819,7 +819,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     }
 
     @Test
-    public void testTableGeneratorsEmptyArrayOnNonEntityClassProducesNoDiagnostic() throws Exception {
+    public void testTableGeneratorsEmptyArrayOnNonEntityClass() throws Exception {
         // Confirms that the empty-array branch in validateNonEmptyMappingArray is only reached for @Entity-annotated classes.
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
