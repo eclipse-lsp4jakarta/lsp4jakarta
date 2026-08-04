@@ -61,7 +61,16 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
         try {
             IType[] types = unit.getAllTypes();
             for (IType type : types) {
-                validateSpecializes(type, uri, context, diagnostics);
+                boolean isSpecializesAnnotated = Stream.of(type.getAnnotations()).anyMatch(annotation -> {
+                    try {
+                        return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.SPECIALIZES_FQ_NAME);
+                    } catch (JavaModelException e) {
+                        return false;
+                    }
+                });
+                if (isSpecializesAnnotated) {
+                    validateSpecializes(type, uri, context, diagnostics);
+                }
             }
         } catch (JavaModelException e) {
             LOGGER.log(Level.SEVERE, "Error occurred while validating @Specializes usage", e);
@@ -85,12 +94,6 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
      */
     private void validateSpecializes(IType type, String uri, JavaDiagnosticsContext context,
                                      List<Diagnostic> diagnostics) throws JavaModelException {
-        String[] typeAnnotations = Stream.of(type.getAnnotations()).map(a -> a.getElementName()).toArray(String[]::new);
-        // Only validate classes annotated with @Specializes
-        if (DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                       new String[] { Constants.SPECIALIZES_FQ_NAME }).isEmpty()) {
-            return;
-        }
         // Per CDI spec 3.1.4, only the direct (immediate) superclass must be a bean.
         // directSuperclassHasAnnotation checks only that single level — not grandparents.
         boolean directSuperclassIsBean = Stream.concat(Constants.SCOPE_FQ_NAMES.stream(),
