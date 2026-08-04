@@ -40,7 +40,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidVersionFieldOrPropertyType,
     InvalidIdType,
     InvalidAttributeOverrideName,
-    InvalidAssociationOverrideName;
+    InvalidAssociationOverrideName,
+    AttributeOverrideOnNonEmbeddedField;
 
     /**
      * {@inheritDoc}
