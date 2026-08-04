@@ -223,10 +223,14 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     // -----------------------------------------------------------------------
 
     /**
-     * Validates single and container override annotations placed on a field or getter
-     * method. Handles {@code @Embedded} members (resolve against the embeddable type)
+     * Validates single and container override annotations placed on a field or method.
+     * Handles {@code @Embedded} members (resolve against the embeddable type)
      * and map {@code @ElementCollection} members (require {@code "key."} or
      * {@code "value."} prefix). Works for both field-based and property-based access.
+     *
+     * <p>For {@code @AttributeOverride} / {@code @AttributeOverrides}: if the member
+     * lacks {@code @Embedded}, {@code @EmbeddedId}, or {@code @ElementCollection},
+     * a diagnostic is emitted for each such annotation — the override has no valid target.
      */
     private void validateOverridesOnMember(IMember member, IType declaringType,
                                            ICompilationUnit unit,
@@ -234,20 +238,50 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                                            JavaDiagnosticsContext context,
                                            List<Diagnostic> diagnostics) throws CoreException {
         IAnnotation[] annotations = DiagnosticUtils.getAnnotations(member);
-        boolean hasEmbedded = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.EMBEDDED);
-        boolean hasElementCollection = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.ELEMENT_COLLECTION);
 
-        if (!hasEmbedded && !hasElementCollection) {
-            return;
-        }
+        boolean hasEmbedded = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.EMBEDDED);
+        boolean hasEmbeddedId = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.EMBEDDEDID);
+        boolean hasElementCollection = DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.ELEMENT_COLLECTION);
+        boolean hasValidTarget = hasEmbedded || hasEmbeddedId || hasElementCollection;
+
+        // Only @AttributeOverride carries the @Embedded/@EmbeddedId/@ElementCollection
+        // restriction at the field/method level.
+        boolean isAttributeOverrideDescriptor = Constants.ATTRIBUTE_OVERRIDE.equals(desc.singleFqn);
 
         for (IAnnotation annotation : annotations) {
-            if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.singleFqn)) {
+            boolean isSingleOverride = DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.singleFqn);
+            boolean isContainerOverride = DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.containerFqn);
+
+            if (!isSingleOverride && !isContainerOverride) {
+                continue;
+            }
+
+            if (isAttributeOverrideDescriptor && !hasValidTarget) {
+                // @AttributeOverride / @AttributeOverrides on a field or method that is not
+                // @Embedded, @EmbeddedId, or @ElementCollection — no valid override target.
+                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                String annotationSimpleName = DiagnosticUtils.getSimpleName(annotation.getElementName());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("AttributeOverrideOnNonEmbeddedField", annotationSimpleName),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.AttributeOverrideOnNonEmbeddedField, DiagnosticSeverity.Error));
+                // Skip name-resolution: there is no embeddable type to resolve against.
+                continue;
+            }
+
+            if (!hasEmbedded && !hasElementCollection) {
+                // For @AssociationOverride (or future descriptors): member has no supported
+                // target annotation — nothing to resolve name against.
+                continue;
+            }
+
+            if (isSingleOverride) {
                 String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
                 if (name != null) {
                     validateNameOnMember(name, annotation, member, declaringType, hasElementCollection, desc, context, diagnostics);
                 }
-            } else if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.containerFqn)) {
+            } else {
+                // isContainerOverride
                 for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
