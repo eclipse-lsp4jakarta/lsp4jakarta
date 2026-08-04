@@ -82,9 +82,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         for (IType type : alltypes) {
             IAnnotation[] allAnnotations = type.getAnnotations();
 
-            // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
-            Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
-
             IAnnotation EntityAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
@@ -94,6 +91,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (EntityAnnotation != null) {
+                // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
+                Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
+
                 // Get constructor information
                 ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;
@@ -571,37 +571,37 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                              String uri, List<Diagnostic> diagnostics) {
         try {
             String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                                                 Constants.GENERATOR_ANNOTATIONS);
+                                                                                 Constants.GENERATOR_AND_TABLE_ANNOTATIONS);
             if (matchedAnnotation == null) {
                 return;
             }
             switch (matchedAnnotation) {
                 case Constants.TABLE_GENERATOR:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
-                                                   "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
+                                                   ErrorCode.TableGeneratorInvalidEmptyName);
                     break;
                 case Constants.SEQUENCE_GENERATOR:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
-                                                   "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
+                                                   ErrorCode.SequenceGeneratorInvalidEmptyName);
                     break;
                 case Constants.SECONDARY_TABLE:
                     validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
-                                                   "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
+                                                   ErrorCode.SecondaryTableInvalidEmptyName);
                     break;
                 case Constants.TABLE_GENERATORS:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                                 "TableGeneratorsMissingTableGeneratorMapping", ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
-                                                 "TableGeneratorInvalidEmptyName", ErrorCode.TableGeneratorInvalidEmptyName);
+                                                 ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
+                                                 ErrorCode.TableGeneratorInvalidEmptyName);
                     break;
                 case Constants.SEQUENCE_GENERATORS:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                                 "SequenceGeneratorsMissingSequenceGeneratorMapping", ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
-                                                 "SequenceGeneratorInvalidEmptyName", ErrorCode.SequenceGeneratorInvalidEmptyName);
+                                                 ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
+                                                 ErrorCode.SequenceGeneratorInvalidEmptyName);
                     break;
                 case Constants.SECONDARY_TABLES:
                     validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
-                                                 "SecondaryTablesMissingSecondaryTableMapping", ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
-                                                 "SecondaryTableInvalidEmptyName", ErrorCode.SecondaryTableInvalidEmptyName);
+                                                 ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
+                                                 ErrorCode.SecondaryTableInvalidEmptyName);
                     break;
                 default:
                     break;
@@ -616,22 +616,22 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * <p>
      * A diagnostic is added to {@code diagnostics} if the {@code name} attribute is absent,
      * {@code null}, an empty string, or contains only whitespace.
+     * The message bundle key is derived from {@code errorCode.name()}.
      *
      * @param annotation the annotation whose {@code name} attribute is checked
      * @param context the diagnostics context
      * @param uri the document URI, used when creating the diagnostic
      * @param diagnostics the mutable list to which a diagnostic is appended on failure
-     * @param messageKey message bundle key for the diagnostic message
-     * @param errorCode error code to attach to the diagnostic
+     * @param errorCode error code to attach to the diagnostic (also used as message bundle key)
      * @throws JavaModelException if the annotation's member value pairs cannot be read
      */
     private void validateGeneratorNameAttribute(IAnnotation annotation, JavaDiagnosticsContext context,
                                                 String uri, List<Diagnostic> diagnostics,
-                                                String messageKey, ErrorCode errorCode) throws JavaModelException {
+                                                ErrorCode errorCode) throws JavaModelException {
         String mappingNameValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
         if (mappingNameValue == null || mappingNameValue.isBlank()) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey),
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCode.name()),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
                                                      null, errorCode, DiagnosticSeverity.Error));
         }
@@ -642,28 +642,27 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * {@code @SecondaryTables}).
      * <p>
      * If the {@code value} array is absent or empty, emits a diagnostic using
-     * {@code emptyMappingMsgKey}/{@code emptyMappingCode}. Otherwise validates the {@code name}
-     * attribute of each nested annotation via {@link #validateGeneratorNameAttribute}.
+     * {@code emptyMappingCode}. Otherwise validates the {@code name} attribute of each nested
+     * annotation via {@link #validateGeneratorNameAttribute}.
+     * Message bundle keys are derived from {@code errorCode.name()} for both codes.
      *
      * @param annotation the container annotation to validate
      * @param context the diagnostics context
      * @param uri the document URI, used when creating diagnostics
      * @param diagnostics the mutable list to which any new diagnostics are appended
-     * @param emptyMappingMsgKey message key for the empty-array diagnostic
      * @param emptyMappingCode error code for the empty-array diagnostic
-     * @param emptyNameMappingMsgKey message key for an empty {@code name} on a nested annotation
      * @param emptyNameMappingCode error code for an empty {@code name} on a nested annotation
      * @throws JavaModelException if the annotation's member value pairs cannot be read
      */
     private void validateNonEmptyMappingArray(IAnnotation annotation, JavaDiagnosticsContext context,
                                               String uri, List<Diagnostic> diagnostics,
-                                              String emptyMappingMsgKey, ErrorCode emptyMappingCode,
-                                              String emptyNameMappingMsgKey, ErrorCode emptyNameMappingCode) throws JavaModelException {
+                                              ErrorCode emptyMappingCode,
+                                              ErrorCode emptyNameMappingCode) throws JavaModelException {
         Object mappingArrayValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, Object.class);
         boolean isEmpty = (mappingArrayValue == null) || (mappingArrayValue instanceof Object[] && ((Object[]) mappingArrayValue).length == 0);
         if (isEmpty) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(emptyMappingMsgKey),
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(emptyMappingCode.name()),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
                                                      null, emptyMappingCode, DiagnosticSeverity.Error));
             return;
@@ -671,7 +670,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         Object[] nested = (mappingArrayValue instanceof Object[]) ? (Object[]) mappingArrayValue : new Object[] { mappingArrayValue };
         for (Object obj : nested) {
             if (obj instanceof IAnnotation) {
-                validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingMsgKey, emptyNameMappingCode);
+                validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingCode);
             }
         }
     }

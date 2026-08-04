@@ -819,6 +819,20 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     }
 
     @Test
+    public void testTableGeneratorsEmptyArrayOnNonEntityClassProducesNoDiagnostic() throws Exception {
+        // Confirms that the empty-array branch in validateNonEmptyMappingArray is only reached for @Entity-annotated classes.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsEmptyArrayNoEntity.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
     public void testTableGeneratorsWithEmptyNameOnTypeFieldAndMethod() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
