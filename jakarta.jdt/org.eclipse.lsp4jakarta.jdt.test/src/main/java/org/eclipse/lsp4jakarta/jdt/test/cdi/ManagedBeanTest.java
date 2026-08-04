@@ -702,6 +702,23 @@ public class ManagedBeanTest extends BaseJakartaTest {
     }
 
     @Test
+    public void customPassivatingScopeWithoutSerializable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/CustomPassivatingScopeWithoutSerializable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic customPassivatingScopeMissingSerializable = d(15, 13, 54,
+                                                                 "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, customPassivatingScopeMissingSerializable);
+    }
+
+    @Test
     public void sessionScopedWithSerializable() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(

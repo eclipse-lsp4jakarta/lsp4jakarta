@@ -99,6 +99,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
+            boolean hasPassivatingScope = hasPassivatingScope(type, unit);
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
@@ -447,6 +448,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
                 // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
+                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type, unit);
+            } else if (hasPassivatingScope) { //This is to be called for custom scoped beans. Not added in the current managedBean check to avoid regressions.
                 validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type, unit);
             }
 
