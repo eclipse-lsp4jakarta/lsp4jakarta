@@ -246,6 +246,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertDefaultPublicConstructorQuickFix" />
 
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMappingDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
