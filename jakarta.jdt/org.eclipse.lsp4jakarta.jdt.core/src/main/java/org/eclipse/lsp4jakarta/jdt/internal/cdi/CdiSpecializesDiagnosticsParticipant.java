@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -70,6 +71,19 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                 });
                 if (isSpecializesAnnotated) {
                     validateSpecializes(type, uri, context, diagnostics);
+                    // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization
+                    // A specialized bean must not declare an explicit bean name using @Named.
+                    // The name is inherited from the bean it specializes.
+                    for (IAnnotation annotation : type.getAnnotations()) {
+                        if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage("SpecializedBeanWithNamedAnnotation", type.getElementName()), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidSpecializedBeanWithNamedAnnotation, DiagnosticSeverity.Error));
+                            break;
+                        }
+                    }
                 }
             }
         } catch (JavaModelException e) {

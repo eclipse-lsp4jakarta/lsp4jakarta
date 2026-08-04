@@ -13,16 +13,23 @@
 
 package org.eclipse.lsp4jakarta.jdt.test.cdi;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -116,5 +123,102 @@ public class CdiSpecializesTest extends BaseJakartaTest {
                                                        "InvalidSpecializesAnnotationOnNonBeanSuperclass");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, scopedGrandparentOnlyDiagnostic);
+    }
+
+    // ── Diagnostic message builder ────────────────────────────────────────────
+    // The engine resolves MessageFormat ''{0}'' → 'ClassName' (single quotes).
+    // We therefore build the expected string with literal single quotes.
+    private static String msg(String className) {
+        return "Specialized bean '" + className + "' must not declare an explicit bean name using @Named. The name is inherited from the bean it specializes.";
+    }
+
+    @Test
+    public void specializedBeanWithNamedAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializedBeanWithNamed.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 14 (1-indexed) = line 13 (0-indexed), col 0..23
+        // @Named("customService") = 23 chars
+        Diagnostic namedDiagnostic = d(13, 0, 23,
+                                       msg("SpecializedBeanWithNamed"),
+                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSpecializedBeanWithNamedAnnotation");
+
+        Diagnostic specializesDiagnostic = d(16, 13, 37,
+                                             "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
+                                             DiagnosticSeverity.Error,
+                                             "jakarta-cdi",
+                                             "InvalidSpecializesAnnotationOnNonBeanSuperclass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedDiagnostic, specializesDiagnostic);
+
+        // Quick-fix: remove "@Named("customService")\n" (lines 13→14, col 0→0)
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, namedDiagnostic);
+        TextEdit removeNamedEdit = te(13, 0, 14, 0, "");
+        CodeAction removeNamedAction = ca(uri, "Remove @Named", namedDiagnostic, removeNamedEdit);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeNamedAction);
+    }
+
+    @Test
+    public void specializedBeanWithBareNamedAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializedBeanWithBareName.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 15 (0-indexed): @Specializes is first, then @Named on line 16 (0-indexed)
+        // @Named alone = 6 chars; col 0..6
+        Diagnostic namedDiagnostic = d(15, 0, 6,
+                                       msg("SpecializedBeanWithBareName"),
+                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSpecializedBeanWithNamedAnnotation");
+
+        Diagnostic specializesDiagnostic = d(17, 13, 40,
+                                             "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
+                                             DiagnosticSeverity.Error,
+                                             "jakarta-cdi",
+                                             "InvalidSpecializesAnnotationOnNonBeanSuperclass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedDiagnostic, specializesDiagnostic);
+
+        // Quick-fix: remove "@Named\n" (lines 15→16, col 0→0)
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, namedDiagnostic);
+        TextEdit removeNamedEdit = te(15, 0, 16, 0, "");
+        CodeAction removeNamedAction = ca(uri, "Remove @Named", namedDiagnostic, removeNamedEdit);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeNamedAction);
+    }
+
+    @Test
+    public void validSpecializedBeanWithoutNamedAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ValidSpecializedBean.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — @Specializes without @Named is valid
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void namedBeanWithoutSpecializesAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/NamedWithoutSpecializes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — @Named without @Specializes is valid
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
