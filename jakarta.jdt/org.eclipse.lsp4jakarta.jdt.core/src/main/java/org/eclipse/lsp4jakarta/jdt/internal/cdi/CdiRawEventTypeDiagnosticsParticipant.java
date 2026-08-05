@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -67,8 +68,7 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
         for (IType type : types) {
             // Check @Inject fields for raw Event type
             for (IField field : type.getFields()) {
-                String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
-                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     if (isRawEventType(field.getTypeSignature())) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
@@ -87,8 +87,7 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
             // RemoveAnnotationConflictQuickFix can resolve the @Inject annotation
             // on the method correctly via its parent-type binding.
             for (IMethod method : type.getMethods()) {
-                String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
-                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     String[] paramTypes = method.getParameterTypes();
                     for (int i = 0; i < paramTypes.length; i++) {
                         if (isRawEventType(paramTypes[i])) {
@@ -112,19 +111,6 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
     }
 
     /**
-     * Checks if an annotation array contains a specific annotation.
-     *
-     * @param type the type containing the annotations
-     * @param annotationNames array of annotation names to check
-     * @param annotationFQName the fully qualified name of the annotation to match
-     * @return true if the annotation is found, false otherwise
-     */
-    private boolean hasAnnotation(IType type, String[] annotationNames, String annotationFQName) {
-        return DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                          new String[] { annotationFQName }).size() > 0;
-    }
-
-    /**
      * Checks whether a type signature represents a raw (unparameterized) {@code Event} type.
      *
      * <p>A raw {@code Event} has no type arguments, i.e. the signature has no {@code <…>} part.
@@ -134,7 +120,7 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
      * @return true if the signature is the raw Event type, false otherwise
      */
     private boolean isRawEventType(String typeSignature) {
-        if (typeSignature == null || typeSignature.isEmpty()) {
+        if (StringUtils.isBlank(typeSignature)) {
             return false;
         }
         // Unwrap array component types — Event[] would also be raw
@@ -143,11 +129,7 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
         }
         String erasure = Signature.getTypeErasure(typeSignature);
         String simpleName = Signature.getSignatureSimpleName(erasure);
-        if (!simpleName.equals("Event")) {
-            return false;
-        }
         // Raw type has no type arguments
-        String[] typeArgs = Signature.getTypeArguments(typeSignature);
-        return typeArgs.length == 0;
+        return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
     }
 }

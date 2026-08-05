@@ -15,6 +15,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
 
+import static org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants.INJECT_FQ_NAME;
+
 /**
  * Removes the {@code @Inject} annotation from an injection point that uses a raw
  * {@code Event} type (i.e. {@code Event} without a type parameter).
@@ -29,7 +31,7 @@ public class RemoveInjectAnnotationFromRawEventQuickFix extends RemoveAnnotation
      * Constructor.
      */
     public RemoveInjectAnnotationFromRawEventQuickFix() {
-        super(false, "jakarta.inject.Inject");
+        super(false, INJECT_FQ_NAME);
     }
 
     /**

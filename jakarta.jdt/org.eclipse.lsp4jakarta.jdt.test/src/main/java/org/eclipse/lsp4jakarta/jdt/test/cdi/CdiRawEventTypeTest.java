@@ -60,6 +60,8 @@ public class CdiRawEventTypeTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
+    private static final String REMOVE_INJECT = "Remove @Inject";
+
     @Test
     public void rawEventInjectionPointDiagnostics() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
@@ -117,31 +119,31 @@ public class CdiRawEventTypeTest extends BaseJakartaTest {
         // Field rawEvent: @Inject is line 17 (0-based 16), indent col 4
         JakartaJavaCodeActionParams fieldCodeActionParams = createCodeActionParams(uri, rawEventFieldDiagnostic);
         TextEdit removeFieldInjectEdit = te(16, 4, 17, 4, "");
-        CodeAction removeFieldInjectAction = ca(uri, "Remove @Inject", rawEventFieldDiagnostic, removeFieldInjectEdit);
+        CodeAction removeFieldInjectAction = ca(uri, REMOVE_INJECT, rawEventFieldDiagnostic, removeFieldInjectEdit);
         assertJavaCodeAction(fieldCodeActionParams, IJDT_UTILS, removeFieldInjectAction);
 
         // Method setRawEvent: @Inject is line 32 (0-based 31), indent col 4
         JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, rawEventMethodParamDiagnostic);
         TextEdit removeMethodInjectEdit = te(31, 4, 32, 4, "");
-        CodeAction removeMethodInjectAction = ca(uri, "Remove @Inject", rawEventMethodParamDiagnostic, removeMethodInjectEdit);
+        CodeAction removeMethodInjectAction = ca(uri, REMOVE_INJECT, rawEventMethodParamDiagnostic, removeMethodInjectEdit);
         assertJavaCodeAction(methodCodeActionParams, IJDT_UTILS, removeMethodInjectAction);
 
         // Method setMixed: @Inject is line 43 (0-based 41), indent col 4
         JakartaJavaCodeActionParams mixedCodeActionParams = createCodeActionParams(uri, rawEventMixedParamDiagnostic);
         TextEdit removeMixedInjectEdit = te(41, 4, 42, 4, "");
-        CodeAction removeMixedInjectAction = ca(uri, "Remove @Inject", rawEventMixedParamDiagnostic, removeMixedInjectEdit);
+        CodeAction removeMixedInjectAction = ca(uri, REMOVE_INJECT, rawEventMixedParamDiagnostic, removeMixedInjectEdit);
         assertJavaCodeAction(mixedCodeActionParams, IJDT_UTILS, removeMixedInjectAction);
 
         // Method setMultipleRawEvents: @Inject is line 48 (0-based 46), indent col 4
         JakartaJavaCodeActionParams multipleParamsCodeActionParams = createCodeActionParams(uri, rawEventMultipleParamsDiagnostic);
         TextEdit removeMultipleParamsInjectEdit = te(46, 4, 47, 4, "");
-        CodeAction removeMultipleParamsInjectAction = ca(uri, "Remove @Inject", rawEventMultipleParamsDiagnostic, removeMultipleParamsInjectEdit);
+        CodeAction removeMultipleParamsInjectAction = ca(uri, REMOVE_INJECT, rawEventMultipleParamsDiagnostic, removeMultipleParamsInjectEdit);
         assertJavaCodeAction(multipleParamsCodeActionParams, IJDT_UTILS, removeMultipleParamsInjectAction);
 
         // Nested class Inner.rawEventInInner: @Inject is line 60 (0-based 58), indent col 8
         JakartaJavaCodeActionParams nestedCodeActionParams = createCodeActionParams(uri, rawEventNestedClassDiagnostic);
         TextEdit removeNestedInjectEdit = te(58, 8, 59, 8, "");
-        CodeAction removeNestedInjectAction = ca(uri, "Remove @Inject", rawEventNestedClassDiagnostic, removeNestedInjectEdit);
+        CodeAction removeNestedInjectAction = ca(uri, REMOVE_INJECT, rawEventNestedClassDiagnostic, removeNestedInjectEdit);
         assertJavaCodeAction(nestedCodeActionParams, IJDT_UTILS, removeNestedInjectAction);
     }
 }
