@@ -26,6 +26,18 @@ public class Constants {
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
+    public static final String EMBEDDED = "jakarta.persistence.Embedded";
+    public static final String ELEMENT_COLLECTION = "jakarta.persistence.ElementCollection";
+    public static final String ATTRIBUTE_OVERRIDE = "jakarta.persistence.AttributeOverride";
+    public static final String ATTRIBUTE_OVERRIDES = "jakarta.persistence.AttributeOverrides";
+    public static final String ASSOCIATION_OVERRIDE = "jakarta.persistence.AssociationOverride";
+    public static final String ASSOCIATION_OVERRIDES = "jakarta.persistence.AssociationOverrides";
+
+    /* @ElementCollection map prefix constants */
+    public static final String ATTRIBUTE_OVERRIDE_VALUE_PREFIX = "value.";
+    public static final String ATTRIBUTE_OVERRIDE_KEY_PREFIX = "key.";
+
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
