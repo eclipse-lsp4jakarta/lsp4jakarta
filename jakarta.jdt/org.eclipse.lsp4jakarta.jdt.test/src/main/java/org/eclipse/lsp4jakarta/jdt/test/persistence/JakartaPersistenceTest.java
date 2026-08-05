@@ -777,13 +777,13 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         Diagnostic convertDiagnostic = d(17, 19, 23,
-                                         "@Convert must specify either a converter class via the converter element or set disableConversion = true.",
+                                         "@Convert must specify a converter class or set disableConversion to true.",
                                          DiagnosticSeverity.Error, "jakarta-persistence",
                                          "InvalidConvertAnnotationMissingConverterOrDisable");
 
         // disableConversion = false is not equivalent to disableConversion = true
         Diagnostic disableConversionDiagnostic = d(21, 19, 25,
-                                                   "@Convert must specify either a converter class via the converter element or set disableConversion = true.",
+                                                   "@Convert must specify a converter class or set disableConversion to true.",
                                                    DiagnosticSeverity.Error, "jakarta-persistence",
                                                    "InvalidConvertAnnotationMissingConverterOrDisable");
 
@@ -828,7 +828,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         Diagnostic diagnostic = d(18, 19, 25,
                                   "Multiple @Convert annotations on the same attribute are not supported.",
                                   DiagnosticSeverity.Error, "jakarta-persistence",
-                                  "InvalidConvertAnnotationMultipleOnSameAttribute");
+                                  "MultipleConvertAnnotationOnSameAttribute");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
     }

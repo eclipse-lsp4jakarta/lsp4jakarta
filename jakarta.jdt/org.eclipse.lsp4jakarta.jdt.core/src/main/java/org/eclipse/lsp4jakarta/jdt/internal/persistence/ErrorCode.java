@@ -41,7 +41,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidIdType,
     InvalidConvertAnnotationMissingConverterOrDisable,
     InvalidConvertAnnotationOnRestrictedTarget,
-    InvalidConvertAnnotationMultipleOnSameAttribute;
+    MultipleConvertAnnotationOnSameAttribute;
 
     /**
      * {@inheritDoc}

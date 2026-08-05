@@ -229,7 +229,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("ConvertAnnotationMultipleOnSameAttribute"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidConvertAnnotationMultipleOnSameAttribute,
+                                                         ErrorCode.MultipleConvertAnnotationOnSameAttribute,
                                                          DiagnosticSeverity.Error));
             } catch (JavaModelException e) {
                 JakartaCorePlugin.logException("Error computing range for @Convert on member " + member.getElementName(), e);
