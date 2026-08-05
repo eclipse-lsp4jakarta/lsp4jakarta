@@ -315,8 +315,25 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                              "jakarta-cdi",
                                                              "InvalidDecoratorDelegateTypeAssignability");
 
+        // Expected diagnostic on InvalidDelegateTypeTruePrimitive class (field-level)
+        // Line 132 (0-based: 131), field name "delegate" starts at column 16, ends at column 24
+        Diagnostic invalidDelegateTypeTruePrimitiveDiagnostic = d(131, 16, 24,
+                                                                  "The delegate type 'int' must implement or extend all decorated types.",
+                                                                  DiagnosticSeverity.Error,
+                                                                  "jakarta-cdi",
+                                                                  "InvalidDecoratorDelegateTypeAssignability");
+
+        // Expected diagnostic on DecoratorWithDelegateButNoDecoratedTypes class (field-level)
+        // Line 152 (0-based: 151), field name "delegate" starts at column 27, ends at column 35
+        Diagnostic noDecoratedTypesDiagnostic = d(151, 27, 35,
+                                                  "The delegate type 'PaymentService' must implement or extend all decorated types.",
+                                                  DiagnosticSeverity.Error,
+                                                  "jakarta-cdi",
+                                                  "InvalidDecoratorDelegateTypeAssignability");
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidDelegateTypeDiagnostic,
-                              invalidDelegateTypePrimitiveDiagnostic, invalidDelegateTypeOnMethodDiagnostic);
+                              invalidDelegateTypePrimitiveDiagnostic, invalidDelegateTypeOnMethodDiagnostic,
+                              invalidDelegateTypeTruePrimitiveDiagnostic, noDecoratedTypesDiagnostic);
     }
 
     /**

@@ -119,6 +119,39 @@ class ValidDelegateTypeOnMethod implements PaymentService {
     }
 }
 
+/**
+ * Invalid: Delegate type is a primitive (int) — primitives are never valid bean types.
+ * Should trigger diagnostic: The delegate type 'int' must implement or extend all decorated types.
+ */
+@Decorator
+@Dependent
+class InvalidDelegateTypeTruePrimitive implements PaymentService {
+
+    @Inject
+    @Delegate
+    private int delegate;
+
+    @Override
+    public void processPayment(double amount) {
+        // This won't work
+    }
+}
+
+/**
+ * Invalid: Decorator has a valid @Delegate injection point but implements no
+ * decorated types (no interfaces, no superclass beyond Object).
+ * Should trigger diagnostic on the delegate field:
+ * "The delegate type 'PaymentService' must implement or extend all decorated types."
+ */
+@Decorator
+@Dependent
+class DecoratorWithDelegateButNoDecoratedTypes {
+
+    @Inject
+    @Delegate
+    private PaymentService delegate;
+}
+
 // Helper class for testing
 class PaymentServiceImpl implements PaymentService {
     @Override

@@ -221,14 +221,23 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            String delegateTypeName = null;
+            String rawTypeSignature = null;
             if (delegateElement instanceof IField) {
-                String typeSignature = Signature.toString(((IField) delegateElement).getTypeSignature());
-                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, typeSignature);
+                rawTypeSignature = ((IField) delegateElement).getTypeSignature();
             } else if (delegateElement instanceof ILocalVariable) {
-                String simpleTypeName = Signature.toString(((ILocalVariable) delegateElement).getTypeSignature());
-                delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType, simpleTypeName);
+                rawTypeSignature = ((ILocalVariable) delegateElement).getTypeSignature();
             }
+            if (rawTypeSignature == null) {
+                return;
+            }
+            // Primitives are never valid bean types — report immediately without further resolution.
+            if (Signature.getTypeSignatureKind(rawTypeSignature) == Signature.BASE_TYPE_SIGNATURE) {
+                reportDelegateTypeAssignabilityDiagnostic(delegateElement, Signature.toString(rawTypeSignature),
+                                                          uri, context, diagnostics);
+                return;
+            }
+            String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType,
+                                                                             Signature.toString(rawTypeSignature));
             if (delegateTypeName == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
@@ -239,31 +248,52 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             // Get all decorated types (interfaces and superclasses of the decorator)
             List<String> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
-                return; // No decorated types to validate against
+                // If the delegate type is java.lang.Object, skip — Object is used as a
+                // raw/untyped delegate and carries no assignability constraint.
+                if (Constants.OBJECT_FQ_NAME.equals(delegateTypeName)) {
+                    return;
+                }
+                // Decorator implements/extends nothing — a non-Object delegate type cannot
+                // satisfy "must implement or extend all decorated types" (CDI 3.0 §8.1.3)
+                reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
+                                                          uri, context, diagnostics);
+                return;
             }
             // Check if delegate type implements/extends all decorated types
             List<String> missingTypes = new ArrayList<>();
             for (String decoratedTypeFQN : decoratedTypes) {
-                // Use TypeHierarchyUtils.inheritsFrom for checking (more efficient and robust)
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
                     missingTypes.add(decoratedTypeFQN);
                 }
             }
             // Report diagnostic if delegate type doesn't implement all decorated types
             if (!missingTypes.isEmpty()) {
-                Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-                // Use simple class names for better readability
-                String delegateTypeSimpleName = delegateType.getElementName();
-                String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability",
-                                                     delegateTypeSimpleName);
-                diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidDecoratorDelegateTypeAssignability,
-                                                         DiagnosticSeverity.Error));
+                reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
+                                                          uri, context, diagnostics);
             }
         } catch (CoreException e) {
             LOGGER.log(Level.WARNING, "Error validating delegate type assignability", e);
         }
+    }
+
+    /**
+     * Reports an {@code InvalidDecoratorDelegateTypeAssignability} diagnostic on the given delegate element.
+     *
+     * @param delegateElement the delegate injection point (field or parameter)
+     * @param delegateTypeName the simple name of the delegate type (used in the message)
+     * @param uri the file URI
+     * @param context the diagnostics context
+     * @param diagnostics the list to add the diagnostic to
+     */
+    private void reportDelegateTypeAssignabilityDiagnostic(IJavaElement delegateElement, String delegateTypeName,
+                                                           String uri, JavaDiagnosticsContext context,
+                                                           List<Diagnostic> diagnostics) throws JavaModelException {
+        Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
+        String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeName);
+        diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                 ErrorCode.InvalidDecoratorDelegateTypeAssignability,
+                                                 DiagnosticSeverity.Error));
     }
 
     /**
@@ -288,7 +318,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         String superclassName = decoratorType.getSuperclassName();
         if (superclassName != null && !superclassName.equals("Object")) {
             String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, superclassName);
-            if (fqName != null && !fqName.equals("java.lang.Object")) {
+            if (fqName != null && !Constants.OBJECT_FQ_NAME.equals(fqName)) {
                 decoratedTypes.add(fqName);
             }
         }
