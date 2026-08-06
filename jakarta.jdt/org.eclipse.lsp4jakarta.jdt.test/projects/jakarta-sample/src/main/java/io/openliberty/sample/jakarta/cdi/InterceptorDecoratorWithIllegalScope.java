@@ -1,6 +1,7 @@
 package io.openliberty.sample.jakarta.cdi;
 
 import jakarta.interceptor.Interceptor;
+import io.openliberty.sample.jakarta.interceptor.Monitored;
 import jakarta.decorator.Decorator;
 import jakarta.decorator.Delegate;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,12 +15,14 @@ import io.openliberty.sample.jakarta.cdi.AccountService;
 // ========== Valid Interceptors ==========
 
 // Valid interceptor with explicit @Dependent scope
+@Monitored
 @Interceptor
 @Dependent
 class ValidInterceptorWithDependent {
 }
 
 // Valid interceptor with no scope (defaults to @Dependent)
+@Monitored
 @Interceptor
 class ValidInterceptorWithNoScope {
 }
@@ -46,18 +49,21 @@ class ValidDecoratorWithNoScope implements AccountService {
 // ========== Invalid Interceptors with Built-in Normal Scopes ==========
 
 // Invalid interceptor with @ApplicationScoped
+@Monitored
 @Interceptor
 @ApplicationScoped
 class InterceptorWithApplicationScoped {
 }
 
 // Invalid interceptor with @SessionScoped
+@Monitored
 @Interceptor
 @SessionScoped
 class InterceptorWithSessionScoped {
 }
 
 // Invalid interceptor with multiple scopes including illegal ones
+@Monitored
 @Interceptor
 @ApplicationScoped
 @SessionScoped
@@ -97,6 +103,7 @@ class DecoratorWithMultipleIllegalScopes implements AccountService {
 // ========== Invalid Interceptors/Decorators with Custom Normal Scopes ==========
 
 // Invalid interceptor with custom normal scope
+@Monitored
 @Interceptor
 @CustomNormalScope
 class InterceptorWithCustomNormalScope {
@@ -112,6 +119,7 @@ class DecoratorWithCustomNormalScope implements AccountService {
 }
 
 // Invalid interceptor with both built-in and custom normal scopes
+@Monitored
 @Interceptor
 @ApplicationScoped
 @CustomNormalScope
