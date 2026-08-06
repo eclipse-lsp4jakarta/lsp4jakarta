@@ -25,7 +25,7 @@ public class Constants {
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-interceptor";
 
-    private static final String AROUND_CONSTRUCT_FQ_NAME = "jakarta.interceptor.AroundConstruct";
+    public static final String AROUND_CONSTRUCT_FQ_NAME = "jakarta.interceptor.AroundConstruct";
 
     private static final String POST_CONSTRUCT_FQ_NAME = "jakarta.annotation.PostConstruct";
 
