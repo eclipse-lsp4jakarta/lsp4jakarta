@@ -467,7 +467,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
-                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationFromRawEventQuickFix" />
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
    </extension>
    
    <!-- Interceptor -->
