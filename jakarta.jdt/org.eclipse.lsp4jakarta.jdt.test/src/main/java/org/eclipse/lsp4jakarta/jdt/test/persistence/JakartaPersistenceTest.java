@@ -765,6 +765,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // This includes primitives, wrapper types, String, Date types, BigDecimal, and BigInteger
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
     @Test
     public void testMultipleEmbeddedId() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
