@@ -62,13 +62,7 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
         try {
             IType[] types = unit.getAllTypes();
             for (IType type : types) {
-                boolean isSpecializesAnnotated = Stream.of(type.getAnnotations()).anyMatch(annotation -> {
-                    try {
-                        return DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.SPECIALIZES_FQ_NAME);
-                    } catch (JavaModelException e) {
-                        return false;
-                    }
-                });
+                boolean isSpecializesAnnotated = DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.SPECIALIZES_FQ_NAME);
                 if (isSpecializesAnnotated) {
                     validateSpecializes(type, uri, context, diagnostics);
                     // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization
