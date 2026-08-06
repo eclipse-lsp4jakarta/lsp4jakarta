@@ -118,6 +118,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
+
+                // Check: @AroundConstruct must not appear in target classes (classes without @Interceptor)
+                if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                    checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context);
+                }
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -419,6 +424,39 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                      Constants.DIAGNOSTIC_SOURCE,
                                                      ErrorCode.InvalidInterceptorMissingInterceptorBinding,
                                                      DiagnosticSeverity.Warning));
+        }
+    }
+
+    /**
+     * Checks if a non-interceptor class (target class) or one of its superclasses
+     * declares a method annotated with {@code @AroundConstruct}.
+     * According to the Jakarta Interceptors 2.0 specification, around-construct
+     * interceptor methods may only be declared in interceptor classes and/or their
+     * superclasses. Declaring them in a target class or its superclasses is invalid.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context) throws JavaModelException {
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidAroundConstructInTargetClass"),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
         }
     }
 }
