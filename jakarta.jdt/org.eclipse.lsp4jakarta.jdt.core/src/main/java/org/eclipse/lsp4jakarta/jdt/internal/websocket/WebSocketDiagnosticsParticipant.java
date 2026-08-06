@@ -94,15 +94,14 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 continue;
             }
 
-            // Class-level checks — do not iterate methods.
-            serverEndpointErrorCheck(context, uri, type, diagnostics);
-            publicNoArgsConstructorCheck(context, uri, type, diagnostics);
-
             /*
-             * Extract endpoint URI path-variables once from the class annotation;
-             * used during the shared method pass below.
+             * Single pass over type.getAnnotations() that covers both serverEndpointErrorCheck
+             * and findAndProcessEndpointURI. Both methods previously iterated the same array
+             * separately; merging them avoids a second scan.
              */
-            List<String> endpointPathVars = findAndProcessEndpointURI(type);
+            List<String> endpointPathVars = checkTypeAnnotations(context, uri, type, diagnostics);
+
+            publicNoArgsConstructorCheck(context, uri, type, diagnostics);
 
             /*
              * Single pass over all methods. The original code called getMethods() four
@@ -311,54 +310,91 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     }
 
     // -----------------------------------------------------------------------
-    // Class-level checks
+    // Class-level annotation pass (single loop over type.getAnnotations())
     // -----------------------------------------------------------------------
 
     /**
-     * Create an error diagnostic if a {@code @ServerEndpoint} annotation's URI
-     * contains relative paths, is missing a leading slash, does not follow a valid
-     * level-1 template URI, or contains duplicate path variables.
+     * Iterates {@code type.getAnnotations()} exactly once and performs all
+     * class-level annotation checks in a single traversal:
+     * <ul>
+     * <li>Validates {@code @ServerEndpoint} URI path (no slash, relative paths,
+     * level-1 template, duplicate variables)</li>
+     * <li>Extracts URI path-variable names for later {@code @PathParam} mismatch checking</li>
+     * </ul>
      *
-     * <p>The {@link Range} is computed once per annotation and reused for all
-     * diagnostics that may be raised on it.
+     * <p>Previously {@code serverEndpointErrorCheck} and {@code findAndProcessEndpointURI}
+     * each called {@code type.getAnnotations()} independently. Both match on the same
+     * annotation array, so a single loop covers both without a second scan.
+     * {@code isWSAnnotatedEndpoint} cannot join this loop because it is a pre-condition
+     * guard evaluated before any diagnostic work begins.
+     *
+     * @return list of URI path-variable names, or {@code null} if no endpoint annotation
+     *         with a string {@code value} is found
      */
-    private void serverEndpointErrorCheck(JavaDiagnosticsContext context, String uri, IType type,
-                                          List<Diagnostic> diagnostics) throws JavaModelException {
+    private List<String> checkTypeAnnotations(JavaDiagnosticsContext context, String uri, IType type,
+                                              List<Diagnostic> diagnostics) throws JavaModelException {
+        String[] endpointAnnotations = { Constants.SERVER_ENDPOINT_ANNOTATION, Constants.CLIENT_ENDPOINT_ANNOTATION };
+        List<String> endpointPathVars = null;
+
         for (IAnnotation annotation : type.getAnnotations()) {
-            if (!DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                      Constants.SERVER_ENDPOINT_ANNOTATION)) {
+            String name = annotation.getElementName();
+
+            // Determine which (if any) endpoint annotation this is.
+            boolean isServerEndpoint = DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SERVER_ENDPOINT_ANNOTATION);
+            boolean isEndpointAnnotation = isServerEndpoint
+                                           || DiagnosticUtils.getMatchedJavaElementName(type, name, endpointAnnotations) != null;
+
+            if (!isEndpointAnnotation) {
                 continue;
             }
+
             String path = getAnnotationStringValue(annotation);
             if (path == null) {
                 continue;
             }
-            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
 
-            if (!DiagnosticUtils.hasLeadingSlash(path)) {
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("ServerEndpointNoSlash"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidEndpointPathWithNoStartingSlash, DiagnosticSeverity.Error));
+            // Extract URI path-variables from the first endpoint annotation that has a value.
+            // Applies to both @ServerEndpoint and @ClientEndpoint.
+            if (endpointPathVars == null) {
+                endpointPathVars = new ArrayList<>();
+                for (String part : path.split(Constants.URI_SEPARATOR)) {
+                    if (part.startsWith(Constants.CURLY_BRACE_START) && part.endsWith(Constants.CURLY_BRACE_END)) {
+                        endpointPathVars.add(part.substring(1, part.length() - 1));
+                    }
+                }
             }
-            if (hasRelativePathURIs(path)) {
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("ServerEndpointRelative"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidEndpointPathWithRelativePaths, DiagnosticSeverity.Error));
-            } else if (!DiagnosticUtils.isValidLevel1URI(path)) {
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("ServerEndpointNotLevel1"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidEndpointPathNotTempleateOrPartialURI, DiagnosticSeverity.Error));
-            }
-            if (hasDuplicateURIVariables(path)) {
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("ServerEndpointDuplicateVar"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.InvalidEndpointPathDuplicateVariable, DiagnosticSeverity.Error));
+
+            // @ServerEndpoint-only URI validation diagnostics.
+            if (isServerEndpoint) {
+                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+
+                if (!DiagnosticUtils.hasLeadingSlash(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointNoSlash"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathWithNoStartingSlash, DiagnosticSeverity.Error));
+                }
+                if (hasRelativePathURIs(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointRelative"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathWithRelativePaths, DiagnosticSeverity.Error));
+                } else if (!DiagnosticUtils.isValidLevel1URI(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointNotLevel1"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathNotTempleateOrPartialURI, DiagnosticSeverity.Error));
+                }
+                if (hasDuplicateURIVariables(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointDuplicateVar"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathDuplicateVariable, DiagnosticSeverity.Error));
+                }
             }
         }
+
+        return endpointPathVars;
     }
 
     private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
@@ -371,47 +407,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.missingPublicNoArgConstructor, DiagnosticSeverity.Error));
         }
-    }
-
-    // -----------------------------------------------------------------------
-    // URI / endpoint helpers
-    // -----------------------------------------------------------------------
-
-    /**
-     * Finds a WebSocket endpoint annotation and extracts all URI path-variable names.
-     *
-     * <p>Shared by {@link #serverEndpointErrorCheck} via {@link #getAnnotationStringValue},
-     * avoiding a second pass over {@code type.getAnnotations()} and
-     * {@code annotation.getMemberValuePairs()}.
-     *
-     * @param type representing the class
-     * @return list of path-variable names, or {@code null} if no endpoint annotation is found
-     */
-    private List<String> findAndProcessEndpointURI(IType type) throws JavaModelException {
-        String[] targetAnnotations = { Constants.SERVER_ENDPOINT_ANNOTATION, Constants.CLIENT_ENDPOINT_ANNOTATION };
-        String endpointURI = null;
-
-        for (IAnnotation annotation : type.getAnnotations()) {
-            if (DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                          targetAnnotations) != null) {
-                endpointURI = getAnnotationStringValue(annotation);
-                if (endpointURI != null) {
-                    break;
-                }
-            }
-        }
-
-        if (endpointURI == null) {
-            return null;
-        }
-
-        List<String> endpointPathVars = new ArrayList<>();
-        for (String part : endpointURI.split(Constants.URI_SEPARATOR)) {
-            if (part.startsWith(Constants.CURLY_BRACE_START) && part.endsWith(Constants.CURLY_BRACE_END)) {
-                endpointPathVars.add(part.substring(1, part.length() - 1));
-            }
-        }
-        return endpointPathVars;
     }
 
     /**
