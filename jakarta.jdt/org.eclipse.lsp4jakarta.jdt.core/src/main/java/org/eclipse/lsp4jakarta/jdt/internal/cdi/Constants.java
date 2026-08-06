@@ -33,6 +33,7 @@ public class Constants {
     public static final String APPLICATION_SCOPED_FQ_NAME = "jakarta.enterprise.context.ApplicationScoped";
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
+    public static final String USER_TRANSACTION_FQ_NAME = "jakarta.transaction.UserTransaction";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
     public static final String DIAGNOSTIC_CODE = "InvalidManagedBeanAnnotation";

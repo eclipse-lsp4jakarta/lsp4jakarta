@@ -175,6 +175,22 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidFieldWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
 
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#additional_builtin_beans
+                // If a Jakarta EE component class has an injection point of type UserTransaction
+                // and qualifier @Default, and may not validly make use of the JTA UserTransaction,
+                // the container automatically detects the problem and treats it as a definition error.
+                // CDI-managed beans (those with a scope annotation) may not validly use UserTransaction.
+                if (isManagedBean && isInjectField && DiagnosticUtils.hasDefaultQualifier(unit, type, field.getAnnotations())) {
+                    String fieldTypeName = DiagnosticUtils.getDataTypeName(field.getTypeSignature());
+                    if (DiagnosticUtils.isMatchedJavaElement(type, fieldTypeName, Constants.USER_TRANSACTION_FQ_NAME)) {
+                        Range range = PositionUtils.toNameRange(field, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidUserTransactionInjectionInCDIBean"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidUserTransactionInjectionInCDIBean, DiagnosticSeverity.Error));
+                    }
+                }
+
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#declaring_resource
                 // Producer fields must not declare a bean name using @Named annotation.
                 // Bean naming is reserved for producer methods and managed beans.
@@ -354,6 +370,21 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                              ErrorCode.InvalidNamedAnnotationOnNonFieldInjectionPoint,
                                                                              DiagnosticSeverity.Error));
                                 }
+                            }
+                        }
+
+                        // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#additional_builtin_beans
+                        // UserTransaction injection via @Inject is also invalid when the injection
+                        // point is a constructor or initializer method parameter in a CDI-managed bean,
+                        // provided the qualifier is @Default (implicit or explicit).
+                        if (isManagedBean && DiagnosticUtils.hasDefaultQualifier(unit, type, param.getAnnotations())) {
+                            String paramTypeName = DiagnosticUtils.getDataTypeName(param.getTypeSignature());
+                            if (DiagnosticUtils.isMatchedJavaElement(type, paramTypeName, Constants.USER_TRANSACTION_FQ_NAME)) {
+                                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                                diagnostics.add(context.createDiagnostic(uri,
+                                                                         Messages.getMessage("InvalidUserTransactionInjectionInCDIBean"), range,
+                                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                                         ErrorCode.InvalidUserTransactionInjectionInCDIBean, DiagnosticSeverity.Error));
                             }
                         }
                     }

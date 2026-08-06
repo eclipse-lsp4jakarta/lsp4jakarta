@@ -46,6 +46,11 @@ public class DiagnosticUtils {
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
 
+    // CDI qualifier constants used by hasDefaultQualifier
+    private static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
+    private static final String CDI_DEFAULT_FQ_NAME = "jakarta.enterprise.inject.Default";
+    private static final String CDI_ANY_FQ_NAME = "jakarta.enterprise.inject.Any";
+
     public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
     public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
     public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
@@ -524,5 +529,37 @@ public class DiagnosticUtils {
      */
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Returns true if the given set of annotations on an injection point carries only the implicit
+     * {@code @Default} qualifier — that is, no qualifier annotation other than {@code @Default} or
+     * {@code @Any} is present (excluding {@code @Inject} itself, which is not a qualifier).
+     *
+     * @param unit the compilation unit containing the injection point
+     * @param type the declaring type
+     * @param annotations the annotations on the injection point element (field or parameter)
+     * @return true if the injection point has the {@code @Default} qualifier
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean hasDefaultQualifier(ICompilationUnit unit, IType type,
+                                              IAnnotation[] annotations) throws JavaModelException {
+        boolean hasExplicitDefault = false;
+        boolean hasOtherQualifier = false;
+
+        for (IAnnotation annotation : annotations) {
+            if (isMatchedAnnotation(unit, annotation, INJECT_FQ_NAME)) {
+                // @Inject is not a qualifier — skip
+                continue;
+            }
+            if (isMatchedAnnotation(unit, annotation, CDI_DEFAULT_FQ_NAME)) {
+                hasExplicitDefault = true;
+            } else if (!isMatchedAnnotation(unit, annotation, CDI_ANY_FQ_NAME)) {
+                // Any other annotation is treated as a qualifier targeting a non-default bean
+                hasOtherQualifier = true;
+            }
+        }
+
+        return hasExplicitDefault || !hasOtherQualifier;
     }
 }
