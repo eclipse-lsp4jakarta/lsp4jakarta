@@ -39,6 +39,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyTemporalOnNonTemporalType,
     InvalidVersionFieldOrPropertyType,
     InvalidIdType,
+    MultipleEmbeddedIdAnnotations,
+    MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean;
 

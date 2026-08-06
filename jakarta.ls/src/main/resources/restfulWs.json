@@ -1,6 +1,6 @@
 {
     "Jakarta RESTful Web Services - new resource class": {
-      "prefix": "rest_class",
+      "prefix": "jakarta_rest_class",
       "body": [
         "package ${1:packagename};",
         "",
@@ -26,7 +26,7 @@
       }
     },
     "Jakarta RESTful Web Services - new GET resource method": {
-      "prefix": "rest_get",
+      "prefix": "jakarta_rest_get",
       "body": [
         "@GET",
         "@Produces(MediaType.TEXT_PLAIN)",
