@@ -170,7 +170,7 @@ public class ASTUtils {
         String qualifiedName = getDeclaringClassName(mi);
         return expectedFQN.equals(qualifiedName);
     }
-    
+
     /**
      * Retrieves the enclosing method declaration for a given AST node.
      *
