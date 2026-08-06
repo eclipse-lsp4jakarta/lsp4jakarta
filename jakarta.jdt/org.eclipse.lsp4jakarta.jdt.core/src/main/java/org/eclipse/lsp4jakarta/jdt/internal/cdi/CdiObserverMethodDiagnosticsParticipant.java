@@ -31,7 +31,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
-import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
@@ -106,7 +106,7 @@ public class CdiObserverMethodDiagnosticsParticipant implements IJavaDiagnostics
      */
     private void validateObserverMethodImplementation(IType type, ICompilationUnit unit, String uri,
                                                       JavaDiagnosticsContext context,
-                                                      List<Diagnostic> diagnostics) throws JavaModelException {
+                                                      List<Diagnostic> diagnostics) throws CoreException {
 
         // Only concrete classes that directly implement ObserverMethod are relevant.
         // Interfaces and abstract classes may legally defer the notify implementation.
@@ -114,7 +114,7 @@ public class CdiObserverMethodDiagnosticsParticipant implements IJavaDiagnostics
             return;
         }
 
-        if (!implementsObserverMethod(type)) {
+        if (TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.OBSERVER_METHOD_FQ_NAME) != TypeHierarchyUtils.HAS_SUPERTYPE) {
             return;
         }
 
@@ -137,27 +137,5 @@ public class CdiObserverMethodDiagnosticsParticipant implements IJavaDiagnostics
                                                      ErrorCode.InvalidObserverMethodWithoutNotify,
                                                      DiagnosticSeverity.Error));
         }
-    }
-
-    /**
-     * Returns {@code true} if the given type directly implements
-     * {@code jakarta.enterprise.inject.spi.ObserverMethod} (raw or parameterised).
-     *
-     * @param type the type to check
-     * @return {@code true} if the type directly implements ObserverMethod
-     * @throws JavaModelException if an error occurs accessing the Java model
-     */
-    private boolean implementsObserverMethod(IType type) throws JavaModelException {
-        String[] superInterfaces = type.getSuperInterfaceNames();
-        for (String iface : superInterfaces) {
-            // Strip type parameters, e.g. "ObserverMethod<AuditEvent>" → "ObserverMethod"
-            int angleIdx = iface.indexOf('<');
-            String rawName = (angleIdx >= 0) ? iface.substring(0, angleIdx).trim() : iface.trim();
-
-            if (DiagnosticUtils.isMatchedJavaElement(type, rawName, Constants.OBSERVER_METHOD_FQ_NAME)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

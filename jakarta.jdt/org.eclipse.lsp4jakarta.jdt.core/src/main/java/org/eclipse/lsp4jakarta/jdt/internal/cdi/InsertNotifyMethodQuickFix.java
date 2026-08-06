@@ -14,6 +14,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -127,22 +128,17 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         // Resolve the concrete type argument T from ObserverMethod<T>.
         String typeArgFQName = resolveTypeArgFQName(parentType);
 
-        String paramTypeFQName;
-        String paramName;
+        AddMethodProposal.MethodParam param;
         if (variant == NotifyVariant.EVENT) {
             // notify(ConcreteType event)
-            paramTypeFQName = typeArgFQName;
-            paramName = "event";
+            param = new AddMethodProposal.MethodParam(typeArgFQName, "event");
         } else {
             // notify(EventContext<ConcreteType> eventContext)
-            paramTypeFQName = Constants.EVENT_CONTEXT_FQ_NAME;
-            paramName = "eventContext";
+            param = new AddMethodProposal.MethodParam(Constants.EVENT_CONTEXT_FQ_NAME, "eventContext", typeArgFQName);
         }
 
         String label = getLabel(resolveTypeArgName(parentType));
-        ChangeCorrectionProposal proposal = new AddMethodProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, "notify", paramTypeFQName, paramName, variant == NotifyVariant.EVENT_CONTEXT ? typeArgFQName : null, true /*
-                                                                                                                                                                                                                                                       * addOverride
-                                                                                                                                                                                                                                                       */);
+        ChangeCorrectionProposal proposal = new AddMethodProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, "notify", "void", "public", Collections.singletonList("java.lang.Override"), Collections.singletonList(param));
 
         try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));

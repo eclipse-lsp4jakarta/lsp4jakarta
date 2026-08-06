@@ -12,6 +12,8 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal;
 
+import java.util.List;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;
@@ -37,14 +39,64 @@ import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRe
 import org.eclipse.lsp4j.CodeActionKind;
 
 /**
- * Code action proposal for adding a public void method with a single parameter
- * to a class.
+ * Code action proposal for adding a method to a class.
+ *
+ * <p>Supports configurable return type, modifier, method-level annotations,
+ * and a list of parameters (each optionally wrapping its type in a generic
+ * type argument).
  *
  * <p>Used to insert required {@code notify} overrides on custom
  * {@code ObserverMethod} implementations.
  */
 @SuppressWarnings("restriction")
 public class AddMethodProposal extends ASTRewriteCorrectionProposal {
+
+    /**
+     * Describes a single method parameter.
+     *
+     * <p>A parameter always has a fully-qualified type name and a variable name.
+     * When {@code typeArgFQName} is non-{@code null} the type is rendered as a
+     * parameterised type: {@code paramTypeFQName<typeArgFQName>}.
+     */
+    public static class MethodParam {
+
+        /** Fully-qualified type of the parameter (or raw type when generic). */
+        public final String typeFQName;
+
+        /** Variable name used in the generated source. */
+        public final String name;
+
+        /**
+         * Optional fully-qualified type argument that turns {@code typeFQName} into a
+         * parameterised type, e.g. {@code EventContext<AuditEvent>}.
+         * {@code null} means use {@code typeFQName} as a simple (non-generic) type.
+         */
+        public final String typeArgFQName;
+
+        /**
+         * Creates a simple (non-generic) parameter.
+         *
+         * @param typeFQName fully-qualified type name
+         * @param name variable name used in generated source
+         */
+        public MethodParam(String typeFQName, String name) {
+            this(typeFQName, name, null);
+        }
+
+        /**
+         * Creates a parameter, optionally with a type argument.
+         *
+         * @param typeFQName fully-qualified type name (or raw type when generic)
+         * @param name variable name used in generated source
+         * @param typeArgFQName if non-{@code null}, wraps {@code typeFQName} as
+         *            {@code typeFQName<typeArgFQName>}
+         */
+        public MethodParam(String typeFQName, String name, String typeArgFQName) {
+            this.typeFQName = typeFQName;
+            this.name = name;
+            this.typeArgFQName = typeArgFQName;
+        }
+    }
 
     private final CompilationUnit invocationNode;
     private final IBinding binding;
@@ -53,42 +105,28 @@ public class AddMethodProposal extends ASTRewriteCorrectionProposal {
     private final String methodName;
 
     /**
-     * Fully-qualified type name of the single method parameter
-     * (e.g. {@code "jakarta.enterprise.event.EventContext"}).
+     * Fully-qualified return type name (e.g. {@code "void"}, {@code "java.lang.String"}).
+     * Use {@code "void"} for methods with no return value.
      */
-    private final String paramTypeFQName;
-
-    /** Simple display name used as the parameter name in the generated source. */
-    private final String paramName;
+    private final String returnTypeFQName;
 
     /**
-     * Optional FQ name of a type argument to wrap {@code paramTypeFQName} in a
-     * parameterized type, e.g. {@code EventContext<AuditEvent>}.
-     * {@code null} means use {@code paramTypeFQName} as a simple (non-generic) type.
+     * Visibility modifier keyword (e.g. {@code "public"}, {@code "protected"},
+     * {@code "private"}). May be {@code null} or empty for package-private.
      */
-    private final String typeArgFQName;
-
-    /** Whether to prepend {@code @Override} to the inserted method. */
-    private final boolean addOverride;
+    private final String modifier;
 
     /**
-     * Creates an {@code AddMethodProposal} with a simple (non-generic) parameter type
-     * and no {@code @Override} annotation.
-     *
-     * @param label the label shown in the quick-fix menu
-     * @param targetCU the compilation unit to modify
-     * @param invocationNode the compilation unit AST root
-     * @param binding the type binding of the class to modify
-     * @param relevance relevance ordering hint
-     * @param methodName simple name of the method to insert
-     * @param paramTypeFQName fully-qualified type name of the single parameter
-     * @param paramName parameter variable name used in the generated source
+     * Ordered list of fully-qualified annotation names to prepend to the method
+     * (e.g. {@code "java.lang.Override"}). May be {@code null} or empty.
      */
-    public AddMethodProposal(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
-                             IBinding binding, int relevance,
-                             String methodName, String paramTypeFQName, String paramName) {
-        this(label, targetCU, invocationNode, binding, relevance, methodName, paramTypeFQName, paramName, null, false);
-    }
+    private final List<String> annotationFQNames;
+
+    /**
+     * Ordered list of parameters to declare on the generated method.
+     * May be {@code null} or empty for a no-arg method.
+     */
+    private final List<MethodParam> params;
 
     /**
      * Creates an {@code AddMethodProposal}.
@@ -99,23 +137,23 @@ public class AddMethodProposal extends ASTRewriteCorrectionProposal {
      * @param binding the type binding of the class to modify
      * @param relevance relevance ordering hint
      * @param methodName simple name of the method to insert
-     * @param paramTypeFQName fully-qualified type name of the parameter (or raw type for generic)
-     * @param paramName parameter variable name to use in the generated source
-     * @param typeArgFQName if non-null, wraps {@code paramTypeFQName} as {@code paramType<typeArg>}
-     * @param addOverride if {@code true}, prepends {@code @Override} to the method
+     * @param returnTypeFQName fully-qualified return type (use {@code "void"} for void methods)
+     * @param modifier visibility modifier keyword (e.g. {@code "public"}), or {@code null} for package-private
+     * @param annotationFQNames list of fully-qualified annotation names to prepend, or {@code null}
+     * @param params list of method parameters, or {@code null} for a no-arg method
      */
     public AddMethodProposal(String label, ICompilationUnit targetCU, CompilationUnit invocationNode,
                              IBinding binding, int relevance,
-                             String methodName, String paramTypeFQName, String paramName,
-                             String typeArgFQName, boolean addOverride) {
+                             String methodName, String returnTypeFQName, String modifier,
+                             List<String> annotationFQNames, List<MethodParam> params) {
         super(label, CodeActionKind.QuickFix, targetCU, null, relevance);
         this.invocationNode = invocationNode;
         this.binding = binding;
         this.methodName = methodName;
-        this.paramTypeFQName = paramTypeFQName;
-        this.paramName = paramName;
-        this.typeArgFQName = typeArgFQName;
-        this.addOverride = addOverride;
+        this.returnTypeFQName = returnTypeFQName;
+        this.modifier = modifier;
+        this.annotationFQNames = annotationFQNames;
+        this.params = params;
     }
 
     /**
@@ -125,13 +163,11 @@ public class AddMethodProposal extends ASTRewriteCorrectionProposal {
      * <p>The generated method has the form:
      *
      * <pre>
-     *   &#64;Override                        // if addOverride is true
-     *   public void &lt;methodName&gt;(&lt;paramType&gt; &lt;paramName&gt;) {}
+     *   &#64;Annotation1 &#64;Annotation2     // if annotations are specified
+     *   [modifier] [returnType] &lt;methodName&gt;([paramType paramName], ...) {}
      * </pre>
      *
-     * where {@code <paramType>} is the simple name of {@code paramTypeFQName} for a
-     * plain type, or {@code RawType<TypeArg>} when {@link #typeArgFQName} is set.
-     * The required imports are added automatically.
+     * Required imports are added automatically.
      *
      * @return the AST rewrite containing the new method insertion
      * @throws CoreException if the AST cannot be resolved or the rewrite cannot be created
@@ -156,35 +192,56 @@ public class AddMethodProposal extends ASTRewriteCorrectionProposal {
         ImportRewrite imports = createImportRewrite(newRoot);
         ImportRewriteContext importContext = new ContextSensitiveImportRewriteContext(declNode, imports);
 
-        // Build the parameter type (adding import as needed).
-        String importedType = imports.addImport(paramTypeFQName, importContext);
-        Type paramType;
-        if (typeArgFQName != null) {
-            // Build a parameterized type: EventContext<AuditEvent>
-            String importedTypeArg = imports.addImport(typeArgFQName, importContext);
-            SimpleType rawType = ast.newSimpleType(ast.newName(importedType));
-            ParameterizedType parameterizedType = ast.newParameterizedType(rawType);
-            parameterizedType.typeArguments().add(ast.newSimpleType(ast.newName(importedTypeArg)));
-            paramType = parameterizedType;
-        } else {
-            paramType = ast.newSimpleType(ast.newName(importedType));
-        }
-
         // Build the method declaration.
         MethodDeclaration md = ast.newMethodDeclaration();
         md.setName(ast.newSimpleName(methodName));
-        md.setReturnType2(ast.newPrimitiveType(PrimitiveType.VOID));
-        if (addOverride) {
-            MarkerAnnotation overrideAnnotation = ast.newMarkerAnnotation();
-            overrideAnnotation.setTypeName(ast.newSimpleName("Override"));
-            md.modifiers().add(overrideAnnotation);
-        }
-        md.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PUBLIC_KEYWORD));
 
-        SingleVariableDeclaration param = ast.newSingleVariableDeclaration();
-        param.setType(paramType);
-        param.setName(ast.newSimpleName(paramName));
-        md.parameters().add(param);
+        // Return type.
+        if ("void".equals(returnTypeFQName)) {
+            md.setReturnType2(ast.newPrimitiveType(PrimitiveType.VOID));
+        } else {
+            String importedReturn = imports.addImport(returnTypeFQName, importContext);
+            md.setReturnType2(ast.newSimpleType(ast.newName(importedReturn)));
+        }
+
+        // Annotations.
+        if (annotationFQNames != null) {
+            for (String annotFQName : annotationFQNames) {
+                MarkerAnnotation annotation = ast.newMarkerAnnotation();
+                String simpleName = annotFQName.substring(annotFQName.lastIndexOf('.') + 1);
+                annotation.setTypeName(ast.newSimpleName(simpleName));
+                md.modifiers().add(annotation);
+            }
+        }
+
+        // Modifier.
+        if (modifier != null && !modifier.isEmpty()) {
+            Modifier.ModifierKeyword keyword = Modifier.ModifierKeyword.toKeyword(modifier);
+            if (keyword != null) {
+                md.modifiers().add(ast.newModifier(keyword));
+            }
+        }
+
+        // Parameters.
+        if (params != null) {
+            for (MethodParam p : params) {
+                String importedType = imports.addImport(p.typeFQName, importContext);
+                Type paramType;
+                if (p.typeArgFQName != null) {
+                    String importedTypeArg = imports.addImport(p.typeArgFQName, importContext);
+                    SimpleType rawType = ast.newSimpleType(ast.newName(importedType));
+                    ParameterizedType parameterizedType = ast.newParameterizedType(rawType);
+                    parameterizedType.typeArguments().add(ast.newSimpleType(ast.newName(importedTypeArg)));
+                    paramType = parameterizedType;
+                } else {
+                    paramType = ast.newSimpleType(ast.newName(importedType));
+                }
+                SingleVariableDeclaration param = ast.newSingleVariableDeclaration();
+                param.setType(paramType);
+                param.setName(ast.newSimpleName(p.name));
+                md.parameters().add(param);
+            }
+        }
 
         Block body = ast.newBlock();
         md.setBody(body);
