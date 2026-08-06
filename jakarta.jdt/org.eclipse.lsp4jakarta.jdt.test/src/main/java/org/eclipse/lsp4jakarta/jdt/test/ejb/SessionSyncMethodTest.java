@@ -193,6 +193,18 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
     }
 
     // -----------------------------------------------------------------------
+    // Negative: non-session-bean class produces no diagnostics even with
+    // session sync annotations that would otherwise violate the spec
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testNonSessionBeanWithSessionSyncMethodsProducesNoDiagnostics() throws Exception {
+        assertJavaDiagnostics(
+                              createDiagnosticsParams(getJavaFileUri(BASE_PATH + "NonSessionBeanWithSessionSyncMethods.java")),
+                              IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
