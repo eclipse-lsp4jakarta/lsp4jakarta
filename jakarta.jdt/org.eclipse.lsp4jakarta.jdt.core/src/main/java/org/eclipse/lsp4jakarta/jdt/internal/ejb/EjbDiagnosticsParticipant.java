@@ -101,10 +101,9 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
                 }
                 validateSessionBeanConstructor(type, context, uri, diagnostics);
                 validateSessionBeanFinalizeMethod(type, context, uri, diagnostics);
+                // Validate session synchronization methods (@AfterBegin, @BeforeCompletion, @AfterCompletion)
+                validateSessionSyncMethods(context, uri, unit, type, diagnostics);
             }
-
-            // Validate session synchronization methods (@AfterBegin, @BeforeCompletion, @AfterCompletion)
-            validateSessionSyncMethods(context, uri, unit, type, diagnostics);
         }
 
         return diagnostics;
