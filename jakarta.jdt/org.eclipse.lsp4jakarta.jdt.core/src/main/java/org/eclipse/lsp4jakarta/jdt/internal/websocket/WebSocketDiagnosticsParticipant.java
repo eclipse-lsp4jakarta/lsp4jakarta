@@ -151,23 +151,29 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
             for (IAnnotation annotation : method.getAnnotations()) {
                 String name = annotation.getElementName();
 
-                if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.ON_OPEN)) {
-                    specialParamTypes = Constants.ON_OPEN_PARAM_OPT_TYPES;
-                    rawSpecialParamTypes = Constants.RAW_ON_OPEN_PARAM_OPT_TYPES;
-                    paramErrorCode = ErrorCode.InvalidOnOpenParams;
-                    lifecycleAnnotName = name;
-                } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.ON_CLOSE)) {
-                    specialParamTypes = Constants.ON_CLOSE_PARAM_OPT_TYPES;
-                    rawSpecialParamTypes = Constants.RAW_ON_CLOSE_PARAM_OPT_TYPES;
-                    paramErrorCode = ErrorCode.InvalidOnCloseParams;
-                    lifecycleAnnotName = name;
-                } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.ON_ERROR)) {
-                    lifecycleAnnotName = name;
-                } else if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.ON_MESSAGE)) {
-                    onMessageAnnotation = annotation;
-                    continue; // @OnMessage is not a lifecycle annotation — skip the duplicate-lifecycle check below
-                } else {
+                String matchedFQN = DiagnosticUtils.getMatchedJavaElementName(type, name, Constants.LIFECYCLE_ANNOTATIONS);
+                if (matchedFQN == null) {
                     continue; // not a WebSocket annotation we care about
+                }
+                switch (matchedFQN) {
+                    case Constants.ON_OPEN:
+                        specialParamTypes = Constants.ON_OPEN_PARAM_OPT_TYPES;
+                        rawSpecialParamTypes = Constants.RAW_ON_OPEN_PARAM_OPT_TYPES;
+                        paramErrorCode = ErrorCode.InvalidOnOpenParams;
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_CLOSE:
+                        specialParamTypes = Constants.ON_CLOSE_PARAM_OPT_TYPES;
+                        rawSpecialParamTypes = Constants.RAW_ON_CLOSE_PARAM_OPT_TYPES;
+                        paramErrorCode = ErrorCode.InvalidOnCloseParams;
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_ERROR:
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_MESSAGE:
+                        onMessageAnnotation = annotation;
+                        continue; // @OnMessage is not a lifecycle annotation — skip the duplicate-lifecycle check below
                 }
 
                 // ---- 2. Duplicate lifecycle annotation check (@OnOpen/@OnClose/@OnError) ----

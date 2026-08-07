@@ -80,6 +80,9 @@ public class Constants {
     public static final String ON_ERROR = "jakarta.websocket.OnError";
     public static final String ON_MESSAGE = "jakarta.websocket.OnMessage";
 
+    /** Ordered FQNs of all WebSocket method-level annotations, used for single-call matching. */
+    public static final String[] LIFECYCLE_ANNOTATIONS = { ON_OPEN, ON_CLOSE, ON_ERROR, ON_MESSAGE };
+
     public static final Map<String, String> WEBSOCKET_ANNOTATION_FQN = Map.of(
                                                                               "OnOpen", ON_OPEN,
                                                                               "OnClose", ON_CLOSE,
