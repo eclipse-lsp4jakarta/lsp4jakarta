@@ -307,7 +307,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         }
         // Get superclass (excluding java.lang.Object)
         String superclassName = decoratorType.getSuperclassName();
-        if (superclassName != null && !superclassName.equals("Object")) {
+        if (superclassName != null && !Constants.OBJECT_CLASS_NAME.equals(superclassName)) {
             String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, superclassName);
             if (fqName != null && !Constants.OBJECT_FQ_NAME.equals(fqName)) {
                 decoratedTypes.add(fqName);

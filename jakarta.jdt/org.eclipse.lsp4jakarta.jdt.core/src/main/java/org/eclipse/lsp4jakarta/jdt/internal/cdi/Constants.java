@@ -42,6 +42,7 @@ public class Constants {
     public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
     public static final String DELEGATE_FQ_NAME = "jakarta.decorator.Delegate";
     public static final String OBJECT_FQ_NAME = "java.lang.Object";
+    public static final String OBJECT_CLASS_NAME = "Object";
     public static final String CONSTRUCTOR_DIAGNOSTIC_CODE = "InvalidManagedBeanConstructor";
 
     public static final String DIAGNOSTIC_CODE_INVALID_INJECT_PARAM = "RemoveInjectOrConflictedAnnotations";
