@@ -59,6 +59,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertProtectedCtrtToClass,
     PersistenceInsertTemporalAnnotation,
     PersistenceChangeTemporalValue,
+    PersistenceRemoveJPAIdentifierConflict,
     PersistenceRemoveNamedJPAAnnotation,
     PersistenceInsertEntityAnnotation,
     PersistenceInsertEntityOrMappedSuperclassAnnotation,
@@ -101,6 +102,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveDisposesFromInterceptorDecorator,
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
+    CDIRemoveNamedFromSpecializedBean,
     //Interceptor
     InterceptorRemoveInterceptorMethodAnnotation,
     // Common modifier quick fixes
