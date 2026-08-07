@@ -50,22 +50,22 @@ public class ObserverMethodNotifyTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic expectedDiagnostic = d(19, 13, 26,
-                                          "The class 'AuditObserver' implements ObserverMethod but does not override notify(T) or notify(EventContext<T>). "
-                                                      + "At least one of these methods must be overridden for the container to invoke the observer.",
-                                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObserverMethodWithoutNotify");
+        Diagnostic observerMethodWithoutNotifyDiagnostic = d(19, 13, 26,
+                                                             "The class 'AuditObserver' implements ObserverMethod but does not override notify(T) or notify(EventContext<T>). "
+                                                                         + "At least one of these methods must be overridden for the container to invoke the observer.",
+                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidObserverMethodWithoutNotify");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, observerMethodWithoutNotifyDiagnostic);
 
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, expectedDiagnostic);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, observerMethodWithoutNotifyDiagnostic);
 
         // notify(AuditEvent event) quick fix — type arg resolved from ObserverMethod<AuditEvent>
         TextEdit notifyEventEdit = te(46, 5, 46, 5, "\n\n\t@Override\n\tpublic void notify(AuditEvent event) {\n\t}");
-        CodeAction notifyEventAction = ca(uri, "Override notify(AuditEvent event)", expectedDiagnostic, notifyEventEdit);
+        CodeAction notifyEventAction = ca(uri, "Override notify(AuditEvent event)", observerMethodWithoutNotifyDiagnostic, notifyEventEdit);
 
         // notify(EventContext<AuditEvent> eventContext) quick fix
         TextEdit notifyEventContextEdit = te(46, 5, 46, 5, "\n\n\t@Override\n\tpublic void notify(EventContext<AuditEvent> eventContext) {\n\t}");
-        CodeAction notifyEventContextAction = ca(uri, "Override notify(EventContext<AuditEvent> eventContext)", expectedDiagnostic, notifyEventContextEdit);
+        CodeAction notifyEventContextAction = ca(uri, "Override notify(EventContext<AuditEvent> eventContext)", observerMethodWithoutNotifyDiagnostic, notifyEventContextEdit);
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, notifyEventAction, notifyEventContextAction);
     }

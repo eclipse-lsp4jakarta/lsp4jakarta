@@ -54,9 +54,6 @@ public class CdiObserverMethodDiagnosticsParticipant implements IJavaDiagnostics
 
     private static final Logger LOGGER = Logger.getLogger(CdiObserverMethodDiagnosticsParticipant.class.getName());
 
-    /** The simple name of the two required {@code notify} overloads. */
-    private static final String NOTIFY_METHOD_NAME = "notify";
-
     /**
      * Collects diagnostics for all types in the compilation unit identified by
      * {@code context.getUri()}, flagging any that implement {@code ObserverMethod}
@@ -123,7 +120,7 @@ public class CdiObserverMethodDiagnosticsParticipant implements IJavaDiagnostics
         // notify(EventContext<T>).
         boolean hasNotifyOverride = false;
         for (IMethod method : type.getMethods()) {
-            if (NOTIFY_METHOD_NAME.equals(method.getElementName()) && !method.isConstructor()) {
+            if (Constants.NOTIFY_METHOD_NAME.equals(method.getElementName()) && !method.isConstructor()) {
                 hasNotifyOverride = true;
                 break;
             }

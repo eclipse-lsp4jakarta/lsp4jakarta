@@ -36,6 +36,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.AddMethodProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
@@ -94,7 +95,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         List<CodeAction> codeActions = new ArrayList<>();
 
         if (parentType != null) {
-            String label = getLabel(resolveTypeArgName(parentType));
+            String label = getLabel(DiagnosticUtils.resolveObserverMethodTypeArgSimpleName(parentType));
             ExtendedCodeAction codeAction = new ExtendedCodeAction(label);
             codeAction.setRelevance(0);
             codeAction.setKind(CodeActionKind.QuickFix);
@@ -126,7 +127,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         }
 
         // Resolve the concrete type argument T from ObserverMethod<T>.
-        String typeArgFQName = resolveTypeArgFQName(parentType);
+        String typeArgFQName = DiagnosticUtils.resolveObserverMethodTypeArgFQName(parentType);
 
         AddMethodProposal.MethodParam param;
         if (variant == NotifyVariant.EVENT) {
@@ -137,7 +138,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
             param = new AddMethodProposal.MethodParam(Constants.EVENT_CONTEXT_FQ_NAME, "eventContext", typeArgFQName);
         }
 
-        String label = getLabel(resolveTypeArgName(parentType));
+        String label = getLabel(DiagnosticUtils.resolveObserverMethodTypeArgSimpleName(parentType));
         ChangeCorrectionProposal proposal = new AddMethodProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, "notify", "void", "public", Collections.singletonList("java.lang.Override"), Collections.singletonList(param));
 
         try {
@@ -147,40 +148,6 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         }
 
         return toResolve;
-    }
-
-    /**
-     * Returns the simple (unqualified) name of the type argument {@code T} from
-     * {@code ObserverMethod<T>} on the given class.
-     *
-     * @param classBinding the type binding of the class to inspect
-     * @return the simple name of the type argument, e.g. {@code "AuditEvent"},
-     *         or {@code "Object"} if it cannot be resolved
-     */
-    private String resolveTypeArgName(ITypeBinding classBinding) {
-        String fqn = resolveTypeArgFQName(classBinding);
-        int dot = fqn.lastIndexOf('.');
-        return dot >= 0 ? fqn.substring(dot + 1) : fqn;
-    }
-
-    /**
-     * Returns the fully-qualified name of the type argument {@code T} from
-     * {@code ObserverMethod<T>} on the given class.
-     *
-     * @param classBinding the type binding of the class to inspect
-     * @return the FQN of the first type argument of {@code ObserverMethod<T>},
-     *         or {@code "java.lang.Object"} if it cannot be resolved
-     */
-    private String resolveTypeArgFQName(ITypeBinding classBinding) {
-        for (ITypeBinding iface : classBinding.getInterfaces()) {
-            if (Constants.OBSERVER_METHOD_FQ_NAME.equals(iface.getErasure().getQualifiedName())) {
-                ITypeBinding[] args = iface.getTypeArguments();
-                if (args.length > 0 && args[0] != null) {
-                    return args[0].getQualifiedName();
-                }
-            }
-        }
-        return "java.lang.Object";
     }
 
     /**

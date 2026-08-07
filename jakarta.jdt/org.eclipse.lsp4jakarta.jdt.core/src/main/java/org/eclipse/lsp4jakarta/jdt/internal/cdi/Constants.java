@@ -35,6 +35,7 @@ public class Constants {
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
     public static final String OBSERVER_METHOD_FQ_NAME = "jakarta.enterprise.inject.spi.ObserverMethod";
     public static final String EVENT_CONTEXT_FQ_NAME = "jakarta.enterprise.inject.spi.EventContext";
+    public static final String NOTIFY_METHOD_NAME = "notify";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
     public static final String DIAGNOSTIC_CODE = "InvalidManagedBeanAnnotation";

@@ -44,9 +44,6 @@ import org.eclipse.lsp4j.CodeActionKind;
  * <p>Supports configurable return type, modifier, method-level annotations,
  * and a list of parameters (each optionally wrapping its type in a generic
  * type argument).
- *
- * <p>Used to insert required {@code notify} overrides on custom
- * {@code ObserverMethod} implementations.
  */
 @SuppressWarnings("restriction")
 public class AddMethodProposal extends ASTRewriteCorrectionProposal {

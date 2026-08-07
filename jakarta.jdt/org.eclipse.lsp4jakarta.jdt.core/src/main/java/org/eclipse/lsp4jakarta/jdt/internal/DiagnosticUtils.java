@@ -33,8 +33,10 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
 
 /**
  *
@@ -524,5 +526,37 @@ public class DiagnosticUtils {
      */
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Returns the fully-qualified name of the type argument {@code T} from
+     * {@code ObserverMethod<T>} on the given class binding.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @return the FQN of the first type argument of {@code ObserverMethod<T>},
+     *         or {@code "java.lang.Object"} if it cannot be resolved
+     */
+    public static String resolveObserverMethodTypeArgFQName(ITypeBinding classBinding) {
+        for (ITypeBinding iface : classBinding.getInterfaces()) {
+            if (Constants.OBSERVER_METHOD_FQ_NAME.equals(iface.getErasure().getQualifiedName())) {
+                ITypeBinding[] args = iface.getTypeArguments();
+                if (args.length > 0 && args[0] != null) {
+                    return args[0].getQualifiedName();
+                }
+            }
+        }
+        return "java.lang.Object";
+    }
+
+    /**
+     * Returns the simple (unqualified) name of the type argument {@code T} from
+     * {@code ObserverMethod<T>} on the given class binding.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @return the simple name of the type argument, e.g. {@code "AuditEvent"},
+     *         or {@code "Object"} if it cannot be resolved
+     */
+    public static String resolveObserverMethodTypeArgSimpleName(ITypeBinding classBinding) {
+        return getSimpleName(resolveObserverMethodTypeArgFQName(classBinding));
     }
 }
