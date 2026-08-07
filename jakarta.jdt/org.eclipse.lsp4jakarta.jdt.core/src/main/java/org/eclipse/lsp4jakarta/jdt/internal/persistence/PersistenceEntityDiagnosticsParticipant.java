@@ -98,6 +98,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 boolean isEntityClassFinal = false;
                 boolean hasPrimaryKey = false;
                 List<IMember> versionMembers = new ArrayList<>();
+                List<IMember> embeddedIdMembers = new ArrayList<>();
+                List<IMember> idMembers = new ArrayList<>();
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
@@ -130,6 +132,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         hasPrimaryKey = true;
                     }
 
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(method);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        idMembers.add(method);
+                    }
+
                     validatePKDateTemporal(type, method, diagnostics, context);
 
                 }
@@ -147,15 +157,18 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
                     }
 
+
                     // Check @Embedded on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
                         validateEmbeddedType(field, type, diagnostics, context);
                     }
 
                     // If a field is static, we do not care about it, we care about all other field
+
                     if (isStatic(field.getFlags())) {
                         continue;
                     }
+
                     // If we find a non-static variable that is final, this is a problem
                     if (isFinal(field.getFlags())) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -168,6 +181,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // Check if any field has @Id or @EmbeddedId annotation
                     if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
                         hasPrimaryKey = true;
+                    }
+
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(field);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        idMembers.add(field);
                     }
 
                     validatePKDateTemporal(type, field, diagnostics, context);
@@ -210,6 +231,36 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
+                }
+
+                // Multiple @EmbeddedId annotations on the same entity
+                if (embeddedIdMembers.size() > 1) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MultipleEmbeddedIdAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MultipleEmbeddedIdAnnotations, DiagnosticSeverity.Error));
+                    }
+                }
+
+                // @Id and @EmbeddedId mixed on the same entity
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14687
+                if (!embeddedIdMembers.isEmpty() && !idMembers.isEmpty()) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsEmbeddedId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
+                    for (IMember member : idMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
                 }
 
                 if (!versionMembers.isEmpty()) {
