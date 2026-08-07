@@ -976,4 +976,72 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaCodeAction(idGetterParams, IJDT_UTILS, removeIdAction);
     }
 
+    @Test
+    public void testMapKeyEnumeratedOnNonEnumKey() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedNonEnumKey.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic stringKeyOnMapField = d(19, 32, 48,
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic integerKeyOnMapField = d(24, 33, 53,
+                                            "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic rawMapKeyOnMapField = d(28, 16, 33,
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic wildcardKeyOnMapField = d(33, 27, 41,
+                                             "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                             DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic methodWithStringKeyMap = d(38, 31, 46,
+                                              "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, stringKeyOnMapField, integerKeyOnMapField, rawMapKeyOnMapField,
+                              wildcardKeyOnMapField, methodWithStringKeyMap);
+    }
+
+    @Test
+    public void testMapKeyEnumeratedNotOnMap() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedNotOnMap.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic listFieldAnnotated = d(19, 25, 30,
+                                          "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
+
+        Diagnostic plainStringFieldAnnotated = d(23, 19, 23,
+                                                 "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, listFieldAnnotated, plainStringFieldAnnotated);
+    }
+
+    @Test
+    public void testMapKeyEnumeratedValidEnumKey() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: map key is an enum — no diagnostic expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
