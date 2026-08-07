@@ -255,16 +255,12 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 return;
             }
             // Check if delegate type implements/extends all decorated types
-            List<String> missingTypes = new ArrayList<>();
             for (String decoratedTypeFQN : decoratedTypes) {
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
-                    missingTypes.add(decoratedTypeFQN);
+                    reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
+                                                              uri, context, diagnostics);
+                    return;
                 }
-            }
-            // Report diagnostic if delegate type doesn't implement all decorated types
-            if (!missingTypes.isEmpty()) {
-                reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
-                                                          uri, context, diagnostics);
             }
         } catch (CoreException e) {
             LOGGER.log(Level.WARNING, "Error validating delegate type assignability", e);
