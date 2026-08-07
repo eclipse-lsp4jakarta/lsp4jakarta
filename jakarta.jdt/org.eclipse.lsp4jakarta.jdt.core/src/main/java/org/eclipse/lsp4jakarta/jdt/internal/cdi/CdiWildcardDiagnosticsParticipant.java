@@ -76,58 +76,48 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
             for (IField field : type.getFields()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
 
-                if (DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                               new String[] { Constants.INJECT_FQ_NAME }).size() > 0) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     if (containsWildcard(field.getTypeSignature())) {
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidWildcardTypeInInjectField"),
+                                                                 Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectField.name()),
                                                                  PositionUtils.toNameRange(field, context.getUtils()),
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidWildcardTypeInInjectField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                                      new String[] { Constants.PRODUCES_FQ_NAME }).size() > 0) {
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
                     checkProducerMember(context, uri, diagnostics, type, annotationNames,
                                         field.getTypeSignature(), typeParamNames, scopeFQNames,
                                         PositionUtils.toNameRange(field, context.getUtils()),
                                         new ErrorCode[] { ErrorCode.InvalidWildcardTypeInProducerField,
                                                           ErrorCode.InvalidProducerFieldWithBareTypeVariableType,
-                                                          ErrorCode.InvalidProducerFieldWithTypeVariableAndNonDependentScope },
-                                        new String[] { "InvalidWildcardTypeInProducerField",
-                                                       "InvalidProducerFieldWithBareTypeVariableType",
-                                                       "InvalidProducerFieldWithTypeVariableAndNonDependentScope" });
+                                                          ErrorCode.InvalidProducerFieldWithTypeVariableAndNonDependentScope });
                 }
             }
 
             for (IMethod method : type.getMethods()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
-                if (DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                               new String[] { Constants.INJECT_FQ_NAME }).size() > 0) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     // Check method parameters for wildcard types
                     String[] parameterTypes = method.getParameterTypes();
                     for (int i = 0; i < parameterTypes.length; i++) {
                         if (containsWildcard(parameterTypes[i])) {
                             diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("InvalidWildcardTypeInInjectMethod"),
+                                                                     Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectMethod.name()),
                                                                      PositionUtils.toNameRange(method.getParameters()[i], context.getUtils()),
                                                                      Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     ErrorCode.InvalidWildcardTypeInInjectField,
+                                                                     ErrorCode.InvalidWildcardTypeInInjectMethod,
                                                                      DiagnosticSeverity.Error));
                         }
                     }
-                } else if (DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                                      new String[] { Constants.PRODUCES_FQ_NAME }).size() > 0) {
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
                     checkProducerMember(context, uri, diagnostics, type, annotationNames,
                                         method.getReturnType(), typeParamNames, scopeFQNames,
                                         PositionUtils.toNameRange(method, context.getUtils()),
                                         new ErrorCode[] { ErrorCode.InvalidWildcardTypeInProducerMethod,
                                                           ErrorCode.InvalidProducerMethodWithBareTypeVariableReturnType,
-                                                          ErrorCode.InvalidProducerMethodWithTypeVariableAndNonDependentScope },
-                                        new String[] { "InvalidWildcardTypeInProducerMethod",
-                                                       "InvalidProducerMethodWithBareTypeVariableReturnType",
-                                                       "InvalidProducerMethodWithTypeVariableAndNonDependentScope" });
+                                                          ErrorCode.InvalidProducerMethodWithTypeVariableAndNonDependentScope });
                 }
             }
         }
@@ -139,9 +129,9 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Applies the three CDI type-variable rules for a single {@code @Produces} member
      * (field or method) and appends any violations to {@code diagnostics}.
      *
-     * <p>{@code errorCodes[0]} / {@code msgKeys[0]} — wildcard in type (always invalid)<br>
-     * {@code errorCodes[1]} / {@code msgKeys[1]} — bare type variable or array of one (always invalid)<br>
-     * {@code errorCodes[2]} / {@code msgKeys[2]} — parameterized type with type variable and non-{@code @Dependent} scope
+     * <p>{@code errorCodes[0]} — wildcard in type (always invalid)<br>
+     * {@code errorCodes[1]} — bare type variable or array of one (always invalid)<br>
+     * {@code errorCodes[2]} — parameterized type with type variable and non-{@code @Dependent} scope
      *
      * @param context the diagnostics context
      * @param uri the compilation unit URI
@@ -152,17 +142,17 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param typeParamNames class-level type parameter names (e.g. {@code {"T"}})
      * @param scopeFQNames fully-qualified scope annotation names to check against
      * @param range the LSP range for the diagnostic
-     * @param errorCodes three error codes indexed by rule (0 = wildcard, 1 = bare, 2 = scope)
-     * @param msgKeys three message property keys indexed by rule
+     * @param errorCodes three error codes indexed by rule (0 = wildcard, 1 = bare, 2 = scope);
+     *            the message key for each is derived via {@link ErrorCode#name()}
      */
     private void checkProducerMember(JavaDiagnosticsContext context, String uri,
                                      List<Diagnostic> diagnostics, IType type,
                                      String[] annotationNames, String typeSignature,
                                      Set<String> typeParamNames, String[] scopeFQNames,
-                                     Range range, ErrorCode[] errorCodes, String[] msgKeys) throws JavaModelException {
+                                     Range range, ErrorCode[] errorCodes) throws JavaModelException {
         // Rule 0: wildcard in type
         if (containsWildcard(typeSignature)) {
-            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(msgKeys[0]),
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[0].name()),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      errorCodes[0], DiagnosticSeverity.Error));
         }
@@ -173,7 +163,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         // Rule 1: bare type variable (T or T[]) — always invalid
         if (isBareTypeVariable(typeSignature, typeParamNames)) {
-            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(msgKeys[1]),
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[1].name()),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      errorCodes[1], DiagnosticSeverity.Error));
         }
@@ -182,7 +172,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean hasNonDependentScope = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
                                                                                       scopeFQNames).stream().anyMatch(s -> !Constants.DEPENDENT_FQ_NAME.equals(s));
             if (hasNonDependentScope) {
-                diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(msgKeys[2]),
+                diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[2].name()),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
                                                          errorCodes[2], DiagnosticSeverity.Error));
             }
