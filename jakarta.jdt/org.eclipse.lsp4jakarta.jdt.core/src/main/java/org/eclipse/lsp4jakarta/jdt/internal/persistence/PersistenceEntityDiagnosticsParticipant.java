@@ -97,13 +97,19 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 boolean isEntityClassFinal = false;
                 boolean hasPrimaryKey = false;
                 List<IMember> versionMembers = new ArrayList<>();
+                List<IMember> embeddedIdMembers = new ArrayList<>();
+                List<IMember> idMembers = new ArrayList<>();
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
-                        validateVersionFieldOrPropertyType(method, type, diagnostics, context);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION);
+                    }
+                    // check @Id annotation usage on methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
                     }
 
                     // All Methods of this class should not be final
@@ -120,6 +126,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         hasPrimaryKey = true;
                     }
 
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(method);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        idMembers.add(method);
+                    }
+
                     validatePKDateTemporal(type, method, diagnostics, context);
 
                 }
@@ -130,13 +144,18 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
-                        validateVersionFieldOrPropertyType(field, type, diagnostics, context);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION);
+                    }
+                    // check @Id annotation usage on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
                     }
 
-                    // If a field is static, we do not care about it, we care about all other field
+                    // If a field is static, we do not care about it further
                     if (isStatic(field.getFlags())) {
                         continue;
                     }
+
                     // If we find a non-static variable that is final, this is a problem
                     if (isFinal(field.getFlags())) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -151,7 +170,16 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         hasPrimaryKey = true;
                     }
 
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(field);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        idMembers.add(field);
+                    }
+
                     validatePKDateTemporal(type, field, diagnostics, context);
+
                 }
 
                 // Check superclass hierarchy for primary key in @MappedSuperclass
@@ -190,6 +218,36 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
+                }
+
+                // Multiple @EmbeddedId annotations on the same entity
+                if (embeddedIdMembers.size() > 1) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MultipleEmbeddedIdAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MultipleEmbeddedIdAnnotations, DiagnosticSeverity.Error));
+                    }
+                }
+
+                // @Id and @EmbeddedId mixed on the same entity
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14687
+                if (!embeddedIdMembers.isEmpty() && !idMembers.isEmpty()) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsEmbeddedId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
+                    for (IMember member : idMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
                 }
 
                 if (!versionMembers.isEmpty()) {
@@ -263,7 +321,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (id != null) {
-            if (typeFQ.equals(Constants.UTIL_DATE)) {
+            if (Constants.UTIL_DATE.equals(typeFQ)) {
                 if (temporal != null) {
                     // Check value
                     IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
@@ -484,8 +542,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     /**
-     * Validates that a field or method annotated with @Version has a supported type.
-     * Supported types are: int, Integer, short, Short, long, Long, java.sql.Timestamp
+     * Validates that a field or method annotated with @Id/@Version has a supported type.
      *
      * @param member the field or method to validate
      * @param type the containing type
@@ -493,25 +550,50 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @param context the diagnostics context
      * @throws JavaModelException
      */
-    private void validateVersionFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                                    JavaDiagnosticsContext context) throws JavaModelException {
+    private void validateFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                             JavaDiagnosticsContext context, String candidate) throws JavaModelException {
         String typeFQ = null;
         Range range = null;
+        boolean isArrayType = false;
 
         if (member instanceof IMethod) {
-            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
+            IMethod method = (IMethod) member;
+            typeFQ = JDTTypeUtils.getResolvedResultTypeName(method);
+            range = PositionUtils.toNameRange(method, context.getUtils());
+            if (Constants.ID.equals(candidate)) {
+                isArrayType = JDTTypeUtils.isArray(method.getReturnType());
+            }
         } else if (member instanceof IField) {
-            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
-            range = PositionUtils.toNameRange((IField) member, context.getUtils());
+            IField field = (IField) member;
+            typeFQ = JDTTypeUtils.getResolvedTypeName(field);
+            range = PositionUtils.toNameRange(field, context.getUtils());
+            if (Constants.ID.equals(candidate)) {
+                isArrayType = JDTTypeUtils.isArray(field.getTypeSignature());
+            }
+        } else {
+            return;
         }
 
-        if (typeFQ != null && !Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
-            diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("InvalidVersionFieldOrPropertyType"),
-                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
+        if (typeFQ == null) {
+            return;
         }
+
+        if (Constants.ID.equals(candidate)) {
+            if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("InvalidIdType"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidIdType, DiagnosticSeverity.Error));
+            }
+        } else if (Constants.VERSION.equals(candidate)) {
+            if (!Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("InvalidVersionFieldOrPropertyType"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
+            }
+        }
+
     }
 
 }

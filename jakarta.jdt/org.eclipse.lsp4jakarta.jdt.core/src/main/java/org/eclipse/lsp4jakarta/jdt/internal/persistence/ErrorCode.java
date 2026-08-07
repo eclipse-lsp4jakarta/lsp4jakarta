@@ -39,7 +39,10 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidVersionFieldOrPropertyType,
     InvalidMapKeyEnumeratedNotOnMapType,
     InvalidMapKeyEnumeratedOnNonEnumType,
-    InvalidMapKeyTemporalOnNonTemporalType;
+    InvalidMapKeyTemporalOnNonTemporalType,
+    InvalidIdType,
+    MultipleEmbeddedIdAnnotations,
+    MixedIdentifierAnnotations;
 
     /**
      * {@inheritDoc}

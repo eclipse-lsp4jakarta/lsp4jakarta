@@ -1,6 +1,7 @@
 package io.openliberty.sample.jakarta.cdi;
 
 import jakarta.interceptor.Interceptor;
+import io.openliberty.sample.jakarta.interceptor.Monitored;
 import jakarta.decorator.Decorator;
 import jakarta.decorator.Delegate;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,12 +14,14 @@ import jakarta.inject.Inject;
 // ========== Valid Interceptors ==========
 
 // Valid interceptor with explicit @Dependent scope
+@Monitored
 @Interceptor
 @Dependent
 class ValidInterceptorWithDependent {
 }
 
 // Valid interceptor with no scope (defaults to @Dependent)
+@Monitored
 @Interceptor
 class ValidInterceptorWithNoScope {
 }
@@ -45,18 +48,21 @@ class ValidDecoratorWithNoScope {
 // ========== Invalid Interceptors with Built-in Normal Scopes ==========
 
 // Invalid interceptor with @ApplicationScoped
+@Monitored
 @Interceptor
 @ApplicationScoped
 class InterceptorWithApplicationScoped {
 }
 
 // Invalid interceptor with @SessionScoped
+@Monitored
 @Interceptor
 @SessionScoped
 class InterceptorWithSessionScoped {
 }
 
 // Invalid interceptor with multiple scopes including illegal ones
+@Monitored
 @Interceptor
 @ApplicationScoped
 @SessionScoped
@@ -96,6 +102,7 @@ class DecoratorWithMultipleIllegalScopes {
 // ========== Invalid Interceptors/Decorators with Custom Normal Scopes ==========
 
 // Invalid interceptor with custom normal scope
+@Monitored
 @Interceptor
 @CustomNormalScope
 class InterceptorWithCustomNormalScope {
@@ -111,6 +118,7 @@ class DecoratorWithCustomNormalScope {
 }
 
 // Invalid interceptor with both built-in and custom normal scopes
+@Monitored
 @Interceptor
 @ApplicationScoped
 @CustomNormalScope
