@@ -765,4 +765,283 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // This includes primitives, wrapper types, String, Date types, BigDecimal, and BigInteger
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testMultipleEmbeddedId() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMultipleEmbeddedId.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic firstEmbeddedIdDiagnostic = d(9, 25, 28,
+                                                 "An entity must not declare more than one @EmbeddedId annotation.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        Diagnostic secondEmbeddedIdDiagnostic = d(12, 25, 28,
+                                                  "An entity must not declare more than one @EmbeddedId annotation.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstEmbeddedIdDiagnostic, secondEmbeddedIdDiagnostic);
+
+        // Quick fix: Remove @EmbeddedId from id1
+        JakartaJavaCodeActionParams removeFirstEmbeddedIdParams = createCodeActionParams(uri, firstEmbeddedIdDiagnostic);
+        TextEdit removeFirstEmbeddedIdEdit = te(8, 4, 9, 4, "");
+        CodeAction removeFirstEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", firstEmbeddedIdDiagnostic, removeFirstEmbeddedIdEdit);
+        assertJavaCodeAction(removeFirstEmbeddedIdParams, IJDT_UTILS, removeFirstEmbeddedIdAction);
+
+        // Quick fix: Remove @EmbeddedId from id2
+        JakartaJavaCodeActionParams removeSecondEmbeddedIdParams = createCodeActionParams(uri, secondEmbeddedIdDiagnostic);
+        TextEdit removeSecondEmbeddedIdEdit = te(11, 4, 12, 4, "");
+        CodeAction removeSecondEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", secondEmbeddedIdDiagnostic, removeSecondEmbeddedIdEdit);
+        assertJavaCodeAction(removeSecondEmbeddedIdParams, IJDT_UTILS, removeSecondEmbeddedIdAction);
+    }
+
+    @Test
+    public void testMixedIdentifiers() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMixedIdentifiers.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on @EmbeddedId field (compositeId)
+        Diagnostic mixedEmbeddedIdDiagnostic = d(13, 25, 36,
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        // Diagnostic on @Id field (id)
+        Diagnostic mixedIdDiagnostic = d(10, 17, 19,
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedEmbeddedIdDiagnostic, mixedIdDiagnostic);
+
+        // Quick fix on @EmbeddedId field (compositeId): only offers Remove @EmbeddedId
+        // because the field only has @EmbeddedId — @Id is on a different field
+        JakartaJavaCodeActionParams embeddedIdFieldParams = createCodeActionParams(uri, mixedEmbeddedIdDiagnostic);
+        TextEdit removeEmbeddedIdFromCompositeEdit = te(12, 4, 13, 4, "");
+        CodeAction removeEmbeddedIdFromCompositeAction = ca(uri, "Remove @EmbeddedId", mixedEmbeddedIdDiagnostic, removeEmbeddedIdFromCompositeEdit);
+        assertJavaCodeAction(embeddedIdFieldParams, IJDT_UTILS, removeEmbeddedIdFromCompositeAction);
+
+        // Quick fix on @Id field (id): only offers Remove @Id
+        // because the field only has @Id — @EmbeddedId is on a different field
+        JakartaJavaCodeActionParams idFieldParams = createCodeActionParams(uri, mixedIdDiagnostic);
+        TextEdit removeIdFromIdEdit = te(9, 4, 10, 4, "");
+        CodeAction removeIdFromIdAction = ca(uri, "Remove @Id", mixedIdDiagnostic, removeIdFromIdEdit);
+        assertJavaCodeAction(idFieldParams, IJDT_UTILS, removeIdFromIdAction);
+    }
+
+    @Test
+    public void testMultipleEmbeddedIdOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMultipleEmbeddedIdOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on getId1() getter
+        Diagnostic firstEmbeddedIdDiagnostic = d(15, 24, 30,
+                                                 "An entity must not declare more than one @EmbeddedId annotation.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        // Diagnostic on getId2() getter
+        Diagnostic secondEmbeddedIdDiagnostic = d(20, 24, 30,
+                                                  "An entity must not declare more than one @EmbeddedId annotation.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "MultipleEmbeddedIdAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstEmbeddedIdDiagnostic, secondEmbeddedIdDiagnostic);
+
+        // Quick fix: Remove @EmbeddedId from getId1
+        JakartaJavaCodeActionParams removeFirstEmbeddedIdParams = createCodeActionParams(uri, firstEmbeddedIdDiagnostic);
+        TextEdit removeFirstEmbeddedIdEdit = te(14, 4, 15, 4, "");
+        CodeAction removeFirstEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", firstEmbeddedIdDiagnostic, removeFirstEmbeddedIdEdit);
+        assertJavaCodeAction(removeFirstEmbeddedIdParams, IJDT_UTILS, removeFirstEmbeddedIdAction);
+
+        // Quick fix: Remove @EmbeddedId from getId2
+        JakartaJavaCodeActionParams removeSecondEmbeddedIdParams = createCodeActionParams(uri, secondEmbeddedIdDiagnostic);
+        TextEdit removeSecondEmbeddedIdEdit = te(19, 4, 20, 4, "");
+        CodeAction removeSecondEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", secondEmbeddedIdDiagnostic, removeSecondEmbeddedIdEdit);
+        assertJavaCodeAction(removeSecondEmbeddedIdParams, IJDT_UTILS, removeSecondEmbeddedIdAction);
+    }
+
+    @Test
+    public void testMixedIdentifiersOnGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMixedIdentifiersOnGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on @Id getter (getId)
+        Diagnostic mixedIdDiagnostic = d(16, 16, 21,
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        // Diagnostic on @EmbeddedId getter (getCompositeId)
+        Diagnostic mixedEmbeddedIdDiagnostic = d(21, 24, 38,
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedIdDiagnostic, mixedEmbeddedIdDiagnostic);
+
+        // Quick fix on @Id getter (getId): only offers Remove @Id
+        JakartaJavaCodeActionParams idGetterParams = createCodeActionParams(uri, mixedIdDiagnostic);
+        TextEdit removeIdEdit = te(15, 4, 16, 4, "");
+        CodeAction removeIdAction = ca(uri, "Remove @Id", mixedIdDiagnostic, removeIdEdit);
+        assertJavaCodeAction(idGetterParams, IJDT_UTILS, removeIdAction);
+
+        // Quick fix on @EmbeddedId getter (getCompositeId): only offers Remove @EmbeddedId
+        JakartaJavaCodeActionParams embeddedIdGetterParams = createCodeActionParams(uri, mixedEmbeddedIdDiagnostic);
+        TextEdit removeEmbeddedIdEdit = te(20, 4, 21, 4, "");
+        CodeAction removeEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", mixedEmbeddedIdDiagnostic, removeEmbeddedIdEdit);
+        assertJavaCodeAction(embeddedIdGetterParams, IJDT_UTILS, removeEmbeddedIdAction);
+    }
+
+    @Test
+    public void testMixedIdentifiersFieldAndGetter() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMixedIdentifiersFieldAndGetter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on @Id field (id)
+        Diagnostic mixedIdDiagnostic = d(10, 17, 19,
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        // Diagnostic on @EmbeddedId getter (getCompositeId)
+        Diagnostic mixedEmbeddedIdDiagnostic = d(18, 24, 38,
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedIdDiagnostic, mixedEmbeddedIdDiagnostic);
+
+        // Quick fix on @Id field (id): only offers Remove @Id
+        JakartaJavaCodeActionParams idFieldParams = createCodeActionParams(uri, mixedIdDiagnostic);
+        TextEdit removeIdEdit = te(9, 4, 10, 4, "");
+        CodeAction removeIdAction = ca(uri, "Remove @Id", mixedIdDiagnostic, removeIdEdit);
+        assertJavaCodeAction(idFieldParams, IJDT_UTILS, removeIdAction);
+
+        // Quick fix on @EmbeddedId getter (getCompositeId): only offers Remove @EmbeddedId
+        JakartaJavaCodeActionParams embeddedIdGetterParams2 = createCodeActionParams(uri, mixedEmbeddedIdDiagnostic);
+        TextEdit removeEmbeddedIdEdit = te(17, 4, 18, 4, "");
+        CodeAction removeEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", mixedEmbeddedIdDiagnostic, removeEmbeddedIdEdit);
+        assertJavaCodeAction(embeddedIdGetterParams2, IJDT_UTILS, removeEmbeddedIdAction);
+    }
+
+    @Test
+    public void testMixedIdentifiersGetterAndField() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/EntityMixedIdentifiersGetterAndField.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic on @EmbeddedId field (compositeId)
+        Diagnostic mixedEmbeddedIdDiagnostic = d(10, 25, 36,
+                                                 "@EmbeddedId cannot be combined with @Id in the same entity.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        // Diagnostic on @Id getter (getId)
+        Diagnostic mixedIdDiagnostic = d(18, 16, 21,
+                                         "@Id cannot be combined with @EmbeddedId in the same entity.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence", "MixedIdentifierAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mixedEmbeddedIdDiagnostic, mixedIdDiagnostic);
+
+        // Quick fix on @EmbeddedId field (compositeId): only offers Remove @EmbeddedId
+        JakartaJavaCodeActionParams embeddedIdFieldParams = createCodeActionParams(uri, mixedEmbeddedIdDiagnostic);
+        TextEdit removeEmbeddedIdEdit = te(9, 4, 10, 4, "");
+        CodeAction removeEmbeddedIdAction = ca(uri, "Remove @EmbeddedId", mixedEmbeddedIdDiagnostic, removeEmbeddedIdEdit);
+        assertJavaCodeAction(embeddedIdFieldParams, IJDT_UTILS, removeEmbeddedIdAction);
+
+        // Quick fix on @Id getter (getId): only offers Remove @Id
+        JakartaJavaCodeActionParams idGetterParams = createCodeActionParams(uri, mixedIdDiagnostic);
+        TextEdit removeIdEdit = te(17, 4, 18, 4, "");
+        CodeAction removeIdAction = ca(uri, "Remove @Id", mixedIdDiagnostic, removeIdEdit);
+        assertJavaCodeAction(idGetterParams, IJDT_UTILS, removeIdAction);
+    }
+
+    @Test
+    public void testMapKeyEnumeratedOnNonEnumKey() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedNonEnumKey.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic stringKeyOnMapField = d(19, 32, 48,
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic integerKeyOnMapField = d(24, 33, 53,
+                                            "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic rawMapKeyOnMapField = d(28, 16, 33,
+                                           "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic wildcardKeyOnMapField = d(33, 27, 41,
+                                             "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                             DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        Diagnostic methodWithStringKeyMap = d(38, 31, 46,
+                                              "@MapKeyEnumerated can only be applied to a field or property that maps to a java.util.Map whose key type is an enum.",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedOnNonEnumType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, stringKeyOnMapField, integerKeyOnMapField, rawMapKeyOnMapField,
+                              wildcardKeyOnMapField, methodWithStringKeyMap);
+    }
+
+    @Test
+    public void testMapKeyEnumeratedNotOnMap() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedNotOnMap.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic listFieldAnnotated = d(19, 25, 30,
+                                          "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
+
+        Diagnostic plainStringFieldAnnotated = d(23, 19, 23,
+                                                 "@MapKeyEnumerated can only be applied to a field or property of type java.util.Map.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidMapKeyEnumeratedNotOnMapType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, listFieldAnnotated, plainStringFieldAnnotated);
+    }
+
+    @Test
+    public void testMapKeyEnumeratedValidEnumKey() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/MapKeyEnumeratedValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: map key is an enum — no diagnostic expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
