@@ -45,7 +45,6 @@ public enum ErrorCode implements IJavaErrorCode {
     MultipleEmbeddedIdAnnotations,
     MixedIdentifierAnnotations;
 
-
     /**
      * {@inheritDoc}
      */

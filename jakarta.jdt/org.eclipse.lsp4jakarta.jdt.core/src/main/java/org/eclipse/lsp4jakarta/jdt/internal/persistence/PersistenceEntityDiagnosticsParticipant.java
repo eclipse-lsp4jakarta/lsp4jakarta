@@ -157,7 +157,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
                     }
 
-
                     // Check @Embedded on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
                         validateEmbeddedType(field, type, diagnostics, context);
