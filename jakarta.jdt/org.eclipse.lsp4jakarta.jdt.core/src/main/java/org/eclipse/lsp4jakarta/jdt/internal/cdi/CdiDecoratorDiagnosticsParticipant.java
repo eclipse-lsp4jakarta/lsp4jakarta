@@ -233,7 +233,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             // Primitives are never valid bean types — report immediately without further resolution.
             if (Signature.getTypeSignatureKind(rawTypeSignature) == Signature.BASE_TYPE_SIGNATURE) {
                 reportDelegateTypeAssignabilityDiagnostic(delegateElement, Signature.toString(rawTypeSignature),
-                                                          uri, context, diagnostics);
+                                                          "", uri, context, diagnostics);
                 return;
             }
             String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType,
@@ -251,13 +251,14 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 // Decorator has no decorated types — the delegate type cannot satisfy
                 // "must implement or extend all decorated types" (CDI 3.0 §8.1.3)
                 reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
-                                                          uri, context, diagnostics);
+                                                          "", uri, context, diagnostics);
                 return;
             }
             // Check if delegate type implements/extends all decorated types
             for (String decoratedTypeFQN : decoratedTypes) {
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
                     reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
+                                                              DiagnosticUtils.getSimpleName(decoratedTypeFQN),
                                                               uri, context, diagnostics);
                     return;
                 }
@@ -272,15 +273,17 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      *
      * @param delegateElement the delegate injection point (field or parameter)
      * @param delegateTypeName the simple name of the delegate type (used in the message)
+     * @param decoratedTypeName the simple name of the decorated type that is not implemented (empty string if unknown)
      * @param uri the file URI
      * @param context the diagnostics context
      * @param diagnostics the list to add the diagnostic to
      */
     private void reportDelegateTypeAssignabilityDiagnostic(IJavaElement delegateElement, String delegateTypeName,
-                                                           String uri, JavaDiagnosticsContext context,
+                                                           String decoratedTypeName, String uri,
+                                                           JavaDiagnosticsContext context,
                                                            List<Diagnostic> diagnostics) throws JavaModelException {
         Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-        String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeName);
+        String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeName, decoratedTypeName);
         diagnostics.add(context.createDiagnostic(uri, message, range,
                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                  ErrorCode.InvalidDecoratorDelegateTypeAssignability,

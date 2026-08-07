@@ -294,7 +294,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostic on InvalidDelegateType class (field-level)
         // Line 18 (0-based: 17), field name "delegate" starts at column 19, ends at column 27
         Diagnostic invalidDelegateTypeDiagnostic = d(17, 19, 27,
-                                                     "The delegate type 'Logger' must implement or extend all decorated types.",
+                                                     "Delegate type 'Logger' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
                                                      DiagnosticSeverity.Error,
                                                      "jakarta-cdi",
                                                      "InvalidDecoratorDelegateTypeAssignability");
@@ -302,7 +302,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostic on InvalidDelegateTypePrimitive class (field-level)
         // Line 72 (0-based: 71), field name "delegate" starts at column 19, ends at column 27
         Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(71, 19, 27,
-                                                              "The delegate type 'String' must implement or extend all decorated types.",
+                                                              "Delegate type 'String' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
                                                               DiagnosticSeverity.Error,
                                                               "jakarta-cdi",
                                                               "InvalidDecoratorDelegateTypeAssignability");
@@ -310,7 +310,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostic on InvalidDelegateTypeOnMethod class (method-level)
         // Line 91 (0-based: 90), parameter name "delegate" starts at column 45, ends at column 53
         Diagnostic invalidDelegateTypeOnMethodDiagnostic = d(90, 45, 53,
-                                                             "The delegate type 'Logger' must implement or extend all decorated types.",
+                                                             "Delegate type 'Logger' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
                                                              DiagnosticSeverity.Error,
                                                              "jakarta-cdi",
                                                              "InvalidDecoratorDelegateTypeAssignability");
@@ -318,15 +318,15 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Expected diagnostic on InvalidDelegateTypeTruePrimitive class (field-level)
         // Line 132 (0-based: 131), field name "delegate" starts at column 16, ends at column 24
         Diagnostic invalidDelegateTypeTruePrimitiveDiagnostic = d(131, 16, 24,
-                                                                  "The delegate type 'int' must implement or extend all decorated types.",
+                                                                  "Delegate type 'int' does not implement the decorated type ''. A delegate must implement or extend the decorated type(s).",
                                                                   DiagnosticSeverity.Error,
                                                                   "jakarta-cdi",
                                                                   "InvalidDecoratorDelegateTypeAssignability");
 
-        // Expected diagnostic on DecoratorWithDelegateButNoDecoratedTypes class (field-level)
+        // Expected diagnostic on DecoratorWithDelegateButNoDecoratedTypes class (field-level): no decorated types exist
         // Line 152 (0-based: 151), field name "delegate" starts at column 27, ends at column 35
         Diagnostic noDecoratedTypesDiagnostic = d(151, 27, 35,
-                                                  "The delegate type 'PaymentService' must implement or extend all decorated types.",
+                                                  "Delegate type 'PaymentService' does not implement the decorated type ''. A delegate must implement or extend the decorated type(s).",
                                                   DiagnosticSeverity.Error,
                                                   "jakarta-cdi",
                                                   "InvalidDecoratorDelegateTypeAssignability");
