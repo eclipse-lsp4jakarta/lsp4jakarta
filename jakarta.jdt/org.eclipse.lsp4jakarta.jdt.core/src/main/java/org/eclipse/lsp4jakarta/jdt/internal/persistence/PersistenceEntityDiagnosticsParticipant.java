@@ -638,7 +638,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         if (!hasEmbeddable) {
             String simpleName = DiagnosticUtils.getSimpleName(fqName);
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("EmbeddedTypeNotAnnotatedWithEmbeddable", simpleName),
+                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
