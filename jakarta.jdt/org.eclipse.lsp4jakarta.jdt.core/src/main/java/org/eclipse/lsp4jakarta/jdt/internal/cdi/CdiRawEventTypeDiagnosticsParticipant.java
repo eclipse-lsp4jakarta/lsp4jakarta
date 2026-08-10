@@ -68,17 +68,16 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
         for (IType type : types) {
             // Check @Inject fields for raw Event type
             for (IField field : type.getFields()) {
-                if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
-                    if (isRawEventType(field.getTypeSignature())) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidRawEventTypeInjectionPoint"),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 null,
-                                                                 ErrorCode.InvalidRawEventTypeInjectionPoint,
-                                                                 DiagnosticSeverity.Error));
-                    }
+                if (isRawEventType(field.getTypeSignature())
+                    && DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(field, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidRawEventTypeInjectionPoint"),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             null,
+                                                             ErrorCode.InvalidRawEventTypeInjectionPoint,
+                                                             DiagnosticSeverity.Error));
                 }
             }
 
@@ -87,8 +86,16 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
             // RemoveAnnotationConflictQuickFix can resolve the @Inject annotation
             // on the method correctly via its parent-type binding.
             for (IMethod method : type.getMethods()) {
-                if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
-                    String[] paramTypes = method.getParameterTypes();
+                String[] paramTypes = method.getParameterTypes();
+                boolean hasRawEventParam = false;
+                for (int i = 0; i < paramTypes.length; i++) {
+                    if (isRawEventType(paramTypes[i])) {
+                        hasRawEventParam = true;
+                        break;
+                    }
+                }
+                if (hasRawEventParam
+                        && DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     for (int i = 0; i < paramTypes.length; i++) {
                         if (isRawEventType(paramTypes[i])) {
                             Range range = PositionUtils.toNameRange(method, context.getUtils());
