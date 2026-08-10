@@ -40,8 +40,6 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 @SuppressWarnings("restriction")
 public class TypeHierarchyUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(TypeHierarchyUtils.class.getName());
-
     public static final int HAS_SUPERTYPE = 1;
 
     /**
@@ -184,7 +182,7 @@ public class TypeHierarchyUtils {
      *         cannot be resolved, or it does not carry the annotation
      * @throws JavaModelException if the Java model cannot be accessed
      */
-    public static boolean directSuperclassHasAnnotation(IType type, String annotationFQName) throws JavaModelException {
+    public static boolean hasAnnotation(IType type, String annotationFQName) throws JavaModelException {
         String superclassName = type.getSuperclassName();
         if (superclassName == null) {
             return false;
