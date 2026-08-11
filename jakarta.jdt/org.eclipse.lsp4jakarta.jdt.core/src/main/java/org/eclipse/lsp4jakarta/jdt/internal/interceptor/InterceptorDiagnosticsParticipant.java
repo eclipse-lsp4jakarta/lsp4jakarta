@@ -76,7 +76,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         for (IType type : types) {
             int typeFlag = type.getFlags();
             // Component class with class-level interceptor binding constraints
-            checkClassLevelInterceptorBindingConstraints(type, typeFlag, unit, uri, diagnostics, context);
+            checkInterceptorBindingConstraints(type, typeFlag, unit, uri, diagnostics, context);
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -441,7 +441,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param context the diagnostics context
      * @throws JavaModelException if there's an error accessing the Java model
      */
-    private void checkClassLevelInterceptorBindingConstraints(IType type, int typeFlag, ICompilationUnit unit,
+    private void checkInterceptorBindingConstraints(IType type, int typeFlag, ICompilationUnit unit,
                                                               String uri, List<Diagnostic> diagnostics,
                                                               JavaDiagnosticsContext context) throws JavaModelException {
         if (!hasClassLevelInterceptorBinding(type, unit)) {
