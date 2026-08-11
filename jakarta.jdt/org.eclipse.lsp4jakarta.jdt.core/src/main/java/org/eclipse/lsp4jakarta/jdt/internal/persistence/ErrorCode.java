@@ -37,6 +37,8 @@ public enum ErrorCode implements IJavaErrorCode {
     DuplicateVersionAnnotationInClass,
     DuplicateVersionAnnotationInHierarchy,
     InvalidVersionFieldOrPropertyType,
+    InheritanceAnnotationOnNonEntityClass,
+    InheritanceAnnotationOnNonRootEntity,
     InvalidMapKeyEnumeratedNotOnMapType,
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
