@@ -232,8 +232,10 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             }
             // Primitives are never valid bean types — report immediately without further resolution.
             if (Signature.getTypeSignatureKind(rawTypeSignature) == Signature.BASE_TYPE_SIGNATURE) {
-                reportDelegateTypeAssignabilityDiagnostic(delegateElement, Signature.toString(rawTypeSignature),
-                                                          "", uri, context, diagnostics);
+                reportDecoratorDiagnostic(delegateElement, "InvalidDecoratorDelegateTypeAssignability",
+                                          Signature.toString(rawTypeSignature), "",
+                                          ErrorCode.InvalidDecoratorDelegateTypeAssignability,
+                                          uri, context, diagnostics);
                 return;
             }
             String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorType,
@@ -248,18 +250,19 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             // Get all decorated types (interfaces and superclasses of the decorator)
             List<String> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
-                // Decorator has no decorated types — the delegate type cannot satisfy
-                // "must implement or extend all decorated types" (CDI 3.0 §8.1.3)
-                reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
-                                                          "", uri, context, diagnostics);
+                // Decorator has no decorated types — definition error
+                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorWithNoDecoratedTypes.name(),
+                                          null, null, ErrorCode.InvalidDecoratorWithNoDecoratedTypes,
+                                          uri, context, diagnostics);
                 return;
             }
             // Check if delegate type implements/extends all decorated types
             for (String decoratedTypeFQN : decoratedTypes) {
                 if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
-                    reportDelegateTypeAssignabilityDiagnostic(delegateElement, delegateType.getElementName(),
-                                                              DiagnosticUtils.getSimpleName(decoratedTypeFQN),
-                                                              uri, context, diagnostics);
+                    reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorDelegateTypeAssignability.name(),
+                                              delegateType.getElementName(), DiagnosticUtils.getSimpleName(decoratedTypeFQN),
+                                              ErrorCode.InvalidDecoratorDelegateTypeAssignability,
+                                              uri, context, diagnostics);
                     return;
                 }
             }
@@ -269,54 +272,53 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Reports an {@code InvalidDecoratorDelegateTypeAssignability} diagnostic on the given delegate element.
+     * Reports a decorator validation diagnostic on the given delegate element.
      *
      * @param delegateElement the delegate injection point (field or parameter)
-     * @param delegateTypeName the simple name of the delegate type (used in the message)
-     * @param decoratedTypeName the simple name of the decorated type that is not implemented (empty string if unknown)
+     * @param messageKey the message key (e.g., "InvalidDecoratorDelegateTypeAssignability")
+     * @param delegateTypeName the simple name of the delegate type (may be null)
+     * @param decoratedTypeName the simple name of the decorated type (may be empty/null)
+     * @param errorCode the error code for the diagnostic
      * @param uri the file URI
      * @param context the diagnostics context
      * @param diagnostics the list to add the diagnostic to
      */
-    private void reportDelegateTypeAssignabilityDiagnostic(IJavaElement delegateElement, String delegateTypeName,
-                                                           String decoratedTypeName, String uri,
-                                                           JavaDiagnosticsContext context,
-                                                           List<Diagnostic> diagnostics) throws JavaModelException {
+    private void reportDecoratorDiagnostic(IJavaElement delegateElement, String messageKey,
+                                           String delegateTypeName, String decoratedTypeName,
+                                           ErrorCode errorCode, String uri,
+                                           JavaDiagnosticsContext context,
+                                           List<Diagnostic> diagnostics) throws JavaModelException {
         Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-        String message = Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeName, decoratedTypeName);
+        String message = Messages.getMessage(messageKey, delegateTypeName, decoratedTypeName);
         diagnostics.add(context.createDiagnostic(uri, message, range,
                                                  Constants.DIAGNOSTIC_SOURCE, null,
-                                                 ErrorCode.InvalidDecoratorDelegateTypeAssignability,
+                                                 errorCode,
                                                  DiagnosticSeverity.Error));
     }
 
     /**
-     * Gets all decorated types of the decorator (interfaces and superclasses, excluding Object).
+     * Gets all decorated types of the decorator (Java interfaces only, excluding java.io.Serializable).
+     *
+     * Per CDI 3.0 specification section 8.1.3:
+     * "The set of decorated types of a decorator includes all bean types of the managed bean
+     * which are Java interfaces, except for java.io.Serializable. The decorator bean class and
+     * its superclasses are not decorated types of the decorator."
      *
      * @param decoratorType the decorator class
-     * @return list of decorated type fully qualified names
+     * @return list of decorated type fully qualified names (interfaces only)
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private List<String> getDecoratedTypes(IType decoratorType) throws JavaModelException {
         List<String> decoratedTypes = new ArrayList<>();
 
-        // Get all interfaces implemented by the decorator
-        String[] interfaceNames = decoratorType.getSuperInterfaceNames();
-        for (String interfaceName : interfaceNames) {
-            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, interfaceName);
-            if (fqName != null) {
+        // Get all interfaces implemented by the decorator and its superclasses (transitively)
+        IType[] interfaces = TypeHierarchyUtils.getAllInterfaces(decoratorType);
+        for (IType interfaceType : interfaces) {
+            String fqName = interfaceType.getFullyQualifiedName();
+            if (!Constants.SERIALIZABLE_FQ_NAME.equals(fqName)) {
                 decoratedTypes.add(fqName);
             }
         }
-        // Get superclass (excluding java.lang.Object)
-        String superclassName = decoratorType.getSuperclassName();
-        if (superclassName != null && !Constants.OBJECT_CLASS_NAME.equals(superclassName)) {
-            String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType, superclassName);
-            if (fqName != null && !Constants.OBJECT_FQ_NAME.equals(fqName)) {
-                decoratedTypes.add(fqName);
-            }
-        }
-
         return decoratedTypes;
     }
 }
