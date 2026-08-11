@@ -484,6 +484,12 @@
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidBareTypeVariableInInjectField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidBareTypeVariableInInjectMethodParam"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSpecializedBeanWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />
   </extension>
