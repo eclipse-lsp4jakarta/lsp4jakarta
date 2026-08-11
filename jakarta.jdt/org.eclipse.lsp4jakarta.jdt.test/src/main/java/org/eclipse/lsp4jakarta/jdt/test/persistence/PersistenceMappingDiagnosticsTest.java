@@ -676,4 +676,112 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEntityAction, removeAssociationOverridesAction);
     }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverride with both joinColumns and joinTable
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: @AssociationOverride specifies both joinColumns and joinTable
+     * on a class-level annotation.
+     * Expected: diagnostic AssociationOverrideBothJoinColumnsAndJoinTable.
+     */
+    @Test
+    public void associationOverrideBothJoinColumnsAndJoinTable_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidBothJoinColumnsAndJoinTable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Lines 22-26 (0-based 21-25): @AssociationOverride(name=..., joinColumns=..., joinTable=...)
+        Diagnostic bothAttributesDiagnostic = d(21, 0, 25, 1,
+                                                "@AssociationOverride must not specify both joinColumns and joinTable.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, bothAttributesDiagnostic);
+    }
+
+    /**
+     * Valid: @AssociationOverride specifies joinTable only (no joinColumns).
+     * Expected: no diagnostic.
+     */
+    @Test
+    public void associationOverrideJoinTableOnly_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidJoinTableOnly.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides container where one nested @AssociationOverride
+     * specifies both joinColumns and joinTable.
+     * Expected: one diagnostic on the conflicting nested entry only.
+     */
+    @Test
+    public void associationOverridesContainerOneBothAttributes_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidContainerBothAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // The second nested @AssociationOverride (lines 27-31, 0-based 26-30) has both attributes.
+        Diagnostic containerBothAttributesDiagnostic = d(26, 4, 30, 5,
+                                                         "@AssociationOverride must not specify both joinColumns and joinTable.",
+                                                         DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, containerBothAttributesDiagnostic);
+    }
+
+    /**
+     * Invalid: @AssociationOverride on an @Embedded field specifies both
+     * joinColumns and joinTable.
+     * Expected: diagnostic AssociationOverrideBothJoinColumnsAndJoinTable.
+     */
+    @Test
+    public void associationOverrideEmbeddedFieldBothAttributes_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmbeddedFieldBothAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @AssociationOverride on field "dept" (lines 30-34, 0-based 29-33)
+        Diagnostic embeddedFieldBothAttributesDiagnostic = d(29, 4, 33, 5,
+                                                             "@AssociationOverride must not specify both joinColumns and joinTable.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, embeddedFieldBothAttributesDiagnostic);
+    }
+
+    /**
+     * Invalid: @AssociationOverride on a property-based (getter) @Embedded accessor
+     * specifies both joinColumns and joinTable.
+     * Expected: diagnostic AssociationOverrideBothJoinColumnsAndJoinTable.
+     */
+    @Test
+    public void associationOverridePropertyBasedBothAttributes_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidPropertyBasedBothAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @AssociationOverride on getter getDept() (lines 31-35, 0-based 30-34)
+        Diagnostic propertyBasedBothAttributesDiagnostic = d(30, 4, 34, 5,
+                                                             "@AssociationOverride must not specify both joinColumns and joinTable.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, propertyBasedBothAttributesDiagnostic);
+    }
 }
