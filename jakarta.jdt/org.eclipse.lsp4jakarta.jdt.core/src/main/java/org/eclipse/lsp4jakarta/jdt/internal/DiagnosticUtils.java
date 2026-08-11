@@ -525,4 +525,23 @@ public class DiagnosticUtils {
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
     }
+
+    /**
+     * Returns the annotations declared on a type, field, or method member.
+     *
+     * @param member the type, field, or method member
+     * @return array of annotations declared on the member
+     * @throws JavaModelException if unable to access member annotations
+     * @throws IllegalArgumentException if the member is not an {@link IType}, {@link IField}, or {@link IMethod}
+     */
+    public static IAnnotation[] getAnnotations(IMember member) throws JavaModelException {
+        if (member instanceof IType) {
+            return ((IType) member).getAnnotations();
+        } else if (member instanceof IField) {
+            return ((IField) member).getAnnotations();
+        } else if (member instanceof IMethod) {
+            return ((IMethod) member).getAnnotations();
+        }
+        throw new IllegalArgumentException("Unsupported IMember type: " + member.getClass().getName());
+    }
 }

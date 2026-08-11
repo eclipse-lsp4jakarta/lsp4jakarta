@@ -44,7 +44,11 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyTemporalOnNonTemporalType,
     InvalidIdType,
     MultipleEmbeddedIdAnnotations,
-    MixedIdentifierAnnotations;
+    MixedIdentifierAnnotations,
+    InvalidAttributeOverrideName,
+    InvalidAssociationOverrideName,
+    AttributeOverrideOnNonEmbeddedField;
+
 
     /**
      * {@inheritDoc}
