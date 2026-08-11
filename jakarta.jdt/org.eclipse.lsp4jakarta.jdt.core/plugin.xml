@@ -251,6 +251,12 @@
                   targetDiagnostic="jakarta-persistence#AttributeOverrideOnNonEmbeddedField"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveAttributeOverrideAnnotationQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#AssociationOverrideOnInvalidTarget"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveAssociationOverrideAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#AssociationOverrideOnInvalidTarget"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.AddEntityAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
