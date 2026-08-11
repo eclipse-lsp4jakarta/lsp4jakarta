@@ -13,6 +13,7 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -39,6 +40,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
  */
 @SuppressWarnings("restriction")
 public class TypeHierarchyUtils {
+
+    private static final Logger LOGGER = Logger.getLogger(TypeHierarchyUtils.class.getName());
 
     public static final int HAS_SUPERTYPE = 1;
 
@@ -166,6 +169,42 @@ public class TypeHierarchyUtils {
         return doesITypeHaveSuperType(fieldType, superType) == HAS_SUPERTYPE;
     }
 
+    /**
+     * Walks the full superclass chain of {@code type} and returns the first
+     * ancestor {@link IType} that is annotated with {@code annotationFQName}.
+     *
+     * <p>The type itself is skipped — only superclasses are examined.</p>
+     *
+     * @param type the root type whose superclass chain is searched
+     * @param annotationFQName the fully-qualified name of the annotation to look for
+     *            (e.g. {@code "jakarta.persistence.Entity"})
+     * @return the first superclass {@link IType} that carries the annotation,
+     *         or {@code null} if none is found
+     * @throws JavaModelException if the type hierarchy cannot be resolved
+     */
+    public static IType findSupertypeWithAnnotation(IType type, String annotationFQName) throws JavaModelException {
+        Set<IType> hierarchy = new HashSet<>();
+        collectSuperTypes(type, hierarchy);
+
+        for (IType superType : hierarchy) {
+            // Skip the type itself — only ancestors are of interest.
+            if (superType.equals(type)) {
+                continue;
+            }
+            try {
+                if (DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(),
+                                                        superType.getAnnotations(),
+                                                        annotationFQName)) {
+                    return superType;
+                }
+            } catch (JavaModelException e) {
+                LOGGER.warning("Could not inspect annotations on superclass "
+                               + superType.getFullyQualifiedName() + ": " + e.getMessage());
+            }
+        }
+        return null;
+    }
+  
     /**
      * Returns {@code true} if the <em>direct</em> (immediate) superclass of
      * {@code type} carries {@code annotationFQName}.
