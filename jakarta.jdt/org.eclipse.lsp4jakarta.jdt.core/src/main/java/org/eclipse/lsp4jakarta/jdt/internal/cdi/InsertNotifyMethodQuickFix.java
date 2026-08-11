@@ -95,7 +95,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         List<CodeAction> codeActions = new ArrayList<>();
 
         if (parentType != null) {
-            String label = getLabel(DiagnosticUtils.resolveObserverMethodTypeArgSimpleName(parentType));
+            String label = getLabel(resolveTypeArgSimpleName(parentType));
             ExtendedCodeAction codeAction = new ExtendedCodeAction(label);
             codeAction.setRelevance(0);
             codeAction.setKind(CodeActionKind.QuickFix);
@@ -127,7 +127,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         }
 
         // Resolve the concrete type argument T from ObserverMethod<T>.
-        String typeArgFQName = DiagnosticUtils.resolveObserverMethodTypeArgFQName(parentType);
+        String typeArgFQName = resolveTypeArgFQName(parentType);
 
         AddMethodProposal.MethodParam param;
         if (variant == NotifyVariant.EVENT) {
@@ -138,7 +138,7 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
             param = new AddMethodProposal.MethodParam(Constants.EVENT_CONTEXT_FQ_NAME, "eventContext", typeArgFQName);
         }
 
-        String label = getLabel(DiagnosticUtils.resolveObserverMethodTypeArgSimpleName(parentType));
+        String label = getLabel(resolveTypeArgSimpleName(parentType));
         ChangeCorrectionProposal proposal = new AddMethodProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, "notify", "void", "public", Collections.singletonList("java.lang.Override"), Collections.singletonList(param));
 
         try {
@@ -148,6 +148,30 @@ abstract class InsertNotifyMethodQuickFix implements IJavaCodeActionParticipant 
         }
 
         return toResolve;
+    }
+
+    /**
+     * Returns the fully-qualified name of the type argument {@code T} from
+     * {@code ObserverMethod<T>} on the given class binding.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @return the FQN of the first type argument of {@code ObserverMethod<T>},
+     *         or {@code "java.lang.Object"} if it cannot be resolved
+     */
+    private String resolveTypeArgFQName(ITypeBinding classBinding) {
+        return DiagnosticUtils.resolveTypeArgumentFQName(classBinding, Constants.OBSERVER_METHOD_FQ_NAME);
+    }
+
+    /**
+     * Returns the simple (unqualified) name of the type argument {@code T} from
+     * {@code ObserverMethod<T>} on the given class binding.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @return the simple name of the type argument, e.g. {@code "AuditEvent"},
+     *         or {@code "Object"} if it cannot be resolved
+     */
+    private String resolveTypeArgSimpleName(ITypeBinding classBinding) {
+        return DiagnosticUtils.getSimpleName(resolveTypeArgFQName(classBinding));
     }
 
     /**

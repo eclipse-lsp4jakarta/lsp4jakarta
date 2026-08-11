@@ -529,16 +529,20 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Returns the fully-qualified name of the type argument {@code T} from
-     * {@code ObserverMethod<T>} on the given class binding.
+     * Returns the fully-qualified name of the first type argument from a parameterised
+     * superinterface on the given class binding.
+     *
+     * <p>For example, given a class that implements {@code ObserverMethod<AuditEvent>},
+     * this method returns {@code "java.lang.AuditEvent"} when called with
+     * {@code interfaceFQName = "jakarta.enterprise.inject.spi.ObserverMethod"}.
      *
      * @param classBinding the type binding of the class to inspect
-     * @return the FQN of the first type argument of {@code ObserverMethod<T>},
-     *         or {@code "java.lang.Object"} if it cannot be resolved
+     * @param interfaceFQName the fully-qualified name of the superinterface to search for
+     * @return the FQN of the first type argument, or {@code "java.lang.Object"} if not found
      */
-    public static String resolveObserverMethodTypeArgFQName(ITypeBinding classBinding) {
+    public static String resolveTypeArgumentFQName(ITypeBinding classBinding, String interfaceFQName) {
         for (ITypeBinding iface : classBinding.getInterfaces()) {
-            if (Constants.OBSERVER_METHOD_FQ_NAME.equals(iface.getErasure().getQualifiedName())) {
+            if (interfaceFQName.equals(iface.getErasure().getQualifiedName())) {
                 ITypeBinding[] args = iface.getTypeArguments();
                 if (args.length > 0 && args[0] != null) {
                     return args[0].getQualifiedName();
@@ -546,17 +550,5 @@ public class DiagnosticUtils {
             }
         }
         return "java.lang.Object";
-    }
-
-    /**
-     * Returns the simple (unqualified) name of the type argument {@code T} from
-     * {@code ObserverMethod<T>} on the given class binding.
-     *
-     * @param classBinding the type binding of the class to inspect
-     * @return the simple name of the type argument, e.g. {@code "AuditEvent"},
-     *         or {@code "Object"} if it cannot be resolved
-     */
-    public static String resolveObserverMethodTypeArgSimpleName(ITypeBinding classBinding) {
-        return getSimpleName(resolveObserverMethodTypeArgFQName(classBinding));
     }
 }
