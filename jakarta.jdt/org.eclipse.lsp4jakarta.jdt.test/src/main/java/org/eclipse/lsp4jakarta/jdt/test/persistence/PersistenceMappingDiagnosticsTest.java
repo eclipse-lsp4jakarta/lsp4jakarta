@@ -599,4 +599,81 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAttributeOverridesAction);
     }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverride on invalid target type (new diagnostic + quickfixes)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: @AssociationOverride applied to a plain class that is neither
+     * @Entity, @MappedSuperclass, nor @Embeddable.
+     * Expected: diagnostic AssociationOverrideOnInvalidTarget, quickfixes to
+     * remove the annotation or add @Entity.
+     */
+    @Test
+    public void associationOverrideOnPlainClass_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidAssociationOverrideOnPlainClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 20 (0-based 19): @AssociationOverride(name = "address", joinColumns = @JoinColumn(name = "ADDR_ID"))
+        Diagnostic overrideOnPlainClass = d(19, 0, 83,
+                                            "@AssociationOverride is only valid on a class annotated with @Entity, @MappedSuperclass, or @Embeddable.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidTarget");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, overrideOnPlainClass);
+
+        // Quickfix 1: add @Entity (returned first by the framework)
+        // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation
+        // and includes the import declaration and the @Entity annotation in the new text.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, overrideOnPlainClass);
+        TextEdit addEntity = te(11, 47, 19, 0,
+                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;\n\n/**\n * Invalid: @AssociationOverride applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n@Entity\n");
+        CodeAction addEntityAction = ca(uri, "Insert @Entity", overrideOnPlainClass, addEntity);
+
+        // Quickfix 2: remove @AssociationOverride
+        TextEdit removeAssociationOverride = te(19, 0, 20, 0, "");
+        CodeAction removeAssociationOverrideAction = ca(uri, "Remove @AssociationOverride", overrideOnPlainClass, removeAssociationOverride);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEntityAction, removeAssociationOverrideAction);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides (container) applied to a plain class that is
+     * neither @Entity, @MappedSuperclass, nor @Embeddable.
+     * Expected: diagnostic AssociationOverrideOnInvalidTarget, quickfixes to
+     * remove the container annotation or add @Entity.
+     */
+    @Test
+    public void associationOverridesContainerOnPlainClass_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidAssociationOverridesOnPlainClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Lines 21-24 (0-based 20-23): @AssociationOverrides({...})
+        Diagnostic containerOverrideOnPlainClass = d(20, 0, 23, 2,
+                                                     "@AssociationOverrides is only valid on a class annotated with @Entity, @MappedSuperclass, or @Embeddable.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidTarget");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, containerOverrideOnPlainClass);
+
+        // Quickfix 1: add @Entity (returned first by the framework)
+        // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation.
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, containerOverrideOnPlainClass);
+        TextEdit addEntity = te(12, 48, 20, 0,
+                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;\n\n/**\n * Invalid: @AssociationOverrides (container) applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n@Entity\n");
+        CodeAction addEntityAction = ca(uri, "Insert @Entity", containerOverrideOnPlainClass, addEntity);
+
+        // Quickfix 2: remove @AssociationOverrides
+        TextEdit removeAssociationOverrides = te(20, 0, 24, 0, "");
+        CodeAction removeAssociationOverridesAction = ca(uri, "Remove @AssociationOverrides", containerOverrideOnPlainClass, removeAssociationOverrides);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEntityAction, removeAssociationOverridesAction);
+    }
 }
