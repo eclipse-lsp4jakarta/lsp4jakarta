@@ -76,6 +76,8 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
+    public static final String JOIN_COLUMNS = "joinColumns";
+    public static final String JOIN_TABLE = "joinTable";
 
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-persistence";

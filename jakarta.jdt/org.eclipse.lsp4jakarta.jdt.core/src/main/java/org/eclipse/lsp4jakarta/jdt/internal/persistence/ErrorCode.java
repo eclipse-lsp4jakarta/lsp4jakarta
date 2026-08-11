@@ -48,7 +48,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidAttributeOverrideName,
     InvalidAssociationOverrideName,
     AttributeOverrideOnNonEmbeddedField,
-    AssociationOverrideOnInvalidTarget;
+    AssociationOverrideOnInvalidTarget,
+    AssociationOverrideBothJoinColumnsAndJoinTable;
 
     /**
      * {@inheritDoc}
