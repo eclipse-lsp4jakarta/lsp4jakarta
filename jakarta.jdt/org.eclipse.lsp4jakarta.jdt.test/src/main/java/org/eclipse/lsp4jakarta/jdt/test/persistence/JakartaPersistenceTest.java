@@ -1044,7 +1044,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // Valid: map key is an enum — no diagnostic expected
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
-    
+
     @Test
     public void testInheritanceOnPlainClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
