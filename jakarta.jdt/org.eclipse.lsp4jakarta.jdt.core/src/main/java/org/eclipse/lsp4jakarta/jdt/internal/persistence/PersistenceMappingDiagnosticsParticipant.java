@@ -184,19 +184,28 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * Validates single and container override annotations placed directly on a type.
      * The {@code name} must resolve against a field declared anywhere in the
      * {@code @MappedSuperclass} supertype chain.
+     * For {@code @AssociationOverride}, also checks that {@code joinColumns} and
+     * {@code joinTable} are not both specified on the same annotation.
      */
     private void validateOverridesOnType(IType type,
                                          OverrideAnnotationDescriptor desc,
                                          JavaDiagnosticsContext context,
                                          List<Diagnostic> diagnostics) throws CoreException {
+        boolean isAssociationOverride = Constants.ASSOCIATION_OVERRIDE.equals(desc.singleFqn);
         for (IAnnotation annotation : type.getAnnotations()) {
             if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.singleFqn)) {
+                if (isAssociationOverride) {
+                    validateAssociationOverrideAttributeConflict(annotation, context, diagnostics);
+                }
                 String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
                 if (name != null) {
                     validateNameAgainstSuperclassChain(name, annotation, type, desc, context, diagnostics);
                 }
             } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.containerFqn)) {
                 for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
+                    if (isAssociationOverride) {
+                        validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
+                    }
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
                         validateNameAgainstSuperclassChain(name, nested, type, desc, context, diagnostics);
@@ -324,7 +333,11 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                 continue;
             }
 
+            boolean isAssociationOverride = !Constants.ATTRIBUTE_OVERRIDE.equals(desc.singleFqn);
             if (isSingleOverride) {
+                if (isAssociationOverride) {
+                    validateAssociationOverrideAttributeConflict(annotation, context, diagnostics);
+                }
                 String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
                 if (name != null) {
                     validateNameOnMember(name, annotation, member, declaringType, hasElementCollection, desc, context, diagnostics);
@@ -332,6 +345,9 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             } else {
                 // isContainerOverride
                 for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
+                    if (isAssociationOverride) {
+                        validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
+                    }
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
                         validateNameOnMember(name, nested, member, declaringType, hasElementCollection, desc, context, diagnostics);
@@ -530,5 +546,35 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             }
         }
         return result;
+    }
+
+    /**
+     * Emits {@link ErrorCode#AssociationOverrideBothJoinColumnsAndJoinTable} if the
+     * given {@code @AssociationOverride} annotation specifies both {@code joinColumns}
+     * and {@code joinTable}.
+     *
+     * @see <a href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a13942">
+     *      Jakarta Persistence 3.0, Section 13.1.1</a>
+     */
+    private void validateAssociationOverrideAttributeConflict(IAnnotation annotation,
+                                                              JavaDiagnosticsContext context,
+                                                              List<Diagnostic> diagnostics) throws JavaModelException {
+        boolean hasJoinColumns = false;
+        boolean hasJoinTable = false;
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if (Constants.JOIN_COLUMNS.equals(pair.getMemberName())) {
+                hasJoinColumns = true;
+            } else if (Constants.JOIN_TABLE.equals(pair.getMemberName())) {
+                hasJoinTable = true;
+            }
+        }
+        if (hasJoinColumns && hasJoinTable) {
+            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage("AssociationOverrideBothJoinColumnsAndJoinTable"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.AssociationOverrideBothJoinColumnsAndJoinTable,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 }
