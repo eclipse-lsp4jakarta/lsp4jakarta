@@ -47,8 +47,8 @@ public enum ErrorCode implements IJavaErrorCode {
     MixedIdentifierAnnotations,
     InvalidAttributeOverrideName,
     InvalidAssociationOverrideName,
-    AttributeOverrideOnNonEmbeddedField;
-
+    AttributeOverrideOnNonEmbeddedField,
+    AssociationOverrideOnInvalidTarget;
 
     /**
      * {@inheritDoc}
