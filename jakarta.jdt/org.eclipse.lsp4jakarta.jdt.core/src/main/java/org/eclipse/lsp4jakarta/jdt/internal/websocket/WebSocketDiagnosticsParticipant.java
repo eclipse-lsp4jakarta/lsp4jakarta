@@ -57,9 +57,8 @@ import com.google.gson.JsonArray;
 public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     /**
-     * Unified lookup table mapping both FQN and simple WebSocket message-type names
-     * to their {@link Constants.MESSAGE_FORMAT}. Replaces the two-branch
-     * {@code getMessageFormat(String, boolean)} switch-pair.
+     * Lookup table mapping both FQN and simple WebSocket message-type names
+     * to their {@link Constants.MESSAGE_FORMAT}.
      */
     private static final Map<String, Constants.MESSAGE_FORMAT> MESSAGE_FORMAT_MAP = new HashMap<>();
     static {
@@ -94,21 +93,10 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                 continue;
             }
 
-            /*
-             * Single pass over type.getAnnotations() that covers both serverEndpointErrorCheck
-             * and findAndProcessEndpointURI. Both methods previously iterated the same array
-             * separately; merging them avoids a second scan.
-             */
             List<String> endpointPathVars = checkTypeAnnotations(context, uri, type, diagnostics);
 
             publicNoArgsConstructorCheck(context, uri, type, diagnostics);
 
-            /*
-             * Single pass over all methods. The original code called getMethods() four
-             * separate times across duplicateLifeCycleAnnotationCheck, invalidParamsCheck,
-             * uriMismatchWarningCheck, and onMessageWSMessageFormats. All four checks are
-             * now merged here, iterating methods → annotations → parameters exactly once.
-             */
             checkMethods(context, uri, type, endpointPathVars, diagnostics);
         }
 
@@ -120,17 +108,14 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     // -----------------------------------------------------------------------
 
     /**
-     * Iterates {@code type.getMethods()} exactly once and performs all per-method
-     * diagnostic checks in a single traversal:
+     * Iterates {@code type.getMethods()} and performs all per-method
+     * diagnostic checks:
      * <ul>
      * <li>Duplicate lifecycle annotation ({@code @OnOpen}, {@code @OnClose}, {@code @OnError})</li>
      * <li>Invalid parameter types for {@code @OnOpen} / {@code @OnClose} methods</li>
      * <li>{@code @PathParam} value mismatch against the endpoint URI</li>
      * <li>Duplicate {@code @OnMessage} handler for the same message format</li>
      * </ul>
-     *
-     * <p>Per-method state (lifecycle annotation set, seen-format map) is maintained
-     * across iterations as local variables rather than separate method calls.
      */
     private void checkMethods(JavaDiagnosticsContext context, String uri, IType type,
                               List<String> endpointPathVars, List<Diagnostic> diagnostics) throws JavaModelException {
@@ -227,8 +212,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                             Set<String> rawSpecialParamTypes, ErrorCode errorCode,
                             String annotationName, List<Diagnostic> diagnostics) throws JavaModelException {
 
-        // JDTTypeUtils.getResolvedTypeName(ILocalVariable) handles the
-        // signature.replace("/", ".") + JavaModelUtil.getResolvedTypeName() steps.
         String resolvedTypeName = JDTTypeUtils.getResolvedTypeName(param);
         String formatSignature = param.getTypeSignature().replace("/", ".");
         boolean isPrimitive = JavaModelUtil.isPrimitive(formatSignature);
@@ -273,8 +256,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                                                       Constants.PATHPARAM_ANNOTATION)) {
                 continue;
             }
-            // DiagnosticUtils.getAnnotationMemberValue reads the named member directly,
-            // replacing the manual getMemberValuePairs() loop.
             String pathValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.ANNOTATION_VALUE, String.class);
             if (pathValue != null && !endpointPathVars.contains(pathValue)) {
                 Range range = PositionUtils.toNameRange(annotation, context.getUtils());
@@ -290,7 +271,7 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
      * Checks whether a second {@code @OnMessage} method handles the same message
      * format (TEXT / BINARY / PONG) as a previously seen one.
      *
-     * @param seenOnMessageFormats mutable map tracking the first annotation per format,
+     * @param seenOnMessageFormats map tracking the first annotation per format,
      *            shared across all methods
      */
     private void checkOnMessageFormat(JavaDiagnosticsContext context, String uri, IType type,
@@ -298,7 +279,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                                       Map<Constants.MESSAGE_FORMAT, IAnnotation> seenOnMessageFormats,
                                       List<Diagnostic> diagnostics) throws JavaModelException {
 
-        // JDTTypeUtils.getResolvedTypeName(ILocalVariable) handles signature normalisation.
         String resolvedTypeName = JDTTypeUtils.getResolvedTypeName(param);
         String lookupName = resolvedTypeName != null ? resolvedTypeName : Signature.getSignatureSimpleName(param.getTypeSignature());
 
@@ -320,19 +300,13 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     // -----------------------------------------------------------------------
 
     /**
-     * Iterates {@code type.getAnnotations()} exactly once and performs all
-     * class-level annotation checks in a single traversal:
+     * Iterates {@code type.getAnnotations()} and performs all class-level
+     * annotation checks:
      * <ul>
      * <li>Validates {@code @ServerEndpoint} URI path (no slash, relative paths,
      * level-1 template, duplicate variables)</li>
      * <li>Extracts URI path-variable names for later {@code @PathParam} mismatch checking</li>
      * </ul>
-     *
-     * <p>Previously {@code serverEndpointErrorCheck} and {@code findAndProcessEndpointURI}
-     * each called {@code type.getAnnotations()} independently. Both match on the same
-     * annotation array, so a single loop covers both without a second scan.
-     * {@code isWSAnnotatedEndpoint} cannot join this loop because it is a pre-condition
-     * guard evaluated before any diagnostic work begins.
      *
      * @return list of URI path-variable names, or {@code null} if no endpoint annotation
      *         with a string {@code value} is found
@@ -417,9 +391,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
 
     /**
      * Returns the string {@code value} member of {@code annotation}, or {@code null}.
-     * <p>
-     * Delegates to {@link DiagnosticUtils#getAnnotationMemberValue}, which performs
-     * the {@link IMemberValuePair} scan and type-checks the result against {@link String}.
      */
     private String getAnnotationStringValue(IAnnotation annotation) throws JavaModelException {
         return DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.ANNOTATION_VALUE, String.class);
@@ -432,17 +403,11 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     /**
      * Returns {@code true} when {@code type} carries a WebSocket endpoint annotation
      * ({@code @ServerEndpoint} or {@code @ClientEndpoint}).
-     *
-     * <p>Replaces the original {@code isWSEndpoint} which returned a two-entry
-     * {@link HashMap}; the {@code IS_SUPERCLASS} entry was computed but never read
-     * by its only caller.
      */
     private boolean isWSAnnotatedEndpoint(IType type) throws JavaModelException {
         if (!type.isClass()) {
             return false;
         }
-        // DiagnosticUtils.getAnnotationNames(IType) extracts annotation element names,
-        // replacing the inline Stream.of(...).map(IAnnotation::getElementName) call.
         String[] annotationNames = Stream.of(type.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
         return !DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
                                                            Constants.WS_ANNOTATION_CLASS).isEmpty();
@@ -451,10 +416,7 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     /**
      * Returns {@code true} if any annotation on {@code param} matches
      * {@code @PathParam}. Any {@link JavaModelException} thrown during matching is
-     * logged and treated as a non-match, keeping the stream lambda clean.
-     * <p>
-     * Replaces the two separate {@code isParamPath} / {@code hasPathParamAnnotation}
-     * methods that performed the identical check with different exception handling.
+     * logged and treated as a non-match.
      */
     private boolean hasPathParamAnnotation(IType type, ILocalVariable param) throws JavaModelException {
         return Stream.of(param.getAnnotations()).anyMatch(annot -> {
@@ -515,8 +477,6 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
 
     /**
      * Check if a URI string has a duplicate variable.
-     * Extracts all URI variable names via a stream pipeline, then compares the
-     * total count against the distinct count — a duplicate exists when they differ.
      *
      * @param uriString ServerEndpoint URI
      * @return if a URI has duplicate variables
