@@ -109,7 +109,10 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
         for (IType type : unit.getAllTypes()) {
             // 1. Validate class-level override annotations
             validateOverridesOnType(type, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
-            validateOverridesOnType(type, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
+            // Skip name-validation when the class itself is an invalid target.
+            if (!validateAssociationOverrideTargetType(type, context, diagnostics)) {
+                validateOverridesOnType(type, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
+            }
 
             // 2. Validate field-level override annotations
             for (IField field : type.getFields()) {
@@ -130,6 +133,52 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     // -----------------------------------------------------------------------
     // Class-level validation
     // -----------------------------------------------------------------------
+
+    /**
+     * Validates that {@code @AssociationOverride} / {@code @AssociationOverrides}
+     * placed directly on a type is only used on an {@code @Entity},
+     * {@code @MappedSuperclass}, or {@code @Embeddable} class.
+     *
+     * <p>Emits {@link ErrorCode#AssociationOverrideOnInvalidTarget} for each
+     * offending annotation when the class lacks all three qualifying annotations.
+     *
+     * @param type the type to validate
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @return {@code true} if the type is an invalid target and at least one
+     *         diagnostic was emitted; {@code false} if the type is valid
+     * @see <a href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a13942">
+     *      Jakarta Persistence 3.0, Section 13.1.1</a>
+     */
+    private boolean validateAssociationOverrideTargetType(IType type,
+                                                          JavaDiagnosticsContext context,
+                                                          List<Diagnostic> diagnostics) throws CoreException {
+        // If the type has one of the three qualifying annotations it is a valid target.
+        for (IAnnotation ann : type.getAnnotations()) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.ENTITY)
+                || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.MAPPEDSUPERCLASS)
+                || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.EMBEDDABLE)) {
+                return false;
+            }
+        }
+
+        // Type lacks qualifying annotations — emit a diagnostic for each override annotation present.
+        boolean invalidTargetFound = false;
+        for (IAnnotation annotation : type.getAnnotations()) {
+            boolean isSingle = DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ASSOCIATION_OVERRIDE);
+            boolean isContainer = DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ASSOCIATION_OVERRIDES);
+            if (isSingle || isContainer) {
+                String simpleName = DiagnosticUtils.getSimpleName(annotation.getElementName());
+                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("AssociationOverrideOnInvalidTarget", simpleName),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.AssociationOverrideOnInvalidTarget, DiagnosticSeverity.Error));
+                invalidTargetFound = true;
+            }
+        }
+        return invalidTargetFound;
+    }
 
     /**
      * Validates single and container override annotations placed directly on a type.
