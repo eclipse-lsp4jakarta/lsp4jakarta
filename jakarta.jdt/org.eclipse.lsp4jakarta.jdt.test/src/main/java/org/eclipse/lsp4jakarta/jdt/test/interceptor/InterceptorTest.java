@@ -727,4 +727,190 @@ public class InterceptorTest extends BaseJakartaTest {
         // Test that valid interceptor with @Monitored binding does NOT trigger diagnostic
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testInvalidLifecycleCallbackMethodSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidLifecycleCallbackMethodSignature.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        String signatureMsg = "Lifecycle callback interceptor methods declared in an interceptor class or its superclass must have one of the signatures: void <METHOD>(InvocationContext) or Object <METHOD>(InvocationContext).";
+        String proceedMsg = "Interceptor methods must always call the InvocationContext.proceed method.";
+        String preDestroyDupMsg = "Only one method with @PreDestroy annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.";
+        String postConstructDupMsg = "Only one method with @PostConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.";
+        String aroundConstructDupMsg = "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.";
+
+        // ── @PreDestroy ──────────────────────────────────────────────────────
+        // Invalid 1 (first @PreDestroy — no duplicate diagnostic)
+        Diagnostic preDestroyVoidWrongParamSig = d(20, 16, 40, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic preDestroyVoidWrongParamProceed = d(20, 16, 40, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+
+        // Invalid 2 (second @PreDestroy — duplicate)
+        Diagnostic preDestroyObjectWrongParamSig = d(24, 18, 44, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                     "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic preDestroyObjectWrongParamProceed = d(24, 18, 44, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic preDestroyObjectWrongParamDup = d(24, 18, 44, preDestroyDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // Invalid 3 (third @PreDestroy — duplicate)
+        Diagnostic preDestroyInvalidReturnTypeSig = d(30, 18, 45, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                      "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic preDestroyInvalidReturnTypeDup = d(30, 18, 45, preDestroyDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // ── @PostConstruct ───────────────────────────────────────────────────
+        // Invalid 4 (first @PostConstruct — no duplicate diagnostic)
+        Diagnostic postConstructVoidWrongParamSig = d(38, 16, 43, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                      "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic postConstructVoidWrongParamProceed = d(38, 16, 43, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+
+        // Invalid 5 (second @PostConstruct — duplicate)
+        Diagnostic postConstructObjectWrongParamSig = d(42, 18, 47, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                        "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic postConstructObjectWrongParamProceed = d(42, 18, 47, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic postConstructObjectWrongParamDup = d(42, 18, 47, postConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                        "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // Invalid 6 (third @PostConstruct — duplicate)
+        Diagnostic postConstructInvalidReturnTypeSig = d(48, 18, 48, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                         "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic postConstructInvalidReturnTypeDup = d(48, 18, 48, postConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                         "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // ── @AroundConstruct ─────────────────────────────────────────────────
+        // Invalid 7 (first @AroundConstruct — no duplicate diagnostic)
+        Diagnostic aroundConstructVoidWrongParamSig = d(56, 16, 45, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                        "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic aroundConstructVoidWrongParamProceed = d(56, 16, 45, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+
+        // Invalid 8 (second @AroundConstruct — duplicate)
+        Diagnostic aroundConstructObjectWrongParamSig = d(60, 18, 49, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                          "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic aroundConstructObjectWrongParamProceed = d(60, 18, 49, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+        Diagnostic aroundConstructObjectWrongParamDup = d(60, 18, 49, aroundConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                          "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // Invalid 9 (third @AroundConstruct — duplicate)
+        Diagnostic aroundConstructInvalidReturnTypeSig = d(66, 18, 50, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                           "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic aroundConstructInvalidReturnTypeDup = d(66, 18, 50, aroundConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                           "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // ── Multiple parameters ───────────────────────────────────────────────
+        // Invalid 10 (fourth @PreDestroy — duplicate, two InvocationContext params)
+        Diagnostic preDestroyMultipleParamsSig = d(74, 16, 40, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic preDestroyMultipleParamsDup = d(74, 16, 40, preDestroyDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // Invalid 11 (fourth @PostConstruct — duplicate, two InvocationContext params)
+        Diagnostic postConstructMultipleParamsSig = d(80, 16, 43, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                      "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic postConstructMultipleParamsDup = d(80, 16, 43, postConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                      "InvalidMultipleInterceptorMethodsOfSameType");
+
+        // Invalid 12 (fourth @AroundConstruct — duplicate, two InvocationContext params)
+        Diagnostic aroundConstructMultipleParamsSig = d(86, 16, 45, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                        "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic aroundConstructMultipleParamsDup = d(86, 16, 45, aroundConstructDupMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                        "InvalidMultipleInterceptorMethodsOfSameType");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              preDestroyVoidWrongParamSig, preDestroyVoidWrongParamProceed,
+                              preDestroyObjectWrongParamSig, preDestroyObjectWrongParamDup, preDestroyObjectWrongParamProceed,
+                              preDestroyInvalidReturnTypeSig, preDestroyInvalidReturnTypeDup,
+                              preDestroyMultipleParamsSig, preDestroyMultipleParamsDup,
+                              postConstructVoidWrongParamSig, postConstructVoidWrongParamProceed,
+                              postConstructObjectWrongParamSig, postConstructObjectWrongParamDup, postConstructObjectWrongParamProceed,
+                              postConstructInvalidReturnTypeSig, postConstructInvalidReturnTypeDup,
+                              postConstructMultipleParamsSig, postConstructMultipleParamsDup,
+                              aroundConstructVoidWrongParamSig, aroundConstructVoidWrongParamProceed,
+                              aroundConstructObjectWrongParamSig, aroundConstructObjectWrongParamDup, aroundConstructObjectWrongParamProceed,
+                              aroundConstructInvalidReturnTypeSig, aroundConstructInvalidReturnTypeDup,
+                              aroundConstructMultipleParamsSig, aroundConstructMultipleParamsDup);
+    }
+
+    @Test
+    public void testValidLifecycleCallbackMethodSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidLifecycleCallbackMethodSignature.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // void/Object + InvocationContext on all three lifecycle annotations — no diagnostic expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testNonLifecycleAnnotationsDoNotTriggerSignatureDiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/NonLifecycleInterceptorAnnotations.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @AroundInvoke and @AroundTimeout with invalid-looking signatures must NOT trigger
+        // InvalidLifecycleCallbackInterceptorMethodSignature — they are not lifecycle callbacks
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testSuperClassWithInvalidLifecycleCallbackMethodSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        // Open the subclass file — superclass InterceptorSuperClassBase is declared in the same
+        // file, so opening it triggers superclass lifecycle signature validation
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InterceptorSubClassWithInvalidSuperClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        String signatureMsg = "Lifecycle callback interceptor methods declared in an interceptor class or its superclass must have one of the signatures: void <METHOD>(InvocationContext) or Object <METHOD>(InvocationContext).";
+        String proceedMsg = "Interceptor methods must always call the InvocationContext.proceed method.";
+
+        // Superclass @AroundConstruct with String return — signature diagnostic (line 28)
+        Diagnostic superAroundConstructInvalidReturnSig = d(28, 18, 46, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                            "InvalidLifecycleCallbackInterceptorMethodSignature");
+
+        // Superclass @PostConstruct with String return — signature diagnostic (line 22)
+        Diagnostic superPostConstructInvalidReturnSig = d(22, 18, 44, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                          "InvalidLifecycleCallbackInterceptorMethodSignature");
+
+        // Superclass @PreDestroy with wrong param type — signature + proceed diagnostics (line 18)
+        Diagnostic superPreDestroyWrongParamSig = d(18, 16, 36, signatureMsg, DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                    "InvalidLifecycleCallbackInterceptorMethodSignature");
+        Diagnostic superPreDestroyWrongParamProceed = d(18, 16, 36, proceedMsg, DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              superAroundConstructInvalidReturnSig,
+                              superPostConstructInvalidReturnSig,
+                              superPreDestroyWrongParamSig, superPreDestroyWrongParamProceed);
+    }
+
+    @Test
+    public void testSuperClassWithValidLifecycleCallbackMethodSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        // Open the subclass file — superclass InterceptorSuperClassValidBase is declared in the
+        // same file with valid signatures, so no diagnostic must fire
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InterceptorSubClassWithValidSuperClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid lifecycle callback signatures in superclass — no diagnostic must fire
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
