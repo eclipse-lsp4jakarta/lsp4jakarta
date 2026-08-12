@@ -26,6 +26,7 @@ public class Constants {
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    public static final String INHERITANCE = "jakarta.persistence.Inheritance";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
@@ -90,4 +91,7 @@ public class Constants {
     public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
     public static final String MAP_INTERFACE_FQDN = "java.util.Map";
+    public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
+    public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
+    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "PersistenceContextType.EXTENDED";
 }
