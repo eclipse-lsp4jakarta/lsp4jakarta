@@ -8,6 +8,10 @@ import jakarta.inject.Inject;
 /**
  * Invalid: Delegate type (Logger) doesn't implement the decorated type (PaymentService)
  * Should trigger diagnostic: The delegate type must implement or extend to the decorator
+ *
+ * <p>Delegate type    - Logger
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - InvalidDelegateType
  */
 @Decorator
 @Dependent
@@ -26,6 +30,10 @@ class InvalidDelegateType implements PaymentService {
 /**
  * Valid: Delegate type (PaymentService) matches the decorated type
  * Should NOT trigger diagnostic
+ *
+ * <p>Delegate type    - PaymentService
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - ValidDelegateType
  */
 @Decorator
 @Dependent
@@ -44,6 +52,10 @@ class ValidDelegateType implements PaymentService {
 /**
  * Valid: Delegate type (PaymentServiceImpl) extends the decorated type (PaymentService)
  * Should NOT trigger diagnostic
+ *
+ * <p>Delegate type    - PaymentServiceImpl
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - ValidDelegateSubtype
  */
 @Decorator
 @Dependent
@@ -62,6 +74,10 @@ class ValidDelegateSubtype implements PaymentService {
 /**
  * Invalid: Delegate type (String) doesn't implement the decorated type (PaymentService)
  * Should trigger diagnostic
+ *
+ * <p>Delegate type    - String
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - InvalidDelegateTypePrimitive
  */
 @Decorator
 @Dependent
@@ -80,6 +96,10 @@ class InvalidDelegateTypePrimitive implements PaymentService {
 /**
  * Invalid: Delegate type on method parameter (Logger) doesn't implement the decorated type (PaymentService)
  * Should trigger diagnostic: The delegate type must implement or extend to the decorator
+ *
+ * <p>Delegate type    - Logger
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - InvalidDelegateTypeOnMethod
  */
 @Decorator
 @Dependent
@@ -101,6 +121,10 @@ class InvalidDelegateTypeOnMethod implements PaymentService {
 /**
  * Valid: Delegate type on method parameter (PaymentService) matches the decorated type
  * Should NOT trigger diagnostic
+ *
+ * <p>Delegate type    - PaymentService
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - ValidDelegateTypeOnMethod
  */
 @Decorator
 @Dependent
@@ -122,6 +146,10 @@ class ValidDelegateTypeOnMethod implements PaymentService {
 /**
  * Invalid: Delegate type is a primitive (int) — primitives are never valid bean types.
  * Should trigger diagnostic: The delegate type 'int' must implement or extend all decorated types.
+ *
+ * <p>Delegate type    - int
+ * <p>Decorated types  - PaymentService
+ * <p>Decorator class  - InvalidDelegateTypeTruePrimitive
  */
 @Decorator
 @Dependent
@@ -142,6 +170,10 @@ class InvalidDelegateTypeTruePrimitive implements PaymentService {
  * decorated types (no interfaces, no superclass beyond Object).
  * Should trigger diagnostic on the delegate field:
  * "The delegate type 'PaymentService' must implement or extend all decorated types."
+ *
+ * <p>Delegate type    - PaymentService
+ * <p>Decorated types  - (none)
+ * <p>Decorator class  - DecoratorWithDelegateButNoDecoratedTypes
  */
 @Decorator
 @Dependent
