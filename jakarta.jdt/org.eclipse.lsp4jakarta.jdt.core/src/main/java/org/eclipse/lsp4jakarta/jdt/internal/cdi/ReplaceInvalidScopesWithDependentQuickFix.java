@@ -51,6 +51,6 @@ public class ReplaceInvalidScopesWithDependentQuickFix extends ReplaceAnnotation
      */
     @Override
     protected String getCodeActionLabel(String formattedNames) {
-        return Messages.getMessage("ReplaceInvalidScopesWithDependent", formattedNames);
+        return Messages.getMessage("ReplaceAnnotationWith", formattedNames, "@Dependent");
     }
 }
