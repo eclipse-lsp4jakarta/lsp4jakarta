@@ -14,6 +14,8 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Persistence diagnostic constants.
@@ -24,9 +26,11 @@ public class Constants {
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    public static final String INHERITANCE = "jakarta.persistence.Inheritance";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
+    public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
@@ -38,6 +42,25 @@ public class Constants {
     public static final Set<String> VALID_VERSION_TYPES = Set.of("int", "short", "long", "java.lang.Integer",
                                                                  "java.lang.Short", "java.lang.Long", SQL_TIMESTAMP);
 
+    /*
+     * Valid @Id field types - Jakarta Persistence 3.0 specification section a14827
+     */
+    public static final Set<String> PRIMITIVES = Set.of("int", "long", "short", "byte", "char", "boolean", "float",
+                                                        "double");
+
+    public static final Set<String> WRAPPER_TYPES = Set.of("java.lang.Integer", "java.lang.Long", "java.lang.Short",
+                                                           "java.lang.Byte", "java.lang.Character", "java.lang.Boolean", "java.lang.Float", "java.lang.Double");
+
+    public static final Set<String> DATE_TYPES = Set.of("java.util.Date", "java.sql.Date");
+
+    public static final Set<String> BIG_NUMBER_TYPES = Set.of("java.math.BigDecimal", "java.math.BigInteger");
+
+    public static final String STRING_TYPE = "java.lang.String";
+
+    /* Combined set of all valid @Id types */
+    public static final Set<String> VALID_ID_TYPES = Stream.of(PRIMITIVES, WRAPPER_TYPES, DATE_TYPES, BIG_NUMBER_TYPES,
+                                                               Set.of(STRING_TYPE)).flatMap(Set::stream).collect(Collectors.toUnmodifiableSet());
+
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
@@ -45,10 +68,14 @@ public class Constants {
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-persistence";
 
-    public static final String[] SET_OF_PERSISTENCE_ANNOTATIONS = { MAPKEY, MAPKEYCLASS, MAPKEYJOINCOLUMN };
+    public static final String[] SET_OF_PERSISTENCE_ANNOTATIONS = { MAPKEY, MAPKEYCLASS, MAPKEYJOINCOLUMN, MAPKEYENUMERATED };
     public static final String[] SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS = { ID, TEMPORAL };
 
     public static final String UTIL_DATE = "java.util.Date";
     public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
+    public static final String MAP_INTERFACE_FQDN = "java.util.Map";
+    public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
+    public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
+    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "PersistenceContextType.EXTENDED";
 }
