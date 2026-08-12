@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -36,6 +37,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -386,14 +388,35 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
 
+            // Check if the class is a stateless session bean
+            boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                             new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
+            boolean isClassGeneric = type.getTypeParameters().length != 0;
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+
             if (isManagedBean) {
-                // Check if the class is a stateless session bean
-                boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                 new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
-                boolean isClassGeneric = type.getTypeParameters().length != 0;
-                Range range = PositionUtils.toNameRange(type, context.getUtils());
                 validateSingletonSessionBean(context, uri, diagnostics, type, typeAnnotations, managedBeanAnnotations,
                                              range);
+            }
+
+            // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
+            // scope from a superclass via @Inherited CDI scope annotations. Check these cases
+            // independently of isManagedBean because isManagedBean is false when no scope is
+            // declared directly on the class.
+            boolean isSingleton = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                             new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
+            if (isSingleton && !isManagedBean) {
+                validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                  new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
+                                                  "SingletonSessionBeanInvalidScope", ErrorCode.InvalidSingletonSessionBeanScope);
+            }
+            if (isStateless && !isManagedBean) {
+                validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                  new String[] { Constants.DEPENDENT_FQ_NAME },
+                                                  "StatelessSessionBeanWithIllegalScope", ErrorCode.InvalidStatelessSessionBeanScope);
+            }
+
+            if (isManagedBean) {
                 // A stateless session bean must belong to the @Dependent scope only
                 // If it has multiple scopes, it's an error
                 if (isStateless && (!isDependent || hasMultipleScopes)) {
@@ -480,17 +503,17 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     if (numDisposes == 0)
                         continue;
                     if (numDisposes > 1) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("ManagedBeanDisposeOneParameter"), range,
+                                                                 Messages.getMessage("ManagedBeanDisposeOneParameter"), methodRange,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidDisposesAnnotationOnMultipleMethodParams, DiagnosticSeverity.Error));
                     }
 
                     if (!invalidAnnotations.isEmpty()) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 createInvalidDisposesLabel(invalidAnnotations), range,
+                                                                 createInvalidDisposesLabel(invalidAnnotations), methodRange,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidDisposerMethodParamAnnotation, DiagnosticSeverity.Error));
                     }
@@ -597,6 +620,52 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                          Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                          ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
             }
+        }
+    }
+
+    /**
+     * Checks whether a session bean class (@Singleton or @Stateless) with no directly declared scope
+     * inherits an invalid CDI scope from a superclass. The Java @Inherited meta-annotation causes CDI
+     * scope annotations to propagate through class inheritance only (not interface implementation), so
+     * this method walks the superclass chain using ITypeHierarchy to find the nearest ancestor that
+     * declares a CDI scope. If that inherited scope is not one of the allowed scopes for the bean type,
+     * a diagnostic is raised.
+     *
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the session bean type with no directly declared scope
+     * @param range the range to use for the diagnostic
+     * @param validScopes the FQ scope names that are valid for this bean type
+     * @param messageKey the messages.properties key for the diagnostic message
+     * @param errorCode the error code for the diagnostic
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private void validateSessionBeanInheritedScope(JavaDiagnosticsContext context, String uri,
+                                                   List<Diagnostic> diagnostics, IType type, Range range,
+                                                   String[] validScopes, String messageKey, ErrorCode errorCode) throws JavaModelException {
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType superclass = hierarchy.getSuperclass(type);
+
+        while (superclass != null && !superclass.getFullyQualifiedName().equals("java.lang.Object")) {
+            // Use the superclass's own compilation unit for correct annotation resolution,
+            // matching the pattern used in PersistenceEntityDiagnosticsParticipant.
+            ICompilationUnit superCu = superclass.getCompilationUnit();
+            for (String scopeFqName : Constants.SCOPE_FQ_NAMES) {
+                if (DiagnosticUtils.isMatchedAnnotation(superCu, superclass.getAnnotations(), scopeFqName)) {
+                    // Found the nearest ancestor scope — check if it is valid for this bean type.
+                    boolean isValidScope = Arrays.stream(validScopes).anyMatch(scopeFqName::equals);
+                    if (!isValidScope) {
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage(messageKey), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 (new Gson().toJsonTree(List.of(scopeFqName))),
+                                                                 errorCode, DiagnosticSeverity.Error));
+                    }
+                    return;
+                }
+            }
+            superclass = hierarchy.getSuperclass(superclass);
         }
     }
 
