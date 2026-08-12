@@ -46,7 +46,6 @@ public enum ErrorCode implements IJavaErrorCode {
     MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean,
-    MixedIdentifierAnnotations,
     InvalidIdType,
     InvalidConvertAnnotationMissingConverterOrDisable,
     InvalidConvertAnnotationOnRestrictedTarget,

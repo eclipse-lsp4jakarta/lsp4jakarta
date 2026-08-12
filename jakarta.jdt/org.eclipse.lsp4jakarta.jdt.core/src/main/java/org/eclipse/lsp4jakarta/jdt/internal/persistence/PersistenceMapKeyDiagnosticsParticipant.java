@@ -174,9 +174,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 }
 
                 // Collect @Convert annotations
-                String convertMatch = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                                                new String[] { Constants.CONVERT });
-                if (convertMatch != null) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERT)) {
                     convertAnnotations.add(annotation);
                 }
             }
@@ -237,8 +235,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         // Rule: Multiple @Convert on the same attribute
         if (convertAnnotations.size() > 1) {
             try {
-                Range range = member instanceof IMethod ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
-                                                                                                                                                      context.getUtils());
+                Range range = PositionUtils.toNameRange(member, context.getUtils());
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("ConvertAnnotationMultipleOnSameAttribute"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -252,11 +249,13 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         // Determine whether this member carries any restricted co-annotation and capture its name
         String restrictedAnnotationName = null;
         for (IAnnotation otherAnnotation : allAnnotations) {
-            String matched = DiagnosticUtils.getMatchedJavaElementName(type, otherAnnotation.getElementName(),
-                                                                       Constants.CONVERT_RESTRICTED_ANNOTATIONS);
-            if (matched != null) {
-                // Use the simple annotation name for the diagnostic message, e.g. "@Id"
-                restrictedAnnotationName = "@" + matched.substring(matched.lastIndexOf('.') + 1);
+            for (String restrictedFQN : Constants.CONVERT_RESTRICTED_ANNOTATIONS) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, otherAnnotation.getElementName(), restrictedFQN)) {
+                    restrictedAnnotationName = "@" + DiagnosticUtils.getSimpleName(restrictedFQN);
+                    break;
+                }
+            }
+            if (restrictedAnnotationName != null) {
                 break;
             }
         }
@@ -271,8 +270,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
                 // Rule: Neither converter nor disableConversion=true specified
                 if (!hasConverter && !hasDisableConversion) {
-                    Range range = member instanceof IMethod ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
-                                                                                                                                                          context.getUtils());
+                    Range range = PositionUtils.toNameRange(member, context.getUtils());
                     diagnostics.add(context.createDiagnostic(context.getUri(),
                                                              Messages.getMessage("ConvertAnnotationMissingConverterOrDisable"),
                                                              range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -282,8 +280,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
                 // Rule: @Convert on a restricted target
                 if (restrictedAnnotationName != null) {
-                    Range range = member instanceof IMethod ? PositionUtils.toNameRange((IMethod) member, context.getUtils()) : PositionUtils.toNameRange((IField) member,
-                                                                                                                                                          context.getUtils());
+                    Range range = PositionUtils.toNameRange(member, context.getUtils());
                     diagnostics.add(context.createDiagnostic(context.getUri(),
                                                              Messages.getMessage("ConvertAnnotationOnRestrictedTarget", restrictedAnnotationName),
                                                              range, Constants.DIAGNOSTIC_SOURCE, null,
