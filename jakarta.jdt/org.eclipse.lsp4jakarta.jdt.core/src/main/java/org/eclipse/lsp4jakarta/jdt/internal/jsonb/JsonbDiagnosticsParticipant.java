@@ -183,7 +183,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
         // Collect diagnostics for Jsonb.fromJson() method invocations with null parameters
         collectJsonbFromJsonNullParameterDiagnostics(unit, context, uri, diagnostics);
-      
+
         // Create WARNING diagnostics to determine the existence of close() method when threads are used.
         // https://jakarta.ee/specifications/jsonb/2.0/apidocs/jakarta/json/bind/jsonb
         // Check all classes - the method itself filters to only those that actually use Jsonb
@@ -191,7 +191,7 @@ public class JsonbDiagnosticsParticipant implements IJavaDiagnosticsParticipant 
 
         return diagnostics;
     }
-  
+
     /**
      * Collects diagnostics for Jsonb.fromJson() method invocations where null is passed as a parameter.
      * According to the Jakarta JSON Binding specification, the fromJson() method must not accept null parameters.
