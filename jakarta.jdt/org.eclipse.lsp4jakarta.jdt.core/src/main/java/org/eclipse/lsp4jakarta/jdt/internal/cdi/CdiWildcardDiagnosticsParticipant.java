@@ -203,6 +203,15 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * parameters, so both the resolved ({@code TT;}) and unresolved ({@code QT;}) forms are
      * recognised by comparing against {@code typeParamNames}.
      *
+     * <p>Examples (assuming the enclosing class declares {@code <T>}):
+     * <ul>
+     * <li>{@code TT;} (resolved type variable) — returns {@code true}</li>
+     * <li>{@code QT;} (unresolved type variable) — returns {@code true}</li>
+     * <li>{@code [TT;} (array of type variable, i.e. {@code T[]}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<TT;>;} (parameterized, e.g. {@code List<T>}) — returns {@code false}</li>
+     * <li>{@code Ljava/lang/String;} (concrete type) — returns {@code false}</li>
+     * </ul>
+     *
      * @param typeSignature the JDT type signature to check
      * @param typeParamNames the class-level declared type parameter names
      * @return {@code true} if the signature is a bare type variable or array of one
@@ -228,6 +237,15 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Returns {@code true} if {@code typeSignature} is a parameterized type that contains
      * at least one type variable in its type arguments (recursively).
      *
+     * <p>Examples (assuming the enclosing class declares {@code <T>}):
+     * <ul>
+     * <li>{@code Ljava/util/List<TT;>;} ({@code List<T>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/Map<Ljava/lang/String;TT;>;} ({@code Map<String, T>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<Ljava/util/Set<TT;>;>;} (nested, {@code List<Set<T>>}) — returns {@code true}</li>
+     * <li>{@code TT;} (bare type variable, not parameterized) — returns {@code false}</li>
+     * <li>{@code Ljava/util/List<Ljava/lang/String;>;} ({@code List<String>}) — returns {@code false}</li>
+     * </ul>
+     *
      * @param typeSignature the JDT type signature to check
      * @param typeParamNames the class-level declared type parameter names
      * @return {@code true} if the signature is a parameterized type containing a type variable
@@ -249,6 +267,16 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
     /**
      * Returns {@code true} if {@code typeSignature} contains a wildcard type parameter
      * ({@code ?}, {@code ? extends}, or {@code ? super}) anywhere in the type tree.
+     *
+     * <p>Examples:
+     * <ul>
+     * <li>{@code Ljava/util/List<*>;} ({@code List<?>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<+Ljava/lang/Number;>;} ({@code List<? extends Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<-Ljava/lang/Number;>;} ({@code List<? super Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Number;>;} ({@code Map<String, ? extends Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<Ljava/lang/String;>;} ({@code List<String>}) — returns {@code false}</li>
+     * <li>{@code [Ljava/util/List<*>;} (array of {@code List<?>}) — returns {@code true}</li>
+     * </ul>
      *
      * @param typeSignature the JDT type signature to check
      * @return {@code true} if the signature contains a wildcard
