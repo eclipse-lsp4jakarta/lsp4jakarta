@@ -85,10 +85,15 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             allAnnotations = type.getAnnotations();
 
             IAnnotation EntityAnnotation = null;
+            IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
                 if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
                                                          Constants.ENTITY)) {
                     EntityAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                         Constants.INHERITANCE)) {
+                    inheritanceAnnotation = annotation;
                 }
             }
 
@@ -265,6 +270,24 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 if (!versionMembers.isEmpty()) {
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
                 }
+
+                // Check @Inheritance is only on the root of the entity hierarchy
+                if (inheritanceAnnotation != null && TypeHierarchyUtils.findSupertypeWithAnnotation(type, Constants.ENTITY) != null) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InheritanceAnnotationOnNonRootEntity"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InheritanceAnnotationOnNonRootEntity,
+                                                             DiagnosticSeverity.Error));
+                }
+            } else if (inheritanceAnnotation != null) {
+                // Check @Inheritance on a class that does not have @Entity
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InheritanceAnnotationOnNonEntityClass"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InheritanceAnnotationOnNonEntityClass,
+                                                         DiagnosticSeverity.Error));
             }
         }
 
