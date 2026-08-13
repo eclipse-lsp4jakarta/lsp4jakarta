@@ -13,7 +13,6 @@
 package io.openliberty.sample.jakarta.interceptor;
 
 import jakarta.interceptor.AroundInvoke;
-import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
 /**
@@ -25,7 +24,6 @@ import jakarta.interceptor.InvocationContext;
 
 // INVALID: final class - triggers InvalidFinalInterceptorBindingClass
 @Monitored
-@Interceptor
 final class InvalidFinalInterceptorBindingClass {
 
     @AroundInvoke
@@ -36,7 +34,6 @@ final class InvalidFinalInterceptorBindingClass {
 
 // INVALID: non-static, non-private final methods - triggers InvalidMethodOnInterceptorBindingClass
 @Monitored
-@Interceptor
 class InvalidMethodsOnInterceptorBindingClass {
 
     // ERROR: public final method (non-static, non-private)
@@ -73,21 +70,3 @@ class InvalidMethodsOnInterceptorBindingClass {
     }
 }
 
-// VALID: no final modifier on class or non-private/non-static methods - no diagnostic expected
-@Monitored
-@Interceptor
-class ValidInterceptorBindingClassModifiers {
-
-    @AroundInvoke
-    public Object intercept(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
-    }
-
-    // Valid: public non-final method
-    public void publicHelper() {
-    }
-
-    // Valid: public static non-final method
-    public static void publicStaticNonFinalHelper() {
-    }
-}
