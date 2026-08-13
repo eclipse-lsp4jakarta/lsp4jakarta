@@ -641,7 +641,6 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
                                       JavaDiagnosticsContext context) throws JavaModelException {
         String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
-        Range range = PositionUtils.toNameRange(member, context.getUtils());
 
         if (fqName == null) {
             return;
@@ -659,6 +658,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                     Constants.EMBEDDABLE);
 
         if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
             String simpleName = DiagnosticUtils.getSimpleName(fqName);
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
