@@ -36,85 +36,181 @@ import com.google.gson.Gson;
  * session beans. CDI scope annotations are @Inherited, so when a session bean declares
  * no scope of its own, the nearest ancestor's scope becomes its effective scope. If that
  * inherited scope is not valid for the bean type, a diagnostic must be raised.
+ *
+ * Test resources are in: io/openliberty/sample/jakarta/cdi/sessionbean/inheritance/
  */
 public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
+    // -----------------------------------------------------------------------
+    // @Singleton — inherits invalid @RequestScoped from direct superclass
+    // File: SingletonInheritsRequestScope.java
+    // @Singleton on line 8, class decl on line 9
+    // "public class SingletonInheritsRequestScope" -> col 13..42
+    // -----------------------------------------------------------------------
     @Test
-    public void sessionBeanInheritedScopeValidation() throws Exception {
+    public void testSingletonInheritsRequestScope() throws Exception {
+        String uri = getFileUri("SingletonInheritsRequestScope.java");
+
+        Diagnostic inheritedRequestScopeOnSingleton = d(8, 13, 42,
+                                                        "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
+        inheritedRequestScopeOnSingleton.setData(
+                                                 new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedRequestScopeOnSingleton);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton — inherits valid @ApplicationScoped: no diagnostic
+    // -----------------------------------------------------------------------
+    @Test
+    public void testSingletonInheritsApplicationScopeIsValid() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("SingletonInheritsApplicationScope.java")), IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton — inherits valid @Dependent: no diagnostic
+    // -----------------------------------------------------------------------
+    @Test
+    public void testSingletonInheritsDependentScopeIsValid() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("SingletonInheritsDependentScope.java")), IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton — inherits invalid @SessionScoped from direct superclass
+    // File: SingletonInheritsSessionScope.java
+    // @Singleton on line 8, class decl on line 9
+    // "public class SingletonInheritsSessionScope" -> col 13..42
+    // -----------------------------------------------------------------------
+    @Test
+    public void testSingletonInheritsSessionScope() throws Exception {
+        String uri = getFileUri("SingletonInheritsSessionScope.java");
+
+        Diagnostic inheritedSessionScopeOnSingleton = d(8, 13, 42,
+                                                        "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
+        inheritedSessionScopeOnSingleton.setData(
+                                                 new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedSessionScopeOnSingleton);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton — inherits @RequestScoped transitively through intermediate class
+    // File: SingletonInheritsRequestScopeTransitively.java
+    // @Singleton on line 9, class decl on line 10
+    // "public class SingletonInheritsRequestScopeTransitively" -> col 13..54
+    // -----------------------------------------------------------------------
+    @Test
+    public void testSingletonInheritsRequestScopeTransitively() throws Exception {
+        String uri = getFileUri("SingletonInheritsRequestScopeTransitively.java");
+
+        Diagnostic inheritedRequestScopeTransitiveOnSingleton = d(9, 13, 54,
+                                                                  "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
+        inheritedRequestScopeTransitiveOnSingleton.setData(
+                                                           new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedRequestScopeTransitiveOnSingleton);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Singleton — own @ApplicationScoped overrides inherited @RequestScoped: no diagnostic
+    // -----------------------------------------------------------------------
+    @Test
+    public void testSingletonWithOwnScopeOverridesInheritedScopeIsValid() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("SingletonWithOwnScopeOverridesInheritedScope.java")), IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateless — inherits invalid @RequestScoped from direct superclass
+    // File: StatelessInheritsRequestScope.java
+    // @Stateless on line 8, class decl on line 9
+    // "public class StatelessInheritsRequestScope" -> col 13..42
+    // -----------------------------------------------------------------------
+    @Test
+    public void testStatelessInheritsRequestScope() throws Exception {
+        String uri = getFileUri("StatelessInheritsRequestScope.java");
+
+        Diagnostic inheritedRequestScopeOnStateless = d(8, 13, 42,
+                                                        "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
+        inheritedRequestScopeOnStateless.setData(
+                                                 new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedRequestScopeOnStateless);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateless — inherits valid @Dependent: no diagnostic
+    // -----------------------------------------------------------------------
+    @Test
+    public void testStatelessInheritsDependentScopeIsValid() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("StatelessInheritsDependentScope.java")), IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateless — inherits invalid @ApplicationScoped from direct superclass
+    // File: StatelessInheritsApplicationScope.java
+    // @Stateless on line 8, class decl on line 9
+    // "public class StatelessInheritsApplicationScope" -> col 13..46
+    // -----------------------------------------------------------------------
+    @Test
+    public void testStatelessInheritsApplicationScope() throws Exception {
+        String uri = getFileUri("StatelessInheritsApplicationScope.java");
+
+        Diagnostic inheritedApplicationScopeOnStateless = d(8, 13, 46,
+                                                            "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                            DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
+        inheritedApplicationScopeOnStateless.setData(
+                                                     new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedApplicationScopeOnStateless);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateless — inherits @RequestScoped transitively through intermediate class
+    // File: StatelessInheritsRequestScopeTransitively.java
+    // @Stateless on line 9, class decl on line 10
+    // "public class StatelessInheritsRequestScopeTransitively" -> col 13..54
+    // -----------------------------------------------------------------------
+    @Test
+    public void testStatelessInheritsRequestScopeTransitively() throws Exception {
+        String uri = getFileUri("StatelessInheritsRequestScopeTransitively.java");
+
+        Diagnostic inheritedRequestScopeTransitiveOnStateless = d(9, 13, 54,
+                                                                  "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                                  DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
+        inheritedRequestScopeTransitiveOnStateless.setData(
+                                                           new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
+
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, inheritedRequestScopeTransitiveOnStateless);
+    }
+
+    // -----------------------------------------------------------------------
+    // @Stateless — own @Dependent overrides inherited @RequestScoped: no diagnostic
+    // -----------------------------------------------------------------------
+    @Test
+    public void testStatelessWithOwnScopeOverridesInheritedScopeIsValid() throws Exception {
+        assertJavaDiagnostics(createDiagnosticsParams(getFileUri("StatelessWithOwnScopeOverridesInheritedScope.java")), IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+
+    private JakartaJavaDiagnosticsParams createDiagnosticsParams(String uri) {
+        JakartaJavaDiagnosticsParams p = new JakartaJavaDiagnosticsParams();
+        p.setUris(Arrays.asList(uri));
+        return p;
+    }
+
+    private String getFileUri(String fileName) throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SingletonSessionBeanInheritance.java"));
-        String uri = javaFile.getLocation().toFile().toURI().toString();
-
-        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
-        diagnosticsParams.setUris(Arrays.asList(uri));
-
-        // --- @Singleton inheritance cases ---
-
-        // Test case 1: @Singleton inherits @RequestScoped from direct superclass — invalid
-        // Class name "SingletonInheritsRequestScope" (29 chars) on line 47 (0-based: 46), col 6-35
-        Diagnostic singletonInheritsRequestScope = d(46, 6, 35,
-                                                     "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
-                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
-        singletonInheritsRequestScope.setData(
-                                              new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
-
-        // Test case 4: @Singleton inherits @SessionScoped from direct superclass — invalid
-        // Class name "SingletonInheritsSessionScope" (29 chars) on line 62 (0-based: 61), col 6-35
-        Diagnostic singletonInheritsSessionScope = d(61, 6, 35,
-                                                     "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
-                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
-        singletonInheritsSessionScope.setData(
-                                              new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
-
-        // Test case 5: @Singleton inherits @RequestScoped transitively (grandparent -> intermediate -> child)
-        // Class name "SingletonInheritsRequestScopeTransitively" (41 chars) on line 68 (0-based: 67), col 6-47
-        Diagnostic singletonInheritsRequestScopeTransitively = d(67, 6, 47,
-                                                                 "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
-                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
-        singletonInheritsRequestScopeTransitively.setData(
-                                                          new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
-
-        // --- @Stateless inheritance cases ---
-
-        // Test case 7: @Stateless inherits @RequestScoped from direct superclass — invalid
-        // Class name "StatelessInheritsRequestScope" (29 chars) on line 84 (0-based: 83), col 6-35
-        Diagnostic statelessInheritsRequestScope = d(83, 6, 35,
-                                                     "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
-                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
-        statelessInheritsRequestScope.setData(
-                                              new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
-
-        // Test case 9: @Stateless inherits @ApplicationScoped from direct superclass — invalid
-        // Class name "StatelessInheritsApplicationScope" (33 chars) on line 94 (0-based: 93), col 6-39
-        Diagnostic statelessInheritsApplicationScope = d(93, 6, 39,
-                                                         "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
-                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
-        statelessInheritsApplicationScope.setData(
-                                                  new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped")));
-
-        // Test case 10: @Stateless inherits @RequestScoped transitively — invalid
-        // Class name "StatelessInheritsRequestScopeTransitively" (41 chars) on line 99 (0-based: 98), col 6-47
-        Diagnostic statelessInheritsRequestScopeTransitively = d(98, 6, 47,
-                                                                 "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
-                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
-        statelessInheritsRequestScopeTransitively.setData(
-                                                          new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
-
-        // Valid cases (test cases 2, 3, 6, 8, 11) must produce no diagnostics:
-        //   - @Singleton inheriting @ApplicationScoped (valid)
-        //   - @Singleton inheriting @Dependent (valid)
-        //   - @Singleton with own @ApplicationScoped overriding inherited @RequestScoped (valid)
-        //   - @Stateless inheriting @Dependent (valid)
-        //   - @Stateless with own @Dependent overriding inherited @RequestScoped (valid)
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
-                              singletonInheritsRequestScope,
-                              singletonInheritsSessionScope,
-                              singletonInheritsRequestScopeTransitively,
-                              statelessInheritsRequestScope,
-                              statelessInheritsApplicationScope,
-                              statelessInheritsRequestScopeTransitively);
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/sessionbean/inheritance/" + fileName));
+        return javaFile.getLocation().toFile().toURI().toString();
     }
 }
