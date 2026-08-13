@@ -442,8 +442,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException if there's an error accessing the Java model
      */
     private void checkInterceptorBindingConstraints(IType type, int typeFlag, ICompilationUnit unit,
-                                                              String uri, List<Diagnostic> diagnostics,
-                                                              JavaDiagnosticsContext context) throws JavaModelException {
+                                                    String uri, List<Diagnostic> diagnostics,
+                                                    JavaDiagnosticsContext context) throws JavaModelException {
         if (!hasClassLevelInterceptorBinding(type, unit)) {
             return;
         }
