@@ -784,4 +784,112 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, propertyBasedBothAttributesDiagnostic);
     }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverrides empty container
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: @AssociationOverrides container with no nested entries.
+     * Expected: diagnostic AssociationOverridesEmptyContainer.
+     */
+    @Test
+    public void associationOverridesEmptyContainer_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmptyAssociationOverrides.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 20 (0-based 19): @AssociationOverrides({})
+        Diagnostic emptyContainerDiagnostic = d(19, 0, 25,
+                                                "@AssociationOverrides must contain at least one @AssociationOverride.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverridesEmptyContainer");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, emptyContainerDiagnostic);
+    }
+
+    /**
+     * Valid: @AssociationOverrides container with at least one entry.
+     * Expected: no diagnostic (reuses ValidContainerOverride which has two entries).
+     */
+    @Test
+    public void associationOverridesNonEmptyContainer_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/ValidContainerOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides({}) empty container on an @Embedded field.
+     * Expected: diagnostic AssociationOverridesEmptyContainer.
+     */
+    @Test
+    public void associationOverridesEmptyContainerOnField_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmptyAssociationOverridesOnField.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 27 (0-based 26): @AssociationOverrides({})
+        Diagnostic emptyContainerOnFieldDiagnostic = d(26, 4, 29,
+                                                       "@AssociationOverrides must contain at least one @AssociationOverride.",
+                                                       DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverridesEmptyContainer");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, emptyContainerOnFieldDiagnostic);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides({}) empty container on a property-based getter.
+     * Expected: diagnostic AssociationOverridesEmptyContainer.
+     */
+    @Test
+    public void associationOverridesEmptyContainerOnMethod_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmptyAssociationOverridesOnMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 29 (0-based 28): @AssociationOverrides({})
+        Diagnostic emptyContainerOnMethodDiagnostic = d(28, 4, 29,
+                                                        "@AssociationOverrides must contain at least one @AssociationOverride.",
+                                                        DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverridesEmptyContainer");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, emptyContainerOnMethodDiagnostic);
+    }
+
+    // -----------------------------------------------------------------------
+    // @AssociationOverrides duplicate names
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: @AssociationOverrides container with two entries sharing the same name "supervisor".
+     * Expected: diagnostic AssociationOverridesDuplicateName on the second (duplicate) entry.
+     */
+    @Test
+    public void associationOverridesDuplicateName_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidDuplicateAssociationOverrideNames.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 25 (0-based 24): the second @AssociationOverride(name = "supervisor", ...)
+        Diagnostic duplicateNameDiagnostic = d(24, 4, 90,
+                                               "@AssociationOverrides contains duplicate override name \"supervisor\". Each name must be unique within the same context.",
+                                               DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverridesDuplicateName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateNameDiagnostic);
+    }
 }
