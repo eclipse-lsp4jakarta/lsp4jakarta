@@ -39,8 +39,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * CDI diagnostics participant that validates specialization.
  *
  * A bean annotated with @Specializes must extend another bean. If the superclass
- * is not a bean (e.g., lacks a scope annotation), the specialization is invalid
- * and is treated as a definition error.
+ * is not a bean (e.g., lacks a scope annotation, including custom @NormalScope-annotated
+ * scopes), the specialization is invalid and is treated as a definition error.
  *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization
  */
@@ -103,7 +103,7 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
     private void validateSpecializes(IType type, String uri, JavaDiagnosticsContext context,
                                      List<Diagnostic> diagnostics) throws JavaModelException {
         // Per CDI spec 3.1.4, only the direct (immediate) superclass must be a bean.
-        // directSuperclassHasAnnotation checks only that single level — not grandparents.
+        // Check built-in scope annotations first.
         boolean directSuperclassIsBean = Stream.concat(Constants.SCOPE_FQ_NAMES.stream(),
                                                        Stream.of(Constants.NORMAL_SCOPE_FQ_NAME)).anyMatch(scopeFQName -> {
                                                            try {
@@ -113,6 +113,12 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                return false;
                                                            }
                                                        });
+        if (!directSuperclassIsBean) {
+            // Also accept a custom scope: any annotation on the direct superclass whose
+            // annotation type is itself meta-annotated with @NormalScope.
+            directSuperclassIsBean = TypeHierarchyUtils.directSuperclassHasAnnotationWithMetaAnnotation(
+                                                                                                        type, Constants.NORMAL_SCOPE_FQ_NAME);
+        }
         if (directSuperclassIsBean) {
             return;
         }
