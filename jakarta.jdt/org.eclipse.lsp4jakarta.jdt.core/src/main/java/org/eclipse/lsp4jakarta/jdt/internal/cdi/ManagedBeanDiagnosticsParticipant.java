@@ -623,7 +623,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
         IType superclass = hierarchy.getSuperclass(type);
 
-        while (superclass != null && !superclass.getFullyQualifiedName().equals("java.lang.Object")) {
+        while (!Constants.OBJECT_FQ_NAME.equals(superclass.getFullyQualifiedName())) {
             // Use the superclass's own compilation unit for correct annotation resolution,
             // matching the pattern used in PersistenceEntityDiagnosticsParticipant.
             ICompilationUnit superCu = superclass.getCompilationUnit();
