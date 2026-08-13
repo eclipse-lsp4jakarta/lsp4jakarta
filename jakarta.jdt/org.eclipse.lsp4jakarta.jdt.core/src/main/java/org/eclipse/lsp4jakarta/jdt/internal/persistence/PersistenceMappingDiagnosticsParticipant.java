@@ -202,7 +202,18 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                     validateNameAgainstSuperclassChain(name, annotation, type, desc, context, diagnostics);
                 }
             } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.containerFqn)) {
-                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
+                List<IAnnotation> nestedOverrides = getNestedOverrides(annotation, desc.containerMember);
+                if (isAssociationOverride && nestedOverrides.isEmpty()) {
+                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("AssociationOverridesEmptyContainer"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.AssociationOverridesEmptyContainer, DiagnosticSeverity.Error));
+                }
+                if (isAssociationOverride) {
+                    validateAssociationOverridesDuplicateNames(nestedOverrides, context, diagnostics);
+                }
+                for (IAnnotation nested : nestedOverrides) {
                     if (isAssociationOverride) {
                         validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
                     }
@@ -344,7 +355,18 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                 }
             } else {
                 // isContainerOverride
-                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
+                List<IAnnotation> nestedOverrides = getNestedOverrides(annotation, desc.containerMember);
+                if (isAssociationOverride && nestedOverrides.isEmpty()) {
+                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("AssociationOverridesEmptyContainer"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.AssociationOverridesEmptyContainer, DiagnosticSeverity.Error));
+                }
+                if (isAssociationOverride) {
+                    validateAssociationOverridesDuplicateNames(nestedOverrides, context, diagnostics);
+                }
+                for (IAnnotation nested : nestedOverrides) {
                     if (isAssociationOverride) {
                         validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
                     }
@@ -546,6 +568,31 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             }
         }
         return result;
+    }
+
+    /**
+     * Emits {@link ErrorCode#AssociationOverridesDuplicateName} for each
+     * {@code @AssociationOverride} nested inside a container whose {@code name}
+     * element duplicates an earlier entry in the same container.
+     */
+    private void validateAssociationOverridesDuplicateNames(List<IAnnotation> nestedOverrides,
+                                                            JavaDiagnosticsContext context,
+                                                            List<Diagnostic> diagnostics) throws JavaModelException {
+        List<String> seen = new ArrayList<>();
+        for (IAnnotation nested : nestedOverrides) {
+            String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
+            if (name != null) {
+                if (seen.contains(name)) {
+                    Range range = PositionUtils.toNameRange(nested, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("AssociationOverridesDuplicateName", name),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.AssociationOverridesDuplicateName, DiagnosticSeverity.Error));
+                } else {
+                    seen.add(name);
+                }
+            }
+        }
     }
 
     /**
