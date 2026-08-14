@@ -45,7 +45,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidWildcardTypeInInjectField,
     InvalidWildcardTypeInProducerMethod,
     InvalidWildcardTypeInProducerField,
-    InvalidNamedAnnotationOnNonFieldInjectionPoint;
+    InvalidNamedAnnotationOnNonFieldInjectionPoint,
+    InvalidSpecializedBeanWithNamedAnnotation,
+    InvalidOrphanDisposerMethod;
 
     /**
      * {@inheritDoc}
