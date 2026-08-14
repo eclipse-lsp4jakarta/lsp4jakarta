@@ -578,4 +578,19 @@ public class DiagnosticUtils {
         }
         return result;
     }
+    
+    /**
+     * Converts a list of fully qualified annotation names to a comma-separated
+     * string of simple names, each prefixed with the given {@code prefix}.
+     *
+     * <p>Use {@code prefix = "@"} to produce display strings such as
+     * {@code "@AfterBegin"}, or {@code prefix = ""} for plain simple names.
+     *
+     * @param annotations the fully qualified annotation names
+     * @param prefix the string to prepend to each simple name (e.g. {@code "@"})
+     * @return comma-separated simple annotation names with the given prefix
+     */
+    public static String getSimpleAnnotationNames(List<String> annotations, String prefix) {
+        return annotations.stream().map(fq -> prefix + getSimpleName(fq)).distinct().collect(Collectors.joining(", "));
+    }
 }
