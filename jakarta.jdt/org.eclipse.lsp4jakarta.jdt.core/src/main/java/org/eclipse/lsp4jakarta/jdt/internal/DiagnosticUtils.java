@@ -578,7 +578,7 @@ public class DiagnosticUtils {
         }
         return result;
     }
-    
+
     /**
      * Converts a list of fully qualified annotation names to a comma-separated
      * string of simple names, each prefixed with the given {@code prefix}.
