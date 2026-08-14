@@ -47,6 +47,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import java.util.logging.Level;
@@ -96,6 +97,10 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     }
                     // Check for negative priority value
                     checkNegativePriority(type, unit, uri, diagnostics, context);
+                    // Check for missing interceptor binding (only for classes with @Interceptor annotation)
+                    if (InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                        checkInterceptorBinding(type, unit, uri, diagnostics, context);
+                    }
                 }
                 // Map to track methods by their interceptor annotation type for duplicate detection
                 Map<String, List<IMethod>> methodsByAnnotation = new HashMap<>();
@@ -197,7 +202,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         int methodFlag = method.getFlags();
-        String annotationNames = getSimpleAnnotationNames(interceptorAnnotations);
+        String annotationNames = DiagnosticUtils.getSimpleAnnotationNames(interceptorAnnotations, "");
         JsonArray annotationData = (JsonArray) new Gson().toJsonTree(interceptorAnnotations);
         // Check for final modifier
         if (Flags.isFinal(methodFlag)) {
@@ -330,17 +335,6 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * Converts a list of fully qualified annotation names to simple names.
-     *
-     * @param annotations the list of FQ annotation names
-     * @return comma-separated string of simple annotation names
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
-        return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
-    }
-
-    /**
      * Checks if an interceptor class has a @Priority annotation with a negative value.
      * According to Jakarta Interceptors 2.0 specification, negative priority values are
      * reserved for future use and should not be used.
@@ -377,6 +371,43 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // If we can't parse the priority value, skip this check and log a warning
                 LOGGER.log(Level.WARNING, "Unable to parse the priority value", e);
             }
+        }
+    }
+
+    /**
+     * Checks if an interceptor class has at least one interceptor binding annotation.
+     * According to Jakarta Interceptors 2.0 specification, an interceptor declared using
+     * interceptor annotation must specify at least one interceptor binding annotation to
+     * enable the container to match it with target components.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkInterceptorBinding(IType type, ICompilationUnit unit, String uri,
+                                         List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
+        boolean hasInterceptorBinding = false;
+        // Get all annotations on the interceptor class
+        IAnnotation[] annotations = type.getAnnotations();
+        for (IAnnotation annotation : annotations) {
+            // Check if this annotation is an interceptor binding
+            if (ManagedBean.hasMetaAnnotation(annotation, type, unit, Constants.INTERCEPTOR_BINDING_FQ_NAME)) {
+                hasInterceptorBinding = true;
+                break;
+            }
+        }
+        // If no interceptor binding found, create diagnostic
+        if (!hasInterceptorBinding) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidInterceptorMissingInterceptorBinding"),
+                                                     range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidInterceptorMissingInterceptorBinding,
+                                                     DiagnosticSeverity.Warning));
         }
     }
 }

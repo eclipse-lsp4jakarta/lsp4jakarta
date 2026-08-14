@@ -16,7 +16,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 
 /**
- * EJB error codes.
+ * Jakarta Enterprise Beans error codes.
  */
 public enum ErrorCode implements IJavaErrorCode {
 
@@ -25,7 +25,15 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidSessionSyncMethodStatic,
     InvalidSessionSyncMethodNonVoid,
     InvalidSessionSyncMethodNoParamAnnotation,
-    InvalidAfterCompletionMethodParams;
+    InvalidAfterCompletionMethodParams,
+    InvalidModifierNotPublic,
+    InvalidModifierFinal,
+    InvalidModifierAbstract,
+    InvalidNonTopLevelClass,
+    InvalidSessionBeanWithInterceptorOrDecorator,
+    ConflictingSessionBeanAnnotations,
+    SessionBeanFinalizeMethod,
+    ImplementMessageListener;
 
     @Override
     public String getCode() {

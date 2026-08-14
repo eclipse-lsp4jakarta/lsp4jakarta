@@ -49,10 +49,10 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics
-        Diagnostic noArgsConstructorMissingParent = d(5, 13, 31,
+        Diagnostic noArgsConstructorMissingParent = d(6, 13, 31,
                                                       "Missing Public NoArgsConstructor. Class InvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                                                       DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
-        Diagnostic noArgsConstructorMissingChild = d(32, 14, 37,
+        Diagnostic noArgsConstructorMissingChild = d(34, 14, 37,
                                                      "Missing Public NoArgsConstructor. Class InnerInvalidInterceptor is of Interceptor type, but does not declare a public no-argument constructor.",
                                                      DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNoArgsConstructorMissing");
 
@@ -95,17 +95,17 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics for @Observes
-        Diagnostic observesMethodDiagnostic = d(13, 16, 30,
+        Diagnostic observesMethodDiagnostic = d(14, 16, 30,
                                                 "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
         // Test diagnostics for @ObservesAsync
-        Diagnostic observesAsyncMethodDiagnostic = d(18, 16, 35,
+        Diagnostic observesAsyncMethodDiagnostic = d(19, 16, 35,
                                                      "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
         // Test diagnostics for both @Observes and @ObservesAsync
-        Diagnostic observesBothMethodDiagnostic = d(23, 16, 34,
+        Diagnostic observesBothMethodDiagnostic = d(24, 16, 34,
                                                     "Interceptors and Decorators cannot have methods with parameters annotated with @Observes or @ObservesAsync.",
                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithObserverMethod");
 
@@ -616,11 +616,11 @@ public class InterceptorTest extends BaseJakartaTest {
         // Test diagnostics - there are two diagnostics on the @Priority annotation:
         // 1. A warning from jakarta-annotations about negative priority values
         // 2. An error from jakarta-interceptor about negative priority values (our implementation)
-        Diagnostic negativePriorityWarningAnnotation = d(6, 0, 15,
+        Diagnostic negativePriorityWarningAnnotation = d(7, 0, 15,
                                                          "Priority values should generally be non-negative, with negative values reserved for special meanings such as \"undefined\" or \"not specified\".",
                                                          DiagnosticSeverity.Warning, "jakarta-annotations", "PriorityShouldBeNonNegative");
 
-        Diagnostic negativePriorityErrorInterceptor = d(6, 0, 15,
+        Diagnostic negativePriorityErrorInterceptor = d(7, 0, 15,
                                                         "Interceptor priority values must not be negative. Negative values are reserved for future use by the specification.",
                                                         DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorNegativePriority");
 
@@ -639,36 +639,36 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics for multiple @AroundInvoke methods
-        Diagnostic aroundInvokeDuplicate1 = d(32, 18, 22,
+        Diagnostic aroundInvokeDuplicate1 = d(33, 18, 22,
                                               "Only one method with @AroundInvoke annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        Diagnostic aroundInvokeDuplicate2 = d(37, 18, 22,
+        Diagnostic aroundInvokeDuplicate2 = d(38, 18, 22,
                                               "Only one method with @AroundInvoke annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
         // Test diagnostics for multiple @AroundTimeout methods
-        Diagnostic aroundTimeoutDuplicate = d(48, 18, 26,
+        Diagnostic aroundTimeoutDuplicate = d(49, 18, 26,
                                               "Only one method with @AroundTimeout annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
         // Test diagnostics for multiple @PostConstruct methods
-        Diagnostic postConstructDuplicate = d(59, 16, 21,
+        Diagnostic postConstructDuplicate = d(60, 16, 21,
                                               "Only one method with @PostConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
         // Test diagnostics for multiple @PreDestroy methods
-        Diagnostic preDestroyDuplicate = d(70, 16, 24,
+        Diagnostic preDestroyDuplicate = d(71, 16, 24,
                                            "Only one method with @PreDestroy annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                            DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
         // Test diagnostics for multiple @AroundConstruct methods
-        Diagnostic aroundConstructDuplicate = d(81, 16, 26,
+        Diagnostic aroundConstructDuplicate = d(82, 16, 26,
                                                 "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                 DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
         // Test diagnostics for nested class with multiple @AroundInvoke methods
-        Diagnostic nestedAroundInvokeDuplicate = d(94, 22, 29,
+        Diagnostic nestedAroundInvokeDuplicate = d(96, 22, 29,
                                                    "Only one method with @AroundInvoke annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                    DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
@@ -689,6 +689,42 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Assert NO diagnostics for valid code with one method per type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testInterceptorMissingBindingAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidInterceptorMissingBinding.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostic for interceptor without binding annotation
+        // Line 14: public class InvalidInterceptorMissingBinding {
+        // Position: "InvalidInterceptorMissingBinding" starts at column 13 (0-based)
+        Diagnostic missingBindingDiagnostic = d(13, 13, 45,
+                                                "An interceptor declared using @Interceptor must specify at least one interceptor binding annotation.",
+                                                DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorMissingInterceptorBinding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingBindingDiagnostic);
+    }
+
+    @Test
+    public void testInterceptorWithValidBindingAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidInterceptorWithBinding.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test that valid interceptor with @Monitored binding does NOT trigger diagnostic
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }

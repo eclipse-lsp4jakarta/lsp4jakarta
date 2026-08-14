@@ -14,18 +14,20 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ReplaceAnnotationsQuickFix;
+import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 
 /**
- * Removes the @Singleton annotation from a class.
+ * Quickfix for InvalidInterceptorOrDecorator diagnostic.
+ * Replaces all invalid scope annotations with @Dependent.
  */
-public class RemoveSingletonAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
+public class ReplaceInvalidScopesWithDependentQuickFix extends ReplaceAnnotationsQuickFix {
 
     /**
      * Constructor.
      */
-    public RemoveSingletonAnnotationQuickFix() {
-        super(false, Constants.SINGLETON_FQ_NAME);
+    public ReplaceInvalidScopesWithDependentQuickFix() {
+        super(Constants.DEPENDENT_FQ_NAME);
     }
 
     /**
@@ -33,14 +35,22 @@ public class RemoveSingletonAnnotationQuickFix extends RemoveAnnotationConflictQ
      */
     @Override
     public String getParticipantId() {
-        return RemoveSingletonAnnotationQuickFix.class.getName();
+        return ReplaceInvalidScopesWithDependentQuickFix.class.getName();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.CDIRemoveSingletonAnnotation;
+    protected ICodeActionId getCodeActionId() {
+        return JakartaCodeActionId.CDIReplaceInvalidScopesWithDependent;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected String getCodeActionLabel(String formattedNames) {
+        return Messages.getMessage("ReplaceAnnotationWith", formattedNames, "@Dependent");
     }
 }

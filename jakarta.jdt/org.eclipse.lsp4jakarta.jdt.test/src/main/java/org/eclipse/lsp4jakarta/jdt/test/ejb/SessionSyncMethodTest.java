@@ -103,7 +103,7 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
     }
 
     // -----------------------------------------------------------------------
-    // Diagnostic: @AfterCompletion method must return void
+    // Diagnostic: @AfterCompletion method must be of type void
     // -----------------------------------------------------------------------
 
     @Test
@@ -115,7 +115,7 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
         // "    public boolean " = 19 chars -> method name starts at col 19
         // "afterComplete" is 13 chars -> ends at col 32
         Diagnostic nonVoidDiagnostic = d(13, 19, 32,
-                                         "@AfterCompletion session synchronization method must return void.",
+                                         "@AfterCompletion session synchronization method must be of type void.",
                                          DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodNonVoid");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nonVoidDiagnostic);
@@ -218,12 +218,96 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
     }
 
     // -----------------------------------------------------------------------
+    // Mixed modifiers: multiple violations on the same method
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testMixedModifiersSessionSyncMethodDiagnosticsAndQuickFixes() throws Exception {
+        String uri = getJavaFileUri(BASE_PATH + "InvalidMixedModifiersSessionSyncMethod.java");
+        JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
+
+        Diagnostic mixedFinalDiagnostic = d(16, 29, 43,
+                                            "@AfterBegin session synchronization method must not be declared as final.",
+                                            DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodFinal");
+        Diagnostic mixedStaticDiagnostic1 = d(16, 29, 43,
+                                              "@AfterBegin session synchronization method must not be declared as static.",
+                                              DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodStatic");
+
+        Diagnostic mixedStaticDiagnostic2 = d(21, 26, 43,
+                                              "@BeforeCompletion session synchronization method must not be declared as static.",
+                                              DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodStatic");
+        Diagnostic mixedNonVoidDiagnostic1 = d(21, 26, 43,
+                                               "@BeforeCompletion session synchronization method must be of type void.",
+                                               DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodNonVoid");
+
+        Diagnostic mixedFinalDiagnostic2 = d(27, 21, 39,
+                                             "@AfterCompletion session synchronization method must not be declared as final.",
+                                             DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodFinal");
+        Diagnostic mixedNonVoidDiagnostic2 = d(27, 21, 39,
+                                               "@AfterCompletion session synchronization method must be of type void.",
+                                               DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionSyncMethodNonVoid");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              mixedFinalDiagnostic, mixedStaticDiagnostic1,
+                              mixedStaticDiagnostic2, mixedNonVoidDiagnostic1,
+                              mixedFinalDiagnostic2, mixedNonVoidDiagnostic2);
+
+        JakartaJavaCodeActionParams finalParams1 = createCodeActionParams(uri, mixedFinalDiagnostic);
+        TextEdit removeFinal1 = te(16, 17, 16, 23, "");
+        CodeAction removeFinalAction1 = ca(uri, "Remove the 'final' modifier", mixedFinalDiagnostic, removeFinal1);
+        assertJavaCodeAction(finalParams1, IJDT_UTILS, removeFinalAction1);
+
+        // QuickFix for beginSyncMixed - remove 'static': "static " occupies cols [11, 18)
+        // (AST uses trailing space when 'static' precedes another modifier)
+        JakartaJavaCodeActionParams staticParams1 = createCodeActionParams(uri, mixedStaticDiagnostic1);
+        TextEdit removeStatic1 = te(16, 11, 16, 18, "");
+        CodeAction removeStaticAction1 = ca(uri, "Remove the 'static' modifier", mixedStaticDiagnostic1, removeStatic1);
+        assertJavaCodeAction(staticParams1, IJDT_UTILS, removeStaticAction1);
+
+        // QuickFix for beforeCommitMixed - remove 'static': " static" occupies cols [10, 17)
+        JakartaJavaCodeActionParams staticParams2 = createCodeActionParams(uri, mixedStaticDiagnostic2);
+        TextEdit removeStatic2 = te(21, 10, 21, 17, "");
+        CodeAction removeStaticAction2 = ca(uri, "Remove the 'static' modifier", mixedStaticDiagnostic2, removeStatic2);
+        assertJavaCodeAction(staticParams2, IJDT_UTILS, removeStaticAction2);
+
+        // QuickFix for beforeCommitMixed - change return type to void: "boolean" occupies cols [18, 25)
+        JakartaJavaCodeActionParams nonVoidParams1 = createCodeActionParams(uri, mixedNonVoidDiagnostic1);
+        TextEdit changeReturnType1 = te(21, 18, 21, 25, "void");
+        CodeAction changeReturnTypeAction1 = ca(uri, "Change return type to void", mixedNonVoidDiagnostic1, changeReturnType1);
+        assertJavaCodeAction(nonVoidParams1, IJDT_UTILS, changeReturnTypeAction1);
+
+        // QuickFix for afterCompleteMixed - remove 'final': " final" occupies cols [10, 16)
+        JakartaJavaCodeActionParams finalParams2 = createCodeActionParams(uri, mixedFinalDiagnostic2);
+        TextEdit removeFinal2 = te(27, 10, 27, 16, "");
+        CodeAction removeFinalAction2 = ca(uri, "Remove the 'final' modifier", mixedFinalDiagnostic2, removeFinal2);
+        assertJavaCodeAction(finalParams2, IJDT_UTILS, removeFinalAction2);
+
+        // QuickFix for afterCompleteMixed - change return type to void: "int" occupies cols [17, 20)
+        JakartaJavaCodeActionParams nonVoidParams2 = createCodeActionParams(uri, mixedNonVoidDiagnostic2);
+        TextEdit changeReturnType2 = te(27, 17, 27, 20, "void");
+        CodeAction changeReturnTypeAction2 = ca(uri, "Change return type to void", mixedNonVoidDiagnostic2, changeReturnType2);
+        assertJavaCodeAction(nonVoidParams2, IJDT_UTILS, changeReturnTypeAction2);
+    }
+
+    // -----------------------------------------------------------------------
     // Negative: valid session synchronization methods produce no diagnostics
     // -----------------------------------------------------------------------
 
     @Test
     public void testValidSessionSyncMethodsProduceNoDiagnostics() throws Exception {
         assertJavaDiagnostics(createDiagnosticsParams(getJavaFileUri(BASE_PATH + "ValidSessionSyncMethods.java")),
+                              IJDT_UTILS);
+    }
+
+    // -----------------------------------------------------------------------
+    // Negative: non-session-bean class produces no diagnostics even with
+    // session sync annotations that would otherwise violate the spec
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testNonSessionBeanWithSessionSyncMethodsProducesNoDiagnostics() throws Exception {
+        assertJavaDiagnostics(
+                              createDiagnosticsParams(getJavaFileUri(BASE_PATH + "NonSessionBeanWithSessionSyncMethods.java")),
                               IJDT_UTILS);
     }
 

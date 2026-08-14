@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 
 /**
@@ -102,6 +103,26 @@ public class JDTTypeUtils {
             String signature = field.getTypeSignature();
             IType primaryType = field.getTypeRoot().findPrimaryType();
             return JavaModelUtil.getResolvedTypeName(signature, primaryType);
+        } catch (JavaModelException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the resolved type name for the given JDT type <code>signature</code>
+     * resolved against the given <code>context</code> type, and null otherwise.
+     *
+     * <p>Use this overload when you have a raw JDT signature string (e.g. a type
+     * argument extracted via {@link org.eclipse.jdt.core.Signature#getTypeArguments})
+     * and need to resolve it against a known declaring type rather than an element.
+     *
+     * @param signature the JDT type signature to resolve (e.g. {@code "QRoleType;"})
+     * @param context the type whose compilation unit is used to resolve imports
+     * @return the fully-qualified type name, or null if it cannot be resolved
+     */
+    public static String getResolvedTypeName(String signature, IType type) {
+        try {
+            return JavaModelUtil.getResolvedTypeName(signature, type);
         } catch (JavaModelException e) {
             return null;
         }
@@ -291,9 +312,7 @@ public class JDTTypeUtils {
         int end = fieldTypeName.lastIndexOf(">");
         String keyValue = fieldTypeName.substring(start, end);
         int index = keyValue.indexOf(',');
-        return new String[] {
-                              keyValue.substring(0, index), keyValue.substring(index + 1, keyValue.length())
-        };
+        return new String[] { keyValue.substring(0, index), keyValue.substring(index + 1, keyValue.length()) };
     }
 
     public static boolean isPrimitiveType(String valueClass) {
@@ -368,10 +387,22 @@ public class JDTTypeUtils {
     }
 
     /**
+     * Returns true if the 'type' signature is an Array
+     *
+     * @param type - Signature type of field or method
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isArray(String type) throws JavaModelException {
+        return Signature.getArrayCount(type) > 0;
+    }
+
+    /**
      * Returns the resolved type arguments for a parameterized type.
      *
      * @param member the field or method
-     * @return array of fully qualified type argument names, or null if not a parameterized type
+     * @return array of fully qualified type argument names, or null if not a
+     *         parameterized type
      */
     public static String[] getResolvedTypeArguments(IMember member) {
         try {
@@ -411,5 +442,6 @@ public class JDTTypeUtils {
             return null;
         }
         return null;
+
     }
 }
