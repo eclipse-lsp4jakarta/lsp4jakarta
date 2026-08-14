@@ -339,6 +339,15 @@
                   targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodFinal"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodStatic"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNonVoid"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.ChangeReturnTypeToVoidForSessionSyncMethodQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
       <codeAction kind="quickfix"
