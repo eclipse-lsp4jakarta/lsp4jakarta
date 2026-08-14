@@ -20,8 +20,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -524,5 +526,36 @@ public class DiagnosticUtils {
      */
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Returns {@code true} if the given JDT type signature represents a raw
+     * (unparameterized) {@code Event} type from {@code jakarta.enterprise.event}.
+     *
+     * <p>A raw {@code Event} has no type arguments, i.e. the signature has no
+     * {@code <…>} part. Parameterized forms such as {@code Event<String>} are valid
+     * and are not flagged. Array component types are unwrapped recursively so that
+     * {@code Event[]} is also treated as raw.
+     *
+     * <p>Callers should guard with
+     * {@link #isImportedJavaElement(ICompilationUnit, String)} before calling this
+     * method to avoid false positives from user-defined classes named {@code Event}.
+     *
+     * @param typeSignature the JDT type signature to check
+     * @return {@code true} if the signature is the raw {@code Event} type;
+     *         {@code false} otherwise
+     */
+    public static boolean isRawEventType(String typeSignature) {
+        if (StringUtils.isBlank(typeSignature)) {
+            return false;
+        }
+        // Unwrap array component types — Event[] would also be raw
+        if (Signature.getTypeSignatureKind(typeSignature) == Signature.ARRAY_TYPE_SIGNATURE) {
+            return isRawEventType(Signature.getElementType(typeSignature));
+        }
+        String erasure = Signature.getTypeErasure(typeSignature);
+        String simpleName = Signature.getSignatureSimpleName(erasure);
+        // Raw type has no type arguments
+        return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
     }
 }

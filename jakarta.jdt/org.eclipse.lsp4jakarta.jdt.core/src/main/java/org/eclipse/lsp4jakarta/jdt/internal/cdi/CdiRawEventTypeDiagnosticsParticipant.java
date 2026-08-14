@@ -16,14 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -64,15 +62,21 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
             return diagnostics;
         }
 
+        // Early exit: if jakarta.enterprise.event.Event is not imported, no raw-Event
+        // injection point can exist in this file.
+        if (!DiagnosticUtils.isImportedJavaElement(unit, Constants.EVENT_FQ_NAME)) {
+            return diagnostics;
+        }
+
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             // Check @Inject fields for raw Event type
             for (IField field : type.getFields()) {
-                if (isRawEventType(field.getTypeSignature())
+                if (DiagnosticUtils.isRawEventType(field.getTypeSignature())
                     && DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("InvalidRawEventTypeInjectionPoint"),
+                                                             Messages.getMessage(ErrorCode.InvalidRawEventTypeInjectionPoint.name()),
                                                              range,
                                                              Constants.DIAGNOSTIC_SOURCE,
                                                              null,
@@ -87,28 +91,19 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
             // on the method correctly via its parent-type binding.
             for (IMethod method : type.getMethods()) {
                 String[] paramTypes = method.getParameterTypes();
-                boolean hasRawEventParam = false;
-                for (int i = 0; i < paramTypes.length; i++) {
-                    if (isRawEventType(paramTypes[i])) {
-                        hasRawEventParam = true;
+                for (String paramType : paramTypes) {
+                    if (DiagnosticUtils.isRawEventType(paramType)
+                        && DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
+                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage(ErrorCode.InvalidRawEventTypeInjectionPoint.name()),
+                                                                 range,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 null,
+                                                                 ErrorCode.InvalidRawEventTypeInjectionPoint,
+                                                                 DiagnosticSeverity.Error));
+                        // One diagnostic per method is sufficient — the whole @Inject must be removed
                         break;
-                    }
-                }
-                if (hasRawEventParam
-                    && DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
-                    for (int i = 0; i < paramTypes.length; i++) {
-                        if (isRawEventType(paramTypes[i])) {
-                            Range range = PositionUtils.toNameRange(method, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("InvalidRawEventTypeInjectionPoint"),
-                                                                     range,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     null,
-                                                                     ErrorCode.InvalidRawEventTypeInjectionPoint,
-                                                                     DiagnosticSeverity.Error));
-                            // One diagnostic per method is sufficient — the whole @Inject must be removed
-                            break;
-                        }
                     }
                 }
             }
@@ -117,26 +112,4 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
         return diagnostics;
     }
 
-    /**
-     * Checks whether a type signature represents a raw (unparameterized) {@code Event} type.
-     *
-     * <p>A raw {@code Event} has no type arguments, i.e. the signature has no {@code <…>} part.
-     * Parameterized forms such as {@code Event<String>} are valid and not flagged.
-     *
-     * @param typeSignature the JDT type signature to check
-     * @return true if the signature is the raw Event type, false otherwise
-     */
-    private boolean isRawEventType(String typeSignature) {
-        if (StringUtils.isBlank(typeSignature)) {
-            return false;
-        }
-        // Unwrap array component types — Event[] would also be raw
-        if (Signature.getTypeSignatureKind(typeSignature) == Signature.ARRAY_TYPE_SIGNATURE) {
-            return isRawEventType(Signature.getElementType(typeSignature));
-        }
-        String erasure = Signature.getTypeErasure(typeSignature);
-        String simpleName = Signature.getSignatureSimpleName(erasure);
-        // Raw type has no type arguments
-        return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
-    }
 }
