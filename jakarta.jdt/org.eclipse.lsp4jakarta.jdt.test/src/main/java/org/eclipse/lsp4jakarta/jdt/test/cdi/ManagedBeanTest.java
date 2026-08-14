@@ -114,17 +114,20 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
 
-        Diagnostic d7 = d(17, 6, 27,
-                          "A managed bean in a passivating scope must implement java.io.Serializable.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
-        Diagnostic d8 = d(27, 6, 33,
-                          "A managed bean in a passivating scope must implement java.io.Serializable.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
-        Diagnostic d9 = d(37, 6, 36,
-                          "A managed bean in a passivating scope must implement java.io.Serializable.",
-                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic nonGenericManagedBeanPassivatingScopeDiagnostic = d(17, 6, 27,
+                                                                       "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic managedBeanWithoutDependentPassivatingScopeDiagnostic = d(27, 6, 33,
+                                                                             "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic managedBeanWithMultipleScopes2PassivatingScopeDiagnostic = d(37, 6, 36,
+                                                                                "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                                DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6,
+                              nonGenericManagedBeanPassivatingScopeDiagnostic,
+                              managedBeanWithoutDependentPassivatingScopeDiagnostic,
+                              managedBeanWithMultipleScopes2PassivatingScopeDiagnostic);
 
         // Assert for diagnostic d1
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
