@@ -50,7 +50,6 @@ public enum ErrorCode implements IJavaErrorCode {
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean;
 
-
     /**
      * {@inheritDoc}
      */

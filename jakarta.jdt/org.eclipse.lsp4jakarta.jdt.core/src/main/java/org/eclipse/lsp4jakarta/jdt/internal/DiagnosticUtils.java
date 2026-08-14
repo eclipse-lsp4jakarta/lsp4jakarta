@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
@@ -543,5 +544,38 @@ public class DiagnosticUtils {
             return ((IMethod) member).getAnnotations();
         }
         throw new IllegalArgumentException("Unsupported IMember type: " + member.getClass().getName());
+    }
+
+    /**
+     * Extracts nested {@link IAnnotation} objects from a container annotation's
+     * named member (e.g. the {@code value} element of {@code @AttributeOverrides}
+     * or {@code @Resources}).
+     *
+     * <p>Handles both a single nested annotation and an array of nested annotations
+     * transparently.
+     *
+     * @param container the container annotation (e.g. {@code @AttributeOverrides})
+     * @param memberName the member element whose value holds the nested annotation(s)
+     *            (typically {@code "value"})
+     * @return a list of nested {@link IAnnotation} objects; never {@code null}
+     * @throws JavaModelException if the annotation model cannot be accessed
+     */
+    public static List<IAnnotation> getNestedAnnotations(IAnnotation container, String memberName) throws JavaModelException {
+        List<IAnnotation> result = new ArrayList<>();
+        for (IMemberValuePair pair : container.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object val = pair.getValue();
+                if (val instanceof Object[]) {
+                    for (Object item : (Object[]) val) {
+                        if (item instanceof IAnnotation) {
+                            result.add((IAnnotation) item);
+                        }
+                    }
+                } else if (val instanceof IAnnotation) {
+                    result.add((IAnnotation) val);
+                }
+            }
+        }
+        return result;
     }
 }

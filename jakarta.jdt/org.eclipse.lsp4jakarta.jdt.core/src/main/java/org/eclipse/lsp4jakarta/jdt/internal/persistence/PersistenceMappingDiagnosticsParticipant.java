@@ -22,7 +22,6 @@ import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMember;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -108,8 +107,8 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
 
         for (IType type : unit.getAllTypes()) {
             // 1. Validate class-level override annotations
-            validateOverridesOnType(type, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
-            validateOverridesOnType(type, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
+            validateOverridesOnType(type, unit, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
+            validateOverridesOnType(type, unit, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
 
             // 2. Validate field-level override annotations
             for (IField field : type.getFields()) {
@@ -136,21 +135,21 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * The {@code name} must resolve against a field declared anywhere in the
      * {@code @MappedSuperclass} supertype chain.
      */
-    private void validateOverridesOnType(IType type,
+    private void validateOverridesOnType(IType type, ICompilationUnit unit,
                                          OverrideAnnotationDescriptor desc,
                                          JavaDiagnosticsContext context,
                                          List<Diagnostic> diagnostics) throws CoreException {
         for (IAnnotation annotation : type.getAnnotations()) {
             if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.singleFqn)) {
-                String name = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
-                if (name != null) {
-                    validateNameAgainstSuperclassChain(name, annotation, type, desc, context, diagnostics);
+                String fieldName = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
+                if (fieldName != null) {
+                    validateNameAgainstSuperclassChain(fieldName, annotation, type, unit, desc, context, diagnostics);
                 }
             } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.containerFqn)) {
-                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
-                    String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
-                    if (name != null) {
-                        validateNameAgainstSuperclassChain(name, nested, type, desc, context, diagnostics);
+                for (IAnnotation nested : DiagnosticUtils.getNestedAnnotations(annotation, desc.containerMember)) {
+                    String fieldName = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
+                    if (fieldName != null) {
+                        validateNameAgainstSuperclassChain(fieldName, nested, type, unit, desc, context, diagnostics);
                     }
                 }
             }
@@ -161,18 +160,18 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * Checks that {@code name} resolves to a declared field somewhere in the
      * {@code @MappedSuperclass} supertype chain of {@code type}.
      */
-    private void validateNameAgainstSuperclassChain(String name, IAnnotation annotation,
-                                                    IType type,
+    private void validateNameAgainstSuperclassChain(String fieldName, IAnnotation annotation,
+                                                    IType type, ICompilationUnit unit,
                                                     OverrideAnnotationDescriptor desc,
                                                     JavaDiagnosticsContext context,
                                                     List<Diagnostic> diagnostics) throws CoreException {
         try {
-            IType superType = findMappedSuperclassWithField(type, name);
-            if (superType == null) {
+            IType mappedSuperClass = findMappedSuperclassWithField(type, unit, fieldName);
+            if (mappedSuperClass == null) {
                 Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                 String targetTypeName = resolveSuperclassChainName(type);
                 diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                         Messages.getMessage(desc.msgNotFound, name, targetTypeName),
+                                                         Messages.getMessage(desc.msgNotFound, fieldName, targetTypeName),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
                                                          desc.errorCode, DiagnosticSeverity.Error));
             }
@@ -186,7 +185,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * that declares a field matching {@code name} (dot-notation resolved recursively).
      * Returns the first matching supertype, or {@code null} if none found.
      */
-    private IType findMappedSuperclassWithField(IType type, String name) throws CoreException {
+    private IType findMappedSuperclassWithField(IType type, ICompilationUnit unit, String fieldName) throws CoreException {
         IType current = type;
         while (current != null) {
             String superclassName = current.getSuperclassName();
@@ -197,20 +196,11 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             if (superType == null) {
                 break;
             }
-            boolean isMappedSuperclass = DiagnosticUtils.isMatchedJavaElement(
-                                                                              superType,
-                                                                              superType.getElementName().isEmpty() ? superclassName : superType.getElementName(),
-                                                                              Constants.MAPPEDSUPERCLASS);
-            // fall back to annotation scan when simple name check fails
-            if (!isMappedSuperclass) {
-                for (IAnnotation annotation : superType.getAnnotations()) {
-                    if (DiagnosticUtils.isMatchedJavaElement(superType, annotation.getElementName(), Constants.MAPPEDSUPERCLASS)) {
-                        isMappedSuperclass = true;
-                        break;
-                    }
-                }
-            }
-            if (isMappedSuperclass && fieldExistsInType(superType, name)) {
+            boolean isMappedSuperclass = DiagnosticUtils.isMatchedAnnotation(
+                                                                             superType.getCompilationUnit(),
+                                                                             superType.getAnnotations(),
+                                                                             Constants.MAPPEDSUPERCLASS);
+            if (isMappedSuperclass && fieldExistsInType(superType, fieldName)) {
                 return superType;
             }
             current = superType;
@@ -248,7 +238,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                     validateNameOnMember(name, annotation, member, declaringType, hasElementCollection, desc, context, diagnostics);
                 }
             } else if (DiagnosticUtils.isMatchedJavaElement(declaringType, annotation.getElementName(), desc.containerFqn)) {
-                for (IAnnotation nested : getNestedOverrides(annotation, desc.containerMember)) {
+                for (IAnnotation nested : DiagnosticUtils.getNestedAnnotations(annotation, desc.containerMember)) {
                     String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
                     if (name != null) {
                         validateNameOnMember(name, nested, member, declaringType, hasElementCollection, desc, context, diagnostics);
@@ -268,7 +258,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                                       JavaDiagnosticsContext context,
                                       List<Diagnostic> diagnostics) throws CoreException {
         try {
-            String typeName = member instanceof IMethod ? JDTTypeUtils.getResolvedResultTypeName((IMethod) member) : JDTTypeUtils.getResolvedTypeName((IField) member);
+            String typeName = JDTTypeUtils.getResolvedTypeName(member);
 
             if (isElementCollection && JDTTypeUtils.isMap(typeName)) {
                 validateNameOnMapElementCollection(name, annotation, member, declaringType, desc, context, diagnostics);
@@ -396,12 +386,12 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * Returns true if {@code type} (or a nested embeddable reached via dot-notation)
      * declares a field matching {@code name}.
      */
-    private boolean fieldExistsInType(IType type, String name) throws JavaModelException {
-        int dotIndex = name.indexOf('.');
-        if (dotIndex == -1) {
-            return hasField(type, name);
+    private boolean fieldExistsInType(IType type, String fieldName) throws JavaModelException {
+        int dotIndex = fieldName.indexOf('.');
+        if (dotIndex == Constants.NOT_FOUND) {
+            return hasField(type, fieldName);
         }
-        String firstSegment = name.substring(0, dotIndex);
+        String firstSegment = fieldName.substring(0, dotIndex);
         if (!hasField(type, firstSegment)) {
             return false;
         }
@@ -411,7 +401,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             return false;
         }
         IType nestedType = JDTTypeUtils.findType(type.getJavaProject(), nestedTypeName);
-        return nestedType != null && fieldExistsInType(nestedType, name.substring(dotIndex + 1));
+        return nestedType != null && fieldExistsInType(nestedType, fieldName.substring(dotIndex + 1));
     }
 
     /**
@@ -423,29 +413,4 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
         return superclassName != null ? superclassName : type.getElementName();
     }
 
-    /**
-     * Extracts the nested single override annotations from a container annotation's
-     * {@code value} attribute (handles both single-element and array values).
-     *
-     * @param container the container annotation (e.g. {@code @AttributeOverrides})
-     * @param memberName the member element name holding the nested annotations (always "value")
-     */
-    private List<IAnnotation> getNestedOverrides(IAnnotation container, String memberName) throws JavaModelException {
-        List<IAnnotation> result = new ArrayList<>();
-        for (IMemberValuePair pair : container.getMemberValuePairs()) {
-            if (memberName.equals(pair.getMemberName())) {
-                Object val = pair.getValue();
-                if (val instanceof Object[]) {
-                    for (Object item : (Object[]) val) {
-                        if (item instanceof IAnnotation) {
-                            result.add((IAnnotation) item);
-                        }
-                    }
-                } else if (val instanceof IAnnotation) {
-                    result.add((IAnnotation) val);
-                }
-            }
-        }
-        return result;
-    }
 }
