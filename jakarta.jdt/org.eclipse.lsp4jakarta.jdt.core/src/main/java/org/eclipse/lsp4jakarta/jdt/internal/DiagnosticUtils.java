@@ -219,19 +219,14 @@ public class DiagnosticUtils {
      *         false otherwise.
      */
     public static boolean doesImplementInterfaces(IType type, String[] interfaceFQNames) throws JavaModelException {
-        String[] interfaceNames = type.getSuperInterfaceNames();
-
-        // should check import statements first for the performance?
-
-        // check super hierarchy
-        if (interfaceNames.length > 0) { // the type implements interface(s)
-            ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-            IType[] interfaces = typeHierarchy.getAllInterfaces();
-            for (IType interfase : interfaces) {
-                String fqName = interfase.getFullyQualifiedName();
-                if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
-                    return true;
-            }
+        // Walk the full supertype hierarchy so that interfaces implemented by a
+        // superclass (inherited implementation) are also considered.
+        ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType[] interfaces = typeHierarchy.getAllInterfaces();
+        for (IType interfase : interfaces) {
+            String fqName = interfase.getFullyQualifiedName();
+            if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
+                return true;
         }
         return false;
     }
@@ -526,6 +521,21 @@ public class DiagnosticUtils {
      */
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Converts a list of fully qualified annotation names to a comma-separated
+     * string of simple names, each prefixed with the given {@code prefix}.
+     *
+     * <p>Use {@code prefix = "@"} to produce display strings such as
+     * {@code "@AfterBegin"}, or {@code prefix = ""} for plain simple names.
+     *
+     * @param annotations the fully qualified annotation names
+     * @param prefix the string to prepend to each simple name (e.g. {@code "@"})
+     * @return comma-separated simple annotation names with the given prefix
+     */
+    public static String getSimpleAnnotationNames(List<String> annotations, String prefix) {
+        return annotations.stream().map(fq -> prefix + getSimpleName(fq)).distinct().collect(Collectors.joining(", "));
     }
 
     /**
