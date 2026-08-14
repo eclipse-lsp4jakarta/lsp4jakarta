@@ -283,8 +283,8 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
         }
         // JDT type signature: "Z" = boolean, "QBoolean;" = java.lang.Boolean
         String param = paramTypes[0];
-        return "Z".equals(param)
-               || DiagnosticUtils.isMatchedJavaElement(type, DiagnosticUtils.getDataTypeName(param), "java.lang.Boolean");
+        return Constants.BOOLEAN_PRIMITIVE_SIGNATURE.equals(param)
+               || DiagnosticUtils.isMatchedJavaElement(type, DiagnosticUtils.getDataTypeName(param), Constants.BOOLEAN_FQ_NAME);
     }
 
     /**
