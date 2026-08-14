@@ -95,7 +95,7 @@ public class CdiRawEventTypeDiagnosticsParticipant implements IJavaDiagnosticsPa
                     }
                 }
                 if (hasRawEventParam
-                        && DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
+                    && DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     for (int i = 0; i < paramTypes.length; i++) {
                         if (isRawEventType(paramTypes[i])) {
                             Range range = PositionUtils.toNameRange(method, context.getUtils());
