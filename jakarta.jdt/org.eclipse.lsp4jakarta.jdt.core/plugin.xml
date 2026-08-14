@@ -488,6 +488,9 @@
                   targetDiagnostic="jakarta-cdi#InvalidSpecializedBeanWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEvent" />
       <codeAction kind="quickfix"
@@ -524,6 +527,12 @@
    <!-- Security -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.security.SecurityIdentityStoreDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-security#MissingApplicationScopedOnIdentityStoreDefinition"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.security.InsertApplicationScopedAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-security#InvalidScopeOnIdentityStoreDefinition"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.security.ReplaceWithApplicationScopedAnnotationQuickFix" />
    </extension>
 
    <!-- EJB -->
