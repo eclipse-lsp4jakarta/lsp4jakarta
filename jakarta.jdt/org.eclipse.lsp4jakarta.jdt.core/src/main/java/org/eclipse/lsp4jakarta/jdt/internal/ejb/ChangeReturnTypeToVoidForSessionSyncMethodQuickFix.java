@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2026 IBM Corporation and others.
+ * Copyright (c) 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -10,23 +10,25 @@
  * Contributors:
  *     IBM Corporation - initial implementation
  *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.annotations;
+package org.eclipse.lsp4jakarta.jdt.internal.ejb;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.ChangeReturnTypeToVoidQuickFix;
 
 /**
- * Modifies the return type of the active element to {@code void}.
+ * Changes the return type of a session synchronization method annotated with
+ * {@code @AfterBegin}, {@code @BeforeCompletion}, or {@code @AfterCompletion}
+ * to {@code void}, as required by the EJB specification.
  */
-public class ModifyConstructReturnTypeQuickFix extends ChangeReturnTypeToVoidQuickFix {
+public class ChangeReturnTypeToVoidForSessionSyncMethodQuickFix extends ChangeReturnTypeToVoidQuickFix {
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getParticipantId() {
-        return ModifyConstructReturnTypeQuickFix.class.getName();
+        return ChangeReturnTypeToVoidForSessionSyncMethodQuickFix.class.getName();
     }
 
     /**
@@ -34,6 +36,6 @@ public class ModifyConstructReturnTypeQuickFix extends ChangeReturnTypeToVoidQui
      */
     @Override
     protected ICodeActionId getCodeActionId() {
-        return JakartaCodeActionId.ChangeReturnTypeToVoid;
+        return JakartaCodeActionId.EJBChangeReturnTypeToVoidForSessionSyncMethod;
     }
 }
