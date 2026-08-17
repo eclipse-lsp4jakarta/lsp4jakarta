@@ -83,25 +83,25 @@ public class UserTransactionInjectTest extends BaseJakartaTest {
                               sessionScopedFieldDiagnostic,
                               initMethodParamDiagnostic);
 
-        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, applicationScopedFieldDiagnostic);
+        JakartaJavaCodeActionParams applicationScopedFieldCodeActionParams = createCodeActionParams(uri, applicationScopedFieldDiagnostic);
         TextEdit removeInjectFromApplicationScopedField = te(12, 4, 13, 4, "");
         CodeAction removeInjectForApplicationScopedField = ca(uri, "Remove @Inject", applicationScopedFieldDiagnostic, removeInjectFromApplicationScopedField);
-        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeInjectForApplicationScopedField);
+        assertJavaCodeAction(applicationScopedFieldCodeActionParams, IJDT_UTILS, removeInjectForApplicationScopedField);
 
-        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, requestScopedFieldDiagnostic);
+        JakartaJavaCodeActionParams requestScopedFieldCodeActionParams = createCodeActionParams(uri, requestScopedFieldDiagnostic);
         TextEdit removeInjectFromRequestScopedField = te(24, 4, 25, 4, "");
         CodeAction removeInjectForRequestScopedField = ca(uri, "Remove @Inject", requestScopedFieldDiagnostic, removeInjectFromRequestScopedField);
-        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeInjectForRequestScopedField);
+        assertJavaCodeAction(requestScopedFieldCodeActionParams, IJDT_UTILS, removeInjectForRequestScopedField);
 
-        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, sessionScopedFieldDiagnostic);
+        JakartaJavaCodeActionParams sessionScopedFieldCodeActionParams = createCodeActionParams(uri, sessionScopedFieldDiagnostic);
         TextEdit removeInjectFromSessionScopedField = te(36, 4, 37, 4, "");
         CodeAction removeInjectForSessionScopedField = ca(uri, "Remove @Inject", sessionScopedFieldDiagnostic, removeInjectFromSessionScopedField);
-        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, removeInjectForSessionScopedField);
+        assertJavaCodeAction(sessionScopedFieldCodeActionParams, IJDT_UTILS, removeInjectForSessionScopedField);
 
-        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, initMethodParamDiagnostic);
+        JakartaJavaCodeActionParams initMethodCodeActionParams = createCodeActionParams(uri, initMethodParamDiagnostic);
         TextEdit removeInjectFromInitMethod = te(48, 4, 49, 4, "");
         CodeAction removeInjectForInitMethod = ca(uri, "Remove @Inject", initMethodParamDiagnostic, removeInjectFromInitMethod);
-        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, removeInjectForInitMethod);
+        assertJavaCodeAction(initMethodCodeActionParams, IJDT_UTILS, removeInjectForInitMethod);
     }
 
     @Test

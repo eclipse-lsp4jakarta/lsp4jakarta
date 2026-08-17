@@ -35,6 +35,8 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.di.DIUtils;
 
 /**
  *
@@ -45,11 +47,6 @@ import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 public class DiagnosticUtils {
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
-
-    // CDI qualifier constants used by hasDefaultQualifier
-    private static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
-    private static final String CDI_DEFAULT_FQ_NAME = "jakarta.enterprise.inject.Default";
-    private static final String CDI_ANY_FQ_NAME = "jakarta.enterprise.inject.Any";
 
     public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
     public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
@@ -555,21 +552,23 @@ public class DiagnosticUtils {
     public static boolean hasDefaultQualifier(ICompilationUnit unit, IType type,
                                               IAnnotation[] annotations) throws JavaModelException {
         boolean hasExplicitDefault = false;
-        boolean hasOtherQualifier = false;
+        boolean hasCustomQualifier = false;
 
         for (IAnnotation annotation : annotations) {
-            if (isMatchedAnnotation(unit, annotation, INJECT_FQ_NAME)) {
+            if (isMatchedAnnotation(unit, annotation, Constants.INJECT_FQ_NAME)) {
                 // @Inject is not a qualifier — skip
                 continue;
             }
-            if (isMatchedAnnotation(unit, annotation, CDI_DEFAULT_FQ_NAME)) {
+            if (isMatchedAnnotation(unit, annotation, Constants.CDI_DEFAULT_FQ_NAME)) {
                 hasExplicitDefault = true;
-            } else if (!isMatchedAnnotation(unit, annotation, CDI_ANY_FQ_NAME)) {
-                // Any other annotation is treated as a qualifier targeting a non-default bean
-                hasOtherQualifier = true;
+            } else if (isMatchedAnnotation(unit, annotation, Constants.CDI_ANY_FQ_NAME)) {
+                // @Any is a built-in qualifier but not a custom one — skip
+            } else if (DIUtils.isQualifier(annotation, unit, type)) {
+                // Only count annotations that are actual CDI qualifiers (meta-annotated with @Qualifier)
+                hasCustomQualifier = true;
             }
         }
 
-        return hasExplicitDefault || !hasOtherQualifier;
+        return hasExplicitDefault || !hasCustomQualifier;
     }
 }
