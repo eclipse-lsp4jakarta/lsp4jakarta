@@ -449,7 +449,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("InvalidAroundConstructInTargetClass"),
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
                                                              range,
                                                              Constants.DIAGNOSTIC_SOURCE,
                                                              ErrorCode.InvalidAroundConstructInTargetClass,

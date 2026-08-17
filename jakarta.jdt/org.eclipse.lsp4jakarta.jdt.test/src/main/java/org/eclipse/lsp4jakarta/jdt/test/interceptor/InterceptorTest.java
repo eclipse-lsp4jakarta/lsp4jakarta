@@ -788,4 +788,37 @@ public class InterceptorTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSuperclass);
     }
+
+    @Test
+    public void testAroundConstructInInterceptorClassIsValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidAroundConstructInInterceptorClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared inside a class annotated with @Interceptor.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructInInterceptorSuperclassIsValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidAroundConstructInInterceptorSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared in a superclass that is also an interceptor
+        // class (@Interceptor). The restriction only applies to target class superclasses.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported on either class.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
