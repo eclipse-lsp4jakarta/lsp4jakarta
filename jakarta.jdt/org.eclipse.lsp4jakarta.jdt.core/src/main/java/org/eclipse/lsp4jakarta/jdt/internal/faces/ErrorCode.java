@@ -11,31 +11,21 @@
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
 
-package org.eclipse.lsp4jakarta.jdt.internal.ejb;
+package org.eclipse.lsp4jakarta.jdt.internal.faces;
 
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
 
 /**
- * Jakarta Enterprise Beans error codes.
+ * Jakarta Faces error code.
  */
 public enum ErrorCode implements IJavaErrorCode {
+    FacesValidatorAnnotatedClassNoValidatorInterfaceImpl;
 
-    MissingPublicNoArgConstructor,
-    InvalidSessionSyncMethodFinal,
-    InvalidSessionSyncMethodStatic,
-    InvalidSessionSyncMethodNonVoid,
-    InvalidModifierNotPublic,
-    InvalidModifierFinal,
-    InvalidModifierAbstract,
-    InvalidNonTopLevelClass,
-    InvalidSessionBeanWithInterceptorOrDecorator,
-    ConflictingSessionBeanAnnotations,
-    SessionBeanFinalizeMethod,
-    ImplementMessageListener;
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getCode() {
         return name();
     }
-
 }
