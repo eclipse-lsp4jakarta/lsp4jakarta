@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
@@ -479,6 +480,41 @@ public class DiagnosticUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns all class-literal values for a named member of an annotation.
+     *
+     * <p>JDT represents {@code Class<?>} literals in annotations as
+     * {@link IMemberValuePair#K_CLASS} pairs whose value is the class name as a
+     * {@link String} (the {@code .class} suffix is already stripped). A member
+     * may hold a single class ({@code @Foo(Bar.class)}) or an array
+     * ({@code @Foo({Bar.class, Baz.class})}); both forms are handled.</p>
+     *
+     * @param annotation the annotation to inspect
+     * @param memberName the member/attribute name whose class values are wanted
+     * @return an unordered list of class names (simple or fully qualified,
+     *         as stored by JDT); never {@code null}, empty when the member is
+     *         absent or carries no {@code K_CLASS} values
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static List<String> getAnnotationClassValues(IAnnotation annotation, String memberName) throws JavaModelException {
+        List<String> values = new ArrayList<>();
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName()) && pair.getValueKind() == IMemberValuePair.K_CLASS) {
+                Object raw = pair.getValue();
+                if (raw instanceof Object[]) {
+                    for (Object element : (Object[]) raw) {
+                        if (element instanceof String) {
+                            values.add((String) element);
+                        }
+                    }
+                } else if (raw instanceof String) {
+                    values.add((String) raw);
+                }
+            }
+        }
+        return values;
     }
 
     /**
