@@ -107,7 +107,7 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
         boolean directSuperclassIsBean = Stream.concat(Constants.SCOPE_FQ_NAMES.stream(),
                                                        Stream.of(Constants.NORMAL_SCOPE_FQ_NAME)).anyMatch(scopeFQName -> {
                                                            try {
-                                                               return TypeHierarchyUtils.hasAnnotation(type, scopeFQName);
+                                                               return TypeHierarchyUtils.directSuperClassHasAnnotation(type, scopeFQName);
                                                            } catch (JavaModelException e) {
                                                                LOGGER.log(Level.WARNING, "Could not inspect direct superclass annotations", e);
                                                                return false;

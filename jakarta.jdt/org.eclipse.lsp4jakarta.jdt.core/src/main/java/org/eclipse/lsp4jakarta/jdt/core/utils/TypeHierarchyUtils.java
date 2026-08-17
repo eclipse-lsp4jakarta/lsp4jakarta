@@ -224,7 +224,7 @@ public class TypeHierarchyUtils {
      *         cannot be resolved, or it does not carry the annotation
      * @throws JavaModelException if the Java model cannot be accessed
      */
-    public static boolean hasAnnotation(IType type, String annotationFQName) throws JavaModelException {
+    public static boolean directSuperClassHasAnnotation(IType type, String annotationFQName) throws JavaModelException {
         IType superclassType = resolveDirectSuperclass(type);
         if (superclassType == null) {
             return false;
