@@ -75,8 +75,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             int typeFlag = type.getFlags();
-            boolean isInterceptorType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
-            if (isInterceptorType) {
+            boolean isInterceptorReferencedType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
+            if (isInterceptorReferencedType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
                 // Check 1: Validate if class is abstract
                 if (Flags.isAbstract(typeFlag)) {
@@ -118,11 +118,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
+            }
 
-                // Check: @AroundConstruct must not appear in target classes (classes without @Interceptor)
-                if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
-                    checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context);
-                }
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
