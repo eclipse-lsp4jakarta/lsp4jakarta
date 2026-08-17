@@ -206,7 +206,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         int methodFlag = method.getFlags();
-        String annotationNames = getSimpleAnnotationNames(interceptorAnnotations);
+        String annotationNames = DiagnosticUtils.getSimpleAnnotationNames(interceptorAnnotations, "");
         JsonArray annotationData = (JsonArray) new Gson().toJsonTree(interceptorAnnotations);
         // Check for final modifier
         if (Flags.isFinal(methodFlag)) {
