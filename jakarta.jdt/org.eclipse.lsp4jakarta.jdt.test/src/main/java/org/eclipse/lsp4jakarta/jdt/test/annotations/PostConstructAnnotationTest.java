@@ -56,8 +56,18 @@ public class PostConstructAnnotationTest extends BaseJakartaTest {
         Diagnostic d1 = d(19, 16, 28, "A method with the @PostConstruct annotation must be void.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructReturnType");
 
+        // Non-void @PostConstruct also violates lifecycle callback signature rule
+        Diagnostic nonVoid = d(19, 16, 28,
+                             "Lifecycle callback interceptor methods declared in a target class or in a superclass of a target class must have the signature void <METHOD>().",
+                             DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackMethodSignatureInTargetClass");
+
         Diagnostic d2 = d(24, 13, 25, "A method with the @PostConstruct annotation must not have any parameters.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructParams");
+
+        // @PostConstruct with params also violates lifecycle callback signature rule
+        Diagnostic withParamsInvalid = d(24, 13, 25,
+                             "Lifecycle callback interceptor methods declared in a target class or in a superclass of a target class must have the signature void <METHOD>().",
+                             DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackMethodSignatureInTargetClass");
 
         Diagnostic d3 = d(29, 13, 25, "A method with the annotation '@PostConstruct' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
@@ -71,7 +81,7 @@ public class PostConstructAnnotationTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-annotations", "PostConstructException");
         d5.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.annotations.CustomCheckedException", "java.io.IOException")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, nonVoid, d2, withParamsInvalid, d3, d4, d5);
 
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
         TextEdit te1 = te(23, 1, 24, 1, "");
