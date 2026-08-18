@@ -555,14 +555,13 @@ public class DiagnosticUtils {
         boolean hasCustomQualifier = false;
 
         for (IAnnotation annotation : annotations) {
-            if (isMatchedAnnotation(unit, annotation, Constants.INJECT_FQ_NAME)) {
-                // @Inject is not a qualifier — skip
+            // @Inject is not a qualifier; @Any is a built-in qualifier but not a custom one — skip both
+            if (isMatchedAnnotation(unit, annotation, Constants.INJECT_FQ_NAME)
+                || isMatchedAnnotation(unit, annotation, Constants.CDI_ANY_FQ_NAME)) {
                 continue;
             }
             if (isMatchedAnnotation(unit, annotation, Constants.CDI_DEFAULT_FQ_NAME)) {
                 hasExplicitDefault = true;
-            } else if (isMatchedAnnotation(unit, annotation, Constants.CDI_ANY_FQ_NAME)) {
-                // @Any is a built-in qualifier but not a custom one — skip
             } else if (DIUtils.isQualifier(annotation, unit, type)) {
                 // Only count annotations that are actual CDI qualifiers (meta-annotated with @Qualifier)
                 hasCustomQualifier = true;
