@@ -21,22 +21,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.lsp4j.DiagnosticSeverity;
-
 /**
  * WebSocket diagnostic and code action constants.
  */
 public class Constants {
     public static final String DIAGNOSTIC_SOURCE = "jakarta-websocket";
 
-    public static final DiagnosticSeverity ERROR = DiagnosticSeverity.Error;
-    public static final DiagnosticSeverity WARNING = DiagnosticSeverity.Warning;
-
-    public static final String DIAGNOSTIC_ERR_MSG = "Cannot calculate WebSocket diagnostics";
-
     public static final String PATHPARAM_ANNOTATION = "jakarta.websocket.server.PathParam";
-
-    public static final String PATHPARAM_DIAGNOSTIC_CODE = "ChangePathParamValue";
 
     public static final String ANNOTATION_VALUE = "value";
 
@@ -52,10 +43,6 @@ public class Constants {
     public static final String SERVER_ENDPOINT_ANNOTATION = "jakarta.websocket.server.ServerEndpoint";
     public static final String CLIENT_ENDPOINT_ANNOTATION = "jakarta.websocket.ClientEndpoint";
 
-    // Superclass
-    public static final String ENDPOINT_SUPERCLASS = "Endpoint";
-    public static final String IS_SUPERCLASS = "isSuperclass";
-
     public static final String[] WS_ANNOTATION_CLASS = { SERVER_ENDPOINT_ANNOTATION, CLIENT_ENDPOINT_ANNOTATION };
 
     public static final String STRING_CLASS_LONG = "java.lang.String";
@@ -68,10 +55,6 @@ public class Constants {
     public static final String INPUTSTREAM_CLASS_SHORT = "InputStream";
     public static final String PONGMESSAGE_CLASS_LONG = "jakarta.websocket.PongMessage";
     public static final String PONGMESSAGE_CLASS_SHORT = "PongMessage";
-    public static final Set<String> LONG_MESSAGE_CLASSES = new HashSet<>(Arrays.asList(STRING_CLASS_LONG, READER_CLASS_LONG, BYTEBUFFER_CLASS_LONG, INPUTSTREAM_CLASS_LONG,
-                                                                                       PONGMESSAGE_CLASS_LONG));
-    public static final Set<String> SHORT_MESSAGE_CLASSES = new HashSet<>(Arrays.asList(STRING_CLASS_SHORT, READER_CLASS_SHORT, BYTEBUFFER_CLASS_SHORT, INPUTSTREAM_CLASS_SHORT,
-                                                                                        PONGMESSAGE_CLASS_SHORT));
     public static final String SESSION_CLASS = "jakarta.websocket.Session";
 
     /* Annotations */
@@ -87,8 +70,6 @@ public class Constants {
                                                                               "OnOpen", ON_OPEN,
                                                                               "OnClose", ON_CLOSE,
                                                                               "OnError", ON_ERROR);
-
-    public static final String IS_ANNOTATION = "isAnnotation";
 
     /* Types */
     public static final String PATH_PARAM_ANNOTATION = "jakarta.websocket.server.PathParam";
