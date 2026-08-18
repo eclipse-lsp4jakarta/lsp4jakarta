@@ -96,6 +96,26 @@ public class CdiSpecializesTest extends BaseJakartaTest {
     }
 
     /**
+     * Tests that a class annotated with @Specializes that extends a valid CDI bean
+     * annotated with @Dependent does NOT trigger a diagnostic.
+     *
+     * @Dependent is a built-in CDI scope, so @Specializes must be accepted without a diagnostic.
+     */
+    @Test
+    public void testSpecializesWithDependentScopedSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesWithDependentScopedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — direct superclass is annotated with @Dependent
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
      * Tests that a class annotated with @Specializes whose direct superclass has no scope
      * annotation triggers a diagnostic, even though the grandparent class IS a valid CDI bean.
      *
