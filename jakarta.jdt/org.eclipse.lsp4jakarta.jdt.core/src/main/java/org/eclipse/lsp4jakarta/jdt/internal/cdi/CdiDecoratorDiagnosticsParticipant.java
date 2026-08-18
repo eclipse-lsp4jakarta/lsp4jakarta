@@ -232,7 +232,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             }
             // Primitives are never valid bean types — report immediately without further resolution.
             if (Signature.getTypeSignatureKind(rawTypeSignature) == Signature.BASE_TYPE_SIGNATURE) {
-                reportDecoratorDiagnostic(delegateElement, "InvalidDecoratorDelegateTypeAssignability",
+                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorDelegateTypeAssignability.name(),
                                           Signature.toString(rawTypeSignature), "",
                                           ErrorCode.InvalidDecoratorDelegateTypeAssignability,
                                           uri, context, diagnostics);
