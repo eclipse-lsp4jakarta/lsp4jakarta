@@ -29,13 +29,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
-import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -44,6 +42,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -319,14 +318,12 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
         for (IAnnotation annotation : type.getAnnotations()) {
             String name = annotation.getElementName();
 
-            // Determine which (if any) endpoint annotation this is.
-            boolean isServerEndpoint = DiagnosticUtils.isMatchedJavaElement(type, name, Constants.SERVER_ENDPOINT_ANNOTATION);
-            boolean isEndpointAnnotation = isServerEndpoint
-                                           || DiagnosticUtils.getMatchedJavaElementName(type, name, endpointAnnotations) != null;
-
-            if (!isEndpointAnnotation) {
+            // Determine which (if any) endpoint annotation this is — single resolution call.
+            String matched = DiagnosticUtils.getMatchedJavaElementName(type, name, endpointAnnotations);
+            if (matched == null) {
                 continue;
             }
+            boolean isServerEndpoint = Constants.SERVER_ENDPOINT_ANNOTATION.equals(matched);
 
             String path = getAnnotationStringValue(annotation);
             if (path == null) {
