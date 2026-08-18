@@ -121,8 +121,10 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            // Lifecycle callback methods in a target class must have the signature void <METHOD>().
             if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
                 checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context);
+                checkLifecycleCallbackMethodSignatureInTargetClass(type, unit, uri, diagnostics, context);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -456,6 +458,48 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              DiagnosticSeverity.Error));
                     break;
                 }
+            }
+        }
+    }
+
+    /**
+     * Checks if a non-interceptor class (target class) or one of its superclasses
+     * declares a lifecycle callback interceptor method (@PostConstruct, @PreDestroy,
+     * @AroundConstruct) that does not have the required signature {@code void <METHOD>()}.
+     *
+     * <p>According to the Jakarta Interceptors 2.0 specification, lifecycle callback
+     * interceptor methods declared in a target class or in a superclass of a target class
+     * must have the following signature: {@code void <METHOD>()}. That is, the method
+     * must return void and must declare no parameters.</p>
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkLifecycleCallbackMethodSignatureInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                                    List<Diagnostic> diagnostics,
+                                                                    JavaDiagnosticsContext context) throws JavaModelException {
+        for (IMethod method : type.getMethods()) {
+            List<String> lifecycleAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                           Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                           Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS);
+            if (lifecycleAnnotations.isEmpty()) {
+                continue;
+            }
+            // Violation: method has parameters or non-void return type
+            boolean hasParams = method.getNumberOfParameters() > 0;
+            boolean isNonVoid = !Constants.VOID_RETURN_TYPE.equals(method.getReturnType());
+            if (hasParams || isNonVoid) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage(ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass.name()),
+                                                         range,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass,
+                                                         DiagnosticSeverity.Error));
             }
         }
     }
