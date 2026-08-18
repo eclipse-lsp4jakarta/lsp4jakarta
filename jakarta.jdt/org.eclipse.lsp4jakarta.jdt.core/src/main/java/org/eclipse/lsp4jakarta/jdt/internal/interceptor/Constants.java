@@ -56,4 +56,7 @@ public class Constants {
     /* @InterceptorBinding */
     public static final String INTERCEPTOR_BINDING_FQ_NAME = "jakarta.interceptor.InterceptorBinding";
 
+    /* JDT return-type signature for void */
+    public static final String VOID_RETURN_TYPE = "V";
+
 }
