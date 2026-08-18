@@ -198,11 +198,11 @@ public class EjbDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
             }
 
             // Validate @AfterBegin/@BeforeCompletion: no parameters allowed
-            boolean isNoParamAnnotation = !DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                      method.getAnnotations(),
-                                                                                      Constants.SESSION_SYNC_NO_PARAM_ANNOTATIONS).isEmpty();
+            boolean isSessionSyncNoParamMethod = !DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                             method.getAnnotations(),
+                                                                                             Constants.SESSION_SYNC_NO_PARAM_ANNOTATIONS).isEmpty();
 
-            if (isNoParamAnnotation && method.getNumberOfParameters() > 0) {
+            if (isSessionSyncNoParamMethod && method.getNumberOfParameters() > 0) {
                 Range range = PositionUtils.toNameRange(method, context.getUtils());
                 diagnostics.add(context.createDiagnostic(uri,
                                                          Messages.getMessage("InvalidSessionSyncMethodNoParamAnnotation", annotationNames),
