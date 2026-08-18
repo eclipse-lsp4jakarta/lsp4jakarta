@@ -218,19 +218,14 @@ public class DiagnosticUtils {
      *         false otherwise.
      */
     public static boolean doesImplementInterfaces(IType type, String[] interfaceFQNames) throws JavaModelException {
-        String[] interfaceNames = type.getSuperInterfaceNames();
-
-        // should check import statements first for the performance?
-
-        // check super hierarchy
-        if (interfaceNames.length > 0) { // the type implements interface(s)
-            ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-            IType[] interfaces = typeHierarchy.getAllInterfaces();
-            for (IType interfase : interfaces) {
-                String fqName = interfase.getFullyQualifiedName();
-                if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
-                    return true;
-            }
+        // Walk the full supertype hierarchy so that interfaces implemented by a
+        // superclass (inherited implementation) are also considered.
+        ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType[] interfaces = typeHierarchy.getAllInterfaces();
+        for (IType interfase : interfaces) {
+            String fqName = interfase.getFullyQualifiedName();
+            if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
+                return true;
         }
         return false;
     }

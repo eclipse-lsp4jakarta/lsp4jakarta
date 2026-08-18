@@ -527,6 +527,11 @@
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
    </extension>
 
+   <!-- Faces -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.faces.FacesDiagnosticsParticipant" />
+   </extension>
+
    <!-- Security -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.security.SecurityIdentityStoreDiagnosticsParticipant" />
