@@ -157,4 +157,18 @@ public class CdiWildcardBeanTypesTest extends BaseJakartaTest {
                               injectMethodMapWildcard, injectMethodNestedWildcard, injectMethodArrayWildcard,
                               injectMethodMultiDimArrayWildcard, injectMethodMixedParams);
     }
+
+    @Test
+    public void wildcardBeanTypesNoIssues() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ValidWildcardBeanTypes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: all @Inject fields, @Inject method parameters,
+        // @Produces fields and @Produces methods use concrete parameterized types.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
