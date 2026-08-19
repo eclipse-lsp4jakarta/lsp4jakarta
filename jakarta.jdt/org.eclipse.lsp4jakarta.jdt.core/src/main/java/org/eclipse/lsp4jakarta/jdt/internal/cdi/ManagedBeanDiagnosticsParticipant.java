@@ -101,7 +101,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
-            boolean hasPassivatingScope = hasPassivatingScope(type, unit);
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
 
@@ -425,15 +424,15 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
+            }
 
-                // A managed bean in a passivating scope must implement Serializable.
-                // CDI 3.0 §6.6.4: Passivating scopes must be declared @NormalScope(passivating=true).
-                // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
-                // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
-                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
-                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type, unit);
-            } else if (hasPassivatingScope) { //This is to be called for custom scoped beans. Not added in the current managedBean check to avoid regressions.
-                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type, unit);
+            // A managed bean (or custom-scoped class) in a passivating scope must implement Serializable.
+            // CDI 3.0 §6.6.4: Passivating scopes must be declared @NormalScope(passivating=true).
+            // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
+            // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
+            // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
+            if (hasPassivatingScope(type, unit)) {
+                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type);
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
@@ -531,16 +530,11 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @param uri the URI of the compilation unit
      * @param diagnostics the list to add diagnostic errors to
      * @param type the Java type being validated
-     * @param unit the compilation unit
      * @throws JavaModelException if there is an error accessing Java model elements
      */
     private void validatePassivatingScopeWithoutSerializable(JavaDiagnosticsContext context, String uri,
-                                                             List<Diagnostic> diagnostics, IType type,
-                                                             ICompilationUnit unit) throws JavaModelException {
-        if (!hasPassivatingScope(type, unit)) {
-            return;
-        }
-
+                                                             List<Diagnostic> diagnostics,
+                                                             IType type) throws JavaModelException {
         // Bean has a passivating scope — must implement java.io.Serializable.
         try {
             if (TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.SERIALIZABLE_FQ_NAME) != TypeHierarchyUtils.HAS_SUPERTYPE) {
