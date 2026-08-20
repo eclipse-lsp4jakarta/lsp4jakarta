@@ -286,13 +286,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
             }
             if (isConverterAnnotated) {
+                ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
                 boolean implementsAttributeConverter = false;
-                for (String superInterfaceName : type.getSuperInterfaceNames()) {
-                    // getSuperInterfaceNames() returns the raw name as declared (e.g.
-                    // "AttributeConverter"), so strip any type parameters before matching.
-                    int typeParamStart = superInterfaceName.indexOf('<');
-                    String rawName = typeParamStart >= 0 ? superInterfaceName.substring(0, typeParamStart) : superInterfaceName;
-                    if (DiagnosticUtils.isMatchedJavaElement(type, rawName, Constants.ATTRIBUTE_CONVERTER)) {
+                for (IType iface : typeHierarchy.getAllInterfaces()) {
+                    if (Constants.ATTRIBUTE_CONVERTER.equals(iface.getFullyQualifiedName())) {
                         implementsAttributeConverter = true;
                         break;
                     }

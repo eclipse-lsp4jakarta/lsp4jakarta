@@ -29,7 +29,7 @@ import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
 /**
- * Tests for the PersistenceAttributeConverterDiagnosticsParticipant.
+ * Tests for the PersistenceEntityDiagnosticsParticipant.
  *
  * Validates that the @Converter annotation must only be applied to classes
  * that implement jakarta.persistence.AttributeConverter.
@@ -98,6 +98,25 @@ public class JakartaPersistenceAttributeConverterTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Verify that NO diagnostics are produced for a valid @Converter implementation
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * A class annotated with @Converter that inherits AttributeConverter through a
+     * superclass must not produce any diagnostics.
+     */
+    @Test
+    public void testConverterInheritedAttributeConverterValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConverterInheritedAttributeConverter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Verify that NO diagnostics are produced when AttributeConverter is inherited
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
