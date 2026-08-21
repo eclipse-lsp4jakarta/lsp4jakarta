@@ -61,7 +61,7 @@ public interface NameExtractorStrategy {
     /**
      * Inspect {@code type} and merge any names of interest into {@code nameCount}.
      *
-     * @param type the type currently being visited by the active {@link ScanBackend}
+     * @param type the type currently being visited by {@link ProjectWideNameScanner}
      * @param nameCount mutable map; use {@code nameCount.merge(name, 1, Integer::sum)}
      * @throws JavaModelException on JDT model errors
      */

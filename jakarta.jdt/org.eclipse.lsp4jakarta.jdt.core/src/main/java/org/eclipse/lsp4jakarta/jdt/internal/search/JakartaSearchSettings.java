@@ -16,15 +16,12 @@ package org.eclipse.lsp4jakarta.jdt.internal.search;
  * Feature-level on/off switch for all diagnostics that require a
  * project-wide search-engine scan.
  *
- * <h3>Two-level control model</h3>
+ * <h3>Control model</h3>
  *
  * <pre>
  *  SEARCH_ENGINE_DIAGNOSTICS_ENABLED   (this class)
- *    │  false → diagnostic returns empty immediately; no scan, no validation
- *    │  true  → proceed to ProjectWideNameScanner
- *    └──► ProjectWideNameScanner.USE_SEARCH_ENGINE
- *           true  → SearchEngineScanBackend  (full project, correct cross-file)
- *           false → CompilationUnitScanBackend (current file only, fast baseline)
+ *    false → diagnostic returns empty immediately; no scan, no validation
+ *    true  → ProjectWideNameScanner.scan() runs using SearchEngine
  * </pre>
  *
  * <h3>How to use in a new search-engine-based diagnostic</h3>
@@ -43,11 +40,10 @@ package org.eclipse.lsp4jakarta.jdt.internal.search;
  * }</pre>
  *
  * <h3>Turning the feature off</h3>
- * Set {@code SEARCH_ENGINE_DIAGNOSTICS_ENABLED = false} before running tests
- * that do not expect cross-file diagnostics, or in environments where the full
- * project index is unavailable (e.g. lightweight editors, CI with partial
- * source trees). All diagnostics that check this flag will silently produce
- * no results until the flag is restored.
+ * Set {@code SEARCH_ENGINE_DIAGNOSTICS_ENABLED = false} to disable all
+ * search-engine-based diagnostics at once — e.g. in environments where the
+ * full project index is unavailable or during tests that do not expect
+ * cross-file diagnostics.
  */
 public final class JakartaSearchSettings {
 
@@ -55,14 +51,11 @@ public final class JakartaSearchSettings {
      * Master switch for all search-engine-based diagnostics.
      *
      * <ul>
-     * <li>{@code true} (default) — diagnostics that require a project-wide
-     * scan are active. The scan backend is further controlled by
-     * {@link ProjectWideNameScanner#USE_SEARCH_ENGINE}.</li>
+     * <li>{@code true} (default) — diagnostics that require a project-wide scan
+     * are active; {@link ProjectWideNameScanner} runs using
+     * {@link SearchEngine}.</li>
      * <li>{@code false} — every diagnostic that checks this flag returns an
-     * empty result immediately, with no scan and no validation. This
-     * disables <em>all</em> search-engine-based diagnostics at once,
-     * regardless of which backend {@link ProjectWideNameScanner} would
-     * have selected.</li>
+     * empty result immediately, with no scan and no validation.</li>
      * </ul>
      */
     public static volatile boolean SEARCH_ENGINE_DIAGNOSTICS_ENABLED = true;
