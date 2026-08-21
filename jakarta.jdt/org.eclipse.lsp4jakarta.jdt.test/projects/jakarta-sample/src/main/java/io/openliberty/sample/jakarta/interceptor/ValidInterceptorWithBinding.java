@@ -16,8 +16,10 @@ public class ValidInterceptorWithBinding {
     
     @AroundInvoke
     public Object log(InvocationContext ctx) throws Exception {
-        Object result = ctx.proceed();
-        return result;
+        try {
+            return ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
-
