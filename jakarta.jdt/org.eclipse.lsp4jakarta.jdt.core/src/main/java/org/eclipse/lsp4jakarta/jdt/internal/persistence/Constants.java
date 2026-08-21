@@ -34,7 +34,6 @@ public class Constants {
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
 
     public static final String CONVERT = "jakarta.persistence.Convert";
-    public static final String CONVERTS = "jakarta.persistence.Converts";
     public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
     public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
     public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
