@@ -55,6 +55,7 @@ import org.junit.Test;
  * <li>{@code TypedBeanClassEmpty.java} — bean class: empty array → no diagnostics</li>
  * <li>{@code TypedProducerMethodValid.java} — producer method: valid return type → no diagnostics</li>
  * <li>{@code TypedProducerFieldValid.java} — producer field: valid field type → no diagnostics</li>
+ * <li>{@code TypedProducerMethodGenericReturnType.java} — producer method: type-variable return type → no diagnostics</li>
  * </ul>
  *
  * @see <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#restricting_bean_types">CDI 3.0 §2.2.2</a>
@@ -221,6 +222,21 @@ public class CdiTypedAnnotationTest extends BaseJakartaTest {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/cdi/TypedProducerFieldValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void typedAnnotationOnProducerMethodWithGenericReturnTypeIsValid() throws Exception {
+        // @Typed(Object.class) on a method returning a type variable T — the return type
+        // cannot be resolved to a concrete IType, so no diagnostic should be raised.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/TypedProducerMethodGenericReturnType.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();

@@ -499,22 +499,17 @@ public class DiagnosticUtils {
      * @throws JavaModelException if there is an error accessing the Java model
      */
     public static List<String> getAnnotationClassValues(IAnnotation annotation, String memberName) throws JavaModelException {
-        List<String> values = new ArrayList<>();
-        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-            if (memberName.equals(pair.getMemberName()) && pair.getValueKind() == IMemberValuePair.K_CLASS) {
-                Object raw = pair.getValue();
-                if (raw instanceof Object[]) {
-                    for (Object element : (Object[]) raw) {
-                        if (element instanceof String) {
-                            values.add((String) element);
-                        }
-                    }
-                } else if (raw instanceof String) {
-                    values.add((String) raw);
-                }
-            }
-        }
-        return values;
+        return Arrays.stream(annotation.getMemberValuePairs()).filter(pair -> memberName.equals(pair.getMemberName())
+                                                                              && pair.getValueKind() == IMemberValuePair.K_CLASS).flatMap(pair -> {
+                                                                                  Object raw = pair.getValue();
+                                                                                  if (raw instanceof Object[]) {
+                                                                                      return Arrays.stream((Object[]) raw).filter(String.class::isInstance).map(String.class::cast);
+                                                                                  } else if (raw instanceof String) {
+                                                                                      return Stream.of((String) raw);
+                                                                                  } else {
+                                                                                      return Stream.empty();
+                                                                                  }
+                                                                              }).collect(Collectors.toList());
     }
 
     /**

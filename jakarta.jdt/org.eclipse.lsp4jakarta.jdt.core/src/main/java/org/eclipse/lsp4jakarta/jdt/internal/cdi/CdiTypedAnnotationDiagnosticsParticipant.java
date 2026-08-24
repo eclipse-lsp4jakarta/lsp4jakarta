@@ -13,9 +13,12 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -163,29 +166,18 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
      * recursive walk.</p>
      */
     private List<String> getUnrestrictedBeanTypes(IType type) {
-        List<String> result = new ArrayList<>();
         try {
-            // The type itself is always part of its own unrestricted bean types
-            result.add(type.getFullyQualifiedName());
-
             ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
 
-            // All superclasses, excluding java.lang.Object (Constants.OBJECT_FQ_NAME)
-            for (IType superClass : hierarchy.getAllSuperclasses(type)) {
-                String fqn = superClass.getFullyQualifiedName();
-                if (!Constants.OBJECT_FQ_NAME.equals(fqn)) {
-                    result.add(fqn);
-                }
-            }
-
-            // All interfaces (direct and inherited)
-            for (IType iface : hierarchy.getAllInterfaces()) {
-                result.add(iface.getFullyQualifiedName());
-            }
+            return Stream.concat(
+                                 Stream.of(type.getFullyQualifiedName()),
+                                 Stream.concat(
+                                               Arrays.stream(hierarchy.getAllSuperclasses(type)).map(IType::getFullyQualifiedName).filter(fqn -> !Constants.OBJECT_FQ_NAME.equals(fqn)),
+                                               Arrays.stream(hierarchy.getAllInterfaces()).map(IType::getFullyQualifiedName))).collect(Collectors.toList());
         } catch (JavaModelException e) {
             LOGGER.log(Level.WARNING, "Error collecting unrestricted bean types for: " + type.getFullyQualifiedName(), e);
+            return List.of();
         }
-        return result;
     }
 
     /**
