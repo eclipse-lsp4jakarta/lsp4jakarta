@@ -46,7 +46,9 @@ public enum ErrorCode implements IJavaErrorCode {
     MultipleEmbeddedIdAnnotations,
     MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
-    ExtendedPersistenceContextInNonStatefulBean;
+    ExtendedPersistenceContextInNonStatefulBean,
+    InverseSideMissingMappedBy,
+    JoinTableOnInverseSide;
 
     /**
      * {@inheritDoc}
