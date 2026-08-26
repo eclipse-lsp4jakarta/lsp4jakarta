@@ -32,6 +32,8 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String CONVERTER = "jakarta.persistence.Converter";
+    public static final String ATTRIBUTE_CONVERTER = "jakarta.persistence.AttributeConverter";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";

@@ -42,11 +42,12 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyEnumeratedNotOnMapType,
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
-    InvalidIdType,
     MultipleEmbeddedIdAnnotations,
-    MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
-    ExtendedPersistenceContextInNonStatefulBean;
+    ExtendedPersistenceContextInNonStatefulBean,
+    MixedIdentifierAnnotations,
+    InvalidIdType,
+    ConverterMustImplementAttributeConverter;
 
     /**
      * {@inheritDoc}
