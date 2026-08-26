@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -50,7 +50,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
  * Persistence diagnostic participant that manages the use
- * of @MapKeyClass, @MapKey, and @MapKeyJoinColumn annotations.
+ * of @MapKeyClass, @MapKey, @MapKeyJoinColumn, and @Convert annotations.
  */
 public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -148,6 +148,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 allAnnotations = ((IField) member).getAnnotations();
             }
 
+            // Collect @Convert annotations on this member for later validation
+            List<IAnnotation> convertAnnotations = new ArrayList<IAnnotation>();
+
             for (IAnnotation annotation : allAnnotations) {
                 String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
                                                                                      Constants.SET_OF_PERSISTENCE_ANNOTATIONS);
@@ -168,6 +171,11 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                                                                                        new String[] { Constants.MAPKEYTEMPORAL });
                 if (mapKeyTemporalMatch != null) {
                     hasMapKeyTemporalAnnotation = true;
+                }
+
+                // Collect @Convert annotations
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERT)) {
+                    convertAnnotations.add(annotation);
                 }
             }
 
@@ -200,6 +208,87 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             if (mapKeyJoinCols.size() > 1) {
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
                                                     diagnostics);
+            }
+
+            // Validate @Convert annotation rules
+            if (!convertAnnotations.isEmpty()) {
+                collectConvertDiagnostics(member, type, convertAnnotations, allAnnotations, context, diagnostics);
+            }
+        }
+    }
+
+    /**
+     * Validates {@code @Convert} annotation rules on a single field or method:
+     *
+     * @param member the field or method
+     * @param type the enclosing type
+     * @param convertAnnotations all {@code @Convert} annotations found on this member
+     * @param allAnnotations all annotations on this member (for co-annotation checks)
+     * @param context the diagnostics context
+     * @param diagnostics the list to which violations are added
+     * @throws CoreException if the JDT model cannot be accessed
+     */
+    private void collectConvertDiagnostics(IMember member, IType type, List<IAnnotation> convertAnnotations,
+                                           IAnnotation[] allAnnotations, JavaDiagnosticsContext context,
+                                           List<Diagnostic> diagnostics) throws CoreException {
+
+        // Rule: Multiple @Convert on the same attribute
+        if (convertAnnotations.size() > 1) {
+            try {
+                Range range = PositionUtils.toNameRange(member, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("ConvertAnnotationMultipleOnSameAttribute"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.MultipleConvertAnnotationOnSameAttribute,
+                                                         DiagnosticSeverity.Error));
+            } catch (JavaModelException e) {
+                JakartaCorePlugin.logException("Error computing range for @Convert on member " + member.getElementName(), e);
+            }
+        }
+
+        // Determine whether this member carries any restricted co-annotation and capture its name
+        String restrictedAnnotationName = null;
+        for (IAnnotation otherAnnotation : allAnnotations) {
+            for (String restrictedFQN : Constants.CONVERT_RESTRICTED_ANNOTATIONS) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, otherAnnotation.getElementName(), restrictedFQN)) {
+                    restrictedAnnotationName = "@" + DiagnosticUtils.getSimpleName(restrictedFQN);
+                    break;
+                }
+            }
+            if (restrictedAnnotationName != null) {
+                break;
+            }
+        }
+
+        for (IAnnotation convertAnnotation : convertAnnotations) {
+            try {
+                List<IMemberValuePair> memberValues = Arrays.asList(convertAnnotation.getMemberValuePairs());
+
+                boolean hasConverter = memberValues.stream().anyMatch(mv -> Constants.CONVERTER.equals(mv.getMemberName()));
+                boolean hasDisableConversion = memberValues.stream().anyMatch(mv -> Constants.DISABLE_CONVERSION.equals(mv.getMemberName())
+                                                                                    && Boolean.TRUE.equals(mv.getValue()));
+
+                // Rule: Neither converter nor disableConversion=true specified
+                if (!hasConverter && !hasDisableConversion) {
+                    Range range = PositionUtils.toNameRange(member, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("ConvertAnnotationMissingConverterOrDisable"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidConvertAnnotationMissingConverterOrDisable,
+                                                             DiagnosticSeverity.Error));
+                }
+
+                // Rule: @Convert on a restricted target
+                if (restrictedAnnotationName != null) {
+                    Range range = PositionUtils.toNameRange(member, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("ConvertAnnotationOnRestrictedTarget", restrictedAnnotationName),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidConvertAnnotationOnRestrictedTarget,
+                                                             DiagnosticSeverity.Error));
+                }
+            } catch (JavaModelException e) {
+                JakartaCorePlugin.logException("Error while validating @Convert on member " + member.getElementName(), e);
             }
         }
     }
