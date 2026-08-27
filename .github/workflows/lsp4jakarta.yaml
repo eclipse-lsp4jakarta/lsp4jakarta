@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, lsp4jakarta-0.2.7-integration-branch]
+    branches: [main, 'lsp4jakarta-*-integration*']
 
 jobs:
   build:
