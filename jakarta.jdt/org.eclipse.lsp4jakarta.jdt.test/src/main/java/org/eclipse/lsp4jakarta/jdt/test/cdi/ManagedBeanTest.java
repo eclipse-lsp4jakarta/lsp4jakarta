@@ -62,7 +62,11 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+        Diagnostic passivatingScopeWithoutSerializableDiagnostic = d(5, 13, 24,
+                                                                     "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, passivatingScopeWithoutSerializableDiagnostic);
 
         // Assert for diagnostic d2
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d2);
@@ -110,7 +114,20 @@ public class ManagedBeanTest extends BaseJakartaTest {
                           "The @Dependent annotation must be the only scope defined by a Managed bean class of generic type.",
                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidGenericManagedBeanClassWithNoDependentScope");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6);
+        Diagnostic nonGenericManagedBeanPassivatingScopeDiagnostic = d(17, 6, 27,
+                                                                       "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic managedBeanWithoutDependentPassivatingScopeDiagnostic = d(27, 6, 33,
+                                                                             "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic managedBeanWithMultipleScopes2PassivatingScopeDiagnostic = d(37, 6, 36,
+                                                                                "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                                DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6,
+                              nonGenericManagedBeanPassivatingScopeDiagnostic,
+                              managedBeanWithoutDependentPassivatingScopeDiagnostic,
+                              managedBeanWithMultipleScopes2PassivatingScopeDiagnostic);
 
         // Assert for diagnostic d1
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
@@ -647,5 +664,74 @@ public class ManagedBeanTest extends BaseJakartaTest {
         CodeAction removeObservesAsyncAction = ca(uri, "Remove the '@ObservesAsync' modifier from parameter 'event'", observesAsyncDiagnostic, removeObservesAsyncEdit);
 
         assertJavaCodeAction(observesAsyncCodeActionParams, IJDT_UTILS, removeNotifyObserverAction2, removeDependentAction2, removeObservesAsyncAction);
+    }
+
+    @Test
+    public void sessionScopedWithoutSerializable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SessionScopedWithoutSerializable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // line 18 (0-based): "public class SessionScopedWithoutSerializable {"
+        // class name starts at col 13, length 32 → end col 45
+        Diagnostic sessionScopedMissingSerializable = d(18, 13, 45,
+                                                        "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, sessionScopedMissingSerializable);
+    }
+
+    @Test
+    public void conversationScopedWithoutSerializable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ConversationScopedWithoutSerializable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // line 18 (0-based): "public class ConversationScopedWithoutSerializable {"
+        // class name starts at col 13, length 37 → end col 50
+        Diagnostic conversationScopedMissingSerializable = d(18, 13, 50,
+                                                             "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, conversationScopedMissingSerializable);
+    }
+
+    @Test
+    public void customPassivatingScopeWithoutSerializable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/CustomPassivatingScopeWithoutSerializable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic customPassivatingScopeMissingSerializable = d(15, 13, 54,
+                                                                 "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                 DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, customPassivatingScopeMissingSerializable);
+    }
+
+    @Test
+    public void sessionScopedWithSerializable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SessionScopedWithSerializable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @SessionScoped with Serializable — no diagnostics expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
