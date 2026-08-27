@@ -36,7 +36,7 @@ public class InterModuleCommonUtils {
      * Checks if type is of Interceptor type or uses interceptor-related features.
      * Returns true if:
      * The type has @Interceptor annotation
-     * The type or its methods use interceptor-specific annotations (AroundInvoke, AroundConstruct, AroundTimeout)
+     * The type or its methods use interceptor-specific annotations (AroundInvoke, AroundTimeout)
      * Any method uses InvocationContext parameter (indicating it's an interceptor method)
      *
      * Note: This excludes PostConstruct and PreDestroy as they belong to the annotations module.
@@ -76,7 +76,7 @@ public class InterModuleCommonUtils {
 
     /**
      * Checks if the type has any methods annotated with interceptor-specific annotations.
-     * Checks for: @AroundInvoke, @AroundConstruct, @AroundTimeout
+     * Checks for: @AroundInvoke, @AroundTimeout
      *
      * @param type the type to check
      * @param methods the methods array (pre-fetched to avoid redundant calls)

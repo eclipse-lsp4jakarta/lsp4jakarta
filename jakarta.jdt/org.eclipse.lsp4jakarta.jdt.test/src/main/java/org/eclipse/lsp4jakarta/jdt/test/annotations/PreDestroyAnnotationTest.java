@@ -52,8 +52,18 @@ public class PreDestroyAnnotationTest extends BaseJakartaTest {
 
         // expected annotations
 
+        // Line 19: getStudentId() has non-void return -- violates lifecycle callback signature in target class
+        Diagnostic nonVoidReturnSignature = d(19, 16, 28,
+                                              "Lifecycle callback interceptor methods declared in a target class or in a superclass of a target class must have the signature void <METHOD>().",
+                                              DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackMethodSignatureInTargetClass");
+
         Diagnostic d1 = d(24, 16, 28, "A method with the @PreDestroy annotation must not have any parameters.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyParams");
+
+        // Line 24: getHappiness(String type) has params -- also violates lifecycle callback signature in target class
+        Diagnostic hasParamsSignature = d(24, 16, 28,
+                                          "Lifecycle callback interceptor methods declared in a target class or in a superclass of a target class must have the signature void <METHOD>().",
+                                          DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidLifecycleCallbackMethodSignatureInTargetClass");
 
         Diagnostic d2 = d(31, 20, 31, "A method with the @PreDestroy annotation must not be static.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyStatic");
@@ -70,7 +80,7 @@ public class PreDestroyAnnotationTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
         d5.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.annotations.CustomCheckedException")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d2, d1, d3, d4, d5);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d5, d4, d3, d2, d1, hasParamsSignature, nonVoidReturnSignature);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);
         TextEdit te = te(23, 1, 24, 1, "");
