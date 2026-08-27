@@ -13,24 +13,15 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -63,9 +54,6 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  */
 public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
-    /** Logger object to record events for this class. */
-    private static final Logger LOGGER = Logger.getLogger(CdiTypedAnnotationDiagnosticsParticipant.class.getName());
-
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
@@ -90,7 +78,7 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
             for (IField field : type.getFields()) {
                 for (IAnnotation annotation : field.getAnnotations()) {
                     if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.TYPED_FQ_NAME)) {
-                        IType fieldType = resolveTypeFromSignature(type, field.getTypeSignature());
+                        IType fieldType = DiagnosticUtils.resolveTypeFromSignature(type, field.getTypeSignature());
                         checkTypedAnnotation(context, uri, diagnostics, type, fieldType, annotation);
                     }
                 }
@@ -100,7 +88,7 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
             for (IMethod method : type.getMethods()) {
                 for (IAnnotation annotation : method.getAnnotations()) {
                     if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.TYPED_FQ_NAME)) {
-                        IType returnType = resolveTypeFromSignature(type, method.getReturnType());
+                        IType returnType = DiagnosticUtils.resolveTypeFromSignature(type, method.getReturnType());
                         checkTypedAnnotation(context, uri, diagnostics, type, returnType, annotation);
                     }
                 }
@@ -138,7 +126,7 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
             return;
         }
 
-        List<String> unrestrictedTypes = getUnrestrictedBeanTypes(beanType);
+        List<String> unrestrictedTypes = DiagnosticUtils.getUnrestrictedBeanTypes(beanType);
         Range range = PositionUtils.toNameRange(typedAnnotation, context.getUtils());
 
         for (String typedValue : typedValues) {
@@ -153,30 +141,6 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
                                                          ErrorCode.InvalidTypedAnnotationNonMatchingBeanType,
                                                          DiagnosticSeverity.Error));
             }
-        }
-    }
-
-    /**
-     * Returns the unrestricted set of bean types for {@code type}: the type itself,
-     * all superclasses (excluding {@code java.lang.Object}), and all directly or
-     * indirectly implemented interfaces.
-     *
-     * <p>Uses {@link ITypeHierarchy#newSupertypeHierarchy} — the same JDT API used
-     * by {@link DiagnosticUtils#doesImplementInterfaces} — instead of a manual
-     * recursive walk.</p>
-     */
-    private List<String> getUnrestrictedBeanTypes(IType type) {
-        try {
-            ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-
-            return Stream.concat(
-                                 Stream.of(type.getFullyQualifiedName()),
-                                 Stream.concat(
-                                               Arrays.stream(hierarchy.getAllSuperclasses(type)).map(IType::getFullyQualifiedName).filter(fqn -> !Constants.OBJECT_FQ_NAME.equals(fqn)),
-                                               Arrays.stream(hierarchy.getAllInterfaces()).map(IType::getFullyQualifiedName))).collect(Collectors.toList());
-        } catch (JavaModelException e) {
-            LOGGER.log(Level.WARNING, "Error collecting unrestricted bean types for: " + type.getFullyQualifiedName(), e);
-            return List.of();
         }
     }
 
@@ -201,19 +165,5 @@ public class CdiTypedAnnotationDiagnosticsParticipant implements IJavaDiagnostic
     private String eraseGenericParameters(String name) {
         int idx = name.indexOf('<');
         return idx >= 0 ? name.substring(0, idx) : name;
-    }
-
-    /**
-     * Resolves a JDT type signature to an {@link IType} by erasing generics and
-     * delegating name resolution to {@link ManagedBean#getChildITypeByName}.
-     */
-    private IType resolveTypeFromSignature(IType declaringType, String typeSignature) {
-        try {
-            String typeName = Signature.toString(Signature.getTypeErasure(typeSignature));
-            return ManagedBean.getChildITypeByName(declaringType, typeName);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error resolving type from signature: " + typeSignature, e);
-            return null;
-        }
     }
 }
