@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -28,6 +26,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.TryStatement;
 
 public class ASTUtils {
 
@@ -115,30 +114,70 @@ public class ASTUtils {
      * @return boolean
      */
     public static boolean containsMethodInvocation(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
-        if (methodDecl == null || methodDecl.getBody() == null) {
+        return findMethodInvocation(methodDecl, targetMethod, parentFQN) != null;
+    }
+
+    /**
+     * Checks whether the given MethodDeclaration contains a call to the specified method
+     * on the specified parent type, and that call is enclosed within a try statement
+     * (i.e., inside a try/catch or try/finally block).
+     *
+     * @param methodDecl the method declaration to inspect
+     * @param targetMethod the method name to look for (e.g. "proceed")
+     * @param parentFQN the fully qualified name of the declaring class (e.g. "jakarta.interceptor.InvocationContext")
+     * @return {@code true} if the matching method invocation exists AND is inside a try statement;
+     *         {@code false} otherwise
+     */
+    public static boolean isProceedWrappedInTryCatch(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
+        MethodInvocation match = findMethodInvocation(methodDecl, targetMethod, parentFQN);
+        if (match == null) {
             return false;
         }
-        AtomicBoolean found = new AtomicBoolean(false);
+        ASTNode parent = match.getParent();
+        while (parent != null && parent != methodDecl) {
+            if (parent instanceof TryStatement) {
+                return true;
+            }
+            parent = parent.getParent();
+        }
+        return false;
+    }
+
+    /**
+     * Finds the first {@link MethodInvocation} within the given method declaration whose name
+     * matches {@code targetMethod} and whose declaring class matches {@code parentFQN}.
+     * Returns {@code null} if no such invocation exists or the method body is absent.
+     *
+     * @param methodDecl the method declaration to search
+     * @param targetMethod the method name to look for
+     * @param parentFQN the fully qualified name of the declaring class
+     * @return the first matching {@link MethodInvocation}, or {@code null}
+     */
+    private static MethodInvocation findMethodInvocation(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
+        if (methodDecl == null || methodDecl.getBody() == null) {
+            return null;
+        }
+        MethodInvocation[] result = new MethodInvocation[1];
         methodDecl.accept(new ASTVisitor() {
             @Override
             public boolean visit(MethodInvocation node) {
-                if (found.get())
-                    return false; // stop descending if found
+                if (result[0] != null) {
+                    return false; // already found, stop visiting
+                }
                 if (targetMethod.equals(node.getName().getIdentifier())) {
                     IMethodBinding binding = node.resolveMethodBinding();
                     if (binding != null) {
                         ITypeBinding declaringClass = binding.getDeclaringClass();
-                        if (declaringClass != null &&
-                            parentFQN.equals(declaringClass.getQualifiedName())) {
-                            found.set(true);
-                            return false; // stop visiting children of this node
+                        if (declaringClass != null && parentFQN.equals(declaringClass.getQualifiedName())) {
+                            result[0] = node;
+                            return false;
                         }
                     }
                 }
-                return true; // keep traversing nodes until found
+                return true;
             }
         });
-        return found.get();
+        return result[0];
     }
 
     /**
