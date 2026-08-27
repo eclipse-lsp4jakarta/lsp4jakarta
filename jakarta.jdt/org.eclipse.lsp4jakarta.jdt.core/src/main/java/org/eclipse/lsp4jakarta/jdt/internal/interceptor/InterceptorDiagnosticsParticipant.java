@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -108,6 +109,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 for (IMethod method : type.getMethods()) {
                     // Validate interceptor method modifiers
                     validateInterceptorMethodModifiers(context, uri, diagnostics, type, method);
+
+                    // Validate lifecycle callback method signatures
+                    validateLifecycleCallbackMethodSignature(context, uri, diagnostics, type, method);
 
                     // Collect methods by annotation type for duplicate detection
                     List<String> interceptorAnnotations = getInterceptorMethodAnnotations(type, method);
@@ -332,6 +336,66 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
         }
+    }
+
+    /**
+     * Validates that a lifecycle callback interceptor method has the required signature.
+     * According to Jakarta Interceptors 2.0 specification, lifecycle callback interceptor
+     * methods declared in an interceptor class or superclass must have one of the signatures:
+     * <ul>
+     * <li>{@code void <METHOD>(InvocationContext)}</li>
+     * <li>{@code Object <METHOD>(InvocationContext)}</li>
+     * </ul>
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param type the declaring type
+     * @param method the method to validate
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateLifecycleCallbackMethodSignature(JavaDiagnosticsContext context, String uri,
+                                                          List<Diagnostic> diagnostics, IType type,
+                                                          IMethod method) throws JavaModelException {
+        // Only validate lifecycle callback methods
+        List<String> lifecycleAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                       Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                       Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS);
+        if (lifecycleAnnotations.isEmpty()) {
+            return;
+        }
+        boolean validSignature = false;
+        ILocalVariable[] params = method.getParameters();
+        if (params.length == 1) {
+            String paramSimpleName = DiagnosticUtils.getDataTypeName(params[0].getTypeSignature());
+            String resolvedParamType = ManagedBean.getFullyQualifiedClassName(type, paramSimpleName);
+            if (Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT.equals(resolvedParamType)) {
+                String returnType = method.getReturnType();
+                boolean isVoid = Constants.VOID_RETURN_TYPE.equals(returnType);
+                boolean isObject = Constants.JAVA_LANG_OBJECT.equals(
+                                                                     ManagedBean.getFullyQualifiedClassName(type, DiagnosticUtils.getDataTypeName(returnType)));
+                validSignature = isVoid || isObject;
+            }
+        }
+        if (!validSignature) {
+            Range range = PositionUtils.toNameRange(method, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidLifecycleCallbackInterceptorMethodSignature"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidLifecycleCallbackInterceptorMethodSignature,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Converts a list of fully qualified annotation names to simple names.
+     *
+     * @param annotations the list of FQ annotation names
+     * @return comma-separated string of simple annotation names
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
+        return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
     }
 
     /**
