@@ -603,22 +603,70 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Scans all source {@link ICompilationUnit}s in the given {@link IJavaProject}
-     * and returns a map from simple class name to {@link IType} for every type
-     * annotated with {@code annotationFQ}.
+     * A checked-exception consumer for {@link IAnnotation} values.
+     *
+     * <p>Used wherever JDT model traversal needs to pass each visited annotation
+     * to a callback that may throw {@link JavaModelException} — for example when
+     * iterating nested annotations inside a container annotation.
+     *
+     * <p>{@link java.util.function.Consumer} cannot be used directly here because
+     * Java's standard functional interfaces do not declare checked exceptions.
+     */
+    @FunctionalInterface
+    public interface AnnotationConsumer {
+        /**
+         * Processes the given annotation.
+         *
+         * @param ann the annotation to process
+         * @throws JavaModelException if a JDT model error occurs
+         */
+        void accept(IAnnotation ann) throws JavaModelException;
+    }
+
+    /**
+     * A checked-exception visitor called once per source {@link IType} during a
+     * project-wide scan via {@link #scanSourceTypes}.
+     */
+    @FunctionalInterface
+    public interface TypeVisitor {
+        /**
+         * Called for each source type in the project.
+         *
+         * @param unit the compilation unit that owns {@code type}
+         * @param type the type currently being visited
+         * @throws JavaModelException if the JDT model cannot be accessed
+         */
+        void visit(ICompilationUnit unit, IType type) throws JavaModelException;
+    }
+
+    /**
+     * Visits every source {@link IType} in the given {@link IJavaProject} and
+     * passes each one to {@code visitor}.
      *
      * <p>Only source roots (kind {@link IPackageFragmentRoot#K_SOURCE}) are
-     * scanned — binary and library roots are skipped. The traversal uses the JDT
-     * project model directly, so results are always consistent with the workspace
-     * state without requiring the JDT search index to be up to date.
+     * visited. The traversal uses the JDT project model directly, so it is
+     * always consistent with the workspace state without requiring the JDT
+     * search index to be up to date.
+     *
+     * <p>Example — count {@code @NamedEntityGraph} names project-wide:
+     *
+     * <pre>{@code
+     * Map<String, Integer> counts = new HashMap<>();
+     * DiagnosticUtils.scanSourceTypes(javaProject, (cu, type) -> {
+     *     for (IAnnotation ann : type.getAnnotations()) {
+     *         if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), NAMED_ENTITY_GRAPH)) {
+     *             String name = DiagnosticUtils.getAnnotationMemberValue(ann, "name", String.class);
+     *             if (name != null)
+     *                 counts.merge(name, 1, Integer::sum);
+     *         }
+     *     }
+     * });
+     * }</pre>
      *
      * @param javaProject the project whose sources are scanned
-     * @param annotationFQ the fully-qualified annotation name to filter by
-     *            (e.g. {@code "jakarta.persistence.Entity"})
-     * @return a map from simple class name to {@link IType}; never {@code null}
+     * @param visitor called once for every source type found
      */
-    public static Map<String, IType> findAnnotatedSourceTypes(IJavaProject javaProject, String annotationFQ) {
-        Map<String, IType> result = new HashMap<>();
+    public static void scanSourceTypes(IJavaProject javaProject, TypeVisitor visitor) {
         try {
             for (IPackageFragmentRoot root : javaProject.getPackageFragmentRoots()) {
                 if (root.getKind() != IPackageFragmentRoot.K_SOURCE) {
@@ -632,11 +680,9 @@ public class DiagnosticUtils {
                     for (ICompilationUnit cu : pkg.getCompilationUnits()) {
                         for (IType type : cu.getAllTypes()) {
                             try {
-                                if (isMatchedAnnotation(cu, type.getAnnotations(), annotationFQ)) {
-                                    result.put(type.getElementName(), type);
-                                }
+                                visitor.visit(cu, type);
                             } catch (JavaModelException e) {
-                                LOGGER.warning("Could not inspect annotations on type "
+                                LOGGER.warning("[scanSourceTypes] JavaModelException on type "
                                                + type.getFullyQualifiedName() + ": " + e.getMessage());
                             }
                         }
@@ -644,8 +690,7 @@ public class DiagnosticUtils {
                 }
             }
         } catch (JavaModelException e) {
-            LOGGER.warning("Failed to scan source types for annotation " + annotationFQ + ": " + e.getMessage());
+            LOGGER.warning("[scanSourceTypes] Failed to scan project sources: " + e.getMessage());
         }
-        return result;
     }
 }

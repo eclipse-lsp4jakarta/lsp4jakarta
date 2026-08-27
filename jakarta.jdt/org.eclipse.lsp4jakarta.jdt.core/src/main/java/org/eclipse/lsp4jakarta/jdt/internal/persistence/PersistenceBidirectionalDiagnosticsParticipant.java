@@ -13,6 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +31,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
-import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -50,7 +50,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * </ol>
  *
  * <p>Cross-file analysis is performed by scanning all source compilation units
- * in the project via {@link DiagnosticUtils#findAnnotatedSourceTypes}, which
+ * in the project via {@link DiagnosticUtils#scanSourceTypes}, which
  * traverses the JDT project model directly and is always consistent with the
  * current workspace state.
  *
@@ -65,9 +65,7 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context,
                                                IProgressMonitor monitor) throws CoreException {
-        String uri = context.getUri();
-        IJDTUtils utils = JDTUtilsLSImpl.getInstance();
-        ICompilationUnit unit = utils.resolveCompilationUnit(uri);
+        ICompilationUnit unit = JDTUtilsLSImpl.getInstance().resolveCompilationUnit(context.getUri());
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         if (unit == null) {
@@ -81,10 +79,14 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
                 continue;
             }
 
-            // Build a project-wide map of all @Entity types keyed by simple name.
-            // Built once per entity class to avoid repeated full-project scans.
-            Map<String, IType> entityTypeMap = DiagnosticUtils.findAnnotatedSourceTypes(
-                                                                                        context.getJavaProject(), Constants.ENTITY);
+            // Build a project-wide map of all @Entity types keyed by simple name using
+            // the generic scanner — populated once per entity class in the file.
+            Map<String, IType> entityTypeMap = new HashMap<>();
+            DiagnosticUtils.scanSourceTypes(context.getJavaProject(), (cu, scannedType) -> {
+                if (DiagnosticUtils.isMatchedAnnotation(cu, scannedType.getAnnotations(), Constants.ENTITY)) {
+                    entityTypeMap.put(scannedType.getElementName(), scannedType);
+                }
+            });
 
             // Validate relationship annotations on fields.
             for (IField field : type.getFields()) {
