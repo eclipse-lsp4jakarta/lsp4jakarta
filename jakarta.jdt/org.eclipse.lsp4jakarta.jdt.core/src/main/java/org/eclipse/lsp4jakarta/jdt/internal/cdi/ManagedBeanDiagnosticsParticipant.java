@@ -412,7 +412,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // If it has multiple scopes, it's an error
                 if (isStateless && (!isDependent || hasMultipleScopes)) {
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("StatelessSessionBeanWithIllegalScope"), range,
+                                                             Messages.getMessage("StatelessSessionBeanInvalidScope"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidStatelessSessionBeanScope, DiagnosticSeverity.Error));
 
@@ -437,21 +437,19 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
-            }
-
-            // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
-            // scope from a superclass via @Inherited CDI scope annotations. Check these cases
-            // independently of isManagedBean because isManagedBean is false when no scope is
-            // declared directly on the class.
-            if (isSingleton && !isManagedBean) {
-                validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
-                                                  new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
-                                                  "SingletonSessionBeanInvalidScope", ErrorCode.InvalidSingletonSessionBeanScope);
-            }
-            if (isStateless && !isManagedBean) {
-                validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
-                                                  new String[] { Constants.DEPENDENT_FQ_NAME },
-                                                  "StatelessSessionBeanWithIllegalScope", ErrorCode.InvalidStatelessSessionBeanScope);
+            } else {
+                // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
+                // scope from a superclass via @Inherited CDI scope annotations.
+                if (isSingleton) {
+                    validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                      new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
+                                                      "SingletonSessionBeanInvalidScope", ErrorCode.InvalidSingletonSessionBeanScope);
+                }
+                if (isStateless) {
+                    validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                      new String[] { Constants.DEPENDENT_FQ_NAME },
+                                                      "StatelessSessionBeanInvalidScope", ErrorCode.InvalidStatelessSessionBeanScope);
+                }
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
