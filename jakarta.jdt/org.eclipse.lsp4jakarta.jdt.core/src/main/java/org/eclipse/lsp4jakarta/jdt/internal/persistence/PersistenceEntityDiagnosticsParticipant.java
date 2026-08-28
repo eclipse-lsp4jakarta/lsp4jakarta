@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
@@ -57,8 +58,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import com.google.gson.JsonArray;
 
 /**
- * Persistence diagnostic participant that manages the use of @Entity
- * annotations.
+ * Persistence diagnostic participant that manages the use of @Entity,
+ * @TableGenerator, @TableGenerators, @SequenceGenerator, @SequenceGenerators,
+ * @SecondaryTable, and @SecondaryTables annotations.
  */
 public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -78,12 +80,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             return diagnostics;
         }
 
-        IType[] alltypes;
-        IAnnotation[] allAnnotations;
-
-        alltypes = unit.getAllTypes();
+        IType[] alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
-            allAnnotations = type.getAnnotations();
+            IAnnotation[] allAnnotations = type.getAnnotations();
 
             IAnnotation entityAnnotation = null;
             IAnnotation mappedSuperclassAnnotation = null;
@@ -143,6 +142,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                              ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
 
             if (entityAnnotation != null) {
+                // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
+                Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
                 // Get constructor information
                 ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;
@@ -153,6 +154,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
+                    // Validate @TableGenerator/s, @SequenceGenerator/s at method level
+                    Arrays.stream(method.getAnnotations()).forEach(methodAnnotation -> validateGeneratorAnnotation(methodAnnotation, type, context, uri, diagnostics));
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
@@ -192,6 +195,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 // Go through the instance variables and make sure no instance vars are final
                 for (IField field : type.getFields()) {
 
+                    // Validate @TableGenerator/s, @SequenceGenerator/s at field level
+                    Arrays.stream(field.getAnnotations()).forEach(fieldAnnotation -> validateGeneratorAnnotation(fieldAnnotation, type, context, uri, diagnostics));
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
@@ -692,7 +697,129 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                          ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
             }
         }
+    }
 
+    /**
+     * Dispatches validation for a single annotation found on a type, field, or method.
+     * <p>
+     * Singular annotations ({@code @TableGenerator}, {@code @SequenceGenerator},
+     * {@code @SecondaryTable}) are validated via {@link #validateGeneratorNameAttribute}.
+     * Container annotations ({@code @TableGenerators}, {@code @SequenceGenerators},
+     * {@code @SecondaryTables}) are validated via {@link #validateNonEmptyMappingArray}.
+     * Annotations that do not match any of the six known names are silently ignored.
+     *
+     * @param annotation the annotation to validate
+     * @param type the enclosing type, used for import resolution
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating diagnostics
+     * @param diagnostics the mutable list to which any new diagnostics are appended
+     */
+    private void validateGeneratorAnnotation(IAnnotation annotation, IType type, JavaDiagnosticsContext context,
+                                             String uri, List<Diagnostic> diagnostics) {
+        try {
+            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                                 Constants.GENERATOR_AND_TABLE_ANNOTATIONS);
+            if (matchedAnnotation == null) {
+                return;
+            }
+            switch (matchedAnnotation) {
+                case Constants.TABLE_GENERATOR:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCE_GENERATOR:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARY_TABLE:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                case Constants.TABLE_GENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
+                                                 ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCE_GENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
+                                                 ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARY_TABLES:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
+                                                 ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                default:
+                    break;
+            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.WARNING, "Error while validating persistence generator annotations", e);
+        }
+    }
+
+    /**
+     * Validates that the given annotation declares a non-empty {@code name} attribute.
+     * <p>
+     * A diagnostic is added to {@code diagnostics} if the {@code name} attribute is absent,
+     * {@code null}, an empty string, or contains only whitespace.
+     * The message bundle key is derived from {@code errorCode.name()}.
+     *
+     * @param annotation the annotation whose {@code name} attribute is checked
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating the diagnostic
+     * @param diagnostics the mutable list to which a diagnostic is appended on failure
+     * @param errorCode error code to attach to the diagnostic (also used as message bundle key)
+     * @throws JavaModelException if the annotation's member value pairs cannot be read
+     */
+    private void validateGeneratorNameAttribute(IAnnotation annotation, JavaDiagnosticsContext context,
+                                                String uri, List<Diagnostic> diagnostics,
+                                                ErrorCode errorCode) throws JavaModelException {
+        String mappingNameValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
+        if (mappingNameValue == null || mappingNameValue.isBlank()) {
+            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCode.name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     null, errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Validates a container annotation ({@code @TableGenerators}, {@code @SequenceGenerators},
+     * {@code @SecondaryTables}).
+     * <p>
+     * If the {@code value} array is absent or empty, emits a diagnostic using
+     * {@code emptyMappingCode}. Otherwise validates the {@code name} attribute of each nested
+     * annotation via {@link #validateGeneratorNameAttribute}.
+     * Message bundle keys are derived from {@code errorCode.name()} for both codes.
+     *
+     * @param annotation the container annotation to validate
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating diagnostics
+     * @param diagnostics the mutable list to which any new diagnostics are appended
+     * @param emptyMappingCode error code for the empty-array diagnostic
+     * @param emptyNameMappingCode error code for an empty {@code name} on a nested annotation
+     * @throws JavaModelException if the annotation's member value pairs cannot be read
+     */
+    private void validateNonEmptyMappingArray(IAnnotation annotation, JavaDiagnosticsContext context,
+                                              String uri, List<Diagnostic> diagnostics,
+                                              ErrorCode emptyMappingCode,
+                                              ErrorCode emptyNameMappingCode) throws JavaModelException {
+        Object mappingArrayValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, Object.class);
+        boolean isEmpty = (mappingArrayValue == null) || (mappingArrayValue instanceof Object[] && ((Object[]) mappingArrayValue).length == 0);
+        if (isEmpty) {
+            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(emptyMappingCode.name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     null, emptyMappingCode, DiagnosticSeverity.Error));
+            return;
+        }
+        Object[] nested = (mappingArrayValue instanceof Object[]) ? (Object[]) mappingArrayValue : new Object[] { mappingArrayValue };
+        for (Object obj : nested) {
+            if (obj instanceof IAnnotation) {
+                validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingCode);
+            }
+        }
     }
 
 }

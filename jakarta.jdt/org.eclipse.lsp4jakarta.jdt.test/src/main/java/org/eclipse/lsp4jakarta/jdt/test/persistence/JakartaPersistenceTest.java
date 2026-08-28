@@ -1144,6 +1144,406 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, inheritanceOnNonRootEntityWithGapDiagnostic);
     }
+
+    // -------------------------------------------------------------------------
+    // @TableGenerator / @TableGenerators diagnostics
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testTableGeneratorEmptyNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorEmptyNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic tableGeneratorEmptyNameOnType = d(9, 0, 26,
+                                                     "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorEmptyNameOnField = d(14, 4, 30,
+                                                      "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorEmptyNameOnMethod = d(17, 4, 30,
+                                                       "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                       DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              tableGeneratorEmptyNameOnType, tableGeneratorEmptyNameOnField, tableGeneratorEmptyNameOnMethod);
+    }
+
+    @Test
+    public void testTableGeneratorsMissingTableGeneratorMappingOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsMissingTableGeneratorMappingOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic tableGeneratorsMissingMappingOnType = d(9, 0, 20,
+                                                           "The @TableGenerators annotation must specify at least one @TableGenerator mapping.",
+                                                           DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorsMissingTableGeneratorMapping");
+        Diagnostic tableGeneratorsMissingMappingOnField = d(14, 4, 24,
+                                                            "The @TableGenerators annotation must specify at least one @TableGenerator mapping.",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorsMissingTableGeneratorMapping");
+        Diagnostic tableGeneratorsMissingMappingOnMethod = d(17, 4, 24,
+                                                             "The @TableGenerators annotation must specify at least one @TableGenerator mapping.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorsMissingTableGeneratorMapping");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              tableGeneratorsMissingMappingOnType, tableGeneratorsMissingMappingOnField, tableGeneratorsMissingMappingOnMethod);
+    }
+
+    @Test
+    public void testTableGeneratorsEmptyArrayOnNonEntityClass() throws Exception {
+        // Confirms that the empty-array branch in validateNonEmptyMappingArray is only reached for @Entity-annotated classes.
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsEmptyArrayNoEntity.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testTableGeneratorsWithEmptyNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsWithEmptyNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic tableGeneratorEmptyNameOnType = d(10, 19, 45,
+                                                     "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorEmptyNameOnField = d(15, 23, 49,
+                                                      "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorEmptyNameOnMethod = d(18, 23, 49,
+                                                       "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                       DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              tableGeneratorEmptyNameOnType, tableGeneratorEmptyNameOnField, tableGeneratorEmptyNameOnMethod);
+    }
+
+    @Test
+    public void testTableGeneratorsWithMultipleEmptyNamesOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsWithMultipleEmptyNamesOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic tableGeneratorFirstEmptyNameOnType = d(10, 19, 48,
+                                                          "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                          DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorSecondEmptyNameOnType = d(10, 83, 109,
+                                                           "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                           DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorFirstEmptyNameOnField = d(15, 23, 52,
+                                                           "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                           DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorSecondEmptyNameOnField = d(15, 87, 113,
+                                                            "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorFirstEmptyNameOnMethod = d(18, 23, 52,
+                                                            "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+        Diagnostic tableGeneratorSecondEmptyNameOnMethod = d(18, 87, 113,
+                                                             "The @TableGenerator annotation must specify a non-empty 'name' attribute.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "TableGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              tableGeneratorFirstEmptyNameOnType, tableGeneratorSecondEmptyNameOnType,
+                              tableGeneratorFirstEmptyNameOnField, tableGeneratorSecondEmptyNameOnField,
+                              tableGeneratorFirstEmptyNameOnMethod, tableGeneratorSecondEmptyNameOnMethod);
+    }
+
+    // -------------------------------------------------------------------------
+    // @SequenceGenerator / @SequenceGenerators diagnostics
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testSequenceGeneratorEmptyNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorEmptyNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic sequenceGeneratorEmptyNameOnType = d(9, 0, 29,
+                                                        "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                        DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorEmptyNameOnField = d(14, 4, 33,
+                                                         "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                         DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorEmptyNameOnMethod = d(17, 4, 33,
+                                                          "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                          DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              sequenceGeneratorEmptyNameOnType, sequenceGeneratorEmptyNameOnField, sequenceGeneratorEmptyNameOnMethod);
+    }
+
+    @Test
+    public void testSequenceGeneratorsMissingSequenceGeneratorMappingOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorsMissingSequenceGeneratorMappingOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic sequenceGeneratorsMissingMappingOnType = d(9, 0, 23,
+                                                              "The @SequenceGenerators annotation must specify at least one @SequenceGenerator mapping.",
+                                                              DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorsMissingSequenceGeneratorMapping");
+        Diagnostic sequenceGeneratorsMissingMappingOnField = d(14, 4, 27,
+                                                               "The @SequenceGenerators annotation must specify at least one @SequenceGenerator mapping.",
+                                                               DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorsMissingSequenceGeneratorMapping");
+        Diagnostic sequenceGeneratorsMissingMappingOnMethod = d(17, 4, 27,
+                                                                "The @SequenceGenerators annotation must specify at least one @SequenceGenerator mapping.",
+                                                                DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorsMissingSequenceGeneratorMapping");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              sequenceGeneratorsMissingMappingOnType, sequenceGeneratorsMissingMappingOnField, sequenceGeneratorsMissingMappingOnMethod);
+    }
+
+    @Test
+    public void testSequenceGeneratorsWithEmptyNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorsWithEmptyNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic sequenceGeneratorEmptyNameOnType = d(10, 22, 51,
+                                                        "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                        DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorEmptyNameOnField = d(15, 26, 55,
+                                                         "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                         DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorEmptyNameOnMethod = d(18, 26, 55,
+                                                          "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                          DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              sequenceGeneratorEmptyNameOnType, sequenceGeneratorEmptyNameOnField, sequenceGeneratorEmptyNameOnMethod);
+    }
+
+    @Test
+    public void testSequenceGeneratorsWithMultipleEmptyNamesOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorsWithMultipleEmptyNamesOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic sequenceGeneratorFirstEmptyNameOnType = d(10, 22, 54,
+                                                             "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorSecondEmptyNameOnType = d(10, 92, 121,
+                                                              "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                              DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorFirstEmptyNameOnField = d(15, 26, 58,
+                                                              "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                              DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorSecondEmptyNameOnField = d(15, 96, 125,
+                                                               "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                               DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorFirstEmptyNameOnMethod = d(18, 26, 58,
+                                                               "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                               DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+        Diagnostic sequenceGeneratorSecondEmptyNameOnMethod = d(18, 96, 125,
+                                                                "The @SequenceGenerator annotation must specify a non-empty 'name' attribute.",
+                                                                DiagnosticSeverity.Error, "jakarta-persistence", "SequenceGeneratorInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              sequenceGeneratorFirstEmptyNameOnType, sequenceGeneratorSecondEmptyNameOnType,
+                              sequenceGeneratorFirstEmptyNameOnField, sequenceGeneratorSecondEmptyNameOnField,
+                              sequenceGeneratorFirstEmptyNameOnMethod, sequenceGeneratorSecondEmptyNameOnMethod);
+    }
+
+    // -------------------------------------------------------------------------
+    // @SecondaryTable / @SecondaryTables diagnostics (TYPE only)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testSecondaryTableEmptyName() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTableEmptyName.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic secondaryTableEmptyName = d(8, 0, 26,
+                                               "The @SecondaryTable annotation must specify a non-empty 'name' attribute.",
+                                               DiagnosticSeverity.Error, "jakarta-persistence", "SecondaryTableInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, secondaryTableEmptyName);
+    }
+
+    @Test
+    public void testSecondaryTablesMissingSecondaryTableMapping() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTablesMissingSecondaryTableMapping.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic secondaryTablesMissingMapping = d(8, 0, 20,
+                                                     "The @SecondaryTables annotation must specify at least one @SecondaryTable mapping.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "SecondaryTablesMissingSecondaryTableMapping");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, secondaryTablesMissingMapping);
+    }
+
+    @Test
+    public void testSecondaryTablesWithEmptyName() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTablesWithEmptyName.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic secondaryTableEmptyNameInContainer = d(10, 4, 30,
+                                                          "The @SecondaryTable annotation must specify a non-empty 'name' attribute.",
+                                                          DiagnosticSeverity.Error, "jakarta-persistence", "SecondaryTableInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, secondaryTableEmptyNameInContainer);
+    }
+
+    @Test
+    public void testSecondaryTablesWithMultipleEmptyNames() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTablesWithMultipleEmptyNames.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic secondaryTableFirstEmptyNameInContainer = d(10, 19, 48,
+                                                               "The @SecondaryTable annotation must specify a non-empty 'name' attribute.",
+                                                               DiagnosticSeverity.Error, "jakarta-persistence", "SecondaryTableInvalidEmptyName");
+        Diagnostic secondaryTableSecondEmptyNameInContainer = d(10, 83, 109,
+                                                                "The @SecondaryTable annotation must specify a non-empty 'name' attribute.",
+                                                                DiagnosticSeverity.Error, "jakarta-persistence", "SecondaryTableInvalidEmptyName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              secondaryTableFirstEmptyNameInContainer, secondaryTableSecondEmptyNameInContainer);
+    }
+
+    // -------------------------------------------------------------------------
+    // Valid cases — no diagnostics expected
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testTableGeneratorValidNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorValidNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — all @TableGenerator names are non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testTableGeneratorsValidNamesOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/TableGeneratorsValidNamesOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — all nested @TableGenerator names are non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testSequenceGeneratorValidNameOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorValidNameOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — all @SequenceGenerator names are non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testSequenceGeneratorsValidNamesOnTypeFieldAndMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SequenceGeneratorsValidNamesOnTypeFieldMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — all nested @SequenceGenerator names are non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testSecondaryTableValidName() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTableValidName.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — @SecondaryTable name is non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testSecondaryTablesValidNames() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/SecondaryTablesValidNames.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — all nested @SecondaryTable names are non-empty
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
     @Test
     public void testNamedEntityGraphOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
