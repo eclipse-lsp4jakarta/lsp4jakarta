@@ -40,28 +40,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
-/**
- * CDI diagnostics participant that detects inconsistent specialization.
- *
- * <p>Per CDI 3.0 specification §4.3.1 (Direct and indirect specialization):
- * a bean X <em>specializes</em> bean Y if X directly specializes Y, or
- * transitively specializes Y through a chain of {@code @Specializes} beans.
- * Per §5.1.3 (Inconsistent specialization):
- * "Suppose an enabled bean X specializes a second bean Y. If there is another
- * enabled bean that specializes Y we say that inconsistent specialization exists.
- * The container automatically detects inconsistent specialization and treats it
- * as a deployment problem."
- *
- * <p>When the current compilation unit contains a class annotated with
- * {@code @Specializes}, this participant scans all source types in the same
- * Java project. It resolves the <em>ultimate</em> base bean of each specializer
- * (following the transitive chain), then reports a diagnostic on any type in the
- * current file whose ultimate base is also the ultimate base of another
- * {@code @Specializes} type elsewhere in the project.
- *
- * @see <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization">CDI 3.0 §4.3.1</a>
- * @see <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#inconsistent_specialization">CDI 3.0 §5.1.3</a>
- */
+/** Detects inconsistent specialization: more than one bean specializing the same base bean. */
 public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     private static final Logger LOGGER = Logger.getLogger(CdiSpecializesDiagnosticsParticipant.class.getName());
@@ -92,18 +71,16 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                 return diagnostics;
             }
 
-            // Build a map of ultimate base FQ name → list of all @Specializes types across the project.
-            // The ultimate base is resolved by walking the @Specializes chain transitively (§4.3.1).
+            // Build a map of ultimate base FQ name to all @Specializes types across the project
             Map<String, List<IType>> specializersByUltimateBase = collectProjectSpecializersByUltimateBase(unit);
 
-            // Check each specializer in the current CU for conflicts
+            // Report a diagnostic on any type whose ultimate base is shared by another specializer
             for (IType type : specializersInUnit) {
                 String supertypeFqName = resolveUltimateBaseFqName(type);
                 if (supertypeFqName == null) {
                     continue;
                 }
                 List<IType> allSpecializersOfBase = specializersByUltimateBase.get(supertypeFqName);
-                // Inconsistent specialization (§5.1.3): more than one bean ultimately specializes the same base
                 if (allSpecializersOfBase != null && allSpecializersOfBase.size() > 1) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
@@ -124,16 +101,11 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * Scans all source compilation units in the same Java project and builds a map from
-     * the <em>ultimate base</em> fully-qualified name to the list of types annotated
-     * with {@code @Specializes} that (directly or transitively) specialize that base.
+     * Scans all source types in the project and builds a map from ultimate base FQ name
+     * to the list of @Specializes types that specialize it (directly or transitively).
      *
-     * <p>The ultimate base is the first type in the {@code @Specializes} chain that
-     * does not itself carry {@code @Specializes} — i.e. the root of the specialization
-     * hierarchy. This correctly handles transitive specialization as defined in §4.3.1.
-     *
-     * @param currentUnit the compilation unit being validated (used to obtain the project)
-     * @return map of ultimate base FQ name → list of specializer types across the project
+     * @param currentUnit the compilation unit being validated
+     * @return map of ultimate base FQ name to list of specializer types
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private Map<String, List<IType>> collectProjectSpecializersByUltimateBase(ICompilationUnit currentUnit) throws JavaModelException {
@@ -141,7 +113,6 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
         IJavaProject javaProject = currentUnit.getJavaProject();
 
         for (IPackageFragmentRoot root : javaProject.getPackageFragmentRoots()) {
-            // Only scan source folders — skip binary JARs and class folders
             if (root.getKind() != IPackageFragmentRoot.K_SOURCE) {
                 continue;
             }
@@ -167,18 +138,11 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * Resolves the fully-qualified name of the <em>ultimate base bean</em> of the given
-     * type by following the {@code @Specializes} chain transitively (§4.3.1).
+     * Walks the @Specializes chain transitively to find the ultimate base bean FQ name.
+     * Returns null if there is no explicit superclass or the name cannot be resolved.
      *
-     * <p>Starting from the direct superclass of {@code type}, if that superclass itself
-     * carries {@code @Specializes}, the walk continues up the chain until a superclass
-     * without {@code @Specializes} is found. That type is the ultimate base.
-     *
-     * <p>Returns {@code null} if the type has no explicit superclass, if the superclass
-     * is {@code java.lang.Object}, or if the name cannot be resolved.
-     *
-     * @param type the type whose ultimate base should be resolved
-     * @return the ultimate base FQ class name, or {@code null}
+     * @param type the type to resolve
+     * @return the ultimate base FQ class name, or null
      */
     private String resolveUltimateBaseFqName(IType type) {
         try {
@@ -190,8 +154,6 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
             if (fqName == null || "java.lang.Object".equals(fqName)) {
                 return null;
             }
-            // Walk up the chain: if the direct superclass itself has @Specializes,
-            // delegate to it so we find the common root of the entire chain.
             IType superType = type.getJavaProject().findType(fqName);
             if (superType != null &&
                 DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(),
