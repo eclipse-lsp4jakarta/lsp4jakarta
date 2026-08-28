@@ -33,8 +33,10 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
 
 /**
  *
@@ -534,5 +536,29 @@ public class DiagnosticUtils {
      */
     public static String getSimpleAnnotationNames(List<String> annotations, String prefix) {
         return annotations.stream().map(fq -> prefix + getSimpleName(fq)).distinct().collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Returns the fully-qualified name of the first type argument from a parameterised
+     * superinterface on the given class binding.
+     *
+     * <p>For example, given a class that implements {@code ObserverMethod<AuditEvent>},
+     * this method returns {@code "java.lang.AuditEvent"} when called with
+     * {@code interfaceFQName = "jakarta.enterprise.inject.spi.ObserverMethod"}.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @param interfaceFQName the fully-qualified name of the superinterface to search for
+     * @return the FQN of the first type argument, or {@code "java.lang.Object"} if not found
+     */
+    public static String resolveTypeArgumentFQName(ITypeBinding classBinding, String interfaceFQName) {
+        for (ITypeBinding iface : classBinding.getInterfaces()) {
+            if (interfaceFQName.equals(iface.getErasure().getQualifiedName())) {
+                ITypeBinding[] args = iface.getTypeArguments();
+                if (args.length > 0 && args[0] != null) {
+                    return args[0].getQualifiedName();
+                }
+            }
+        }
+        return "java.lang.Object";
     }
 }
