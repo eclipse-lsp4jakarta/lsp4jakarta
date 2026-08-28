@@ -63,6 +63,11 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -104,6 +109,9 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         IAnnotation[] annotations;
         IMethod[] allMethods;
 
+        // Build AST once for TYPE_USE traversal (type argument annotations)
+        List<FieldDeclaration> fieldDeclarations = ASTUtils.getFieldDeclarations(unit);
+
         alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
             allFields = type.getFields();
@@ -120,6 +128,8 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         validAnnotation(context, uri, field, annotation, matchedAnnotation, diagnostics);
                     }
                 }
+                // Check TYPE_USE annotations on generic type arguments of this field
+                checkTypeUseAnnotations(context, uri, field, type, fieldDeclarations, diagnostics);
             }
             allMethods = type.getMethods();
             for (IMethod method : allMethods) {
@@ -187,7 +197,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 case ASSERT_FALSE, ASSERT_TRUE -> {
                     String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
 
-                    if (!type.equals(Signature.SIG_BOOLEAN) && !getDataTypeName(type).equals("Boolean")) {
+                    if (!type.equals(Signature.SIG_BOOLEAN) && !DiagnosticUtils.getDataTypeName(type).equals("Boolean")) {
                         Range range = PositionUtils.toNameRange(element, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
                                                                  matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
@@ -196,7 +206,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> {
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
-                                                                                      getDataTypeName(type),
+                                                                                      DiagnosticUtils.getDataTypeName(type),
                                                                                       NUMERIC_AND_CHAR_WRAPPER_TYPES);
 
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
@@ -213,7 +223,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 case EMAIL, NOT_BLANK, PATTERN -> checkStringOnly(context, uri, element, diagnostics, annotationName, isMethod, type, matchedAnnotation, declaringType, isField);
                 case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> {
-                    String dataType = getDataTypeName(type);
+                    String dataType = DiagnosticUtils.getDataTypeName(type);
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, dataType,
                                                                                       SET_OF_DATE_TYPES.toArray(new String[0]));
                     if (dataTypeFQName == null) {
@@ -226,7 +236,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 case MIN, MAX -> {
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
-                                                                                      getDataTypeName(type),
+                                                                                      DiagnosticUtils.getDataTypeName(type),
                                                                                       NUMERIC_WRAPPER_TYPES);
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
@@ -240,7 +250,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
                 case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> {
                     String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
-                                                                                      getDataTypeName(type),
+                                                                                      DiagnosticUtils.getDataTypeName(type),
                                                                                       NUMERIC_AND_DECIMAL_WRAPPER_TYPES);
                     if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
                         && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
@@ -292,6 +302,166 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
+     * Checks TYPE_USE annotations on the generic type arguments of a field's declared type.
+     * Uses the pre-collected list of {@link FieldDeclaration} AST nodes (from
+     * {@link ASTUtils#getFieldDeclarations}) to access {@code ITypeBinding.getTypeArguments()}
+     * and the {@code IAnnotationBinding} array on each type argument, since the JDT model
+     * ({@code IField.getTypeSignature()}) only exposes the erased type.
+     *
+     * @param context the diagnostics context
+     * @param uri the document URI
+     * @param field the IField being inspected
+     * @param type the declaring IType (used for name resolution)
+     * @param fieldDeclarations pre-collected field declarations from the AST root
+     * @param diagnostics the list to add diagnostics to
+     */
+    private void checkTypeUseAnnotations(JavaDiagnosticsContext context, String uri, IField field,
+                                         IType type, List<FieldDeclaration> fieldDeclarations,
+                                         List<Diagnostic> diagnostics) throws CoreException {
+        String fieldName = field.getElementName();
+
+        for (FieldDeclaration node : fieldDeclarations) {
+            for (Object frag : node.fragments()) {
+                if (frag instanceof VariableDeclarationFragment vdf
+                    && vdf.getName().getIdentifier().equals(fieldName)) {
+                    ITypeBinding typeBinding = node.getType().resolveBinding();
+                    if (typeBinding != null) {
+                        validateTypeArgBindings(context, uri, field, type, typeBinding, diagnostics);
+                    }
+                    return; // found — no need to continue
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively validates constraint annotations on the type arguments of {@code typeBinding}.
+     */
+    private void validateTypeArgBindings(JavaDiagnosticsContext context, String uri, IField field,
+                                         IType declaringType, ITypeBinding typeBinding,
+                                         List<Diagnostic> diagnostics) {
+        for (ITypeBinding typeArg : typeBinding.getTypeArguments()) {
+            // Unwrap a single wildcard bound (e.g., ? extends Foo → Foo)
+            ITypeBinding resolved = typeArg.isWildcardType() ? typeArg.getBound() : typeArg;
+            if (resolved == null)
+                continue;
+
+            for (IAnnotationBinding annBinding : resolved.getTypeAnnotations()) {
+                String annFQN = annBinding.getAnnotationType().getQualifiedName();
+                try {
+                    String matched = DiagnosticUtils.getMatchedJavaElementName(declaringType, annFQN,
+                                                                               SET_OF_ANNOTATIONS.toArray(new String[0]));
+                    if (matched != null) {
+                        checkTypeUseAnnotationType(context, uri, field, declaringType, matched,
+                                                   annBinding.getAnnotationType().getName(),
+                                                   resolved, diagnostics);
+                    }
+                } catch (CoreException e) {
+                    LOGGER.log(Level.WARNING, "Error checking TYPE_USE annotation on field " + field.getElementName(), e);
+                }
+            }
+
+            // Recurse into nested generic type arguments
+            if (resolved.getTypeArguments().length > 0) {
+                validateTypeArgBindings(context, uri, field, declaringType, resolved, diagnostics);
+            }
+        }
+    }
+
+    /**
+     * Core type-compatibility check for a constraint annotation placed on a generic
+     * type argument (TYPE_USE target). Mirrors the switch in {@link #validAnnotation}
+     * but uses {@link ITypeBinding} for type information and the {@code TypeUse}
+     * message suffix.
+     *
+     * @param context the diagnostics context
+     * @param uri the document URI
+     * @param field the enclosing field — used as the diagnostic anchor
+     * @param declaringType the declaring class, used for name resolution
+     * @param matched fully-qualified name of the matched constraint
+     * @param annotationName simple name of the annotation (for messages)
+     * @param typeArgBinding the type binding of the annotated type argument
+     * @param diagnostics list to add any new diagnostic to
+     */
+    private void checkTypeUseAnnotationType(JavaDiagnosticsContext context, String uri, IField field,
+                                            IType declaringType, String matched, String annotationName,
+                                            ITypeBinding typeArgBinding, List<Diagnostic> diagnostics) throws CoreException {
+        String qualifiedName = typeArgBinding.getQualifiedName();
+        // Strip type parameters from the qualified name for matching (e.g. "java.util.List<String>" → "java.util.List")
+        int paramStart = qualifiedName.indexOf('<');
+        String erasedName = paramStart >= 0 ? qualifiedName.substring(0, paramStart) : qualifiedName;
+
+        boolean invalid = false;
+        String messageKey;
+        ErrorCode errorCode;
+
+        switch (matched) {
+            case ASSERT_FALSE, ASSERT_TRUE -> {
+                messageKey = "AnnotationBooleanTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField;
+                invalid = !erasedName.equals(Constants.BOOLEAN_FQ) && !erasedName.equals("boolean");
+            }
+            case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> {
+                messageKey = "AnnotationBigDecimalTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField;
+                invalid = DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
+                                                                    NUMERIC_AND_CHAR_WRAPPER_TYPES) == null
+                          && !(typeArgBinding.isPrimitive() && !erasedName.equals("float")
+                               && !erasedName.equals("double") && !erasedName.equals("char")
+                               && !erasedName.equals("boolean"));
+            }
+            case EMAIL, NOT_BLANK, PATTERN -> {
+                messageKey = "AnnotationStringTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonStringMethodOrField;
+                invalid = DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
+                                                                    new String[] { STRING_FQ, CHAR_SEQUENCE_FQ }) == null;
+            }
+            case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> {
+                messageKey = "AnnotationDateTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField;
+                invalid = DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
+                                                                    SET_OF_DATE_TYPES.toArray(new String[0])) == null;
+            }
+            case MIN, MAX -> {
+                messageKey = "AnnotationMinMaxTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField;
+                invalid = DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
+                                                                    NUMERIC_WRAPPER_TYPES) == null
+                          && !(typeArgBinding.isPrimitive() && !erasedName.equals("float")
+                               && !erasedName.equals("double") && !erasedName.equals("char")
+                               && !erasedName.equals("boolean"));
+            }
+            case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> {
+                messageKey = "AnnotationPositiveTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField;
+                invalid = DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
+                                                                    NUMERIC_AND_DECIMAL_WRAPPER_TYPES) == null
+                          && !(typeArgBinding.isPrimitive() && !erasedName.equals("char")
+                               && !erasedName.equals("boolean"));
+            }
+            case NOT_EMPTY, SIZE -> {
+                messageKey = "SizeOrNonEmptyAnnotationsTypeUse";
+                errorCode = ErrorCode.InvalidAnnotationOnNonSizeMethodOrField;
+                // Reuse existing isSizeOrNonEmptyAllowed — erasedName is a qualified name
+                // (no Q....; wrapping), which getDataTypeName returns unchanged, so the
+                // resolver path in isSizeOrNonEmptyAllowed works correctly.
+                invalid = !isSizeOrNonEmptyAllowed(declaringType, erasedName);
+            }
+            default -> {
+                return;
+            }
+        }
+
+        if (invalid) {
+            Range range = PositionUtils.toNameRange(field, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage(messageKey, "@" + annotationName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, matched,
+                                                     errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
      * getDiagnosticMessage
      *
      * @param isMethod
@@ -329,7 +499,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         } else if (PRIMITIVE_TYPES.contains(childTypeString)) {
             return false;
         } else {
-            IType fieldType = ManagedBean.getChildITypeByName(parentType, getDataTypeName(childTypeString));
+            IType fieldType = ManagedBean.getChildITypeByName(parentType, DiagnosticUtils.getDataTypeName(childTypeString));
             return fieldType != null
                    && (doesITypeHaveSuperType(fieldType, Constants.CHAR_SEQUENCE_FQ)
                        || doesITypeHaveSuperType(fieldType, Constants.COLLECTION_FQ)
@@ -366,7 +536,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             return false;
         }
 
-        String dataTypeName = getDataTypeName(childTypeString);
+        String dataTypeName = DiagnosticUtils.getDataTypeName(childTypeString);
 
         // Boxed primitive types are not cascadable - use fully qualified name check
         String wrapperTypeFQName = DiagnosticUtils.getMatchedJavaElementName(parentType, dataTypeName,
@@ -421,7 +591,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     private void checkStringOnly(JavaDiagnosticsContext context, String uri, IJavaElement element,
                                  List<Diagnostic> diagnostics,
                                  String annotationName, boolean isMethod, String type, String matchedAnnotation, IType declaringType, boolean isField) throws JavaModelException {
-        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, DiagnosticUtils.getDataTypeName(type),
                                                                           new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
         if (dataTypeFQName == null) {
             String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationString");
@@ -430,14 +600,6 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                      matchedAnnotation, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
                                                      DiagnosticSeverity.Error));
         }
-    }
-
-    private static String getDataTypeName(String type) {
-        int length = type.length();
-        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
-            return type.substring(1, length - 1);
-        }
-        return type;
     }
 
     /**
