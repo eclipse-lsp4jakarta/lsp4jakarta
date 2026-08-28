@@ -388,6 +388,8 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiRawEventTypeDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiObserverMethodDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiSpecializesDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -499,6 +501,12 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEvent" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEventContext" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
