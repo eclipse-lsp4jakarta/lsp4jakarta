@@ -183,24 +183,21 @@ public class TypeHierarchyUtils {
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
     public static IType findSupertypeWithAnnotation(IType type, String annotationFQName) throws JavaModelException {
-        Set<IType> hierarchy = new HashSet<>();
-        collectSuperTypes(type, hierarchy);
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
+        IType superclass = hierarchy.getSuperclass(type);
 
-        for (IType superType : hierarchy) {
-            // Skip the type itself — only ancestors are of interest.
-            if (superType.equals(type)) {
-                continue;
-            }
+        while (superclass != null && !"java.lang.Object".equals(superclass.getFullyQualifiedName())) {
             try {
-                if (DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(),
-                                                        superType.getAnnotations(),
+                if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(),
+                                                        superclass.getAnnotations(),
                                                         annotationFQName)) {
-                    return superType;
+                    return superclass;
                 }
             } catch (JavaModelException e) {
                 LOGGER.warning("Could not inspect annotations on superclass "
-                               + superType.getFullyQualifiedName() + ": " + e.getMessage());
+                               + superclass.getFullyQualifiedName() + ": " + e.getMessage());
             }
+            superclass = hierarchy.getSuperclass(superclass);
         }
         return null;
     }

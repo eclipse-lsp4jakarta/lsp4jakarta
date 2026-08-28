@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -37,7 +36,6 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -47,6 +45,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -601,9 +600,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Checks whether a session bean class (@Singleton or @Stateless) with no directly declared scope
      * inherits an invalid CDI scope from a superclass. The Java @Inherited meta-annotation causes CDI
      * scope annotations to propagate through class inheritance only (not interface implementation), so
-     * this method walks the superclass chain using ITypeHierarchy to find the nearest ancestor that
-     * declares a CDI scope. If that inherited scope is not one of the allowed scopes for the bean type,
-     * a diagnostic is raised.
+     * this method uses {@link TypeHierarchyUtils#findSupertypeWithAnnotation} to find the nearest ancestor
+     * that declares a CDI scope. If that inherited scope is not one of the allowed scopes for the bean
+     * type, a diagnostic is raised.
      *
      * @param context the Java diagnostics context
      * @param uri the URI of the compilation unit
@@ -618,28 +617,20 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
     private void validateSessionBeanInheritedScope(JavaDiagnosticsContext context, String uri,
                                                    List<Diagnostic> diagnostics, IType type, Range range,
                                                    String[] validScopes, String messageKey, ErrorCode errorCode) throws JavaModelException {
-        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-        IType superclass = hierarchy.getSuperclass(type);
-
-        while (!Constants.OBJECT_FQ_NAME.equals(superclass.getFullyQualifiedName())) {
-            // Use the superclass's own compilation unit for correct annotation resolution,
-            // matching the pattern used in PersistenceEntityDiagnosticsParticipant.
-            ICompilationUnit superCu = superclass.getCompilationUnit();
-            for (String scopeFqName : Constants.SCOPE_FQ_NAMES) {
-                if (DiagnosticUtils.isMatchedAnnotation(superCu, superclass.getAnnotations(), scopeFqName)) {
-                    // Found the nearest ancestor scope — check if it is valid for this bean type.
-                    boolean isValidScope = Arrays.stream(validScopes).anyMatch(scopeFqName::equals);
-                    if (!isValidScope) {
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage(messageKey), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 (new Gson().toJsonTree(List.of(scopeFqName))),
-                                                                 errorCode, DiagnosticSeverity.Error));
-                    }
-                    return;
+        for (String scopeFqName : Constants.SCOPE_FQ_NAMES) {
+            IType ancestor = TypeHierarchyUtils.findSupertypeWithAnnotation(type, scopeFqName);
+            if (ancestor != null) {
+                // Found the nearest ancestor with this scope — check if it is valid for this bean type.
+                boolean isValidScope = Arrays.stream(validScopes).anyMatch(scopeFqName::equals);
+                if (!isValidScope) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(messageKey), range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             (new Gson().toJsonTree(List.of(scopeFqName))),
+                                                             errorCode, DiagnosticSeverity.Error));
                 }
+                return;
             }
-            superclass = hierarchy.getSuperclass(superclass);
         }
     }
 
