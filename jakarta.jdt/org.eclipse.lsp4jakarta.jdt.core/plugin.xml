@@ -339,6 +339,15 @@
                   targetDiagnostic="jakarta-ejb#MissingPublicNoArgConstructor"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.InsertPublicNoArgConstructorQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodFinal"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodStatic"
+                  class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveStaticModifierQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNonVoid"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.ChangeReturnTypeToVoidForSessionSyncMethodQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
       <codeAction kind="quickfix"
@@ -377,7 +386,10 @@
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiRawEventTypeDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiObserverMethodDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiSpecializesDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -486,8 +498,20 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSpecializedBeanWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />
-  </extension>
-   
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEvent" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEventContext" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+   </extension>
+
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.InterceptorDiagnosticsParticipant" />
@@ -514,9 +538,20 @@
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAbstractModifierQuickFix" />
    </extension>
 
+   <!-- Faces -->
+   <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.faces.FacesDiagnosticsParticipant" />
+   </extension>
+
    <!-- Security -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.security.SecurityIdentityStoreDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-security#MissingApplicationScopedOnIdentityStoreDefinition"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.security.InsertApplicationScopedAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-security#InvalidScopeOnIdentityStoreDefinition"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.security.ReplaceWithApplicationScopedAnnotationQuickFix" />
    </extension>
 
    <!-- EJB -->
