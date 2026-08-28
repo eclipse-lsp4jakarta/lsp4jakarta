@@ -42,17 +42,23 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyEnumeratedNotOnMapType,
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
-    InvalidIdType,
     MultipleEmbeddedIdAnnotations,
     MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
-    ExtendedPersistenceContextInNonStatefulBean,
     TableGeneratorInvalidEmptyName,
     TableGeneratorsMissingTableGeneratorMapping,
     SequenceGeneratorInvalidEmptyName,
     SequenceGeneratorsMissingSequenceGeneratorMapping,
     SecondaryTableInvalidEmptyName,
-    SecondaryTablesMissingSecondaryTableMapping;
+    SecondaryTablesMissingSecondaryTableMapping,
+    ExtendedPersistenceContextInNonStatefulBean,
+    InvalidIdType,
+    NamedEntityGraphOnNonEntityClass,
+    NamedEntityGraphsOnNonEntityClass,
+    NamedQueryOnInvalidClass,
+    NamedQueriesOnInvalidClass,
+    NamedNativeQueryOnInvalidClass,
+    NamedNativeQueriesOnInvalidClass;
 
     /**
      * {@inheritDoc}

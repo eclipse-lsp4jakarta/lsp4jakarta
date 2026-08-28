@@ -32,6 +32,12 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
+    public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
+    public static final String NAMEDQUERIES = "jakarta.persistence.NamedQueries";
+    public static final String NAMEDNATIVEQUERY = "jakarta.persistence.NamedNativeQuery";
+    public static final String NAMEDNATIVEQUERIES = "jakarta.persistence.NamedNativeQueries";
 
     public static final String TABLE_GENERATOR = "jakarta.persistence.TableGenerator";
     public static final String TABLE_GENERATORS = "jakarta.persistence.TableGenerators";

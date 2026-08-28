@@ -60,6 +60,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertTemporalAnnotation,
     PersistenceChangeTemporalValue,
     PersistenceRemoveJPAIdentifierConflict,
+    PersistenceRemoveNamedJPAAnnotation,
+    PersistenceInsertEntityAnnotation,
+    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
     WBRemoveAnnotation,

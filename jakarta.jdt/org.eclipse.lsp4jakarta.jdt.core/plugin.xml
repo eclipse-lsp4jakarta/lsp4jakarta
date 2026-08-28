@@ -274,6 +274,42 @@
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#MixedIdentifierAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveJPAIdentifierConflictQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphsOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphsOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
    </extension>
    
    <!-- WebSocket -->
