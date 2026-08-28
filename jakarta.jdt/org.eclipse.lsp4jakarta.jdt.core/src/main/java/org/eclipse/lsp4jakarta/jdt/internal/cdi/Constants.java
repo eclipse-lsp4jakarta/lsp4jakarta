@@ -27,6 +27,7 @@ public class Constants {
     public static final String NAMED_FQ_NAME = "jakarta.inject.Named";
     public static final String SPECIALIZES_FQ_NAME = "jakarta.enterprise.inject.Specializes";
     public static final String DISPOSES_FQ_NAME = "jakarta.enterprise.inject.Disposes";
+    public static final String EVENT_FQ_NAME = "jakarta.enterprise.event.Event";
     public static final String OBSERVES_FQ_NAME = "jakarta.enterprise.event.Observes";
     public static final String OBSERVES_ASYNC_FQ_NAME = "jakarta.enterprise.event.ObservesAsync";
     public static final String DEPENDENT_FQ_NAME = "jakarta.enterprise.context.Dependent";

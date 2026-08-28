@@ -49,7 +49,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidSpecializedBeanWithNamedAnnotation,
     InvalidOrphanDisposerMethod,
     InvalidSpecializesAnnotationOnNonBeanSuperclass,
-    InvalidObserverMethodWithoutNotify;
+    InvalidObserverMethodWithoutNotify,
+    InvalidRawEventTypeInjectionPoint;
 
     /**
      * {@inheritDoc}
