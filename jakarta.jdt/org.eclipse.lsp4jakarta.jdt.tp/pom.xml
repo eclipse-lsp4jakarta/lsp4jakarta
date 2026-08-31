@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.eclipse.lsp4jakarta</groupId>
         <artifactId>jdt-parent</artifactId>
-        <version>0.2.7-SNAPSHOT</version>
+        <version>0.2.7</version>
     </parent>
     <artifactId>org.eclipse.lsp4jakarta.jdt.tp</artifactId>
     <name>lsp4jakarta :: Target Platform</name>
