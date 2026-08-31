@@ -433,7 +433,8 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                       ErrorCode.InvalidAnnotationOnNonSizeTypeUse);
                             }
                         }
-                        default -> { /* not a constraint annotation — skip */ }
+                        default -> {
+                            /* not a constraint annotation — skip */ }
                     }
                 } catch (CoreException e) {
                     LOGGER.log(Level.WARNING, "Error checking TYPE_USE annotation on field " + field.getElementName(), e);
@@ -452,7 +453,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
      */
     private void emitTypeUseDiagnostic(JavaDiagnosticsContext context, String uri, IField field,
                                        List<Diagnostic> diagnostics, String matched,
-                                       String annotationSimpleName, String messageKey, ErrorCode errorCode) {
+                                       String annotationSimpleName, String messageKey, ErrorCode errorCode) throws JavaModelException {
         Range range = PositionUtils.toNameRange(field, context.getUtils());
         diagnostics.add(context.createDiagnostic(uri,
                                                  Messages.getMessage(messageKey, "@" + annotationSimpleName),
