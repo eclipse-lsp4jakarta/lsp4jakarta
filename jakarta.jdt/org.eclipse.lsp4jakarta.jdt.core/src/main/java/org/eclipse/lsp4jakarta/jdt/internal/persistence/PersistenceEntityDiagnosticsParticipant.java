@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
@@ -166,6 +167,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
                     }
 
+                    // Check @Embedded on getter methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(method, type, diagnostics, context);
+                    }
+
                     // All Methods of this class should not be final
                     if (isFinal(method.getFlags())) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
@@ -207,7 +213,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
                     }
 
-                    // If a field is static, we do not care about it further
+                    // Check @Embedded on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(field, type, diagnostics, context);
+                    }
+
+                    // If a field is static, we do not care about it, we care about all other field
+
                     if (isStatic(field.getFlags())) {
                         continue;
                     }
@@ -398,17 +410,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                         JavaDiagnosticsContext context) throws JavaModelException {
         IAnnotation[] allAnnotations = null;
         IAnnotation id = null, temporal = null;
-        String typeFQ = null;
-        Range range = null;
+        String typeFQ = JDTTypeUtils.getResolvedMemberTypeName(member);
+        Range range = PositionUtils.toNameRange(member, context.getUtils());
 
         if (member instanceof IMethod) {
             allAnnotations = ((IMethod) member).getAnnotations();
-            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
         } else if (member instanceof IField) {
             allAnnotations = ((IField) member).getAnnotations();
-            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
-            range = PositionUtils.toNameRange((IField) member, context.getUtils());
         }
 
         for (IAnnotation annotation : allAnnotations) {
@@ -819,6 +827,46 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             if (obj instanceof IAnnotation) {
                 validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingCode);
             }
+        }
+    }
+
+    /**
+     * Validates that a field or method annotated with @Embedded references a type
+     * that is annotated with @Embeddable.
+     * Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14672
+     *
+     * @param member the field or method to validate
+     * @param type the containing entity type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                      JavaDiagnosticsContext context) throws JavaModelException {
+        String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
+
+        if (fqName == null) {
+            return;
+        }
+
+        IJavaProject javaProject = type.getJavaProject();
+        IType embeddedType = javaProject.findType(fqName);
+        if (embeddedType == null) {
+            return;
+        }
+
+        ICompilationUnit embeddedUnit = embeddedType.getCompilationUnit();
+        boolean hasEmbeddable = DiagnosticUtils.isMatchedAnnotation(embeddedUnit,
+                                                                    embeddedType.getAnnotations(),
+                                                                    Constants.EMBEDDABLE);
+
+        if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
+            String simpleName = DiagnosticUtils.getSimpleName(fqName);
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
     }
 
