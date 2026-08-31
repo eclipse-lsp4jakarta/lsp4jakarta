@@ -191,27 +191,98 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
 
         if (declaringType != null) {
             String annotationName = annotation.getElementName();
-            // Strip the "Q...;" wrapping from reference type signatures ("QBoolean;"→"Boolean").
-            // Primitive signatures ("Z", "I", etc.) are passed as-is via rawTypeSignature.
-            String javaTypeName = DiagnosticUtils.getDataTypeName(type);
 
-            String messageKeyBase = getMessageKeyBase(matchedAnnotation);
-            if (messageKeyBase != null && !isAnnotationValidForJavaType(matchedAnnotation, declaringType, type, javaTypeName)) {
-                String message = getDiagnosticMessage(isMethod, isField, annotationName, messageKeyBase);
-                Range range = PositionUtils.toNameRange(element, context.getUtils());
-                diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                         matchedAnnotation, getErrorCode(matchedAnnotation),
-                                                         DiagnosticSeverity.Error));
-            } else if (matchedAnnotation.equals(VALID)) {
-                if (!isCascadableType(declaringType, type)) {
-                    String message = Messages.getMessage("InvalidValidAnnotation");
-                    Range range = PositionUtils.toNameRange(element, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
-                                                             matchedAnnotation, ErrorCode.InvalidValidAnnotationOnNonCascadableType,
-                                                             DiagnosticSeverity.Error));
+            //The below block throws diagnostics if invalid element type is used with constraint annotations
+            switch (matchedAnnotation) {
+                case ASSERT_FALSE, ASSERT_TRUE -> {
+                    String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationBoolean");
+
+                    if (!type.equals(Signature.SIG_BOOLEAN) && !getDataTypeName(type).equals("Boolean")) {
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
-            } else if (messageKeyBase == null) {
-                LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
+                case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
+                                                                                      NUMERIC_AND_CHAR_WRAPPER_TYPES);
+
+                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
+                        && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
+                        && !type.equals(Signature.SIG_LONG)) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
+                                                              "AnnotationBigDecimal");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation,
+                                                                 ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                case EMAIL, NOT_BLANK, PATTERN -> checkStringOnly(context, uri, element, diagnostics, annotationName, isMethod, type, matchedAnnotation, declaringType, isField);
+                case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> {
+                    String dataType = getDataTypeName(type);
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, dataType,
+                                                                                      SET_OF_DATE_TYPES.toArray(new String[0]));
+                    if (dataTypeFQName == null) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationDate");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                case MIN, MAX -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
+                                                                                      NUMERIC_WRAPPER_TYPES);
+                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
+                        && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
+                        && !type.equals(Signature.SIG_LONG)) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationMinMax");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> {
+                    String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType,
+                                                                                      getDataTypeName(type),
+                                                                                      NUMERIC_AND_DECIMAL_WRAPPER_TYPES);
+                    if (dataTypeFQName == null && !type.equals(Signature.SIG_BYTE)
+                        && !type.equals(Signature.SIG_SHORT) && !type.equals(Signature.SIG_INT)
+                        && !type.equals(Signature.SIG_LONG) && !type.equals(Signature.SIG_FLOAT)
+                        && !type.equals(Signature.SIG_DOUBLE)) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationPositive");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                case NOT_EMPTY, SIZE -> {
+                    if (!(isSizeOrNonEmptyAllowed(declaringType, type))) {
+                        String message = getDiagnosticMessage(isMethod, isField, annotationName,
+                                                              "SizeOrNonEmptyAnnotations");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidAnnotationOnNonSizeMethodOrField,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                case VALID -> {
+                    if (!isCascadableType(declaringType, type)) {
+                        String message = Messages.getMessage("InvalidValidAnnotation");
+                        Range range = PositionUtils.toNameRange(element, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                                 matchedAnnotation, ErrorCode.InvalidValidAnnotationOnNonCascadableType,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+                default -> LOGGER.log(Level.SEVERE, "Unexpected value for annotation");
             }
             //Throws invalid static element diagnostics if the element is static and has constraint annotations
             if (!isParameterType(element) && Flags.isStatic(((IMember) element).getFlags())) {
@@ -340,22 +411,6 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * Returns the {@link ErrorCode} for the given constraint annotation.
-     */
-    private static ErrorCode getErrorCode(String matched) {
-        return switch (matched) {
-            case ASSERT_FALSE, ASSERT_TRUE -> ErrorCode.InvalidAnnotationOnNonBooleanMethodOrField;
-            case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> ErrorCode.InvalidAnnotationOnNonBigDecimalCharByteShortIntLongMethodOrField;
-            case EMAIL, NOT_BLANK, PATTERN -> ErrorCode.InvalidAnnotationOnNonStringMethodOrField;
-            case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> ErrorCode.InvalidAnnotationOnNonDateTimeMethodOrField;
-            case MIN, MAX -> ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField;
-            case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField;
-            case NOT_EMPTY, SIZE -> ErrorCode.InvalidAnnotationOnNonSizeMethodOrField;
-            default -> ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField;
-        };
-    }
-
-    /**
      * Returns the TYPE_USE-specific {@link ErrorCode} for the given constraint annotation.
      * These codes have no quickfix registered in plugin.xml.
      */
@@ -419,6 +474,28 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             case NOT_EMPTY, SIZE -> isSizeOrNonEmptyAllowed(declaringType, rawTypeSignature);
             default -> true; // unknown annotation, don't flag
         };
+    }
+
+    private void checkStringOnly(JavaDiagnosticsContext context, String uri, IJavaElement element,
+                                 List<Diagnostic> diagnostics,
+                                 String annotationName, boolean isMethod, String type, String matchedAnnotation, IType declaringType, boolean isField) throws JavaModelException {
+        String dataTypeFQName = DiagnosticUtils.getMatchedJavaElementName(declaringType, getDataTypeName(type),
+                                                                          new String[] { STRING_FQ, CHAR_SEQUENCE_FQ });
+        if (dataTypeFQName == null) {
+            String message = getDiagnosticMessage(isMethod, isField, annotationName, "AnnotationString");
+            Range range = PositionUtils.toNameRange(element, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, message, range, Constants.DIAGNOSTIC_SOURCE,
+                                                     matchedAnnotation, ErrorCode.InvalidAnnotationOnNonStringMethodOrField,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    private static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
     }
 
     private boolean isParameterType(IJavaElement element) {
