@@ -1544,6 +1544,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // No diagnostics expected — all nested @SecondaryTable names are non-empty
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
     @Test
     public void testNamedEntityGraphOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
