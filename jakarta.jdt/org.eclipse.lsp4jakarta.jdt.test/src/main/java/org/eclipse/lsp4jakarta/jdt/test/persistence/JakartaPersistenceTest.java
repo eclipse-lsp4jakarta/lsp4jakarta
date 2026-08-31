@@ -73,7 +73,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
 
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
 
-        TextEdit te3 = te(14, 13, 15, 27, "");
+        TextEdit te3 = te(15, 4, 16, 4, "");
         TextEdit te4 = te(14, 4, 15, 4, "");
         CodeAction ca3 = ca(uri, "Remove @MapKeyClass", d2, te3);
         CodeAction ca4 = ca(uri, "Remove @MapKey", d2, te4);

@@ -116,7 +116,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
         TextEdit te11 = te(35, 0, 36, 0, "");
         CodeAction ca11 = ca(uri, "Remove @RequestScoped", d1, te11);
-        TextEdit te12 = te(35, 14, 36, 14, "");
+        TextEdit te12 = te(36, 0, 37, 0, "");
         CodeAction ca12 = ca(uri, "Remove @SessionScoped", d1, te12);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca11, ca12);
 
@@ -180,7 +180,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // Assert for the diagnostic d1
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
-        TextEdit te1 = te(11, 33, 12, 4, "");
+        TextEdit te1 = te(11, 33, 11, 43, "");
         TextEdit te2 = te(11, 14, 11, 33, "");
         CodeAction ca1 = ca(uri, "Remove @ApplicationScoped", d1, te2);
         CodeAction ca2 = ca(uri, "Remove @Dependent", d1, te1);
@@ -189,7 +189,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // Assert for the diagnostic d2
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
-        TextEdit te3 = te(14, 33, 15, 4, "");
+        TextEdit te3 = te(14, 33, 14, 47, "");
         TextEdit te4 = te(14, 14, 14, 33, "");
         CodeAction ca3 = ca(uri, "Remove @ApplicationScoped", d2, te4);
         CodeAction ca4 = ca(uri, "Remove @RequestScoped", d2, te3);
@@ -198,7 +198,7 @@ public class ManagedBeanTest extends BaseJakartaTest {
 
         // Assert for the diagnostic d3
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
-        TextEdit te5 = te(9, 19, 10, 0, "");
+        TextEdit te5 = te(9, 19, 9, 33, "");
         TextEdit te6 = te(9, 0, 9, 19, "");
         CodeAction ca5 = ca(uri, "Remove @ApplicationScoped", d3, te6);
         CodeAction ca6 = ca(uri, "Remove @RequestScoped", d3, te5);
