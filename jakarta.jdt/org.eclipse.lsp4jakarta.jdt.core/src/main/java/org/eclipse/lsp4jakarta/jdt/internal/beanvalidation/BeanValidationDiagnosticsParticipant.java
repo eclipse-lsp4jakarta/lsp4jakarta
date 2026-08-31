@@ -286,7 +286,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                             diagnostics.add(context.createDiagnostic(uri,
                                                                      Messages.getMessage(messageKey, "@" + annotationName),
                                                                      range, Constants.DIAGNOSTIC_SOURCE, matched,
-                                                                     getErrorCode(matched), DiagnosticSeverity.Error));
+                                                                     getTypeUseErrorCode(matched), DiagnosticSeverity.Error));
                         }
                     }
                 } catch (CoreException e) {
@@ -351,6 +351,23 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
             case MIN, MAX -> ErrorCode.InvalidAnnotationOnNonMinMaxMethodOrField;
             case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> ErrorCode.InvalidAnnotationOnNonPositiveMethodOrField;
             case NOT_EMPTY, SIZE -> ErrorCode.InvalidAnnotationOnNonSizeMethodOrField;
+            default -> ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField;
+        };
+    }
+
+    /**
+     * Returns the TYPE_USE-specific {@link ErrorCode} for the given constraint annotation.
+     * These codes have no quickfix registered in plugin.xml.
+     */
+    private static ErrorCode getTypeUseErrorCode(String matched) {
+        return switch (matched) {
+            case ASSERT_FALSE, ASSERT_TRUE -> ErrorCode.InvalidAnnotationOnNonBooleanTypeUse;
+            case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> ErrorCode.InvalidAnnotationOnNonBigDecimalTypeUse;
+            case EMAIL, NOT_BLANK, PATTERN -> ErrorCode.InvalidAnnotationOnNonStringTypeUse;
+            case FUTURE, FUTURE_OR_PRESENT, PAST, PAST_OR_PRESENT -> ErrorCode.InvalidAnnotationOnNonDateTimeTypeUse;
+            case MIN, MAX -> ErrorCode.InvalidAnnotationOnNonMinMaxTypeUse;
+            case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> ErrorCode.InvalidAnnotationOnNonPositiveTypeUse;
+            case NOT_EMPTY, SIZE -> ErrorCode.InvalidAnnotationOnNonSizeTypeUse;
             default -> ErrorCode.InvalidConstrainAnnotationOnStaticMethodOrField;
         };
     }

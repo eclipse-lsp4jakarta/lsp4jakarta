@@ -74,4 +74,174 @@ public class TypeUseConstraintValidation {
 
     // line 74 — nested: inner type arg @Email on Integer → error on outer field
     private Map<String, List<@Email Integer>> nestedEmailOnInteger;
+
+	public List<Integer> getAssertTrueOnInteger() {
+		return assertTrueOnInteger;
+	}
+
+	public void setAssertTrueOnInteger(List<Integer> assertTrueOnInteger) {
+		this.assertTrueOnInteger = assertTrueOnInteger;
+	}
+
+	public List<String> getAssertFalseOnString() {
+		return assertFalseOnString;
+	}
+
+	public void setAssertFalseOnString(List<String> assertFalseOnString) {
+		this.assertFalseOnString = assertFalseOnString;
+	}
+
+	public List<Boolean> getDecimalMaxOnBoolean() {
+		return decimalMaxOnBoolean;
+	}
+
+	public void setDecimalMaxOnBoolean(List<Boolean> decimalMaxOnBoolean) {
+		this.decimalMaxOnBoolean = decimalMaxOnBoolean;
+	}
+
+	public List<Boolean> getDecimalMinOnBoolean() {
+		return decimalMinOnBoolean;
+	}
+
+	public void setDecimalMinOnBoolean(List<Boolean> decimalMinOnBoolean) {
+		this.decimalMinOnBoolean = decimalMinOnBoolean;
+	}
+
+	public List<Boolean> getDigitsOnBoolean() {
+		return digitsOnBoolean;
+	}
+
+	public void setDigitsOnBoolean(List<Boolean> digitsOnBoolean) {
+		this.digitsOnBoolean = digitsOnBoolean;
+	}
+
+	public List<Integer> getEmailOnInteger() {
+		return emailOnInteger;
+	}
+
+	public void setEmailOnInteger(List<Integer> emailOnInteger) {
+		this.emailOnInteger = emailOnInteger;
+	}
+
+	public List<String> getFutureOnString() {
+		return futureOnString;
+	}
+
+	public void setFutureOnString(List<String> futureOnString) {
+		this.futureOnString = futureOnString;
+	}
+
+	public List<Integer> getFutureOrPresentOnInteger() {
+		return futureOrPresentOnInteger;
+	}
+
+	public void setFutureOrPresentOnInteger(List<Integer> futureOrPresentOnInteger) {
+		this.futureOrPresentOnInteger = futureOrPresentOnInteger;
+	}
+
+	public List<Boolean> getPastOnBoolean() {
+		return pastOnBoolean;
+	}
+
+	public void setPastOnBoolean(List<Boolean> pastOnBoolean) {
+		this.pastOnBoolean = pastOnBoolean;
+	}
+
+	public List<String> getPastOrPresentOnString() {
+		return pastOrPresentOnString;
+	}
+
+	public void setPastOrPresentOnString(List<String> pastOrPresentOnString) {
+		this.pastOrPresentOnString = pastOrPresentOnString;
+	}
+
+	public List<Boolean> getMinOnBoolean() {
+		return minOnBoolean;
+	}
+
+	public void setMinOnBoolean(List<Boolean> minOnBoolean) {
+		this.minOnBoolean = minOnBoolean;
+	}
+
+	public List<String> getMaxOnString() {
+		return maxOnString;
+	}
+
+	public void setMaxOnString(List<String> maxOnString) {
+		this.maxOnString = maxOnString;
+	}
+
+	public List<Boolean> getNegativeOnBoolean() {
+		return negativeOnBoolean;
+	}
+
+	public void setNegativeOnBoolean(List<Boolean> negativeOnBoolean) {
+		this.negativeOnBoolean = negativeOnBoolean;
+	}
+
+	public List<String> getNegativeOrZeroOnString() {
+		return negativeOrZeroOnString;
+	}
+
+	public void setNegativeOrZeroOnString(List<String> negativeOrZeroOnString) {
+		this.negativeOrZeroOnString = negativeOrZeroOnString;
+	}
+
+	public List<Boolean> getPositiveOnBoolean() {
+		return positiveOnBoolean;
+	}
+
+	public void setPositiveOnBoolean(List<Boolean> positiveOnBoolean) {
+		this.positiveOnBoolean = positiveOnBoolean;
+	}
+
+	public List<String> getPositiveOrZeroOnString() {
+		return positiveOrZeroOnString;
+	}
+
+	public void setPositiveOrZeroOnString(List<String> positiveOrZeroOnString) {
+		this.positiveOrZeroOnString = positiveOrZeroOnString;
+	}
+
+	public List<Integer> getNotBlankOnInteger() {
+		return notBlankOnInteger;
+	}
+
+	public void setNotBlankOnInteger(List<Integer> notBlankOnInteger) {
+		this.notBlankOnInteger = notBlankOnInteger;
+	}
+
+	public List<Integer> getPatternOnInteger() {
+		return patternOnInteger;
+	}
+
+	public void setPatternOnInteger(List<Integer> patternOnInteger) {
+		this.patternOnInteger = patternOnInteger;
+	}
+
+	public Map<String, Boolean> getSizeOnBoolean() {
+		return sizeOnBoolean;
+	}
+
+	public void setSizeOnBoolean(Map<String, Boolean> sizeOnBoolean) {
+		this.sizeOnBoolean = sizeOnBoolean;
+	}
+
+	public List<Boolean> getNotEmptyOnBoolean() {
+		return notEmptyOnBoolean;
+	}
+
+	public void setNotEmptyOnBoolean(List<Boolean> notEmptyOnBoolean) {
+		this.notEmptyOnBoolean = notEmptyOnBoolean;
+	}
+
+	public Map<String, List<Integer>> getNestedEmailOnInteger() {
+		return nestedEmailOnInteger;
+	}
+
+	public void setNestedEmailOnInteger(Map<String, List<Integer>> nestedEmailOnInteger) {
+		this.nestedEmailOnInteger = nestedEmailOnInteger;
+	}
+    
+    
 }
