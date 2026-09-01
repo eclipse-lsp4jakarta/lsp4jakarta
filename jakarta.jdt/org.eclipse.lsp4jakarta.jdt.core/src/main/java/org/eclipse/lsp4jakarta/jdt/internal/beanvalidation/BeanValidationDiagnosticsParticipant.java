@@ -362,11 +362,12 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     int paramStart = qualifiedName.indexOf('<');
                     String erasedName = paramStart >= 0 ? qualifiedName.substring(0, paramStart) : qualifiedName;
 
-                    // Each case checks validity and emits the TYPE_USE-specific error code
+                    // Each case checks validity and emits the TYPE_USE-specific error code.
+                    // Primitives are not valid generic type arguments (Java compile error), so
+                    // only wrapper/object types need to be checked here.
                     switch (matched) {
                         case ASSERT_FALSE, ASSERT_TRUE -> {
-                            if (!erasedName.equals("boolean") && !erasedName.equals("Boolean")
-                                && !erasedName.equals(Constants.BOOLEAN_FQ)) {
+                            if (!erasedName.equals(Constants.BOOLEAN_FQ)) {
                                 emitTypeUseDiagnostic(context, uri, field, diagnostics, matched,
                                                       annBinding.getAnnotationType().getName(),
                                                       "AnnotationBooleanTypeUse",
@@ -375,9 +376,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         }
                         case DECIMAL_MAX, DECIMAL_MIN, DIGITS -> {
                             if (DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
-                                                                          NUMERIC_AND_CHAR_WRAPPER_TYPES) == null
-                                && !erasedName.equals("byte") && !erasedName.equals("short")
-                                && !erasedName.equals("int") && !erasedName.equals("long")) {
+                                                                          NUMERIC_AND_CHAR_WRAPPER_TYPES) == null) {
                                 emitTypeUseDiagnostic(context, uri, field, diagnostics, matched,
                                                       annBinding.getAnnotationType().getName(),
                                                       "AnnotationBigDecimalTypeUse",
@@ -404,9 +403,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         }
                         case MIN, MAX -> {
                             if (DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
-                                                                          NUMERIC_WRAPPER_TYPES) == null
-                                && !erasedName.equals("byte") && !erasedName.equals("short")
-                                && !erasedName.equals("int") && !erasedName.equals("long")) {
+                                                                          NUMERIC_WRAPPER_TYPES) == null) {
                                 emitTypeUseDiagnostic(context, uri, field, diagnostics, matched,
                                                       annBinding.getAnnotationType().getName(),
                                                       "AnnotationMinMaxTypeUse",
@@ -415,10 +412,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                         }
                         case NEGATIVE, NEGATIVE_OR_ZERO, POSITIVE, POSITIVE_OR_ZERO -> {
                             if (DiagnosticUtils.getMatchedJavaElementName(declaringType, erasedName,
-                                                                          NUMERIC_AND_DECIMAL_WRAPPER_TYPES) == null
-                                && !erasedName.equals("byte") && !erasedName.equals("short")
-                                && !erasedName.equals("int") && !erasedName.equals("long")
-                                && !erasedName.equals("float") && !erasedName.equals("double")) {
+                                                                          NUMERIC_AND_DECIMAL_WRAPPER_TYPES) == null) {
                                 emitTypeUseDiagnostic(context, uri, field, diagnostics, matched,
                                                       annBinding.getAnnotationType().getName(),
                                                       "AnnotationPositiveTypeUse",
