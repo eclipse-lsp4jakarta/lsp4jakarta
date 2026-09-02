@@ -31,14 +31,17 @@ import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 
 /**
  *
@@ -55,6 +58,9 @@ public class DiagnosticUtils {
     public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
     public static final String METHOD_MUST_BE_PUBLIC = "MethodMustBePublic";
     public static final String FIELD_MUST_EXIST_IN_SETTER = "FieldMustExistInSetter";
+
+    /** Fully qualified name of {@code java.lang.Object}. */
+    public static final String OBJECT_FQ_NAME = "java.lang.Object";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -231,6 +237,50 @@ public class DiagnosticUtils {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Returns the unrestricted set of bean types for a given type: the type itself,
+     * all superclasses (excluding {@code java.lang.Object}), and all directly or
+     * indirectly implemented interfaces.
+     *
+     * <p>Uses {@link ITypeHierarchy#newSupertypeHierarchy} to walk the full
+     * supertype hierarchy without manual recursion.</p>
+     *
+     * @param type the bean type to inspect
+     * @return list of fully qualified names of all unrestricted bean types;
+     *         empty if the hierarchy cannot be resolved
+     */
+    public static List<String> getUnrestrictedBeanTypes(IType type) {
+        try {
+            ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+            return Stream.concat(
+                                 Stream.of(type.getFullyQualifiedName()),
+                                 Stream.concat(
+                                               Arrays.stream(hierarchy.getAllSuperclasses(type)).map(IType::getFullyQualifiedName).filter(fqn -> !OBJECT_FQ_NAME.equals(fqn)),
+                                               Arrays.stream(hierarchy.getAllInterfaces()).map(IType::getFullyQualifiedName))).collect(Collectors.toList());
+        } catch (JavaModelException e) {
+            JakartaCorePlugin.logException("Error collecting unrestricted bean types for: " + type.getFullyQualifiedName(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Resolves a JDT type signature to an {@link IType} by erasing generic parameters
+     * and delegating name resolution to {@link ManagedBean#getChildITypeByName}.
+     *
+     * @param declaringType the type in whose context the signature should be resolved
+     * @param typeSignature the JDT type signature to resolve
+     * @return the resolved {@link IType}, or {@code null} if resolution fails
+     */
+    public static IType resolveTypeFromSignature(IType declaringType, String typeSignature) {
+        try {
+            String typeName = Signature.toString(Signature.getTypeErasure(typeSignature));
+            return ManagedBean.getChildITypeByName(declaringType, typeName);
+        } catch (Exception e) {
+            JakartaCorePlugin.logException("Error resolving type from signature: " + typeSignature, e);
+            return null;
+        }
     }
 
     /**
@@ -483,6 +533,36 @@ public class DiagnosticUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns all class-literal values for a named member of an annotation.
+     *
+     * <p>JDT represents {@code Class<?>} literals in annotations as
+     * {@link IMemberValuePair#K_CLASS} pairs whose value is the class name as a
+     * {@link String} (the {@code .class} suffix is already stripped). A member
+     * may hold a single class ({@code @Foo(Bar.class)}) or an array
+     * ({@code @Foo({Bar.class, Baz.class})}); both forms are handled.</p>
+     *
+     * @param annotation the annotation to inspect
+     * @param memberName the member/attribute name whose class values are wanted
+     * @return an unordered list of class names (simple or fully qualified,
+     *         as stored by JDT); never {@code null}, empty when the member is
+     *         absent or carries no {@code K_CLASS} values
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static List<String> getAnnotationClassValues(IAnnotation annotation, String memberName) throws JavaModelException {
+        return Arrays.stream(annotation.getMemberValuePairs()).filter(pair -> memberName.equals(pair.getMemberName())
+                                                                              && pair.getValueKind() == IMemberValuePair.K_CLASS).flatMap(pair -> {
+                                                                                  Object raw = pair.getValue();
+                                                                                  if (raw instanceof Object[]) {
+                                                                                      return Arrays.stream((Object[]) raw).filter(String.class::isInstance).map(String.class::cast);
+                                                                                  } else if (raw instanceof String) {
+                                                                                      return Stream.of((String) raw);
+                                                                                  } else {
+                                                                                      return Stream.empty();
+                                                                                  }
+                                                                              }).collect(Collectors.toList());
     }
 
     /**

@@ -57,7 +57,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidOrphanDisposerMethod,
     InvalidSpecializesAnnotationOnNonBeanSuperclass,
     InvalidObserverMethodWithoutNotify,
-    InvalidRawEventTypeInjectionPoint;
+    InvalidRawEventTypeInjectionPoint,
+    InvalidTypedAnnotationNonMatchingBeanType;
 
     /**
      * {@inheritDoc}
