@@ -232,8 +232,9 @@ public class CdiTypedAnnotationTest extends BaseJakartaTest {
 
     @Test
     public void typedAnnotationOnProducerMethodWithGenericReturnTypeIsValid() throws Exception {
-        // @Typed(Object.class) on a method returning a type variable T — the return type
-        // cannot be resolved to a concrete IType, so no diagnostic should be raised.
+        // @Typed(List.class) on a method returning List<T> (parameterized with a type variable).
+        // The method is @Dependent (satisfying the CDI §3.3 scope rule), and List is in the
+        // unrestricted bean-type set of java.util.List — so no diagnostic should be raised.
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/cdi/TypedProducerMethodGenericReturnType.java"));

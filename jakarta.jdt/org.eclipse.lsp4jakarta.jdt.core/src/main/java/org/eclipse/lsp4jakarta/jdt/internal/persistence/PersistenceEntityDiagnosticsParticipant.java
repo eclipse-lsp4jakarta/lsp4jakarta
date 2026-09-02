@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
@@ -54,6 +55,8 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+
+import com.google.gson.JsonArray;
 
 /**
  * Persistence diagnostic participant that manages the use of @Entity,
@@ -82,23 +85,66 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         for (IType type : alltypes) {
             IAnnotation[] allAnnotations = type.getAnnotations();
 
-            IAnnotation EntityAnnotation = null;
+            IAnnotation entityAnnotation = null;
+            IAnnotation mappedSuperclassAnnotation = null;
+            IAnnotation namedEntityGraphAnnotation = null;
+            IAnnotation namedEntityGraphsAnnotation = null;
+            IAnnotation namedQueryAnnotation = null;
+            IAnnotation namedQueriesAnnotation = null;
+            IAnnotation namedNativeQueryAnnotation = null;
+            IAnnotation namedNativeQueriesAnnotation = null;
+
             IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                         Constants.ENTITY)) {
-                    EntityAnnotation = annotation;
+                String elementName = annotation.getElementName();
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.ENTITY)) {
+                    entityAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.MAPPEDSUPERCLASS)) {
+                    mappedSuperclassAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPH)) {
+                    namedEntityGraphAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPHS)) {
+                    namedEntityGraphsAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERY)) {
+                    namedQueryAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERIES)) {
+                    namedQueriesAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERY)) {
+                    namedNativeQueryAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
+                    namedNativeQueriesAnnotation = annotation;
                 }
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                         Constants.INHERITANCE)) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
                 }
             }
 
-            if (EntityAnnotation != null) {
+            boolean hasEntity = entityAnnotation != null;
+            boolean hasMappedSuperclass = mappedSuperclassAnnotation != null;
+
+            // Validate named JPA annotations are on correct class types
+            validateNamedAnnotationPlacement(namedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
+                                             hasEntity, "NamedEntityGraphOnNonEntityClass",
+                                             ErrorCode.NamedEntityGraphOnNonEntityClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedEntityGraphsAnnotation, Constants.NAMEDENTITYGRAPHS,
+                                             hasEntity, "NamedEntityGraphsOnNonEntityClass",
+                                             ErrorCode.NamedEntityGraphsOnNonEntityClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedQueryAnnotation, Constants.NAMEDQUERY,
+                                             hasEntity || hasMappedSuperclass, "NamedQueryOnInvalidClass",
+                                             ErrorCode.NamedQueryOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedQueriesAnnotation, Constants.NAMEDQUERIES,
+                                             hasEntity || hasMappedSuperclass, "NamedQueriesOnInvalidClass",
+                                             ErrorCode.NamedQueriesOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedNativeQueryAnnotation, Constants.NAMEDNATIVEQUERY,
+                                             hasEntity || hasMappedSuperclass, "NamedNativeQueryOnInvalidClass",
+                                             ErrorCode.NamedNativeQueryOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedNativeQueriesAnnotation, Constants.NAMEDNATIVEQUERIES,
+                                             hasEntity || hasMappedSuperclass, "NamedNativeQueriesOnInvalidClass",
+                                             ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
+
+            if (entityAnnotation != null) {
                 // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
                 Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
-
                 // Get constructor information
                 ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;
@@ -119,6 +165,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @Id annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
                         validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
+                    }
+
+                    // Check @Embedded on getter methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(method, type, diagnostics, context);
                     }
 
                     // All Methods of this class should not be final
@@ -162,7 +213,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
                     }
 
-                    // If a field is static, we do not care about it further
+                    // Check @Embedded on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(field, type, diagnostics, context);
+                    }
+
+                    // If a field is static, we do not care about it, we care about all other field
+
                     if (isStatic(field.getFlags())) {
                         continue;
                     }
@@ -289,6 +346,36 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     /**
+     * Validates that a named JPA annotation is placed on a class type that satisfies
+     * the required condition. Adds an error diagnostic when the annotation is present
+     * but the condition is not met.
+     *
+     * @param annotation the annotation to validate, or {@code null} to skip
+     * @param annotationFQN the fully-qualified annotation name (used as diagnostic data)
+     * @param isValid {@code true} if the class satisfies the placement requirement
+     * @param messageKey the message key for the diagnostic message
+     * @param errorCode the error code identifying the diagnostic
+     * @param uri the URI of the compilation unit being analysed
+     * @param context the diagnostics context
+     * @param diagnostics the list to add any new diagnostic to
+     * @throws JavaModelException
+     */
+    private void validateNamedAnnotationPlacement(IAnnotation annotation, String annotationFQN,
+                                                  boolean isValid, String messageKey, ErrorCode errorCode,
+                                                  String uri, JavaDiagnosticsContext context,
+                                                  List<Diagnostic> diagnostics) throws JavaModelException {
+        if (annotation == null || isValid) {
+            return;
+        }
+        JsonArray diagnosticsData = new JsonArray();
+        diagnosticsData.add(annotationFQN);
+        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey), range,
+                                                 Constants.DIAGNOSTIC_SOURCE, diagnosticsData,
+                                                 errorCode, DiagnosticSeverity.Error));
+    }
+
+    /**
      * Check the annotation value is TemporalType.DATE Enum
      *
      * @param pair
@@ -323,17 +410,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                         JavaDiagnosticsContext context) throws JavaModelException {
         IAnnotation[] allAnnotations = null;
         IAnnotation id = null, temporal = null;
-        String typeFQ = null;
-        Range range = null;
+        String typeFQ = JDTTypeUtils.getResolvedMemberTypeName(member);
+        Range range = PositionUtils.toNameRange(member, context.getUtils());
 
         if (member instanceof IMethod) {
             allAnnotations = ((IMethod) member).getAnnotations();
-            typeFQ = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-            range = PositionUtils.toNameRange((IMethod) member, context.getUtils());
         } else if (member instanceof IField) {
             allAnnotations = ((IField) member).getAnnotations();
-            typeFQ = JDTTypeUtils.getResolvedTypeName((IField) member);
-            range = PositionUtils.toNameRange((IField) member, context.getUtils());
         }
 
         for (IAnnotation annotation : allAnnotations) {
@@ -744,6 +827,46 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             if (obj instanceof IAnnotation) {
                 validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingCode);
             }
+        }
+    }
+
+    /**
+     * Validates that a field or method annotated with @Embedded references a type
+     * that is annotated with @Embeddable.
+     * Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14672
+     *
+     * @param member the field or method to validate
+     * @param type the containing entity type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                      JavaDiagnosticsContext context) throws JavaModelException {
+        String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
+
+        if (fqName == null) {
+            return;
+        }
+
+        IJavaProject javaProject = type.getJavaProject();
+        IType embeddedType = javaProject.findType(fqName);
+        if (embeddedType == null) {
+            return;
+        }
+
+        ICompilationUnit embeddedUnit = embeddedType.getCompilationUnit();
+        boolean hasEmbeddable = DiagnosticUtils.isMatchedAnnotation(embeddedUnit,
+                                                                    embeddedType.getAnnotations(),
+                                                                    Constants.EMBEDDABLE);
+
+        if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
+            String simpleName = DiagnosticUtils.getSimpleName(fqName);
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
     }
 
