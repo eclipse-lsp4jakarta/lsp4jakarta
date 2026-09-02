@@ -650,4 +650,209 @@ public class BeanValidationTest extends BaseJakartaTest {
                               primitiveReturnMethod, boxedLongReturnMethod, primitiveArrayReturnMethod,
                               primitiveParameter, boxedParameter, primitiveArrayParameter);
     }
+
+    @Test
+    public void typeUseConstraintValidation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/TypeUseConstraintValidation.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // line 16 (0-based 15): List<@AssertTrue Integer> — Integer is not boolean/Boolean
+        Diagnostic assertTrueOnIntegerError = d(15, 38, 57,
+                                                "The @AssertTrue annotation can only be used on boolean and Boolean type arguments.",
+                                                DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanTypeUse",
+                                                "jakarta.validation.constraints.AssertTrue");
+
+        // line 19 (0-based 18): List<@AssertFalse String> — String is not boolean/Boolean
+        Diagnostic assertFalseOnStringError = d(18, 38, 57,
+                                                "The @AssertFalse annotation can only be used on boolean and Boolean type arguments.",
+                                                DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBooleanTypeUse",
+                                                "jakarta.validation.constraints.AssertFalse");
+
+        // line 22 (0-based 21): List<@DecimalMax("10") Boolean> — Boolean is not numeric/CharSequence
+        Diagnostic decimalMaxOnBooleanError = d(21, 44, 63,
+                                                "The @DecimalMax annotation can only be used on: \n"
+                                                            + "- BigDecimal \n"
+                                                            + "- BigInteger \n"
+                                                            + "- CharSequence\n"
+                                                            + "- byte, short, int, long (and their respective wrappers) \n"
+                                                            + " type arguments.",
+                                                DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalTypeUse",
+                                                "jakarta.validation.constraints.DecimalMax");
+
+        // line 25 (0-based 24): List<@DecimalMin("1") Boolean> — Boolean is not numeric/CharSequence
+        Diagnostic decimalMinOnBooleanError = d(24, 43, 62,
+                                                "The @DecimalMin annotation can only be used on: \n"
+                                                            + "- BigDecimal \n"
+                                                            + "- BigInteger \n"
+                                                            + "- CharSequence\n"
+                                                            + "- byte, short, int, long (and their respective wrappers) \n"
+                                                            + " type arguments.",
+                                                DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalTypeUse",
+                                                "jakarta.validation.constraints.DecimalMin");
+
+        // line 28 (0-based 27): List<@Digits(integer=3, fraction=0) Boolean> — Boolean not numeric
+        Diagnostic digitsOnBooleanError = d(27, 61, 76,
+                                            "The @Digits annotation can only be used on: \n"
+                                                        + "- BigDecimal \n"
+                                                        + "- BigInteger \n"
+                                                        + "- CharSequence\n"
+                                                        + "- byte, short, int, long (and their respective wrappers) \n"
+                                                        + " type arguments.",
+                                            DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonBigDecimalTypeUse",
+                                            "jakarta.validation.constraints.Digits");
+
+        // line 31 (0-based 30): List<@Email Integer> — Integer is not String/CharSequence
+        Diagnostic emailOnIntegerError = d(30, 33, 47,
+                                           "The @Email annotation can only be used on String and CharSequence type arguments.",
+                                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringTypeUse",
+                                           "jakarta.validation.constraints.Email");
+
+        // line 34 (0-based 33): List<@Future String> — String is not a date type
+        Diagnostic futureOnStringError = d(33, 33, 47,
+                                           "The @Future annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type arguments.",
+                                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeTypeUse",
+                                           "jakarta.validation.constraints.Future");
+
+        // line 37 (0-based 36): List<@FutureOrPresent Integer> — Integer is not a date type
+        Diagnostic futureOrPresentOnIntegerError = d(36, 43, 67,
+                                                     "The @FutureOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type arguments.",
+                                                     DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeTypeUse",
+                                                     "jakarta.validation.constraints.FutureOrPresent");
+
+        // line 40 (0-based 39): List<@Past Boolean> — Boolean is not a date type
+        Diagnostic pastOnBooleanError = d(39, 32, 45,
+                                          "The @Past annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type arguments.",
+                                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeTypeUse",
+                                          "jakarta.validation.constraints.Past");
+
+        // line 43 (0-based 42): List<@PastOrPresent String> — String is not a date type
+        Diagnostic pastOrPresentOnStringError = d(42, 40, 61,
+                                                  "The @PastOrPresent annotation can only be used on: Date, Calendar, Instant, LocalDate, LocalDateTime, LocalTime, MonthDay, OffsetDateTime, OffsetTime, Year, YearMonth, ZonedDateTime, HijrahDate, JapaneseDate, MinguoDate and ThaiBuddhistDate type arguments.",
+                                                  DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonDateTimeTypeUse",
+                                                  "jakarta.validation.constraints.PastOrPresent");
+
+        // line 46 (0-based 45): List<@Min(1) Boolean> — Boolean is not numeric
+        Diagnostic minOnBooleanError = d(45, 34, 46,
+                                         "The @Min annotation can only be used on \n"
+                                                     + "- BigDecimal \n"
+                                                     + "- BigInteger\n"
+                                                     + "- byte, short, int, long (and their respective wrappers) \n"
+                                                     + " type arguments.",
+                                         DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonMinMaxTypeUse",
+                                         "jakarta.validation.constraints.Min");
+
+        // line 49 (0-based 48): List<@Max(100) String> — String is not numeric
+        Diagnostic maxOnStringError = d(48, 35, 46,
+                                        "The @Max annotation can only be used on \n"
+                                                    + "- BigDecimal \n"
+                                                    + "- BigInteger\n"
+                                                    + "- byte, short, int, long (and their respective wrappers) \n"
+                                                    + " type arguments.",
+                                        DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonMinMaxTypeUse",
+                                        "jakarta.validation.constraints.Max");
+
+        // line 52 (0-based 51): List<@Negative Boolean> — Boolean is not numeric
+        Diagnostic negativeOnBooleanError = d(51, 36, 53,
+                                              "The @Negative annotation can only be used on \n"
+                                                          + "- BigDecimal \n"
+                                                          + "- BigInteger\n"
+                                                          + "- byte, short, int, long, float, double (and their respective wrappers) \n"
+                                                          + " type arguments.",
+                                              DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveTypeUse",
+                                              "jakarta.validation.constraints.Negative");
+
+        // line 55 (0-based 54): List<@NegativeOrZero String> — String is not numeric
+        Diagnostic negativeOrZeroOnStringError = d(54, 41, 63,
+                                                   "The @NegativeOrZero annotation can only be used on \n"
+                                                               + "- BigDecimal \n"
+                                                               + "- BigInteger\n"
+                                                               + "- byte, short, int, long, float, double (and their respective wrappers) \n"
+                                                               + " type arguments.",
+                                                   DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveTypeUse",
+                                                   "jakarta.validation.constraints.NegativeOrZero");
+
+        // line 58 (0-based 57): List<@Positive Boolean> — Boolean is not numeric
+        Diagnostic positiveOnBooleanError = d(57, 36, 53,
+                                              "The @Positive annotation can only be used on \n"
+                                                          + "- BigDecimal \n"
+                                                          + "- BigInteger\n"
+                                                          + "- byte, short, int, long, float, double (and their respective wrappers) \n"
+                                                          + " type arguments.",
+                                              DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveTypeUse",
+                                              "jakarta.validation.constraints.Positive");
+
+        // line 61 (0-based 60): List<@PositiveOrZero String> — String is not numeric
+        Diagnostic positiveOrZeroOnStringError = d(60, 41, 63,
+                                                   "The @PositiveOrZero annotation can only be used on \n"
+                                                               + "- BigDecimal \n"
+                                                               + "- BigInteger\n"
+                                                               + "- byte, short, int, long, float, double (and their respective wrappers) \n"
+                                                               + " type arguments.",
+                                                   DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonPositiveTypeUse",
+                                                   "jakarta.validation.constraints.PositiveOrZero");
+
+        // line 64 (0-based 63): List<@NotBlank Integer> — Integer is not String/CharSequence
+        Diagnostic notBlankOnIntegerError = d(63, 36, 53,
+                                              "The @NotBlank annotation can only be used on String and CharSequence type arguments.",
+                                              DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringTypeUse",
+                                              "jakarta.validation.constraints.NotBlank");
+
+        // line 67 (0-based 66): List<@Pattern(regexp = ".*") Integer> — Integer is not String/CharSequence
+        Diagnostic patternOnIntegerError = d(66, 50, 66,
+                                             "The @Pattern annotation can only be used on String and CharSequence type arguments.",
+                                             DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringTypeUse",
+                                             "jakarta.validation.constraints.Pattern");
+
+        // line 70 (0-based 69): Map<String, @Size Boolean> — Boolean is not CharSequence/Collection/Map/Array
+        Diagnostic sizeOnBooleanError = d(69, 39, 52,
+                                          "This annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
+                                          DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeTypeUse",
+                                          "jakarta.validation.constraints.Size");
+
+        // line 73 (0-based 72): List<@NotEmpty Boolean> — Boolean is not CharSequence/Collection/Map/Array
+        Diagnostic notEmptyOnBooleanError = d(72, 36, 53,
+                                              "This annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
+                                              DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeTypeUse",
+                                              "jakarta.validation.constraints.NotEmpty");
+
+        // line 76 (0-based 75): Map<String, List<@Email Integer>> — nested type arg, error on outer field
+        Diagnostic nestedEmailOnIntegerError = d(75, 46, 66,
+                                                 "The @Email annotation can only be used on String and CharSequence type arguments.",
+                                                 DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonStringTypeUse",
+                                                 "jakarta.validation.constraints.Email");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              assertTrueOnIntegerError, assertFalseOnStringError,
+                              decimalMaxOnBooleanError, decimalMinOnBooleanError, digitsOnBooleanError,
+                              emailOnIntegerError, futureOnStringError, futureOrPresentOnIntegerError,
+                              pastOnBooleanError, pastOrPresentOnStringError,
+                              minOnBooleanError, maxOnStringError,
+                              negativeOnBooleanError, negativeOrZeroOnStringError,
+                              positiveOnBooleanError, positiveOrZeroOnStringError,
+                              notBlankOnIntegerError, patternOnIntegerError,
+                              sizeOnBooleanError, notEmptyOnBooleanError,
+                              nestedEmailOnIntegerError);
+    }
+
+    @Test
+    public void validTypeUseConstraints() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/ValidTypeUseConstraints.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // All type arguments carry compatible constraint annotations — no diagnostics expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
