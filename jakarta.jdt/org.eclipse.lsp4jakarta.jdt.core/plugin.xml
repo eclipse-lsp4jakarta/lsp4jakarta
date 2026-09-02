@@ -546,7 +546,10 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
-   </extension>
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidUserTransactionInjectionInCDIBean"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+  </extension>
 
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">

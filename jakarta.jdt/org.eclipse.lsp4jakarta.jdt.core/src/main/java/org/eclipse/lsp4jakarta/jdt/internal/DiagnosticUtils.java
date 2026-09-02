@@ -39,6 +39,8 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.di.DIUtils;
 
 /**
  *
@@ -593,5 +595,38 @@ public class DiagnosticUtils {
         String simpleName = Signature.getSignatureSimpleName(erasure);
         // Raw type has no type arguments
         return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
+    }
+
+    /**
+     * Returns true if the given set of annotations on an injection point carries only the implicit
+     * {@code @Default} qualifier — that is, no qualifier annotation other than {@code @Default} or
+     * {@code @Any} is present (excluding {@code @Inject} itself, which is not a qualifier).
+     *
+     * @param unit the compilation unit containing the injection point
+     * @param type the declaring type
+     * @param annotations the annotations on the injection point element (field or parameter)
+     * @return true if the injection point has the {@code @Default} qualifier
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean hasDefaultQualifier(ICompilationUnit unit, IType type,
+                                              IAnnotation[] annotations) throws JavaModelException {
+        boolean hasExplicitDefault = false;
+        boolean hasCustomQualifier = false;
+
+        for (IAnnotation annotation : annotations) {
+            // @Inject is not a qualifier; @Any is a built-in qualifier but not a custom one — skip both
+            if (isMatchedAnnotation(unit, annotation, Constants.INJECT_FQ_NAME)
+                || isMatchedAnnotation(unit, annotation, Constants.CDI_ANY_FQ_NAME)) {
+                continue;
+            }
+            if (isMatchedAnnotation(unit, annotation, Constants.CDI_DEFAULT_FQ_NAME)) {
+                hasExplicitDefault = true;
+            } else if (DIUtils.isQualifier(annotation, unit, type)) {
+                // Only count annotations that are actual CDI qualifiers (meta-annotated with @Qualifier)
+                hasCustomQualifier = true;
+            }
+        }
+
+        return hasExplicitDefault || !hasCustomQualifier;
     }
 }
