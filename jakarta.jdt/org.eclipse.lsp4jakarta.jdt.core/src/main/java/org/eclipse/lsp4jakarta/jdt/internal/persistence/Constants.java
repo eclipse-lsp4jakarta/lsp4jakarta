@@ -25,6 +25,8 @@ public class Constants {
     public static final String ENTITY = "jakarta.persistence.Entity";
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
+    public static final String EMBEDDED = "jakarta.persistence.Embedded";
+    public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
     public static final String INHERITANCE = "jakarta.persistence.Inheritance";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
@@ -32,6 +34,12 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
+    public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
+    public static final String NAMEDQUERIES = "jakarta.persistence.NamedQueries";
+    public static final String NAMEDNATIVEQUERY = "jakarta.persistence.NamedNativeQuery";
+    public static final String NAMEDNATIVEQUERIES = "jakarta.persistence.NamedNativeQueries";
 
     public static final String TABLE_GENERATOR = "jakarta.persistence.TableGenerator";
     public static final String TABLE_GENERATORS = "jakarta.persistence.TableGenerators";

@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -170,6 +171,18 @@ public class TypeHierarchyUtils {
      */
     public static boolean inheritsFrom(IType fieldType, String superType) throws CoreException {
         return doesITypeHaveSuperType(fieldType, superType) == HAS_SUPERTYPE;
+    }
+
+    /**
+     * Gets all interfaces implemented by a type and its superclasses.
+     *
+     * @param type the type to inspect
+     * @return an array of all interface types
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    public static IType[] getAllInterfaces(IType type) throws JavaModelException {
+        ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        return typeHierarchy.getAllInterfaces();
     }
 
     /**
