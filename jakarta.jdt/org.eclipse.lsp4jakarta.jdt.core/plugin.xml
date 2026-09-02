@@ -275,6 +275,42 @@
        <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#MixedIdentifierAnnotations"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveJPAIdentifierConflictQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphsOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedEntityGraphsOnNonEntityClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueryOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveNamedJPAAnnotationQuickFix" />
+       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#NamedNativeQueriesOnInvalidClass"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertEntityOrMappedSuperclassAnnotationQuickFix" />
    </extension>
    
    <!-- WebSocket -->
@@ -387,7 +423,10 @@
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.ManagedBeanDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiWildcardDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiRawEventTypeDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiObserverMethodDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiSpecializesDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -499,8 +538,17 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidOrphanDisposerMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDisposesFromInterceptorDecoratorQuickFix" />
-  </extension>
-   
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEvent" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidObserverMethodWithoutNotify"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNotifyMethodQuickFix$NotifyEventContext" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+   </extension>
+
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.interceptor.InterceptorDiagnosticsParticipant" />
