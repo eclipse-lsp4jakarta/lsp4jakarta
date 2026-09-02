@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -35,6 +36,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -103,6 +105,20 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         for (IMethod method : type.getMethods()) {
             IAnnotation[] methodAnnotations = method.getAnnotations();
 
+            // Per CDI spec §3.7 / §8.1.2, @Delegate is only valid on injection points:
+            // fields, bean constructor parameters, or initializer method parameters.
+            // An initializer method is a non-constructor, non-static, void method
+            // annotated with @Inject.  Skip parameters of any other kind of method —
+            // they are not injection points.
+            boolean isConstructor = DiagnosticUtils.isConstructorMethod(method);
+            boolean isInitializerMethod = !isConstructor
+                                          && !Flags.isStatic(method.getFlags())
+                                          && JDTTypeUtils.isVoidReturnType(method)
+                                          && DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), methodAnnotations, Constants.INJECT_FQ_NAME);
+            if (!isConstructor && !isInitializerMethod) {
+                continue;
+            }
+
             for (ILocalVariable parameter : method.getParameters()) {
                 validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, methodAnnotations);
             }
@@ -128,12 +144,14 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
 
         IAnnotation[] annotations = (element instanceof IAnnotatable) ? ((IAnnotatable) element).getAnnotations() : new IAnnotation[0];
 
-        if (DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.DELEGATE_FQ_NAME)) {
-            delegateElements.add(element);
-            validateDelegateInjectionPoint(owner,
-                                           methodAnnotations.length > 0 ? methodAnnotations : annotations,
-                                           type, uri, context, diagnostics);
+        if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.DELEGATE_FQ_NAME)) {
+            return;
         }
+
+        delegateElements.add(element);
+        validateDelegateInjectionPoint(owner,
+                                       methodAnnotations.length > 0 ? methodAnnotations : annotations,
+                                       type, uri, context, diagnostics);
     }
 
     /**
