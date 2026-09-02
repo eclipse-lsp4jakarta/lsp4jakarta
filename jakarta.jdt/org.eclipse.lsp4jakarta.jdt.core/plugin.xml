@@ -384,6 +384,9 @@
                   targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNonVoid"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.ChangeReturnTypeToVoidForSessionSyncMethodQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNoParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
       <codeAction kind="quickfix"

@@ -37,6 +37,12 @@ public class Constants {
     /** JVM return-type descriptor for {@code void}. */
     public static final String VOID_RETURN_TYPE = "V";
 
+    /** JDT type-signature for the primitive {@code boolean}. */
+    public static final String BOOLEAN_PRIMITIVE_SIGNATURE = "Z";
+
+    /** Fully qualified name of {@code java.lang.Boolean}. */
+    public static final String BOOLEAN_FQ_NAME = "java.lang.Boolean";
+
     public static final String[] SESSION_BEAN_ANNOTATIONS = {
                                                               STATELESS_FQ_NAME,
                                                               STATEFUL_FQ_NAME,
@@ -47,5 +53,11 @@ public class Constants {
                                                               AFTER_BEGIN_FQ_NAME,
                                                               BEFORE_COMPLETION_FQ_NAME,
                                                               AFTER_COMPLETION_FQ_NAME
+    };
+
+    /** Annotations whose methods must declare no parameters. */
+    public static final String[] SESSION_SYNC_NO_PARAM_ANNOTATIONS = {
+                                                                       AFTER_BEGIN_FQ_NAME,
+                                                                       BEFORE_COMPLETION_FQ_NAME
     };
 }

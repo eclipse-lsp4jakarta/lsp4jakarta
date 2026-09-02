@@ -21,7 +21,7 @@ public class ValidSessionSyncMethods {
     public void beforeCompletion() {
     }
 
-    // Valid: not final, not static, returns void (boolean param is allowed for @AfterCompletion)
+    // Valid: not final, not static, returns void, and has exactly one boolean parameter
     @AfterCompletion
     public void afterCompletion(boolean committed) {
     }
