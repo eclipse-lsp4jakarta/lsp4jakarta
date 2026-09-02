@@ -167,9 +167,14 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                         validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
                     }
 
-                    // Check @Embedded on getter methods
+                    // Check @Embedded on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDED)) {
-                        validateEmbeddedType(method, type, diagnostics, context);
+                        validateEmbeddableReferenceType(method, type, diagnostics, context, ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable);
+                    }
+
+                    // Check @EmbeddedId on methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        validateEmbeddableReferenceType(method, type, diagnostics, context, ErrorCode.EmbeddedIdTypeNotAnnotatedWithEmbeddable);
                     }
 
                     // All Methods of this class should not be final
@@ -215,7 +220,12 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                     // Check @Embedded on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
-                        validateEmbeddedType(field, type, diagnostics, context);
+                        validateEmbeddableReferenceType(field, type, diagnostics, context, ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable);
+                    }
+
+                    // Check @EmbeddedId on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        validateEmbeddableReferenceType(field, type, diagnostics, context, ErrorCode.EmbeddedIdTypeNotAnnotatedWithEmbeddable);
                     }
 
                     // If a field is static, we do not care about it, we care about all other field
@@ -831,18 +841,18 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     /**
-     * Validates that a field or method annotated with @Embedded references a type
-     * that is annotated with @Embeddable.
-     * Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14672
+     * Validates that a field or method annotated with @Embedded or @EmbeddedId
+     * references a type that is annotated with @Embeddable.
      *
      * @param member the field or method to validate
      * @param type the containing entity type
      * @param diagnostics list to add diagnostics to
      * @param context the diagnostics context
+     * @param errorCode the error code to report if the type lacks @Embeddable
      * @throws JavaModelException
      */
-    private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                      JavaDiagnosticsContext context) throws JavaModelException {
+    private void validateEmbeddableReferenceType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                                 JavaDiagnosticsContext context, ErrorCode errorCode) throws JavaModelException {
         String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
 
         if (fqName == null) {
@@ -864,9 +874,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             Range range = PositionUtils.toNameRange(member, context.getUtils());
             String simpleName = DiagnosticUtils.getSimpleName(fqName);
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     Messages.getMessage(errorCode.name(), simpleName),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
+                                                     errorCode, DiagnosticSeverity.Error));
         }
     }
 
