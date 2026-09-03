@@ -13,6 +13,7 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -183,15 +184,55 @@ public class TypeHierarchyUtils {
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
     public static IType findSupertypeWithAnnotation(IType type, String annotationFQName) throws JavaModelException {
+        Set<IType> hierarchy = new HashSet<>();
+        collectSuperTypes(type, hierarchy);
+
+        for (IType superType : hierarchy) {
+            // Skip the type itself — only ancestors are of interest.
+            if (superType.equals(type)) {
+                continue;
+            }
+            try {
+                if (DiagnosticUtils.isMatchedAnnotation(superType.getCompilationUnit(),
+                                                        superType.getAnnotations(),
+                                                        annotationFQName)) {
+                    return superType;
+                }
+            } catch (JavaModelException e) {
+                LOGGER.warning("Could not inspect annotations on superclass "
+                               + superType.getFullyQualifiedName() + ": " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Walks the full superclass chain of {@code type} and returns {@code true} if any
+     * ancestor carries at least one of the given (invalid) annotations.
+     *
+     * <p>The type itself is skipped — only superclasses are examined. Every level of the
+     * hierarchy is checked; the walk only stops early when a match is found.</p>
+     *
+     * @param type the root type whose superclass chain is searched
+     * @param invalidAnnotationFQNames the fully-qualified names of the annotations to treat
+     *            as invalid (e.g. the scopes that are not permitted for this bean type)
+     * @return {@code true} if any ancestor in the superclass chain carries at least one of
+     *         the invalid annotations; {@code false} if no such ancestor exists
+     * @throws JavaModelException if the type hierarchy cannot be resolved
+     */
+    public static boolean findSupertypeWithAnyAnnotation(IType type,
+                                                         Collection<String> invalidAnnotationFQNames) throws JavaModelException {
         ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
         IType superclass = hierarchy.getSuperclass(type);
 
         while (superclass != null && !"java.lang.Object".equals(superclass.getFullyQualifiedName())) {
             try {
-                if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(),
-                                                        superclass.getAnnotations(),
-                                                        annotationFQName)) {
-                    return superclass;
+                for (String annotationFQName : invalidAnnotationFQNames) {
+                    if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(),
+                                                            superclass.getAnnotations(),
+                                                            annotationFQName)) {
+                        return true;
+                    }
                 }
             } catch (JavaModelException e) {
                 LOGGER.warning("Could not inspect annotations on superclass "
@@ -199,6 +240,6 @@ public class TypeHierarchyUtils {
             }
             superclass = hierarchy.getSuperclass(superclass);
         }
-        return null;
+        return false;
     }
 }

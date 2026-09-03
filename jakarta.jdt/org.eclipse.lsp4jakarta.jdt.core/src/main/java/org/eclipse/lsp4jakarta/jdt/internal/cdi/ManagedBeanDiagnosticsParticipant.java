@@ -617,20 +617,16 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
     private void validateSessionBeanInheritedScope(JavaDiagnosticsContext context, String uri,
                                                    List<Diagnostic> diagnostics, IType type, Range range,
                                                    String[] validScopes, String messageKey, ErrorCode errorCode) throws JavaModelException {
-        for (String scopeFqName : Constants.SCOPE_FQ_NAMES) {
-            IType ancestor = TypeHierarchyUtils.findSupertypeWithAnnotation(type, scopeFqName);
-            if (ancestor != null) {
-                // Found the nearest ancestor with this scope — check if it is valid for this bean type.
-                boolean isValidScope = Arrays.stream(validScopes).anyMatch(scopeFqName::equals);
-                if (!isValidScope) {
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage(messageKey), range,
-                                                             Constants.DIAGNOSTIC_SOURCE,
-                                                             (new Gson().toJsonTree(List.of(scopeFqName))),
-                                                             errorCode, DiagnosticSeverity.Error));
-                }
-                return;
-            }
+        // Compute the scopes that are invalid for this bean type, then check whether any
+        // ancestor in the superclass chain carries one of them.
+        Set<String> invalidScopes = new HashSet<>(Constants.SCOPE_FQ_NAMES);
+        Arrays.stream(validScopes).forEach(invalidScopes::remove);
+
+        if (TypeHierarchyUtils.findSupertypeWithAnyAnnotation(type, invalidScopes)) {
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage(messageKey), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     errorCode, DiagnosticSeverity.Error));
         }
     }
 
