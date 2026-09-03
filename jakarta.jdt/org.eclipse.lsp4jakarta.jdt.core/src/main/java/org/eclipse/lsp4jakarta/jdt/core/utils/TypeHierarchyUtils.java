@@ -13,6 +13,7 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IAnnotation;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
@@ -173,6 +177,18 @@ public class TypeHierarchyUtils {
     }
 
     /**
+     * Gets all interfaces implemented by a type and its superclasses.
+     *
+     * @param type the type to inspect
+     * @return an array of all interface types
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    public static IType[] getAllInterfaces(IType type) throws JavaModelException {
+        ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        return typeHierarchy.getAllInterfaces();
+    }
+
+    /**
      * Walks the full superclass chain of {@code type} and returns the first
      * ancestor {@link IType} that is annotated with {@code annotationFQName}.
      *
@@ -208,7 +224,6 @@ public class TypeHierarchyUtils {
         return null;
     }
 
-    /**
      * Walks the full superclass chain of {@code type} and returns the FQ name of the first
      * invalid annotation found in any ancestor, or {@code null} if none is found.
      *
@@ -243,5 +258,90 @@ public class TypeHierarchyUtils {
             superclass = hierarchy.getSuperclass(superclass);
         }
         return null;
+    }
+
+    /**
+     * Returns {@code true} if the <em>direct</em> (immediate) superclass of
+     * {@code type} carries {@code annotationFQName}.
+     *
+     * <p>Only the single class named by {@link IType#getSuperclassName()} is
+     * inspected — grandparents and further ancestors are not considered.
+     * This is intentionally distinct from {@link #findSupertypeWithAnnotation},
+     * which walks the full hierarchy.</p>
+     *
+     * @param type the type whose direct superclass is checked
+     * @param annotationFQName the fully-qualified annotation name to look for
+     * @return {@code true} if the direct superclass carries the annotation;
+     *         {@code false} if there is no direct superclass, the superclass
+     *         cannot be resolved, or it does not carry the annotation
+     * @throws JavaModelException if the Java model cannot be accessed
+     */
+    public static boolean directSuperClassHasAnnotation(IType type, String annotationFQName) throws JavaModelException {
+        IType superclassType = resolveDirectSuperclass(type);
+        if (superclassType == null) {
+            return false;
+        }
+        return DiagnosticUtils.isMatchedAnnotation(superclassType.getCompilationUnit(),
+                                                   superclassType.getAnnotations(),
+                                                   annotationFQName);
+    }
+
+    /**
+     * Returns {@code true} if the <em>direct</em> (immediate) superclass of
+     * {@code type} carries any annotation that is itself meta-annotated with
+     * {@code metaAnnotationFQName}.
+     *
+     * <p>This builds on {@link #hasAnnotation} by first resolving the direct
+     * superclass via {@link #resolveDirectSuperclass}, then delegating each of
+     * its annotations to
+     * {@link ManagedBean#hasMetaAnnotation(IAnnotation, IType, ICompilationUnit, String)}
+     * to check whether the annotation's own type carries the meta-annotation.
+     * It is used, for example, to detect custom CDI scopes on a superclass: a
+     * user-defined {@code @MyScope} annotation is a valid scope when its own
+     * declaration is annotated with {@code @NormalScope}.</p>
+     *
+     * <p>Only the single class named by {@link IType#getSuperclassName()} is
+     * inspected — grandparents and further ancestors are not considered.</p>
+     *
+     * @param type the type whose direct superclass is checked
+     * @param metaAnnotationFQName the fully-qualified name of the meta-annotation
+     *            to look for on the annotation types of the direct superclass
+     *            (e.g. {@code "jakarta.enterprise.context.NormalScope"})
+     * @return {@code true} if the direct superclass has at least one annotation
+     *         whose own type carries {@code metaAnnotationFQName};
+     *         {@code false} if there is no direct superclass, it cannot be
+     *         resolved, or none of its annotations carry the meta-annotation
+     * @throws JavaModelException if the Java model cannot be accessed
+     */
+    public static boolean directSuperclassHasAnnotationWithMetaAnnotation(IType type,
+                                                                          String metaAnnotationFQName) throws JavaModelException {
+        IType superclassType = resolveDirectSuperclass(type);
+        if (superclassType == null) {
+            return false;
+        }
+        return Arrays.stream(superclassType.getAnnotations()).anyMatch(annotation -> {
+            try {
+                return ManagedBean.hasMetaAnnotation(annotation, superclassType, superclassType.getCompilationUnit(), metaAnnotationFQName);
+            } catch (JavaModelException e) {
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Resolves and returns the direct (immediate) superclass {@link IType} of
+     * {@code type}, or {@code null} if there is no superclass or it cannot be
+     * resolved.
+     *
+     * @param type the type whose direct superclass is resolved
+     * @return the resolved {@link IType} of the direct superclass, or {@code null}
+     * @throws JavaModelException if the Java model cannot be accessed
+     */
+    private static IType resolveDirectSuperclass(IType type) throws JavaModelException {
+        String superclassName = type.getSuperclassName();
+        if (superclassName == null) {
+            return null;
+        }
+        return ManagedBean.getChildITypeByName(type, superclassName);
     }
 }
