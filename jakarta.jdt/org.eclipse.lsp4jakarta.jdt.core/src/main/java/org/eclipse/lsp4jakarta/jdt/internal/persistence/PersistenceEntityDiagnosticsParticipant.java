@@ -95,6 +95,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IAnnotation namedNativeQueriesAnnotation = null;
 
             IAnnotation inheritanceAnnotation = null;
+            IAnnotation idClassAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
                 String elementName = annotation.getElementName();
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.ENTITY)) {
@@ -116,6 +117,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 }
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.IDCLASS)) {
+                    idClassAnnotation = annotation;
                 }
             }
 
@@ -141,6 +145,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             validateNamedAnnotationPlacement(namedNativeQueriesAnnotation, Constants.NAMEDNATIVEQUERIES,
                                              hasEntity || hasMappedSuperclass, "NamedNativeQueriesOnInvalidClass",
                                              ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
+
+            if (idClassAnnotation != null) {
+                validateIdClassType(idClassAnnotation, type, diagnostics, context);
+            }
 
             if (entityAnnotation != null) {
                 // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
@@ -877,6 +885,47 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                      Messages.getMessage(errorCode.name(), simpleName),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Validates that the primary key class referenced by @IdClass is annotated with @Embeddable.
+     * Specification: Jakarta Persistence 3.0, Section 11.1.14, #a14687
+     *
+     * @param idClassAnnotation the @IdClass annotation
+     * @param type the containing class type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateIdClassType(IAnnotation idClassAnnotation, IType type, List<Diagnostic> diagnostics,
+                                     JavaDiagnosticsContext context) throws JavaModelException {
+        String keyClassName = DiagnosticUtils.getAnnotationMemberValue(idClassAnnotation, "value", String.class);
+        if (keyClassName == null || keyClassName.isBlank()) {
+            return;
+        }
+
+        // The returned value can be a fully qualified name or a simple name (e.g., "OrderId")
+        String fqName = DiagnosticUtils.resolveFullyQualifiedName(type, keyClassName);
+
+        IJavaProject javaProject = type.getJavaProject();
+        IType keyType = javaProject.findType(fqName);
+        if (keyType == null) {
+            return;
+        }
+
+        ICompilationUnit keyUnit = keyType.getCompilationUnit();
+        boolean hasEmbeddable = DiagnosticUtils.isMatchedAnnotation(keyUnit,
+                                                                    keyType.getAnnotations(),
+                                                                    Constants.EMBEDDABLE);
+
+        if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(idClassAnnotation, context.getUtils());
+            String simpleName = DiagnosticUtils.getSimpleName(fqName);
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage(ErrorCode.IdClassTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.IdClassTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
     }
 
