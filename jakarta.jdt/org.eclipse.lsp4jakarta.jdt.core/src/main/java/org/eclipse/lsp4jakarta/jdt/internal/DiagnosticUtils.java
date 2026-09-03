@@ -526,6 +526,28 @@ public class DiagnosticUtils {
     }
 
     /**
+     * Resolves a class type name (simple or qualified) against the context type
+     * and returns the fully qualified class name.
+     *
+     * @param contextType the context type
+     * @param typeName the class type name to resolve
+     * @return the resolved fully qualified name, or the original typeName if resolution fails
+     * @throws JavaModelException if unable to resolve type name
+     */
+    public static String resolveFullyQualifiedName(IType contextType, String typeName) throws JavaModelException {
+        if (contextType == null || typeName == null || typeName.isBlank()) {
+            return typeName;
+        }
+        String[][] resolved = contextType.resolveType(typeName);
+        if (resolved != null && resolved.length > 0) {
+            String packagePart = resolved[0][0];
+            String classPart = resolved[0][1];
+            return packagePart.isEmpty() ? classPart : packagePart + "." + classPart;
+        }
+        return typeName;
+    }
+
+    /**
      * Converts a list of fully qualified annotation names to a comma-separated
      * string of simple names, each prefixed with the given {@code prefix}.
      *
