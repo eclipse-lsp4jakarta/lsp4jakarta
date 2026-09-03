@@ -38,6 +38,8 @@ public enum ErrorCode implements IJavaErrorCode {
     DuplicateVersionAnnotationInHierarchy,
     InvalidVersionFieldOrPropertyType,
     EmbeddedTypeNotAnnotatedWithEmbeddable,
+    EmbeddedIdTypeNotAnnotatedWithEmbeddable,
+    IdClassTypeNotAnnotatedWithEmbeddable,
     InvalidIdType,
     InheritanceAnnotationOnNonEntityClass,
     InheritanceAnnotationOnNonRootEntity,
