@@ -224,6 +224,7 @@ public class TypeHierarchyUtils {
         return null;
     }
 
+    /**
      * Walks the full superclass chain of {@code type} and returns the FQ name of the first
      * invalid annotation found in any ancestor, or {@code null} if none is found.
      *
@@ -237,6 +238,7 @@ public class TypeHierarchyUtils {
      *         annotations; {@code null} if no such ancestor exists
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
+
     public static String findSupertypeWithAnyAnnotation(IType type,
                                                         Collection<String> invalidAnnotationFQNames) throws JavaModelException {
         ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
