@@ -393,7 +393,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             boolean isSingleton = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
                                                                              new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
             boolean isClassGeneric = type.getTypeParameters().length != 0;
-            Range range = PositionUtils.toNameRange(type, context.getUtils());
 
             if (isManagedBean) {
 
@@ -401,6 +400,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     boolean hasInvalidSingletonScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
                                                                                                               && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
                     if (hasInvalidSingletonScope) {
+                        Range range = PositionUtils.toNameRange(type, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
                                                                  Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
                                                                  Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
@@ -410,6 +410,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // A stateless session bean must belong to the @Dependent scope only
                 // If it has multiple scopes, it's an error
                 if (isStateless && (!isDependent || hasMultipleScopes)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("StatelessSessionBeanInvalidScope"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -417,6 +418,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
                 } else if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -424,6 +426,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
                 } else if (nonStaticPublicFieldPresent) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -431,6 +434,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // Scope type annotations must be specified by a managed bean class at most once.
                 } else if (hasMultipleScopes) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
@@ -440,11 +444,13 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
                 // scope from a superclass via @Inherited CDI scope annotations.
                 if (isSingleton) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
                                                       new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
                                                       "SingletonSessionBeanInvalidScope", ErrorCode.InvalidSingletonSessionBeanScope);
                 }
                 if (isStateless) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
                                                       new String[] { Constants.DEPENDENT_FQ_NAME },
                                                       "StatelessSessionBeanInvalidScope", ErrorCode.InvalidStatelessSessionBeanScope);
@@ -622,10 +628,12 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         Set<String> invalidScopes = new HashSet<>(Constants.SCOPE_FQ_NAMES);
         Arrays.stream(validScopes).forEach(invalidScopes::remove);
 
-        if (TypeHierarchyUtils.findSupertypeWithAnyAnnotation(type, invalidScopes)) {
+        String matchedScope = TypeHierarchyUtils.findSupertypeWithAnyAnnotation(type, invalidScopes);
+        if (matchedScope != null) {
             diagnostics.add(context.createDiagnostic(uri,
                                                      Messages.getMessage(messageKey), range,
-                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     (new Gson().toJsonTree(List.of(matchedScope))),
                                                      errorCode, DiagnosticSeverity.Error));
         }
     }
