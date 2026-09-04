@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +49,8 @@ public class TypeHierarchyUtils {
     private static final Logger LOGGER = Logger.getLogger(TypeHierarchyUtils.class.getName());
 
     public static final int HAS_SUPERTYPE = 1;
+
+    private static final String OBJECT_FQ_NAME = "java.lang.Object";
 
     /**
      *
@@ -217,6 +220,43 @@ public class TypeHierarchyUtils {
                 LOGGER.warning("Could not inspect annotations on superclass "
                                + superType.getFullyQualifiedName() + ": " + e.getMessage());
             }
+        }
+        return null;
+    }
+
+    /**
+     * Walks the full superclass chain of {@code type} and returns the FQ name of the first
+     * matching annotation found in any ancestor, or {@code null} if none is found.
+     *
+     * <p>The type itself is skipped — only superclasses are examined. Every level of the
+     * hierarchy is checked; the walk stops early when a match is found.</p>
+     *
+     * @param type the root type whose superclass chain is searched
+     * @param annotationFQNames the fully-qualified names of the annotations to look for
+     *            in the supertype chain
+     * @return the matched annotation FQ name if any ancestor carries one of the
+     *         annotations; {@code null} if no such ancestor exists
+     * @throws JavaModelException if the type hierarchy cannot be resolved
+     */
+    public static String findSupertypeWithAnyAnnotation(IType type,
+                                                        Collection<String> annotationFQNames) throws JavaModelException {
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
+        IType superclass = hierarchy.getSuperclass(type);
+
+        while (superclass != null && !OBJECT_FQ_NAME.equals(superclass.getFullyQualifiedName())) {
+            try {
+                for (String annotationFQName : annotationFQNames) {
+                    if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(),
+                                                            superclass.getAnnotations(),
+                                                            annotationFQName)) {
+                        return annotationFQName;
+                    }
+                }
+            } catch (JavaModelException e) {
+                LOGGER.warning("Could not inspect annotations on superclass "
+                               + superclass.getFullyQualifiedName() + ": " + e.getMessage());
+            }
+            superclass = hierarchy.getSuperclass(superclass);
         }
         return null;
     }

@@ -80,4 +80,6 @@ public class Constants {
                                                                           "jakarta.enterprise.context.RequestScoped" };
 
     public static final Set<String> INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS = Set.of(OBSERVES_FQ_NAME, OBSERVES_ASYNC_FQ_NAME);
+
+    public static final String OBJECT_FQ_NAME = "java.lang.Object";
 }
