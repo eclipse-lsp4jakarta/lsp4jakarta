@@ -226,27 +226,26 @@ public class TypeHierarchyUtils {
 
     /**
      * Walks the full superclass chain of {@code type} and returns the FQ name of the first
-     * invalid annotation found in any ancestor, or {@code null} if none is found.
+     * matching annotation found in any ancestor, or {@code null} if none is found.
      *
      * <p>The type itself is skipped — only superclasses are examined. Every level of the
      * hierarchy is checked; the walk stops early when a match is found.</p>
      *
      * @param type the root type whose superclass chain is searched
-     * @param invalidAnnotationFQNames the fully-qualified names of the annotations to treat
-     *            as invalid (e.g. the scopes that are not permitted for this bean type)
-     * @return the matched annotation FQ name if any ancestor carries one of the invalid
+     * @param annotationFQNames the fully-qualified names of the annotations to look for
+     *            in the supertype chain
+     * @return the matched annotation FQ name if any ancestor carries one of the
      *         annotations; {@code null} if no such ancestor exists
      * @throws JavaModelException if the type hierarchy cannot be resolved
      */
-
     public static String findSupertypeWithAnyAnnotation(IType type,
-                                                        Collection<String> invalidAnnotationFQNames) throws JavaModelException {
+                                                        Collection<String> annotationFQNames) throws JavaModelException {
         ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
         IType superclass = hierarchy.getSuperclass(type);
 
         while (superclass != null && !OBJECT_FQ_NAME.equals(superclass.getFullyQualifiedName())) {
             try {
-                for (String annotationFQName : invalidAnnotationFQNames) {
+                for (String annotationFQName : annotationFQNames) {
                     if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(),
                                                             superclass.getAnnotations(),
                                                             annotationFQName)) {
