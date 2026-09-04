@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +48,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
  */
 @SuppressWarnings("restriction")
 public class DiagnosticUtils {
+
+    private static final Logger LOGGER = Logger.getLogger(DiagnosticUtils.class.getName());
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
 
@@ -594,4 +597,63 @@ public class DiagnosticUtils {
         // Raw type has no type arguments
         return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
     }
+
+    /**
+     * Finds the first annotation in {@code annotations} whose fully-qualified name
+     * matches {@code annotationFQ} and returns it, or {@code null} if none matches.
+     *
+     * <p>This is the get-the-instance companion to
+     * {@link #isMatchedAnnotation(ICompilationUnit, IAnnotation[], String)}, which
+     * only returns a boolean. Use this overload when the caller needs the
+     * {@link IAnnotation} object itself (e.g. to read its member values).
+     *
+     * @param unit the compilation unit used for import resolution
+     * @param annotations the annotations to search through
+     * @param annotationFQ the fully-qualified annotation name to look for
+     * @return the first matching {@link IAnnotation}, or {@code null} if not found
+     * @throws JavaModelException if JDT cannot inspect the annotations
+     */
+    public static IAnnotation getMatchedAnnotation(ICompilationUnit unit, IAnnotation[] annotations,
+                                                   String annotationFQ) throws JavaModelException {
+        for (IAnnotation annotation : annotations) {
+            if (isMatchedAnnotation(unit, annotation, annotationFQ)) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the simple class name from a JDT type signature string.
+     *
+     * <p>Handles both simple reference types (e.g. {@code QDepartment;}) and
+     * parameterized collection types whose element type is of interest
+     * (e.g. {@code QList<QEmployee;>;} → {@code "Employee"}).
+     * For a parameterized type the first (and typically only) type argument is
+     * returned; for a simple reference type the reference name itself is returned.
+     *
+     * <p>This is intentionally a <em>simple-name</em> extraction — it does not
+     * resolve fully-qualified names. Callers that need the fully-qualified type
+     * name should use {@link JDTTypeUtils#getResolvedTypeArguments} instead.
+     *
+     * @param typeSignature a JDT type signature (e.g. from
+     *            {@link IField#getTypeSignature()} or {@link IMethod#getReturnType()})
+     * @return the simple class name extracted from the signature, or {@code null}
+     *         if the signature is {@code null} or cannot be parsed
+     */
+    public static String getElementTypeSimpleName(String typeSignature) {
+        if (typeSignature == null) {
+            return null;
+        }
+        // Parameterized type: extract first type argument — e.g. QList<QEmployee;>;
+        int angleOpen = typeSignature.indexOf('<');
+        int angleClose = typeSignature.lastIndexOf('>');
+        if (angleOpen != -1 && angleClose != -1) {
+            String inner = typeSignature.substring(angleOpen + 1, angleClose);
+            return getDataTypeName(inner);
+        }
+        // Simple reference type: QDepartment;
+        return getDataTypeName(typeSignature);
+    }
+
 }
