@@ -66,11 +66,6 @@ public class Constants {
                                                                               ONE_TO_MANY, ONE_TO_ONE, MANY_TO_MANY
     };
 
-    /** All relationship annotations (including owning-side only ones). */
-    public static final String[] ALL_RELATIONSHIP_ANNOTATIONS = {
-                                                                  ONE_TO_MANY, ONE_TO_ONE, MANY_TO_MANY, MANY_TO_ONE
-    };
-
     /* Annotation attribute constants */
     public static final String MAPPED_BY = "mappedBy";
 

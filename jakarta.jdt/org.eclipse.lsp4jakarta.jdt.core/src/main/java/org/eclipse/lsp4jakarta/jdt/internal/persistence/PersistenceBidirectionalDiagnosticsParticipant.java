@@ -13,7 +13,6 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,10 +48,9 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * annotation.</li>
  * </ol>
  *
- * <p>Cross-file analysis is performed by scanning all source compilation units
- * in the project via {@link DiagnosticUtils#scanSourceTypes}, which
- * traverses the JDT project model directly and is always consistent with the
- * current workspace state.
+ * <p>Cross-file analysis is performed via {@link PersistenceUtils#findAnnotatedEntityTypes},
+ * which uses {@link org.eclipse.lsp4jakarta.jdt.internal.SourceTypeScanner} to traverse
+ * the JDT project model directly and is always consistent with the current workspace state.
  *
  * <p>Specification reference:
  * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0
@@ -79,14 +77,9 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
                 continue;
             }
 
-            // Build a project-wide map of all @Entity types keyed by simple name using
-            // the generic scanner — populated once per entity class in the file.
-            Map<String, IType> entityTypeMap = new HashMap<>();
-            DiagnosticUtils.scanSourceTypes(context.getJavaProject(), (cu, scannedType) -> {
-                if (DiagnosticUtils.isMatchedAnnotation(cu, scannedType.getAnnotations(), Constants.ENTITY)) {
-                    entityTypeMap.put(scannedType.getElementName(), scannedType);
-                }
-            });
+            // Build a project-wide map of all @Entity types keyed by simple name.
+            Map<String, IType> entityTypeMap = PersistenceUtils.findAnnotatedEntityTypes(
+                                                                                         context.getJavaProject());
 
             // Validate relationship annotations on fields.
             for (IField field : type.getFields()) {
@@ -281,14 +274,7 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
      */
     private IType resolveTargetEntityType(IMember member, Map<String, IType> entityTypeMap) {
         try {
-            String rawTypeSig;
-            if (member instanceof IField) {
-                rawTypeSig = ((IField) member).getTypeSignature();
-            } else if (member instanceof IMethod) {
-                rawTypeSig = ((IMethod) member).getReturnType();
-            } else {
-                return null;
-            }
+            String rawTypeSig = member instanceof IField ? ((IField) member).getTypeSignature() : ((IMethod) member).getReturnType();
             String simpleName = DiagnosticUtils.getElementTypeSimpleName(rawTypeSig);
             return simpleName != null ? entityTypeMap.get(simpleName) : null;
         } catch (JavaModelException e) {
