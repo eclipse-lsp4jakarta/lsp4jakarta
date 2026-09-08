@@ -93,6 +93,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IAnnotation namedQueriesAnnotation = null;
             IAnnotation namedNativeQueryAnnotation = null;
             IAnnotation namedNativeQueriesAnnotation = null;
+            IAnnotation idClassAnnotation = null;
 
             IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
@@ -114,6 +115,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
                     namedNativeQueriesAnnotation = annotation;
                 }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.IDCLASS)) {
+                    idClassAnnotation = annotation;
+                }
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
                 }
@@ -121,6 +125,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
             boolean hasEntity = entityAnnotation != null;
             boolean hasMappedSuperclass = mappedSuperclassAnnotation != null;
+
+            if (idClassAnnotation != null && (hasEntity || hasMappedSuperclass)) {
+                validateIdClass(type, idClassAnnotation, context, uri, diagnostics);
+            }
 
             // Validate named JPA annotations are on correct class types
             validateNamedAnnotationPlacement(namedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
@@ -870,4 +878,160 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
     }
 
+    /**
+     * Validates the structural requirements of the class referenced by @IdClass.
+     *
+     * @param entityType the entity or mapped superclass declaring @IdClass
+     * @param idClassAnnotation the @IdClass annotation
+     * @param context the diagnostics context
+     * @param uri the URI of the compilation unit being analysed
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if the Java model cannot be inspected
+     */
+    private void validateIdClass(IType entityType, IAnnotation idClassAnnotation,
+                                 JavaDiagnosticsContext context, String uri,
+                                 List<Diagnostic> diagnostics) throws JavaModelException {
+        IType idClass = resolveIdClass(entityType, idClassAnnotation);
+        if (idClass == null) {
+            return;
+        }
+
+        Range idClassRange = PositionUtils.toNameRange(idClass, context.getUtils());
+        if (!Flags.isPublic(idClass.getFlags())) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustBePublic", ErrorCode.IdClassMustBePublic);
+        }
+
+        boolean hasPublicNoArgConstructor = false;
+        for (IMethod method : idClass.getMethods()) {
+            if (method.isConstructor() && method.getNumberOfParameters() == 0 && Flags.isPublic(method.getFlags())) {
+                hasPublicNoArgConstructor = true;
+                break;
+            }
+        }
+        if (!hasPublicNoArgConstructor) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustHavePublicNoArgConstructor", ErrorCode.IdClassMustHavePublicNoArgConstructor);
+        }
+
+        if (!implementsSerializable(idClass)) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustBeSerializable", ErrorCode.IdClassMustBeSerializable);
+        }
+
+        boolean hasEquals = false;
+        boolean hasHashCode = false;
+        for (IMethod method : idClass.getMethods()) {
+            if (!idClass.equals(method.getDeclaringType())) {
+                continue;
+            }
+            if ("equals".equals(method.getElementName()) && hasObjectParameter(method, idClass)) {
+                hasEquals = true;
+            } else if ("hashCode".equals(method.getElementName()) && method.getNumberOfParameters() == 0) {
+                hasHashCode = true;
+            }
+        }
+        if (!hasEquals) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustDeclareEquals", ErrorCode.IdClassMustDeclareEquals);
+        }
+        if (!hasHashCode) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustDeclareHashCode", ErrorCode.IdClassMustDeclareHashCode);
+        }
+    }
+
+    /**
+     * Checks whether a method declares a single {@code java.lang.Object} parameter.
+     *
+     * @param method the method to inspect
+     * @param declaringType the type declaring the method
+     * @return {@code true} if the method has the required parameter
+     * @throws JavaModelException if the method cannot be inspected
+     */
+    private boolean hasObjectParameter(IMethod method, IType declaringType) throws JavaModelException {
+        if (method.getNumberOfParameters() != 1) {
+            return false;
+        }
+        String parameterType = JDTTypeUtils.getResolvedTypeName(method.getParameterTypes()[0], declaringType);
+        return "java.lang.Object".equals(parameterType);
+    }
+
+    /**
+     * Resolves the class value of an @IdClass annotation.
+     *
+     * @param declaringType the type containing the annotation
+     * @param annotation the @IdClass annotation
+     * @return the referenced key class, or {@code null} if it cannot be resolved
+     * @throws JavaModelException if the annotation cannot be inspected
+     */
+    private IType resolveIdClass(IType declaringType, IAnnotation annotation) throws JavaModelException {
+        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
+            if (!Constants.VALUE.equals(pair.getMemberName()) || !(pair.getValue() instanceof String)) {
+                continue;
+            }
+
+            String simpleName = ((String) pair.getValue()).replace(".class", "");
+            String fqName = simpleName;
+            String[][] resolvedNames = declaringType.resolveType(simpleName);
+            if (resolvedNames != null && resolvedNames.length > 0) {
+                String packageName = resolvedNames[0][0];
+                String typeName = resolvedNames[0][1];
+                fqName = packageName == null || packageName.isEmpty() ? typeName : packageName + "." + typeName;
+            } else {
+                // resolveType may fail for secondary types in the same compilation unit;
+                // fall back to qualifying with the declaring type's package.
+                String packageName = declaringType.getPackageFragment().getElementName();
+                if (!packageName.isEmpty()) {
+                    fqName = packageName + "." + simpleName;
+                }
+            }
+
+            // IJavaProject.findType() cannot locate secondary types (package-private
+            // top-level types whose file name differs from the type name). Search the
+            // declaring type's compilation unit first, then fall back to findType.
+            ICompilationUnit cu = declaringType.getCompilationUnit();
+            if (cu != null) {
+                for (IType type : cu.getAllTypes()) {
+                    if (fqName.equals(type.getFullyQualifiedName('.'))) {
+                        return type;
+                    }
+                }
+            }
+
+            IType idClass = declaringType.getJavaProject().findType(fqName);
+            if (idClass != null) {
+                return idClass;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks whether a type implements Serializable, directly or through an interface hierarchy.
+     *
+     * @param type the type to inspect
+     * @return {@code true} if the type is serializable
+     * @throws JavaModelException if the type hierarchy cannot be inspected
+     */
+    private boolean implementsSerializable(IType type) throws JavaModelException {
+        return Arrays.stream(type.newSupertypeHierarchy(new NullProgressMonitor()).getAllSuperInterfaces(type)).anyMatch(superInterface -> Constants.SERIALIZABLE.equals(superInterface.getFullyQualifiedName()));
+    }
+
+    /**
+     * Adds a structural @IdClass diagnostic.
+     *
+     * @param diagnostics the list to add the diagnostic to
+     * @param context the diagnostics context
+     * @param uri the URI of the compilation unit being analysed
+     * @param range the diagnostic range
+     * @param messageKey the message bundle key
+     * @param errorCode the diagnostic error code
+     */
+    private void addIdClassDiagnostic(List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                      String uri, Range range, String messageKey, ErrorCode errorCode) {
+        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey), range,
+                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                 errorCode, DiagnosticSeverity.Error));
+    }
 }
