@@ -54,6 +54,7 @@ public enum ErrorCode implements IJavaErrorCode {
     SecondaryTableInvalidEmptyName,
     SecondaryTablesMissingSecondaryTableMapping,
     ExtendedPersistenceContextInNonStatefulBean,
+    DuplicateNamedEntityGraphName,
     NamedEntityGraphOnNonEntityClass,
     NamedEntityGraphsOnNonEntityClass,
     NamedQueryOnInvalidClass,
