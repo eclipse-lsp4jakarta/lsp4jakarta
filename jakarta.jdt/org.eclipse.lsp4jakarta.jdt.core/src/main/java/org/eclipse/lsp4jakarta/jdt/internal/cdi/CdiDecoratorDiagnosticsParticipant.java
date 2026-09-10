@@ -70,7 +70,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
         try {
             IType[] types = unit.getAllTypes();
             for (IType type : types) {
-                validateDecorator(type, unit, uri, context, diagnostics);
+                validateDelegateUsage(type, unit, uri, context, diagnostics);
             }
         } catch (JavaModelException e) {
             LOGGER.log(Level.SEVERE, "Error occurred while validating decorator", e);
@@ -80,7 +80,13 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Validates that a decorator class declares exactly one @Delegate injection point.
+     * Single-pass validation of @Delegate usage for a type.
+     *
+     * For a class annotated with @Decorator: collects all @Delegate injection points
+     * in one traversal and validates count, @Inject presence, and type assignability.
+     *
+     * For a class NOT annotated with @Decorator: any @Delegate injection point found
+     * during the same traversal is immediately reported as a definition error.
      *
      * @param type the type to validate
      * @param unit the compilation unit
@@ -89,50 +95,67 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private void validateDecorator(IType type, ICompilationUnit unit, String uri,
-                                   JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+    private void validateDelegateUsage(IType type, ICompilationUnit unit, String uri,
+                                       JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
 
-        if (!DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.DECORATOR_FQ_NAME)) {
-            return;
-        }
+        boolean isDecorator = DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.DECORATOR_FQ_NAME);
 
         List<IJavaElement> delegateElements = new ArrayList<>();
         for (IField field : type.getFields()) {
-            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements);
+            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements, isDecorator);
         }
         for (IMethod method : type.getMethods()) {
             IAnnotation[] methodAnnotations = method.getAnnotations();
-
             for (ILocalVariable parameter : method.getParameters()) {
-                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, methodAnnotations);
+                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, isDecorator, methodAnnotations);
             }
         }
-        reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics,
-                                              delegateElements, delegateElements.size());
 
-        // Validate delegate type assignability (Section 8.1.3 of CDI spec)
-        if (delegateElements.size() == 1) {
-            validateDelegateTypeAssignability(type, delegateElements.get(0), uri, context, diagnostics);
+        if (isDecorator) {
+            reportInvalidDelegateCountDiagnostics(type, uri, context, diagnostics,
+                                                  delegateElements, delegateElements.size());
+            if (delegateElements.size() == 1) {
+                validateDelegateTypeAssignability(type, delegateElements.get(0), uri, context, diagnostics);
+            }
         }
     }
 
     /**
      * Unified delegate processing for fields and parameters.
      *
+     * If {@code isDecorator} is true, collects the element into {@code delegateElements}
+     * and validates the @Inject requirement. If {@code isDecorator} is false, any
+     *
+     * @Delegate found is immediately reported as an error (delegate outside decorator).
+     *
      * @param owner The element to report diagnostics on (field or method).
      * @param element The actual element annotated with @Delegate.
+     * @param isDecorator Whether the enclosing class is annotated with @Decorator.
+     * @param methodAnnotations Annotations from the enclosing method, if any.
      */
     private void validateDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
                                   JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                  List<IJavaElement> delegateElements, IAnnotation... methodAnnotations) throws JavaModelException {
+                                  List<IJavaElement> delegateElements, boolean isDecorator,
+                                  IAnnotation... methodAnnotations) throws JavaModelException {
 
         IAnnotation[] annotations = (element instanceof IAnnotatable) ? ((IAnnotatable) element).getAnnotations() : new IAnnotation[0];
 
-        if (DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.DELEGATE_FQ_NAME)) {
+        if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.DELEGATE_FQ_NAME)) {
+            return;
+        }
+
+        if (isDecorator) {
             delegateElements.add(element);
             validateDelegateInjectionPoint(owner,
                                            methodAnnotations.length > 0 ? methodAnnotations : annotations,
                                            type, uri, context, diagnostics);
+        } else {
+            Range range = PositionUtils.toNameRange(element, context.getUtils());
+            String message = Messages.getMessage("DelegateOutsideDecorator");
+            diagnostics.add(context.createDiagnostic(uri, message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidDelegateOutsideDecorator,
+                                                     DiagnosticSeverity.Error));
         }
     }
 
@@ -210,7 +233,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * or extend a decorated type of the decorator (or specifies different type parameters),
      * the container automatically detects the problem and treats it as a definition error."
      *
-     * @param decorator class
+     * @param decoratorClass the decorator class
      * @param delegateElement the delegate injection point (field or parameter)
      * @param uri the file URI
      * @param context the diagnostics context
@@ -247,7 +270,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            // Get all decorated types (interfaces and superclasses of the decorator)
+            // Get all decorated types (interfaces of the decorator, excluding java.io.Serializable)
             List<String> decoratedTypes = getDecoratedTypes(decoratorClass);
             if (decoratedTypes.isEmpty()) {
                 // Decorator has no decorated types — definition error
@@ -304,7 +327,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * which are Java interfaces, except for java.io.Serializable. The decorator bean class and
      * its superclasses are not decorated types of the decorator."
      *
-     * @param decorator class
+     * @param decoratorClass the decorator class
      * @return list of decorated type fully qualified names (interfaces only)
      * @throws JavaModelException if an error occurs accessing the Java model
      */
