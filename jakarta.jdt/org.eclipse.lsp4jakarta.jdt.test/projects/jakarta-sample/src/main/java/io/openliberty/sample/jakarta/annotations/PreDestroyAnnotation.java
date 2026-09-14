@@ -54,8 +54,8 @@ public class PreDestroyAnnotation {
 	}
 
 	@PreDestroy()
-	public void throwCustomCheckedException() throws CustomCheckedException {
-		System.out.println("CustomCheckedException");
+	public void throwCustomExceptions() throws CustomCheckedException, CustomUncheckedException {
+		System.out.println("throwCustomExceptions");
 	}
 
 	@PreDestroy()

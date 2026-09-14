@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation and others.
+* Copyright (c) 2021, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -178,6 +178,20 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         TextEdit te8 = te(48, 4, 49, 4, "");
         CodeAction ca8 = ca(uri, "Remove @JsonbAnnotation", d6, te8);
         assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca8);
+
+        // Quick fix for the accessor "getFavoriteEditor"
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d7);
+        TextEdit te9 = te(66, 4, 67, 4, "");
+        CodeAction ca9 = ca(uri, "Remove @JsonbTransient", d7, te9);
+        assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca9);
+
+        // Quick fix for the accessor "setFavoriteEditor"
+        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d8);
+        TextEdit te10 = te(72, 4, 73, 4, "");
+        TextEdit te11 = te(73, 4, 74, 4, "");
+        CodeAction ca10 = ca(uri, "Remove @JsonbAnnotation", d8, te10);
+        CodeAction ca11 = ca(uri, "Remove @JsonbTransient", d8, te11);
+        assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca10, ca11);
     }
 
     @Test
@@ -234,5 +248,331 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+    }
+
+    @Test
+    public void JsonbDiagnosticsTest() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbDiagnostics.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(36, 19, 33,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d1.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+
+        Diagnostic d2 = d(41, 19, 36,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d2.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient")));
+
+        Diagnostic d3 = d(48, 17, 34,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d3.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbAnnotation", "jakarta.json.bind.annotation.JsonbTransient")));
+
+        Diagnostic d4 = d(53, 19, 25,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d4.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+
+        Diagnostic d5 = d(56, 19, 25,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d5.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbProperty")));
+
+        Diagnostic d6 = d(59, 19, 28,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d6.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTypeAdapter")));
+
+        Diagnostic d7 = d(63, 19, 28,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d7.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient", "jakarta.json.bind.annotation.JsonbCreator")));
+
+        Diagnostic d8 = d(70, 17, 26,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d8.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient", "jakarta.json.bind.annotation.JsonbDateFormat",
+                                                       "jakarta.json.bind.annotation.JsonbNumberFormat")));
+
+        Diagnostic d9 = d(75, 19, 28,
+                          "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d9.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient")));
+
+        Diagnostic d10 = d(86, 18, 30,
+                           "When an accessor is annotated with @JsonbTransient, its field or the accessor must not be annotated with other JSON Binding annotations.",
+                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor");
+        d10.setData(new Gson().toJsonTree(Arrays.asList("jakarta.json.bind.annotation.JsonbTransient", "jakarta.json.bind.annotation.JsonbTypeDeserializer",
+                                                        "jakarta.json.bind.annotation.JsonbTypeSerializer")));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        TextEdit te1 = te(35, 4, 36, 4, "");
+        CodeAction ca1 = ca(uri, "Remove @JsonbProperty", d1, te1);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1);
+
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        TextEdit te3 = te(40, 4, 41, 4, "");
+        CodeAction ca3 = ca(uri, "Remove @JsonbTransient", d2, te3);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3);
+
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
+        TextEdit te4 = te(46, 4, 47, 4, "");
+        TextEdit te5 = te(47, 4, 48, 4, "");
+        CodeAction ca4 = ca(uri, "Remove @JsonbAnnotation", d3, te4);
+        CodeAction ca5 = ca(uri, "Remove @JsonbTransient", d3, te5);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca4, ca5);
+
+        JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, d4);
+        TextEdit te6 = te(52, 4, 53, 4, "");
+        CodeAction ca6 = ca(uri, "Remove @JsonbProperty", d4, te6);
+        assertJavaCodeAction(codeActionParams4, IJDT_UTILS, ca6);
+
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te7 = te(55, 4, 56, 4, "");
+        CodeAction ca7 = ca(uri, "Remove @JsonbProperty", d5, te7);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca7);
+
+        JakartaJavaCodeActionParams codeActionParams6 = createCodeActionParams(uri, d6);
+        TextEdit te8 = te(58, 4, 59, 4, "");
+        CodeAction ca8 = ca(uri, "Remove @JsonbTypeAdapter", d6, te8);
+        assertJavaCodeAction(codeActionParams6, IJDT_UTILS, ca8);
+
+        JakartaJavaCodeActionParams codeActionParams7 = createCodeActionParams(uri, d7);
+        TextEdit te9 = te(62, 4, 63, 4, "");
+        TextEdit te10 = te(61, 1, 62, 4, "");
+        CodeAction ca9 = ca(uri, "Remove @JsonbCreator", d7, te9);
+        CodeAction ca10 = ca(uri, "Remove @JsonbTransient", d7, te10);
+        assertJavaCodeAction(codeActionParams7, IJDT_UTILS, ca9, ca10);
+
+        JakartaJavaCodeActionParams codeActionParams8 = createCodeActionParams(uri, d8);
+        TextEdit te11 = te(68, 4, 70, 4, "");
+        TextEdit te12 = te(67, 4, 68, 4, "");
+        CodeAction ca11 = ca(uri, "Remove @JsonbDateFormat, @JsonbNumberFormat", d8, te11);
+        CodeAction ca12 = ca(uri, "Remove @JsonbTransient", d8, te12);
+        assertJavaCodeAction(codeActionParams8, IJDT_UTILS, ca11, ca12);
+
+        JakartaJavaCodeActionParams codeActionParams9 = createCodeActionParams(uri, d9);
+        TextEdit te13 = te(74, 4, 75, 4, "");
+        CodeAction ca13 = ca(uri, "Remove @JsonbTransient", d9, te13);
+        assertJavaCodeAction(codeActionParams9, IJDT_UTILS, ca13);
+
+        JakartaJavaCodeActionParams codeActionParams10 = createCodeActionParams(uri, d10);
+        TextEdit te14 = te(83, 4, 84, 4, "");
+        TextEdit te15 = te(84, 4, 86, 4, "");
+        CodeAction ca14 = ca(uri, "Remove @JsonbTransient", d10, te14);
+        CodeAction ca15 = ca(uri, "Remove @JsonbTypeDeserializer, @JsonbTypeSerializer", d10, te15);
+        assertJavaCodeAction(codeActionParams10, IJDT_UTILS, ca14, ca15);
+    }
+
+    @Test
+    public void JsonbDeserialization() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbDeserialization.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic d1 = d(4, 13, 33,
+                          "Missing Public or Protected NoArgsConstructor: Class JsonbDeserialization uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d2 = d(56, 21, 31,
+                          "Missing Public or Protected NoArgsConstructor: Class Childclass uses JSON Binding annotations, but does not declare a public or protected no-argument constructor.",
+                          DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNoArgsConstructorMissing");
+
+        Diagnostic d3 = d(83, 14, 22,
+                          "Cannot deserialize class SubChild because it is not static. Please declare the class as static for JSONB deserialization.",
+                          DiagnosticSeverity.Warning, "jakarta-jsonb", "InvalidJsonBNonStaticInnerClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3);
+
+        JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, d1);
+        String newText1 = "protected JsonbDeserialization() {\n\t}\n\n\t";
+        String newText2 = "public JsonbDeserialization() {\n\t}\n\n\t";
+        TextEdit te1 = te(6, 1, 6, 1, newText1);
+        TextEdit te2 = te(6, 1, 6, 1, newText2);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d1, te1);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d1, te2);
+        assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2);
+
+        JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, d2);
+        String newText3 = "protected Childclass() {\n		}\n		";
+        String newText4 = "public Childclass() {\n		}\n		";
+        TextEdit te3 = te(58, 2, 58, 2, newText3);
+        TextEdit te4 = te(58, 2, 58, 2, newText4);
+        CodeAction ca3 = ca(uri, "Add a no-arg protected constructor to this class", d2, te3);
+        CodeAction ca4 = ca(uri, "Add a no-arg public constructor to this class", d2, te4);
+        assertJavaCodeAction(codeActionParams2, IJDT_UTILS, ca3, ca4);
+
+        JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, d3);
+        String newText5 = " static";
+        TextEdit te5 = te(83, 7, 83, 7, newText5);
+        CodeAction ca5 = ca(uri, "Add 'static' modifier to the nested class", d3, te5);
+        assertJavaCodeAction(codeActionParams3, IJDT_UTILS, ca5);
+    }
+
+    @Test
+    public void JsonbNonPublicStaticNestedClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbStaticNestedClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Diagnostic for private static nested class SubChild
+        // Note: protected is valid according to spec, so only private and package-private should be flagged
+        Diagnostic privateClassDiagnostic = d(50, 25, 33,
+                                              "Static nested class SubChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
+
+        // Diagnostic for package-private (default) static nested class PackagePrivateChild
+        Diagnostic packagePrivateClassDiagnostic = d(88, 17, 36,
+                                                     "Static nested class PackagePrivateChild must be public or protected for JSON Binding deserialization. Private and packaged private static nested classes are not supported.",
+                                                     DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonBNonPublicProtectedStaticNestedClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, privateClassDiagnostic, packagePrivateClassDiagnostic);
+
+        // Test code actions for private static nested class
+        // Note: ModifyModifiersProposal only replaces the visibility modifier, so "private " becomes "public " or "protected " (static remains)
+        JakartaJavaCodeActionParams privateClassCodeActionParams = createCodeActionParams(uri, privateClassDiagnostic);
+        TextEdit privateClassTextEditPublic = te(50, 4, 50, 12, "public ");
+        CodeAction privateClassCodeActionPublic = ca(uri, "Change modifier to public", privateClassDiagnostic, privateClassTextEditPublic);
+
+        TextEdit privateClassTextEditProtected = te(50, 4, 50, 12, "protected ");
+        CodeAction privateClassCodeActionProtected = ca(uri, "Change modifier to protected", privateClassDiagnostic, privateClassTextEditProtected);
+
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(privateClassCodeActionParams, IJDT_UTILS, privateClassCodeActionProtected, privateClassCodeActionPublic);
+
+        // Test code actions for package-private static nested class
+        // Note: For package-private, ModifyModifiersProposal inserts "public " or "protected " before "static"
+        JakartaJavaCodeActionParams packagePrivateClassCodeActionParams = createCodeActionParams(uri, packagePrivateClassDiagnostic);
+        TextEdit packagePrivateClassTextEditPublic = te(88, 4, 88, 4, "public ");
+        CodeAction packagePrivateClassCodeActionPublic = ca(uri, "Change modifier to public", packagePrivateClassDiagnostic, packagePrivateClassTextEditPublic);
+
+        TextEdit packagePrivateClassTextEditProtected = te(88, 4, 88, 4, "protected ");
+        CodeAction packagePrivateClassCodeActionProtected = ca(uri, "Change modifier to protected", packagePrivateClassDiagnostic, packagePrivateClassTextEditProtected);
+
+        // Assert both code actions are available
+        // Note: Quick fixes are returned in alphabetical order by class name (protected, public)
+        assertJavaCodeAction(packagePrivateClassCodeActionParams, IJDT_UTILS, packagePrivateClassCodeActionProtected, packagePrivateClassCodeActionPublic);
+    }
+
+    @Test
+    public void testJsonbFromJsonNullParameters() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbFromJsonNullParameter.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test null first parameter with cast: jsonb.fromJson((String) null, Person.class)
+        Diagnostic nullFirstParamWithCast = d(47, 38, 51,
+                                              "The parameter of the fromJson() method must not be null.",
+                                              DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test null second parameter: jsonb.fromJson(json, null)
+        Diagnostic nullSecondParam = d(57, 46, 50,
+                                       "The parameter of the fromJson() method must not be null.",
+                                       DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test both parameters null: jsonb.fromJson(null, null) - first null
+        Diagnostic nullBothParamsFirst = d(66, 40, 44,
+                                           "The parameter of the fromJson() method must not be null.",
+                                           DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test both parameters null: jsonb.fromJson(null, null) - second null
+        Diagnostic nullBothParamsSecond = d(66, 46, 50,
+                                            "The parameter of the fromJson() method must not be null.",
+                                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        // Test null first parameter without cast: jsonb.fromJson(null, Person.class)
+        Diagnostic nullFirstParamNoCast = d(75, 38, 42,
+                                            "The parameter of the fromJson() method must not be null.",
+                                            DiagnosticSeverity.Error, "jakarta-jsonb", "InvalidJsonbFromJsonNullParameter");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nullFirstParamWithCast, nullSecondParam,
+                              nullBothParamsFirst, nullBothParamsSecond, nullFirstParamNoCast);
+    }
+
+    @Test
+    public void JsonbLocalInstanceClosable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbLocalInstanceClosable.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // INVALID SCENARIOS - Diagnostics SHOULD trigger for local Jsonb instances with threads but no close()
+
+        // localJsonbWithExecutorNoClose() - Local Jsonb with ExecutorService, no close()
+        Diagnostic localExecutorNoCloseDiag = d(18, 16, 45,
+                                                "Thread source detected in method localJsonbWithExecutorNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithCompletableFutureNoClose() - Local Jsonb with CompletableFuture, no close()
+        Diagnostic localCompletableFutureNoCloseDiag = d(29, 16, 54,
+                                                         "Thread source detected in method localJsonbWithCompletableFutureNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                         DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithThreadNoClose() - Local Jsonb with Thread, no close()
+        Diagnostic localThreadNoCloseDiag = d(39, 16, 43,
+                                              "Thread source detected in method localJsonbWithThreadNoClose, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                              DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // localJsonbWithTryWithResources() - Try-with-resources (known limitation - false positive)
+        Diagnostic localTryWithResourcesDiag = d(68, 16, 46,
+                                                 "Thread source detected in method localJsonbWithTryWithResources, but no close() found. Ensure all threads have finished interaction with Jsonb before calling close().",
+                                                 DiagnosticSeverity.Warning, "jakarta-jsonb", "JsonbCloseableThreadSafety");
+
+        // VALID SCENARIOS - No diagnostics expected:
+        // - localJsonbWithThreadsAndClose(): Has explicit close()
+        // - localJsonbWithoutThreads(): No threads used
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, localExecutorNoCloseDiag, localCompletableFutureNoCloseDiag,
+                              localThreadNoCloseDiag, localTryWithResourcesDiag);
+    }
+
+    @Test
+    public void JsonbGlobalInstanceClosableValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/jsonb/JsonbGlobalInstanceClosableValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // ALL SCENARIOS - No diagnostics expected for global/field Jsonb instances
+        // Global and instance field Jsonb instances should NOT be closed in individual methods
+        // Therefore, no diagnostics should trigger even when threads are used without close()
+
+        // Test cases:
+        // - globalJsonbWithExecutor(): Global Jsonb with ExecutorService
+        // - globalJsonbWithCompletableFuture(): Global Jsonb with CompletableFuture
+        // - globalJsonbWithThread(): Global Jsonb with Thread
+        // - instanceFieldJsonbWithThreads(): Instance field Jsonb with threads
+        // - globalJsonbWithoutThreads(): Global Jsonb without threads
+        // - multipleOperationsWithGlobalJsonb(): Multiple operations with global Jsonb
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }

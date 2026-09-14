@@ -35,6 +35,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 public class PreDestroyAnnotationTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
@@ -58,12 +60,15 @@ public class PreDestroyAnnotationTest extends BaseJakartaTest {
 
         Diagnostic d3 = d(36, 13, 25, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d3.setData(new Gson().toJsonTree(Arrays.asList("java.lang.Exception")));
 
         Diagnostic d4 = d(51, 13, 29, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d4.setData(new Gson().toJsonTree(Arrays.asList("java.io.IOException")));
 
-        Diagnostic d5 = d(56, 13, 40, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
+        Diagnostic d5 = d(56, 13, 34, "A method with the annotation '@PreDestroy' must not throw checked exceptions.",
                           DiagnosticSeverity.Error, "jakarta-annotations", "PreDestroyException");
+        d5.setData(new Gson().toJsonTree(Arrays.asList("io.openliberty.sample.jakarta.annotations.CustomCheckedException")));
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d2, d1, d3, d4, d5);
 
@@ -80,6 +85,13 @@ public class PreDestroyAnnotationTest extends BaseJakartaTest {
         CodeAction ca2 = ca(uri, "Remove @PreDestroy", d2, te2);
         CodeAction ca3 = ca(uri, "Remove the 'static' modifier", d2, te3);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca2, ca3);
+
+        JakartaJavaCodeActionParams codeActionParams5 = createCodeActionParams(uri, d5);
+        TextEdit te51 = te(55, 1, 56, 1, "");
+        TextEdit te52 = te(56, 44, 56, 68, "");
+        CodeAction ca51 = ca(uri, "Remove @PreDestroy", d5, te51);
+        CodeAction ca52 = ca(uri, "Remove all checked exceptions.", d5, te52);
+        assertJavaCodeAction(codeActionParams5, IJDT_UTILS, ca51, ca52);
 
     }
 

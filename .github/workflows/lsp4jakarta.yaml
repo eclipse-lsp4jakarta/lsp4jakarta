@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, 'lsp4jakarta-*-integration*']
 
 jobs:
   build:
@@ -15,17 +15,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v1
         with:
-          java-version: 17
+          java-version: 21
       - name: Build LSP4Jakarta JDT LS Extension with Maven
         working-directory: ./jakarta.jdt
-        run: xvfb-run -a mvn -B install --file pom.xml
+        run: xvfb-run -a ./mvnw clean install -B --file pom.xml
       - name: Build LSP4Jakarta Language Server with Maven
         working-directory: ./jakarta.ls
-        run: mvn clean install --file pom.xml 
+        run: ./mvnw clean install -B --file pom.xml
       - name: Build LSP4Jakarta Eclipse client plug-in with Maven
         working-directory: ./jakarta.eclipse
-        run: xvfb-run -a mvn -B install --file pom.xml
+        run: xvfb-run -a ./mvnw clean install -B --file pom.xml
           

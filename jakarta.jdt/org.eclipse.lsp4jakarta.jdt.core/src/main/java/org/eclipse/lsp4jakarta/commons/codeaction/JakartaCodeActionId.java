@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 Red Hat Inc. and others.
+* Copyright (c) 2023, 2026 Red Hat Inc. and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -33,28 +33,39 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAllParameters,
     RemoveAnnotationPreDestroy,
     RemoveAnnotationPostConstruct,
-    AnnotationRemoveStaticModifier,
+    RemoveAnnotationResource,
+    RemoveResourceAnnotationAttribute,
+    RemoveCheckedExceptions,
     InsertSlashAnnotationValueAttribute,
     // Bean validation
     RemoveConstraintAnnotation,
-    BBRemoveStaticModifier,
     // Dependency injection
     DIRemoveInjectAnnotation,
-    DIRemoveFinalModifier,
-    DIRemoveAbstractModifier,
-    DIRemoveStaticModifier,
+    DIRemoveScopeAttributes,
     // JSON-B
     JSONBRemoveJsonbCreatorAnnotation,
     JSONBRemoveJsonbTransientAnnotation,
     JSONBRemoveAllButJsonbTransientAnnotation,
+    JSONBChangeModifierToPublic,
+    JSONBChangeModifierToProtected,
+    JSONBInsertPublicConstructorToClass,
+    JSONBInsertProtectedConstructorToClass,
+    MakeClassStatic,
     // Persistence
-    PersistenceRemoveFinalModifier,
     PersistenceRemoveMapKeyAnnotation,
+    PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
     PersistenceInsertPublicCtrtToClass,
     PersistenceInsertProtectedCtrtToClass,
+    PersistenceInsertTemporalAnnotation,
+    PersistenceChangeTemporalValue,
+    PersistenceRemoveJPAIdentifierConflict,
+    PersistenceRemoveNamedJPAAnnotation,
+    PersistenceInsertEntityAnnotation,
+    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
+    WBRemoveAnnotation,
     // Servlet
     ServletCompleteWebFilterAnnotation,
     ServletCompleteServletAnnotation,
@@ -74,7 +85,36 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
-    CDIReplaceScopeAnnotations;
+    CDIRemoveDependentScope,
+    CDIReplaceScopeAnnotations,
+    // EJB
+    EJBInsertPublicCtrtToClass,
+    EJBChangeReturnTypeToVoidForSessionSyncMethod,
+    EJBRemoveSessionBeanAnnotation,
+    EJBRemoveInterceptorOrDecorator,
+    EJBRemoveFinalizeMethod,
+    EJBRemoveConflictingSessionBeanAnnotations,
+    CDIRemoveConditionalObserverAnnotations,
+    CDIRemoveNotifyObserverAttribute,
+    CDIRemoveObserverConflictParams,
+    CDIReplaceInvalidScopesWithDependent,
+    CDIRemoveDisposesFromInterceptorDecorator,
+    CDIRemoveNamedAnnotation,
+    CDIInsertNamedValueAttribute,
+    CDIRemoveNamedFromSpecializedBean,
+    CDIInsertNotifyEventMethod,
+    CDIInsertNotifyEventContextMethod,
+    //Interceptor
+    InterceptorRemoveInterceptorMethodAnnotation,
+    // Common modifier quick fixes
+    RemoveFinalModifier,
+    RemoveAbstractModifier,
+    RemoveStaticModifier,
+    //EJB
+    EJBMessageDrivenImplementation,
+    // Security
+    SecurityInsertApplicationScopedAnnotation,
+    SecurityReplaceWithApplicationScopedAnnotation;
 
     @Override
     public String getId() {

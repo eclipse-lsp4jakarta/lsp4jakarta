@@ -21,7 +21,7 @@ In the following sections, we document how to build and test using the Eclipse I
 
 ## Prerequisites
 
-[Java SE 17](https://adoptium.net/en-GB/marketplace/), [Maven](https://maven.apache.org/download.cgi), and [Eclipse](https://www.eclipse.org/downloads/) (Eclipse IDE for Enterprise Java and Web Developers is recommended) are required to build the Eclipse LSP4Jakarta project.
+[Java SE 21](https://adoptium.net/en-GB/marketplace/), [Maven](https://maven.apache.org/download.cgi), and [Eclipse](https://www.eclipse.org/downloads/) (Eclipse IDE for Enterprise Java and Web Developers is recommended) are required to build the Eclipse LSP4Jakarta project.
 
 Ensure the [Eclipse Plug-in Development Environment (PDE)](https://marketplace.eclipse.org/content/eclipse-pde-plug-development-environment) is installed in your Eclipse workspace.
 
@@ -45,13 +45,8 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 
     <img src="/docs/images/building_project_explorer.png" alt="Eclipse project explorer" height="30%" width="30%"/>
 
-    You may also need to install Tycho Project Configurations to resolve Maven plug-in execution errors.
 
-    <img src="/docs/images/building_tycho_configurator_1.png" alt="Tycho configurator errors" height="60%" width="60%"/>
-    
-    <img src="/docs/images/building_tycho_configurator_2.png" alt="Discover m2e connectors" height="40%" width="40%"/> <img src="/docs/images/building_tycho_configurator_3.png" alt="Installing Tycho Project Configurators" height="50%" width="50%"/>
-
-4. Ensure that the Java projects are being built with `JavaSE-17` (Right-click project --> "Properties" --> "Java Build Path" --> "Libraries")
+4. Ensure that the Java projects are being built with `JavaSE-21` (Right-click project --> "Properties" --> "Java Build Path" --> "Libraries")
 
 5. Configure the Java build path for the `org.eclipse.lsp4jakarta.lsp4e.core` project:
 
@@ -67,13 +62,23 @@ The following instructions explain how to set up your Eclipse IDE workspace.
 
         <img src="/docs/images/building_lsp4e_4.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
 
+6. Set target platform:
+   Open `jakarta.jdt/org.eclipse.lsp4jakarta.jdt.tp/org.eclipse.lsp4jakarta.jdt.target` 
+
+   <img src="/docs/images/tp.png" alt="lsp4e project build path confirming jar" height="60%" width="60%"/>
+ 
+   Click on 'Set as Active target platform'.
+
+   Clean and build the project.
+
+
 ## Common Errors 
 
 1. When setting up the Eclipse workspace:  
 &nbsp;- *Bundle 'org.apache.commons.lang3' cannot be resolved* in Eclipse workspace  
 &nbsp;Solution: [#46](https://github.com/eclipse/lsp4jakarta/issues/46)
 
-2. If during initial setup `mvn verify` returns errors or compilation failures, verify that you are using [JavaSE-17](https://www.oracle.com/ca-en/java/technologies/downloads/#java17). You may have to configure `$JAVA_HOME` variable and make sure it is pointing to the correct location.
+2. If during initial setup `mvn verify` returns errors or compilation failures, verify that you are using [JavaSE-21](https://www.oracle.com/ca-en/java/technologies/downloads/#java21). You may have to configure `$JAVA_HOME` variable and make sure it is pointing to the correct location.
 
 ## Run and Debug
 
@@ -86,6 +91,18 @@ Run `org.eclipse.lsp4jakarta.lsp4e.core` as an Eclipse Application to launch a n
 Debug `org.eclipse.lsp4jakarta.lsp4e.core` as an Eclipse Application to launch a new instance of the Eclipse IDE with Eclipse LSP4Jakarta (Right-click on the `org.eclipse.lsp4jakarta.lsp4e.core` project, "Debug As" --> "Eclipse Application"). A new Eclipse application will launch with the Eclipse LSP4Jakarta Eclipse IDE client plug-in installed.
 
 <img src="/docs/images/building_debug_lsp4e.png" alt="Debug lsp4e Eclipse IDE plug-in" height="60%" width="60%"/>
+
+## Autogenerate No diagnostics test cases
+
+1. Add your code changes and dataset addition/modification used for testing in jakarta-sample project.
+
+2. Run script syncTestDatasets.sh - script used for syncing up test datasets; jakarta-sample which comprises of diagnostic, quick fix etc test cases for testing lsp4jakarta features, and another automated test dataset demo-servlet-no-diagnostics which comprises of the exact same features from jakarta-sample replaced by fake import statements to test *No diagnostics* getting generated.
+
+    1. Pass SOURCE file and DESTINATION file directories as arguments: bash syncTestDatasets.sh *SOURCE directory* *DESTINATION directory* - Takes the latest changes from the java files inside source directory and syncs it with destination directory with fake imports.
+
+    2. Don't pass any arguments: bash syncTestDatasets.sh - Takes the latest changes for all the java files inside jakarta-sample project and syncs it with demo-servlet-no-diagnostics project with fake imports.
+
+3. bash buildAll.sh - Checks if project builds fine.
 
 ## Snippets
 
