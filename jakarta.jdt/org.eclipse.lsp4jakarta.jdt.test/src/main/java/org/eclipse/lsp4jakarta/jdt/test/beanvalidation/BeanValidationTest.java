@@ -535,6 +535,119 @@ public class BeanValidationTest extends BaseJakartaTest {
         TextEdit te12 = te(69, 66, 69, 86, "");
         CodeAction ca12 = ca(uri, "Remove constraint annotation DecimalMax from element", d12, te12);
         assertJavaCodeAction(codeActionParams12, IJDT_UTILS, ca12);
+    }
 
+    @Test
+    public void conflictingConstraints() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/ConflictingConstraints.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics for conflicting constraints
+        Diagnostic minMaxField = d(10, 16, 29,
+                                   "The @Min value '100' cannot be greater than the @Max value '50'.",
+                                   DiagnosticSeverity.Warning, "jakarta-bean-validation", "ConflictingConstraintAnnotations");
+
+        Diagnostic decimalMinMaxField = d(19, 23, 43,
+                                          "The @DecimalMin value '100.5' cannot be greater than the @DecimalMax value '50.5'.",
+                                          DiagnosticSeverity.Warning, "jakarta-bean-validation", "ConflictingConstraintAnnotations");
+
+        Diagnostic sizeField = d(27, 19, 30,
+                                 "The @Size min value '10' cannot be greater than the max value '5'.",
+                                 DiagnosticSeverity.Warning, "jakarta-bean-validation", "ConflictingConstraintAnnotations");
+
+        Diagnostic minMaxMethod = d(35, 15, 37,
+                                    "The @Min value '200' cannot be greater than the @Max value '100'.",
+                                    DiagnosticSeverity.Warning, "jakarta-bean-validation", "ConflictingConstraintAnnotations");
+
+        Diagnostic minMaxMethodParam = d(40, 77, 82,
+                                         "The @Min value '50' cannot be greater than the @Max value '10'.",
+                                         DiagnosticSeverity.Warning, "jakarta-bean-validation", "ConflictingConstraintAnnotations");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, minMaxField, decimalMinMaxField, sizeField, minMaxMethod, minMaxMethodParam);
+    }
+
+    @Test
+    public void testValidAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/beanvalidation/ValidAnnotationTest.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Test diagnostics for invalid @Valid usage on non-cascadable types
+        // Also verifies that valid @Valid usage on cascadable types does NOT produce diagnostics
+        String msg = "The @Valid annotation cannot be used on non-cascadable types (primitives, boxed types, String, etc.). It is only valid for complex types that support cascading validation.";
+
+        // Fields - non-cascadable types (should trigger diagnostics)
+        Diagnostic primitiveIntField = d(31, 16, 33, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                         "jakarta.validation.Valid");
+        Diagnostic boxedIntegerField = d(35, 20, 37, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                         "jakarta.validation.Valid");
+        Diagnostic boxedByteField = d(37, 17, 31, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                      "jakarta.validation.Valid");
+        Diagnostic boxedShortField = d(39, 18, 33, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                       "jakarta.validation.Valid");
+        Diagnostic boxedLongField = d(41, 17, 31, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                      "jakarta.validation.Valid");
+        Diagnostic boxedFloatField = d(43, 18, 33, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                       "jakarta.validation.Valid");
+        Diagnostic boxedCharacterField = d(45, 22, 41, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                           "jakarta.validation.Valid");
+        Diagnostic boxedBooleanField = d(47, 20, 37, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                         "jakarta.validation.Valid");
+        Diagnostic boxedDoubleField = d(49, 19, 35, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                        "jakarta.validation.Valid");
+        Diagnostic stringField = d(53, 19, 30, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                   "jakarta.validation.Valid");
+        Diagnostic bigIntegerField = d(57, 23, 38, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                       "jakarta.validation.Valid");
+        Diagnostic bigDecimalField = d(59, 23, 38, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                       "jakarta.validation.Valid");
+        Diagnostic dateField = d(63, 17, 26, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType", "jakarta.validation.Valid");
+        Diagnostic localDateField = d(65, 22, 36, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                      "jakarta.validation.Valid");
+        Diagnostic uuidField = d(69, 27, 36, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType", "jakarta.validation.Valid");
+        Diagnostic uriField = d(71, 25, 33, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType", "jakarta.validation.Valid");
+        Diagnostic urlField = d(73, 25, 33, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType", "jakarta.validation.Valid");
+        Diagnostic enumField = d(77, 19, 28, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType", "jakarta.validation.Valid");
+        Diagnostic primitiveIntArray = d(81, 18, 35, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                         "jakarta.validation.Valid");
+        Diagnostic primitiveBooleanArray = d(83, 22, 43, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                             "jakarta.validation.Valid");
+        Diagnostic primitiveDoubleArray = d(85, 21, 41, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                            "jakarta.validation.Valid");
+        // Methods - non-cascadable return types (should trigger diagnostics)
+        Diagnostic primitiveReturnMethod = d(109, 15, 37, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                             "jakarta.validation.Valid");
+        Diagnostic boxedLongReturnMethod = d(114, 16, 34, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                             "jakarta.validation.Valid");
+        Diagnostic primitiveArrayReturnMethod = d(119, 17, 44, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                                  "jakarta.validation.Valid");
+        // Parameters - non-cascadable types (should trigger diagnostics)
+        Diagnostic primitiveParameter = d(138, 49, 54, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                          "jakarta.validation.Valid");
+        Diagnostic boxedParameter = d(141, 49, 54, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                      "jakarta.validation.Valid");
+        Diagnostic primitiveArrayParameter = d(144, 56, 61, msg, DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidValidAnnotationOnNonCascadableType",
+                                               "jakarta.validation.Valid");
+
+        // Assert all diagnostics for non-cascadable types
+        // Note: Cascadable types (Product, List<Product>, Product[], Map<String, Product>) should NOT produce diagnostics
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              primitiveIntField, boxedIntegerField, boxedByteField, boxedShortField, boxedLongField,
+                              boxedFloatField, boxedCharacterField, boxedBooleanField,
+                              boxedDoubleField, stringField, bigIntegerField, bigDecimalField, dateField, localDateField, uuidField,
+                              uriField, urlField, enumField, primitiveIntArray, primitiveBooleanArray, primitiveDoubleArray,
+                              primitiveReturnMethod, boxedLongReturnMethod, primitiveArrayReturnMethod,
+                              primitiveParameter, boxedParameter, primitiveArrayParameter);
     }
 }

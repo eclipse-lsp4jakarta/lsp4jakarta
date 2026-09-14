@@ -46,6 +46,7 @@ public class Constants {
     public static final String PATTERN = "jakarta.validation.constraints.Pattern";
     public static final String SIZE = "jakarta.validation.constraints.Size";
     public static final String NOT_EMPTY = "jakarta.validation.constraints.NotEmpty";
+    public static final String VALID = "jakarta.validation.Valid";
 
     /* Types */
     public static final String THAI_BUDDHIST_DATE = "java.time.chrono.ThaiBuddhistDate";
@@ -77,6 +78,9 @@ public class Constants {
     public static final String BYTE_FQ = "java.lang.Byte";
     public static final String BIG_INTEGER_FQ = "java.math.BigInteger";
     public static final String BIG_DECIMAL_FQ = "java.math.BigDecimal";
+    public static final String UUID_FQ = "java.util.UUID";
+    public static final String URI_FQ = "java.net.URI";
+    public static final String URL_FQ = "java.net.URL";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-bean-validation";
 
@@ -84,7 +88,7 @@ public class Constants {
                                                                                                                        DECIMAL_MIN, EMAIL, PAST_OR_PRESENT, FUTURE_OR_PRESENT, PAST,
                                                                                                                        FUTURE, MIN, MAX, NEGATIVE_OR_ZERO,
                                                                                                                        POSITIVE_OR_ZERO, NEGATIVE, POSITIVE, NOT_BLANK, PATTERN,
-                                                                                                                       SIZE, NOT_EMPTY)));
+                                                                                                                       SIZE, NOT_EMPTY, VALID)));
     public final static Set<String> SET_OF_DATE_TYPES = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(THAI_BUDDHIST_DATE, MINGUO_DATE, JAPANESE_DATE,
                                                                                                                       HIJRAH_DATE, ZONED_DATE_TIME, YEAR_MONTH, YEAR, OFFSET_TIME,
                                                                                                                       OFFSET_DATE_TIME, MONTH_DAY,
@@ -102,4 +106,20 @@ public class Constants {
     public final static String[] NUMERIC_AND_CHAR_WRAPPER_TYPES = { BIG_DECIMAL_FQ, BIG_INTEGER_FQ, BYTE_FQ, SHORT_FQ,
                                                                     INTEGER_FQ, LONG_FQ, CHAR_SEQUENCE_FQ };
 
+    public final static String[] NON_CASCADABLE_TYPES = { STRING_FQ, CHAR_SEQUENCE_FQ, BIG_DECIMAL_FQ, BIG_INTEGER_FQ,
+                                                          DATE, CALENDAR, INSTANT, LOCAL_DATE,
+                                                          LOCAL_DATE_TIME, LOCAL_TIME, MONTH_DAY,
+                                                          OFFSET_DATE_TIME, OFFSET_TIME, YEAR,
+                                                          YEAR_MONTH, ZONED_DATE_TIME, HIJRAH_DATE,
+                                                          JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE,
+                                                          UUID_FQ, URI_FQ, URL_FQ };
+    public final static Set<String> WRAPPER_TYPES_FQ = Set.of(
+                                                              "java.lang.Boolean",
+                                                              "java.lang.Byte",
+                                                              "java.lang.Character",
+                                                              "java.lang.Short",
+                                                              "java.lang.Integer",
+                                                              "java.lang.Long",
+                                                              "java.lang.Float",
+                                                              "java.lang.Double");
 }

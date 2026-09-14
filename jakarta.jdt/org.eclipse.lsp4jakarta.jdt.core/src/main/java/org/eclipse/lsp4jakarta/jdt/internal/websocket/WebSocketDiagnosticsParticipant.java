@@ -42,6 +42,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
@@ -408,20 +409,9 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
                                               List<Diagnostic> diagnostics) throws JavaModelException {
 
-        boolean hasUserDefinedConstructor = false, hasPublicNoArgConstructor = false;
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
 
-        for (IMethod method : type.getMethods()) {
-            if (DiagnosticUtils.isConstructorMethod(method)) {
-                hasUserDefinedConstructor = true;
-                String[] params = method.getParameterTypes();
-                int flags = method.getFlags();
-                if (params.length == 0 && Flags.isPublic(flags)) {
-                    hasPublicNoArgConstructor = true;
-                }
-            }
-        }
-
-        if (hasUserDefinedConstructor && !hasPublicNoArgConstructor) {
+        if (constructorInfo.hasParameterizedConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
             Range range = PositionUtils.toNameRange(type, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri,
                                                      Messages.getMessage("publicNoArgConstructorMissing", type.getElementName()), range,

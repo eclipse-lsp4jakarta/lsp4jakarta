@@ -33,27 +33,36 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAllParameters,
     RemoveAnnotationPreDestroy,
     RemoveAnnotationPostConstruct,
+    RemoveAnnotationResource,
+    RemoveResourceAnnotationAttribute,
     RemoveCheckedExceptions,
-    AnnotationRemoveStaticModifier,
     InsertSlashAnnotationValueAttribute,
     // Bean validation
     RemoveConstraintAnnotation,
-    BBRemoveStaticModifier,
     // Dependency injection
     DIRemoveInjectAnnotation,
-    DIRemoveFinalModifier,
-    DIRemoveAbstractModifier,
-    DIRemoveStaticModifier,
+    DIRemoveScopeAttributes,
     // JSON-B
     JSONBRemoveJsonbCreatorAnnotation,
     JSONBRemoveJsonbTransientAnnotation,
     JSONBRemoveAllButJsonbTransientAnnotation,
+    JSONBChangeModifierToPublic,
+    JSONBChangeModifierToProtected,
+    JSONBInsertPublicConstructorToClass,
+    JSONBInsertProtectedConstructorToClass,
+    MakeClassStatic,
     // Persistence
-    PersistenceRemoveFinalModifier,
     PersistenceRemoveMapKeyAnnotation,
+    PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
     PersistenceInsertPublicCtrtToClass,
     PersistenceInsertProtectedCtrtToClass,
+    PersistenceInsertTemporalAnnotation,
+    PersistenceChangeTemporalValue,
+    PersistenceRemoveJPAIdentifierConflict,
+    PersistenceRemoveNamedJPAAnnotation,
+    PersistenceInsertEntityAnnotation,
+    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
     WBRemoveAnnotation,
@@ -76,7 +85,36 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveProducesAnnotation,
     CDIRemoveInjectAnnotation,
     CDIRemoveScopeDeclarationAnnotationsButOne,
-    CDIReplaceScopeAnnotations;
+    CDIRemoveDependentScope,
+    CDIReplaceScopeAnnotations,
+    // EJB
+    EJBInsertPublicCtrtToClass,
+    EJBChangeReturnTypeToVoidForSessionSyncMethod,
+    EJBRemoveSessionBeanAnnotation,
+    EJBRemoveInterceptorOrDecorator,
+    EJBRemoveFinalizeMethod,
+    EJBRemoveConflictingSessionBeanAnnotations,
+    CDIRemoveConditionalObserverAnnotations,
+    CDIRemoveNotifyObserverAttribute,
+    CDIRemoveObserverConflictParams,
+    CDIReplaceInvalidScopesWithDependent,
+    CDIRemoveDisposesFromInterceptorDecorator,
+    CDIRemoveNamedAnnotation,
+    CDIInsertNamedValueAttribute,
+    CDIRemoveNamedFromSpecializedBean,
+    CDIInsertNotifyEventMethod,
+    CDIInsertNotifyEventContextMethod,
+    //Interceptor
+    InterceptorRemoveInterceptorMethodAnnotation,
+    // Common modifier quick fixes
+    RemoveFinalModifier,
+    RemoveAbstractModifier,
+    RemoveStaticModifier,
+    //EJB
+    EJBMessageDrivenImplementation,
+    // Security
+    SecurityInsertApplicationScopedAnnotation,
+    SecurityReplaceWithApplicationScopedAnnotation;
 
     @Override
     public String getId() {

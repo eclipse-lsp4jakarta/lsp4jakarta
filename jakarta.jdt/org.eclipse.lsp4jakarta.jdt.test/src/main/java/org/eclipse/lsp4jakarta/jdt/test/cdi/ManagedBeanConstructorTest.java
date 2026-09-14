@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2021, 2025 IBM Corporation.
+* Copyright (c) 2021, 2026 IBM Corporation.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -64,8 +64,8 @@ public class ManagedBeanConstructorTest extends BaseJakartaTest {
                           "protected ManagedBeanConstructor() {\n\t}\n\n\t");
         TextEdit te3 = te(19, 1, 19, 1,
                           "public ManagedBeanConstructor() {\n\t}\n\n\t");
-        CodeAction ca1 = ca(uri, "Add a default 'protected' constructor to this class", d, te2);
-        CodeAction ca2 = ca(uri, "Add a default 'public' constructor to this class", d, te3);
+        CodeAction ca1 = ca(uri, "Add a no-arg protected constructor to this class", d, te2);
+        CodeAction ca2 = ca(uri, "Add a no-arg public constructor to this class", d, te3);
         CodeAction ca3 = ca(uri, "Insert @Inject", d, te1);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, ca1, ca2, ca3);
     }

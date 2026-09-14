@@ -19,6 +19,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaErrorCode;
  */
 public enum ErrorCode implements IJavaErrorCode {
     InvalidDateFormat,
+    GeneratedValueInvalidFormat,
+    GeneratedValueEmpty,
     MissingResourceAnnotation,
     MissingResourceNameAttribute,
     MissingResourceTypeAttribute,

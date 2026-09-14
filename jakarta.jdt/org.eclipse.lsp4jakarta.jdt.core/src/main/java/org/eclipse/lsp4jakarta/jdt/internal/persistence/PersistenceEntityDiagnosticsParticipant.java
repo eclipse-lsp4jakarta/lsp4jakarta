@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020, 2023 IBM Corporation, Ankush Sharma and others.
+* Copyright (c) 2020, 2026 IBM Corporation, Ankush Sharma and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,10 +14,16 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 
 /**
@@ -29,24 +35,37 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
+import com.google.gson.JsonArray;
+
 /**
- * Persistence diagnostic participant that manages the use of @Entity
- * annotations.
+ * Persistence diagnostic participant that manages the use of @Entity,
+ * @TableGenerator, @TableGenerators, @SequenceGenerator, @SequenceGenerators,
+ * @SecondaryTable, and @SecondaryTables annotations.
  */
 public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    private static final Logger LOGGER = Logger.getLogger(PersistenceEntityDiagnosticsParticipant.class.getName());
 
     /**
      * {@inheritDoc}
@@ -62,41 +81,97 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             return diagnostics;
         }
 
-        IType[] alltypes;
-        IAnnotation[] allAnnotations;
-
-        alltypes = unit.getAllTypes();
+        IType[] alltypes = unit.getAllTypes();
         for (IType type : alltypes) {
-            allAnnotations = type.getAnnotations();
+            IAnnotation[] allAnnotations = type.getAnnotations();
 
-            IAnnotation EntityAnnotation = null;
+            IAnnotation entityAnnotation = null;
+            IAnnotation mappedSuperclassAnnotation = null;
+            IAnnotation namedEntityGraphAnnotation = null;
+            IAnnotation namedEntityGraphsAnnotation = null;
+            IAnnotation namedQueryAnnotation = null;
+            IAnnotation namedQueriesAnnotation = null;
+            IAnnotation namedNativeQueryAnnotation = null;
+            IAnnotation namedNativeQueriesAnnotation = null;
+
+            IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                         Constants.ENTITY)) {
-                    EntityAnnotation = annotation;
+                String elementName = annotation.getElementName();
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.ENTITY)) {
+                    entityAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.MAPPEDSUPERCLASS)) {
+                    mappedSuperclassAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPH)) {
+                    namedEntityGraphAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPHS)) {
+                    namedEntityGraphsAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERY)) {
+                    namedQueryAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDQUERIES)) {
+                    namedQueriesAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERY)) {
+                    namedNativeQueryAnnotation = annotation;
+                } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
+                    namedNativeQueriesAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
+                    inheritanceAnnotation = annotation;
                 }
             }
 
-            if (EntityAnnotation != null) {
-                // Define boolean requirements for the diagnostics
-                boolean hasPublicOrProtectedNoArgConstructor = false;
-                boolean hasArgConstructor = false;
+            boolean hasEntity = entityAnnotation != null;
+            boolean hasMappedSuperclass = mappedSuperclassAnnotation != null;
+
+            // Validate named JPA annotations are on correct class types
+            validateNamedAnnotationPlacement(namedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
+                                             hasEntity, "NamedEntityGraphOnNonEntityClass",
+                                             ErrorCode.NamedEntityGraphOnNonEntityClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedEntityGraphsAnnotation, Constants.NAMEDENTITYGRAPHS,
+                                             hasEntity, "NamedEntityGraphsOnNonEntityClass",
+                                             ErrorCode.NamedEntityGraphsOnNonEntityClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedQueryAnnotation, Constants.NAMEDQUERY,
+                                             hasEntity || hasMappedSuperclass, "NamedQueryOnInvalidClass",
+                                             ErrorCode.NamedQueryOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedQueriesAnnotation, Constants.NAMEDQUERIES,
+                                             hasEntity || hasMappedSuperclass, "NamedQueriesOnInvalidClass",
+                                             ErrorCode.NamedQueriesOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedNativeQueryAnnotation, Constants.NAMEDNATIVEQUERY,
+                                             hasEntity || hasMappedSuperclass, "NamedNativeQueryOnInvalidClass",
+                                             ErrorCode.NamedNativeQueryOnInvalidClass, uri, context, diagnostics);
+            validateNamedAnnotationPlacement(namedNativeQueriesAnnotation, Constants.NAMEDNATIVEQUERIES,
+                                             hasEntity || hasMappedSuperclass, "NamedNativeQueriesOnInvalidClass",
+                                             ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
+
+            if (entityAnnotation != null) {
+                // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
+                Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
+                // Get constructor information
+                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
                 boolean isEntityClassFinal = false;
+                boolean hasPrimaryKey = false;
+                List<IMember> versionMembers = new ArrayList<>();
+                List<IMember> embeddedIdMembers = new ArrayList<>();
+                List<IMember> idMembers = new ArrayList<>();
 
                 // Get the Methods of the annotated Class
                 for (IMethod method : type.getMethods()) {
-                    if (DiagnosticUtils.isConstructorMethod(method)) {
-                        // We have found a method that is a constructor
-                        if (method.getNumberOfParameters() > 0) {
-                            hasArgConstructor = true;
-                            continue;
-                        }
-                        // Don't need to perform subtractions to check flags because eclipse notifies on
-                        // illegal constructor modifiers
-                        if (method.getFlags() != Flags.AccPublic && method.getFlags() != Flags.AccProtected)
-                            continue;
-                        hasPublicOrProtectedNoArgConstructor = true;
+                    // Validate @TableGenerator/s, @SequenceGenerator/s at method level
+                    Arrays.stream(method.getAnnotations()).forEach(methodAnnotation -> validateGeneratorAnnotation(methodAnnotation, type, context, uri, diagnostics));
+                    // check @version annotation usage on methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
+                        versionMembers.add(method);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION);
                     }
+                    // check @Id annotation usage on methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
+                    }
+
+                    // Check @Embedded on getter methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(method, type, diagnostics, context);
+                    }
+
                     // All Methods of this class should not be final
                     if (isFinal(method.getFlags())) {
                         Range range = PositionUtils.toNameRange(method, context.getUtils());
@@ -105,14 +180,50 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  Constants.DIAGNOSTIC_SOURCE, method.getElementType(),
                                                                  ErrorCode.InvalidFinalMethodInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
+
+                    // Check if any method has @Id or @EmbeddedId annotation
+                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, method.getAnnotations())) {
+                        hasPrimaryKey = true;
+                    }
+
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(method);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
+                        idMembers.add(method);
+                    }
+
+                    validatePKDateTemporal(type, method, diagnostics, context);
+
                 }
 
                 // Go through the instance variables and make sure no instance vars are final
                 for (IField field : type.getFields()) {
+
+                    // Validate @TableGenerator/s, @SequenceGenerator/s at field level
+                    Arrays.stream(field.getAnnotations()).forEach(fieldAnnotation -> validateGeneratorAnnotation(fieldAnnotation, type, context, uri, diagnostics));
+                    // check @version annotation usage on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
+                        versionMembers.add(field);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION);
+                    }
+                    // check @Id annotation usage on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
+                    }
+
+                    // Check @Embedded on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
+                        validateEmbeddedType(field, type, diagnostics, context);
+                    }
+
                     // If a field is static, we do not care about it, we care about all other field
+
                     if (isStatic(field.getFlags())) {
                         continue;
                     }
+
                     // If we find a non-static variable that is final, this is a problem
                     if (isFinal(field.getFlags())) {
                         Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -121,6 +232,28 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                                  Constants.DIAGNOSTIC_SOURCE, field.getElementType(),
                                                                  ErrorCode.InvalidPersistentFieldInEntityAnnotatedClass, DiagnosticSeverity.Error));
                     }
+
+                    // Check if any field has @Id or @EmbeddedId annotation
+                    if (!hasPrimaryKey && hasPrimaryKeyAnnotation(type, field.getAnnotations())) {
+                        hasPrimaryKey = true;
+                    }
+
+                    // Track @EmbeddedId and @Id members for identifier conflict checks
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        embeddedIdMembers.add(field);
+                    }
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
+                        idMembers.add(field);
+                    }
+
+                    validatePKDateTemporal(type, field, diagnostics, context);
+
+                }
+
+                // Check superclass hierarchy for primary key in @MappedSuperclass
+                if (!hasPrimaryKey) {
+                    hasPrimaryKey = hasPrimaryKeyInSuperclass(type);
+
                 }
 
                 // Ensure that the Entity class is not given a final modifier
@@ -128,7 +261,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     isEntityClassFinal = true;
 
                 // Create Diagnostics if needed
-                if (!hasPublicOrProtectedNoArgConstructor && hasArgConstructor) {
+                if (constructorInfo.hasParameterizedConstructor() &&
+                    !constructorInfo.hasValidPublicNoArgsConstructor() &&
+                    !constructorInfo.hasValidProtectedNoArgsConstructor()) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("EntityNoArgConstructor"), range,
@@ -144,10 +279,183 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                              Constants.DIAGNOSTIC_SOURCE, type.getElementType(),
                                                              ErrorCode.InvalidFinalModifierOnEntityAnnotatedClass, DiagnosticSeverity.Error));
                 }
+
+                if (!hasPrimaryKey) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("EntityMissingPrimaryKey", type.getElementName()), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.MissingPrimaryKey, DiagnosticSeverity.Error));
+                }
+
+                // Multiple @EmbeddedId annotations on the same entity
+                if (embeddedIdMembers.size() > 1) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MultipleEmbeddedIdAnnotations"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MultipleEmbeddedIdAnnotations, DiagnosticSeverity.Error));
+                    }
+                }
+
+                // @Id and @EmbeddedId mixed on the same entity
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14687
+                if (!embeddedIdMembers.isEmpty() && !idMembers.isEmpty()) {
+                    for (IMember member : embeddedIdMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsEmbeddedId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
+                    for (IMember member : idMembers) {
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("MixedIdentifierAnnotationsId"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.MixedIdentifierAnnotations, DiagnosticSeverity.Error));
+                    }
+                }
+
+                if (!versionMembers.isEmpty()) {
+                    validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
+                }
+
+                // Check @Inheritance is only on the root of the entity hierarchy
+                if (inheritanceAnnotation != null && TypeHierarchyUtils.findSupertypeWithAnnotation(type, Constants.ENTITY) != null) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InheritanceAnnotationOnNonRootEntity"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InheritanceAnnotationOnNonRootEntity,
+                                                             DiagnosticSeverity.Error));
+                }
+            } else if (inheritanceAnnotation != null) {
+                // Check @Inheritance on a class that does not have @Entity
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InheritanceAnnotationOnNonEntityClass"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InheritanceAnnotationOnNonEntityClass,
+                                                         DiagnosticSeverity.Error));
             }
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that a named JPA annotation is placed on a class type that satisfies
+     * the required condition. Adds an error diagnostic when the annotation is present
+     * but the condition is not met.
+     *
+     * @param annotation the annotation to validate, or {@code null} to skip
+     * @param annotationFQN the fully-qualified annotation name (used as diagnostic data)
+     * @param isValid {@code true} if the class satisfies the placement requirement
+     * @param messageKey the message key for the diagnostic message
+     * @param errorCode the error code identifying the diagnostic
+     * @param uri the URI of the compilation unit being analysed
+     * @param context the diagnostics context
+     * @param diagnostics the list to add any new diagnostic to
+     * @throws JavaModelException
+     */
+    private void validateNamedAnnotationPlacement(IAnnotation annotation, String annotationFQN,
+                                                  boolean isValid, String messageKey, ErrorCode errorCode,
+                                                  String uri, JavaDiagnosticsContext context,
+                                                  List<Diagnostic> diagnostics) throws JavaModelException {
+        if (annotation == null || isValid) {
+            return;
+        }
+        JsonArray diagnosticsData = new JsonArray();
+        diagnosticsData.add(annotationFQN);
+        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey), range,
+                                                 Constants.DIAGNOSTIC_SOURCE, diagnosticsData,
+                                                 errorCode, DiagnosticSeverity.Error));
+    }
+
+    /**
+     * Check the annotation value is TemporalType.DATE Enum
+     *
+     * @param pair
+     * @return
+     */
+    private boolean isValidTemporalDateValue(IMemberValuePair pair) {
+        if (pair == null) {
+            return false;
+        }
+
+        String memberName = pair.getMemberName();
+        Object value = pair.getValue();
+        int valueKind = pair.getValueKind();
+
+        return "value".equals(memberName)
+               && valueKind == IMemberValuePair.K_QUALIFIED_NAME
+               && value instanceof String
+               && Constants.TEMPORAL_TYPE_DATE.equals((String) value);
+    }
+
+    /**
+     * Check @Temporal annotation exist for primary key field/property with @Id annotation
+     * Specification: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a132
+     *
+     * @param type
+     * @param member
+     * @param diagnostics
+     * @param context
+     * @throws JavaModelException
+     */
+    private void validatePKDateTemporal(IType type, IMember member, List<Diagnostic> diagnostics,
+                                        JavaDiagnosticsContext context) throws JavaModelException {
+        IAnnotation[] allAnnotations = null;
+        IAnnotation id = null, temporal = null;
+        String typeFQ = JDTTypeUtils.getResolvedMemberTypeName(member);
+        Range range = PositionUtils.toNameRange(member, context.getUtils());
+
+        if (member instanceof IMethod) {
+            allAnnotations = ((IMethod) member).getAnnotations();
+        } else if (member instanceof IField) {
+            allAnnotations = ((IField) member).getAnnotations();
+        }
+
+        for (IAnnotation annotation : allAnnotations) {
+            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type,
+                                                                                 annotation.getElementName(),
+                                                                                 Constants.SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS);
+            if (matchedAnnotation != null) {
+                if (matchedAnnotation.equals(Constants.ID)) {
+                    id = annotation;
+                } else if (matchedAnnotation.equals(Constants.TEMPORAL)) {
+                    temporal = annotation;
+                }
+            }
+        }
+
+        if (id != null) {
+            if (Constants.UTIL_DATE.equals(typeFQ)) {
+                if (temporal != null) {
+                    // Check value
+                    IMemberValuePair[] memberValuePairs = temporal.getMemberValuePairs();
+                    for (IMemberValuePair pair : memberValuePairs) {
+                        if (!isValidTemporalDateValue(pair)) {
+                            // Add diagnostics for invalid type
+                            range = PositionUtils.toNameRange(temporal, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                                     Messages.getMessage("InvalidValueInTemporalAnnotation"), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidValueInTemporalAnnotation, DiagnosticSeverity.Error));
+                        }
+                    }
+                } else {
+                    // Add diagnostics for missing annotation
+                    diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                             Messages.getMessage("MissingTemporalAnnotation"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.MissingTemporalAnnotation, DiagnosticSeverity.Error));
+                }
+            }
+        }
     }
 
     /**
@@ -189,6 +497,377 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             return true;
         }
         return false;
+    }
+
+    /**
+     * Validates @Version annotations on entity class.
+     * Checks for:
+     * 1. Multiple @Version annotations within the same class
+     * 2. @Version annotation in both parent and child entity classes
+     *
+     * @param versionMembers member elements has version annotation
+     * @param type the entity class type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateVersionAnnotations(List<IMember> versionMembers, ICompilationUnit unit, IType type, List<Diagnostic> diagnostics,
+                                            JavaDiagnosticsContext context) throws JavaModelException {
+
+        // Check for duplicate @Version in the same class
+        if (versionMembers.size() > 1) {
+            createVersionAnnotationDiagnostics(versionMembers, diagnostics, context, "DuplicateVersionAnnotation",
+                                               ErrorCode.DuplicateVersionAnnotationInClass);
+        }
+
+        // Check for @Version in parent entity classes
+        if (versionMembers.size() > 0 && hasVersionInParentEntity(unit, type)) {
+            createVersionAnnotationDiagnostics(versionMembers, diagnostics, context, "VersionAnnotationInHierarchy",
+                                               ErrorCode.DuplicateVersionAnnotationInHierarchy);
+        }
+    }
+
+    /**
+     * Create diagnostics for @Version annotation for class level or hierarchy level
+     *
+     * @param versionMembers
+     * @param diagnostics
+     * @param context
+     * @param mCode
+     * @param eCode
+     * @throws JavaModelException
+     */
+    private void createVersionAnnotationDiagnostics(List<IMember> versionMembers, List<Diagnostic> diagnostics,
+                                                    JavaDiagnosticsContext context, String mCode, ErrorCode eCode) throws JavaModelException {
+        for (IMember member : versionMembers) {
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
+            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(mCode), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null, eCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Checks if any parent entity class has a @Version annotation.
+     *
+     * @param type the current entity class type
+     * @return true if a parent entity has @Version annotation, false otherwise
+     * @throws JavaModelException
+     */
+    private boolean hasVersionInParentEntity(ICompilationUnit unit, IType type) throws JavaModelException {
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType superclass = hierarchy.getSuperclass(type);
+
+        while (superclass != null && !superclass.getFullyQualifiedName().equals(Constants.OBJECT)) {
+            // Check if parent class is an entity
+            boolean isEntity = DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(), superclass.getAnnotations(), Constants.MAPPEDSUPERCLASS);
+
+            if (isEntity) {
+                // Check if parent entity has @Version annotation on fields
+                for (IField field : superclass.getFields()) {
+                    if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(), field.getAnnotations(), Constants.VERSION)) {
+                        return true;
+                    }
+                }
+
+                // Check if parent entity has @Version annotation on methods
+                for (IMethod method : superclass.getMethods()) {
+                    if (DiagnosticUtils.isMatchedAnnotation(superclass.getCompilationUnit(), method.getAnnotations(), Constants.VERSION)) {
+                        return true;
+                    }
+                }
+            }
+
+            superclass = hierarchy.getSuperclass(superclass);
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the given annotations contain @Id or @EmbeddedId
+     *
+     * @param type the type context for resolving annotations
+     * @param annotations the annotations to check
+     * @return true if a primary key annotation is found
+     * @throws CoreException
+     */
+    private boolean hasPrimaryKeyAnnotation(IType type, IAnnotation[] annotations) throws CoreException {
+        return Arrays.stream(annotations).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                 new String[] { Constants.ID, Constants.EMBEDDEDID }) != null;
+            } catch (JavaModelException e) {
+                LOGGER.warning("JavaModelException while processing annotation:" + annotation.getElementName());
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Check if the type or its superclass hierarchy (annotated with @MappedSuperclass)
+     * contains a primary key (@Id or @EmbeddedId)
+     *
+     * @param type the type to check
+     * @return true if a primary key is found in the hierarchy
+     * @throws CoreException
+     */
+    private boolean hasPrimaryKeyInSuperclass(IType type) throws CoreException {
+        // Collect all supertypes using the utility
+        Set<IType> hierarchy = new HashSet<>();
+        TypeHierarchyUtils.collectSuperTypes(type, hierarchy);
+
+        // Check each supertype for @MappedSuperclass and primary key
+        for (IType superType : hierarchy) {
+            // Skip the type itself
+            if (superType.equals(type)) {
+                continue;
+            }
+
+            // Check if superclass is annotated with @MappedSuperclass
+            boolean isMappedSuperclass = false;
+            for (IAnnotation annotation : superType.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedJavaElement(superType, annotation.getElementName(), Constants.MAPPEDSUPERCLASS)) {
+                    isMappedSuperclass = true;
+                    break;
+                }
+            }
+
+            // Only check for primary key if it's a @MappedSuperclass
+            if (isMappedSuperclass) {
+                // Check fields in superclass
+                for (IField field : superType.getFields()) {
+                    if (hasPrimaryKeyAnnotation(superType, field.getAnnotations())) {
+                        return true;
+                    }
+                }
+
+                // Check methods in superclass
+                for (IMethod method : superType.getMethods()) {
+                    if (hasPrimaryKeyAnnotation(superType, method.getAnnotations())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Validates that a field or method annotated with @Id/@Version has a supported type.
+     *
+     * @param member the field or method to validate
+     * @param type the containing type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                             JavaDiagnosticsContext context, String candidate) throws JavaModelException {
+        String typeFQ = null;
+        Range range = null;
+        boolean isArrayType = false;
+
+        if (member instanceof IMethod) {
+            IMethod method = (IMethod) member;
+            typeFQ = JDTTypeUtils.getResolvedResultTypeName(method);
+            range = PositionUtils.toNameRange(method, context.getUtils());
+            if (Constants.ID.equals(candidate)) {
+                isArrayType = JDTTypeUtils.isArray(method.getReturnType());
+            }
+        } else if (member instanceof IField) {
+            IField field = (IField) member;
+            typeFQ = JDTTypeUtils.getResolvedTypeName(field);
+            range = PositionUtils.toNameRange(field, context.getUtils());
+            if (Constants.ID.equals(candidate)) {
+                isArrayType = JDTTypeUtils.isArray(field.getTypeSignature());
+            }
+        } else {
+            return;
+        }
+
+        if (typeFQ == null) {
+            return;
+        }
+
+        if (Constants.ID.equals(candidate)) {
+            if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("InvalidIdType"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidIdType, DiagnosticSeverity.Error));
+            }
+        } else if (Constants.VERSION.equals(candidate)) {
+            if (!Constants.VALID_VERSION_TYPES.contains(typeFQ)) {
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("InvalidVersionFieldOrPropertyType"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidVersionFieldOrPropertyType, DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * Dispatches validation for a single annotation found on a type, field, or method.
+     * <p>
+     * Singular annotations ({@code @TableGenerator}, {@code @SequenceGenerator},
+     * {@code @SecondaryTable}) are validated via {@link #validateGeneratorNameAttribute}.
+     * Container annotations ({@code @TableGenerators}, {@code @SequenceGenerators},
+     * {@code @SecondaryTables}) are validated via {@link #validateNonEmptyMappingArray}.
+     * Annotations that do not match any of the six known names are silently ignored.
+     *
+     * @param annotation the annotation to validate
+     * @param type the enclosing type, used for import resolution
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating diagnostics
+     * @param diagnostics the mutable list to which any new diagnostics are appended
+     */
+    private void validateGeneratorAnnotation(IAnnotation annotation, IType type, JavaDiagnosticsContext context,
+                                             String uri, List<Diagnostic> diagnostics) {
+        try {
+            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                                 Constants.GENERATOR_AND_TABLE_ANNOTATIONS);
+            if (matchedAnnotation == null) {
+                return;
+            }
+            switch (matchedAnnotation) {
+                case Constants.TABLE_GENERATOR:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCE_GENERATOR:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARY_TABLE:
+                    validateGeneratorNameAttribute(annotation, context, uri, diagnostics,
+                                                   ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                case Constants.TABLE_GENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.TableGeneratorsMissingTableGeneratorMapping,
+                                                 ErrorCode.TableGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SEQUENCE_GENERATORS:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.SequenceGeneratorsMissingSequenceGeneratorMapping,
+                                                 ErrorCode.SequenceGeneratorInvalidEmptyName);
+                    break;
+                case Constants.SECONDARY_TABLES:
+                    validateNonEmptyMappingArray(annotation, context, uri, diagnostics,
+                                                 ErrorCode.SecondaryTablesMissingSecondaryTableMapping,
+                                                 ErrorCode.SecondaryTableInvalidEmptyName);
+                    break;
+                default:
+                    break;
+            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.WARNING, "Error while validating persistence generator annotations", e);
+        }
+    }
+
+    /**
+     * Validates that the given annotation declares a non-empty {@code name} attribute.
+     * <p>
+     * A diagnostic is added to {@code diagnostics} if the {@code name} attribute is absent,
+     * {@code null}, an empty string, or contains only whitespace.
+     * The message bundle key is derived from {@code errorCode.name()}.
+     *
+     * @param annotation the annotation whose {@code name} attribute is checked
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating the diagnostic
+     * @param diagnostics the mutable list to which a diagnostic is appended on failure
+     * @param errorCode error code to attach to the diagnostic (also used as message bundle key)
+     * @throws JavaModelException if the annotation's member value pairs cannot be read
+     */
+    private void validateGeneratorNameAttribute(IAnnotation annotation, JavaDiagnosticsContext context,
+                                                String uri, List<Diagnostic> diagnostics,
+                                                ErrorCode errorCode) throws JavaModelException {
+        String mappingNameValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.NAME, String.class);
+        if (mappingNameValue == null || mappingNameValue.isBlank()) {
+            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCode.name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     null, errorCode, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Validates a container annotation ({@code @TableGenerators}, {@code @SequenceGenerators},
+     * {@code @SecondaryTables}).
+     * <p>
+     * If the {@code value} array is absent or empty, emits a diagnostic using
+     * {@code emptyMappingCode}. Otherwise validates the {@code name} attribute of each nested
+     * annotation via {@link #validateGeneratorNameAttribute}.
+     * Message bundle keys are derived from {@code errorCode.name()} for both codes.
+     *
+     * @param annotation the container annotation to validate
+     * @param context the diagnostics context
+     * @param uri the document URI, used when creating diagnostics
+     * @param diagnostics the mutable list to which any new diagnostics are appended
+     * @param emptyMappingCode error code for the empty-array diagnostic
+     * @param emptyNameMappingCode error code for an empty {@code name} on a nested annotation
+     * @throws JavaModelException if the annotation's member value pairs cannot be read
+     */
+    private void validateNonEmptyMappingArray(IAnnotation annotation, JavaDiagnosticsContext context,
+                                              String uri, List<Diagnostic> diagnostics,
+                                              ErrorCode emptyMappingCode,
+                                              ErrorCode emptyNameMappingCode) throws JavaModelException {
+        Object mappingArrayValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, Object.class);
+        boolean isEmpty = (mappingArrayValue == null) || (mappingArrayValue instanceof Object[] && ((Object[]) mappingArrayValue).length == 0);
+        if (isEmpty) {
+            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(emptyMappingCode.name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     null, emptyMappingCode, DiagnosticSeverity.Error));
+            return;
+        }
+        Object[] nested = (mappingArrayValue instanceof Object[]) ? (Object[]) mappingArrayValue : new Object[] { mappingArrayValue };
+        for (Object obj : nested) {
+            if (obj instanceof IAnnotation) {
+                validateGeneratorNameAttribute((IAnnotation) obj, context, uri, diagnostics, emptyNameMappingCode);
+            }
+        }
+    }
+
+    /**
+     * Validates that a field or method annotated with @Embedded references a type
+     * that is annotated with @Embeddable.
+     * Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14672
+     *
+     * @param member the field or method to validate
+     * @param type the containing entity type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                      JavaDiagnosticsContext context) throws JavaModelException {
+        String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
+
+        if (fqName == null) {
+            return;
+        }
+
+        IJavaProject javaProject = type.getJavaProject();
+        IType embeddedType = javaProject.findType(fqName);
+        if (embeddedType == null) {
+            return;
+        }
+
+        ICompilationUnit embeddedUnit = embeddedType.getCompilationUnit();
+        boolean hasEmbeddable = DiagnosticUtils.isMatchedAnnotation(embeddedUnit,
+                                                                    embeddedType.getAnnotations(),
+                                                                    Constants.EMBEDDABLE);
+
+        if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(member, context.getUtils());
+            String simpleName = DiagnosticUtils.getSimpleName(fqName);
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
+        }
     }
 
 }

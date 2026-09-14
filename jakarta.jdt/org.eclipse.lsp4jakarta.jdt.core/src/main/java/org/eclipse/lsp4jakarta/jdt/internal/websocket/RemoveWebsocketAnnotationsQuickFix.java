@@ -43,7 +43,7 @@ public class RemoveWebsocketAnnotationsQuickFix extends RemoveAnnotationConflict
     }
 
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.WBRemoveAnnotation;
     }
 
