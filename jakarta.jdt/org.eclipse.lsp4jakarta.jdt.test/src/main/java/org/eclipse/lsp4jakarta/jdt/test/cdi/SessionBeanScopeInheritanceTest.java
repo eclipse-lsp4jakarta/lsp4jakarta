@@ -54,7 +54,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonInheritsRequestScope.java");
 
         Diagnostic inheritedRequestScopeOnSingleton = d(8, 13, 42,
-                                                        "Invalid scope @RequestScoped present in the class ScopeInheritanceParentWithRequestScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
+                                                        "Invalid scope @RequestScoped present in the inherited class ScopeInheritanceParentWithRequestScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         inheritedRequestScopeOnSingleton.setData(
                                                  new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
@@ -89,7 +89,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonInheritsSessionScope.java");
 
         Diagnostic inheritedSessionScopeOnSingleton = d(8, 13, 42,
-                                                        "Invalid scope @SessionScoped present in the class ScopeInheritanceParentWithSessionScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
+                                                        "Invalid scope @SessionScoped present in the inherited class ScopeInheritanceParentWithSessionScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         inheritedSessionScopeOnSingleton.setData(
                                                  new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
@@ -108,7 +108,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonInheritsRequestScopeTransitively.java");
 
         Diagnostic inheritedRequestScopeTransitiveOnSingleton = d(9, 13, 54,
-                                                                  "Invalid scope @RequestScoped present in the class ScopeInheritanceParentWithRequestScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
+                                                                  "Invalid scope @RequestScoped present in the inherited class ScopeInheritanceParentWithRequestScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         inheritedRequestScopeTransitiveOnSingleton.setData(
                                                            new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
@@ -135,7 +135,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessInheritsRequestScope.java");
 
         Diagnostic inheritedRequestScopeOnStateless = d(8, 13, 42,
-                                                        "Invalid scope @RequestScoped present in the class ScopeInheritanceParentWithRequestScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                        "Invalid scope @RequestScoped present in the inherited class ScopeInheritanceParentWithRequestScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
         inheritedRequestScopeOnStateless.setData(
                                                  new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
@@ -162,7 +162,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessInheritsApplicationScope.java");
 
         Diagnostic inheritedApplicationScopeOnStateless = d(8, 13, 46,
-                                                            "Invalid scope @ApplicationScoped present in the class ScopeInheritanceParentWithApplicationScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                            "Invalid scope @ApplicationScoped present in the inherited class ScopeInheritanceParentWithApplicationScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                             DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
         inheritedApplicationScopeOnStateless.setData(
                                                      new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped")));
@@ -181,7 +181,7 @@ public class SessionBeanScopeInheritanceTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessInheritsRequestScopeTransitively.java");
 
         Diagnostic inheritedRequestScopeTransitiveOnStateless = d(9, 13, 54,
-                                                                  "Invalid scope @RequestScoped present in the class ScopeInheritanceParentWithRequestScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                                                  "Invalid scope @RequestScoped present in the inherited class ScopeInheritanceParentWithRequestScope. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
         inheritedRequestScopeTransitiveOnStateless.setData(
                                                            new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));

@@ -439,13 +439,13 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
                                                       new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
-                                                      "SingletonSessionBeanInvalidScope", ErrorCode.InvalidSingletonSessionBeanScope);
+                                                      "SingletonSessionBeanInvalidInheritedScope", ErrorCode.InvalidSingletonSessionBeanScope);
                 }
                 if (isStateless) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
                                                       new String[] { Constants.DEPENDENT_FQ_NAME },
-                                                      "StatelessSessionBeanInvalidScope", ErrorCode.InvalidStatelessSessionBeanScope);
+                                                      "StatelessSessionBeanInvalidInheritedScope", ErrorCode.InvalidStatelessSessionBeanScope);
                 }
             }
 
