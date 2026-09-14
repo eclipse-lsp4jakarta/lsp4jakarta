@@ -53,6 +53,7 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionResult;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextResult;
+import org.eclipse.lsp4jakarta.commons.ProjectLabelInfoEntry;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
 import org.eclipse.lsp4jakarta.ls.commons.ValidatorDelayer;
@@ -60,6 +61,7 @@ import org.eclipse.lsp4jakarta.ls.commons.client.ExtendedClientCapabilities;
 import org.eclipse.lsp4jakarta.ls.java.JakartaTextDocuments;
 import org.eclipse.lsp4jakarta.ls.java.JakartaTextDocuments.JakartaTextDocument;
 import org.eclipse.lsp4jakarta.ls.java.JavaTextDocumentSnippetRegistry;
+import org.eclipse.lsp4jakarta.ls.version.JakartaVersionManager;
 import org.eclipse.lsp4jakarta.settings.JakartaTraceSettings;
 import org.eclipse.lsp4jakarta.settings.SharedSettings;
 import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
@@ -107,7 +109,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
         return document.executeIfInJakartaProject((projectInfo, cancelChecker) -> {
             JakartaJavaCompletionParams javaParams = new JakartaJavaCompletionParams(params.getTextDocument().getUri(), params.getPosition());
-
+            // getting jakarta version from version manager.
+            int jakartaVersion = JakartaVersionManager.getInstance().getVersion(params.getTextDocument().getUri(), projectInfo.getClassPath()).getLevel();
             // get the completion capabilities from the java language server component
             CompletableFuture<JakartaJavaCompletionResult> javaParticipantCompletionsFuture = jakartaLanguageServer.getLanguageClient().getJavaCompletion(javaParams);
 

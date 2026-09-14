@@ -26,6 +26,26 @@ public class JakartaJavaDiagnosticsParams {
 
     private List<String> uris;
 
+    private int jakartaVersion;
+
+    public int getJakartaVersion() {
+        return jakartaVersion;
+    }
+
+    public void setJakartaVersion(int jakartaVersion) {
+        this.jakartaVersion = jakartaVersion;
+    }
+
+    public List<String> getLines() {
+        return lines;
+    }
+
+    public void setLines(List<String> lines) {
+        this.lines = lines;
+    }
+
+    private List<String> lines;
+
     private DocumentFormat documentFormat;
 
     private JakartaJavaDiagnosticsSettings settings;

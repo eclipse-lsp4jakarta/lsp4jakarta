@@ -15,16 +15,21 @@ package org.eclipse.lsp4jakarta.jdt.core;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaProjectLabelsParams;
 import org.eclipse.lsp4jakarta.commons.ProjectLabelInfoEntry;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
@@ -77,9 +82,29 @@ public class ProjectLabelManager {
     private ProjectLabelInfoEntry getProjectLabelInfo(IProject project, List<String> types) {
         String uri = JDTJakartaUtils.getProjectURI(project);
         if (uri != null) {
-            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(project, types));
+            IJavaProject javaProject = JavaCore.create(project);
+            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(javaProject, types), getProjectClassPath(javaProject));
         }
         return null;
+    }
+
+    /**
+     * getProjectClassPath
+     *
+     * @param javaProject
+     * @return
+     */
+    private List<String> getProjectClassPath(IJavaProject javaProject) {
+        System.out.println("jakarta getProjectClassPath");
+        IClasspathEntry[] entries = null;
+        try {
+            entries = javaProject.getResolvedClasspath(true);
+        } catch (JavaModelException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return Arrays.stream(entries).map(IClasspathEntry::getPath).map(IPath::toOSString).collect(Collectors.toList());
+
     }
 
     /**
@@ -118,12 +143,11 @@ public class ProjectLabelManager {
     /**
      * Returns the project labels for the given project.
      *
-     * @param project the Eclipse project.
+     * @param javaProject the Eclipse project.
      * @param types the Java type list to check.
      * @return the project labels for the given project.
      */
-    private List<String> getProjectLabels(IProject project, List<String> types) {
-        IJavaProject javaProject = JavaCore.create(project);
+    private List<String> getProjectLabels(IJavaProject javaProject, List<String> types) {
 
         if (javaProject == null) {
             return Collections.emptyList();

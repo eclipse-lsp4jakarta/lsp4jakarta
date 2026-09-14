@@ -23,16 +23,18 @@ import java.util.List;
  *
  */
 public class ProjectLabelInfoEntry {
-    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList());
+    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList(), Collections.emptyList());
 
     private final String uri;
     private final String name;
     private final List<String> labels;
+    private final List<String> classPath;
 
-    public ProjectLabelInfoEntry(String uri, String name, List<String> labels) {
+    public ProjectLabelInfoEntry(String uri, String name, List<String> labels, List<String> classPath) {
         this.uri = uri;
         this.name = name;
         this.labels = labels;
+        this.classPath = classPath;
     }
 
     /**
@@ -60,6 +62,10 @@ public class ProjectLabelInfoEntry {
      */
     public List<String> getLabels() {
         return labels;
+    }
+
+    public List<String> getClassPath() {
+        return classPath;
     }
 
     /**

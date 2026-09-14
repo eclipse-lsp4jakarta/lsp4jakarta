@@ -53,7 +53,7 @@ public class JakartaTextDocuments extends TextDocuments<JakartaTextDocument> {
 
     private static final Logger LOGGER = Logger.getLogger(JakartaTextDocuments.class.getName());
 
-    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null);
+    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null, null);
 
     private final Map<String /* Java file URI */, CompletableFuture<ProjectLabelInfoEntry>> documentCache;
 

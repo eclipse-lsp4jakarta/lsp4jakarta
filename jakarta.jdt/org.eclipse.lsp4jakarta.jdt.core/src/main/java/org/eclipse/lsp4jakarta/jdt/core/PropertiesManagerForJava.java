@@ -316,6 +316,7 @@ public class PropertiesManagerForJava {
      */
     public List<PublishDiagnosticsParams> diagnostics(JakartaJavaDiagnosticsParams params, IJDTUtils utils,
                                                       IProgressMonitor monitor) throws JavaModelException {
+        System.out.println("diagnostics--------" + params.getJakartaVersion());
         List<String> uris = params.getUris();
         if (uris == null) {
             return Collections.emptyList();
@@ -326,7 +327,7 @@ public class PropertiesManagerForJava {
             List<Diagnostic> diagnostics = new ArrayList<>();
             PublishDiagnosticsParams publishDiagnostic = new PublishDiagnosticsParams(uri, diagnostics);
             publishDiagnostics.add(publishDiagnostic);
-            collectDiagnostics(uri, utils, documentFormat, params.getSettings(), diagnostics, monitor);
+            collectDiagnostics(uri, utils, documentFormat, params.getSettings(), diagnostics, monitor, params.getJakartaVersion());
         }
         if (monitor.isCanceled()) {
             return Collections.emptyList();
@@ -335,7 +336,7 @@ public class PropertiesManagerForJava {
     }
 
     private void collectDiagnostics(String uri, IJDTUtils utils, DocumentFormat documentFormat,
-                                    JakartaJavaDiagnosticsSettings settings, List<Diagnostic> diagnostics, IProgressMonitor monitor) {
+                                    JakartaJavaDiagnosticsSettings settings, List<Diagnostic> diagnostics, IProgressMonitor monitor, int version) {
         ITypeRoot typeRoot = resolveTypeRoot(uri, utils, monitor);
         if (typeRoot == null) {
             return;
@@ -343,6 +344,7 @@ public class PropertiesManagerForJava {
 
         // Collect all adapted diagnostics participant
         JavaDiagnosticsContext context = new JavaDiagnosticsContext(uri, typeRoot, utils, documentFormat, settings);
+        context.setJakartaVersion(version);
         List<JavaDiagnosticsDefinition> definitions = JavaFeaturesRegistry.getInstance().getJavaDiagnosticsDefinitions().stream().filter(definition -> definition.isAdaptedForDiagnostics(context,
                                                                                                                                                                                           monitor)).collect(Collectors.toList());
         if (definitions.isEmpty()) {

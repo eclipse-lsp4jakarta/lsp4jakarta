@@ -328,11 +328,11 @@ public class JakartaSnippetRegistryTest {
         assertTrue(snippet.get().getPrefixes() + " snippet context is not a Java context",
                    context instanceof SnippetContextForJava);
 
-        ProjectLabelInfoEntry projectInfo = new ProjectLabelInfoEntry("", null, new ArrayList<>());
+        ProjectLabelInfoEntry projectInfo = new ProjectLabelInfoEntry("", null, new ArrayList<>(), new ArrayList<>());
         boolean match = ((SnippetContextForJava) context).isMatch(context(projectInfo, javaCursorContextKind));
         assertFalse("Project should not have " + contextType + " type", match);
 
-        ProjectLabelInfoEntry projectInfo1 = new ProjectLabelInfoEntry("", null, Arrays.asList(contextType));
+        ProjectLabelInfoEntry projectInfo1 = new ProjectLabelInfoEntry("", null, Arrays.asList(contextType), new ArrayList<>());
         boolean match1 = ((SnippetContextForJava) context).isMatch(context(projectInfo1, javaCursorContextKind,
                                                                            snippet.get().getPrefixes().isEmpty() ? "" : snippet.get().getPrefixes().get(0)));
         if (javaCursorContextKind.getValue() == 10) {
