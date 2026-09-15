@@ -40,14 +40,14 @@ public class JakartaVersionFinder {
      * This method maintains backward compatibility with existing code.
      *
      * @param entries The classpath entries to analyze
-     * @return The detected Jakarta version 
+     * @return The detected Jakarta version
      */
     public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries) {
         return analyzeClasspath(entries, DetectionStrategy.MANIFEST_THEN_FILENAME);
     }
-    
+
     public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries, IJavaProject javaProject) {
-        return analyzeClasspath(entries,javaProject, DetectionStrategy.MANIFEST_THEN_FILENAME);
+        return analyzeClasspath(entries, javaProject, DetectionStrategy.MANIFEST_THEN_FILENAME);
     }
 
     /**

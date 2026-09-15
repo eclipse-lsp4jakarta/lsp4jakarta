@@ -62,7 +62,7 @@ public class ServletDiagnosticsParticipant implements IJavaDiagnosticsParticipan
         //--------------------
         IJavaProject javaProject = context.getJavaProject();
         IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
-        JakartaVersion jakartaVersion = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(),javaProject, entries);
+        JakartaVersion jakartaVersion = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
         //---------------------
         IType[] alltypes;
         IAnnotation[] allAnnotations;

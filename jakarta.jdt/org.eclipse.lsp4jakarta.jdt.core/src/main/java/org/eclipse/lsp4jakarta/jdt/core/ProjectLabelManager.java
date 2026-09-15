@@ -168,7 +168,7 @@ public class ProjectLabelManager {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(),javaProject, entries);
+        return JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
 
     }
 

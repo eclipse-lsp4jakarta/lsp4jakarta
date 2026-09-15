@@ -33,9 +33,9 @@ public class JakartaVersionManager {
         projectVersionMap.put(projectName, version);
     }
 
-    public JakartaVersion getVersion(String projectName,IJavaProject javaProject, IClasspathEntry[] entries) {
+    public JakartaVersion getVersion(String projectName, IJavaProject javaProject, IClasspathEntry[] entries) {
         //if (!hasVersion(projectName)) {
-            this.setVersion(projectName, JakartaVersionFinder.analyzeClasspath(entries, javaProject));
+        this.setVersion(projectName, JakartaVersionFinder.analyzeClasspath(entries, javaProject));
         //}
         return projectVersionMap.get(projectName);
     }

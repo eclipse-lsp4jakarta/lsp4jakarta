@@ -62,8 +62,8 @@ public class VersionDiagnosticsParticipant implements IJavaDiagnosticsParticipan
 
         // Create diagnostic message showing current version
         String message = selectedVersion != null ? "Multiple Jakarta EE versions are present in this project. The current active version is "
-                                                   + selectedVersion + ".\nRecommend to use single version to avoid conflicts. "
-                                                   : "Multiple Jakarta EE versions are present in this project.";
+                                                   + selectedVersion
+                                                   + ".\nRecommend to use single version to avoid conflicts. " : "Multiple Jakarta EE versions are present in this project.";
 
         Diagnostic versionDiagnostic = context.createDiagnostic(
                                                                 uri,

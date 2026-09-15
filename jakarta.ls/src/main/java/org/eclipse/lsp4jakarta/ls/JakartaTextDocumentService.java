@@ -50,6 +50,8 @@ import org.eclipse.lsp4jakarta.commons.DocumentFormat;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionResult;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextResult;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
@@ -63,7 +65,6 @@ import org.eclipse.lsp4jakarta.settings.SharedSettings;
 import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4jakarta.snippets.SnippetContextForJava;
 import org.eclipse.lsp4jakarta.version.JakartaVersion;
-import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 public class JakartaTextDocumentService implements TextDocumentService {
 
@@ -227,6 +228,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
         document.executeIfInJakartaProject((projectInfo, cancelChecker) -> {
             // Get the project URI from projectInfo - this is the project-level identifier
             String projectUri = projectInfo.getUri();
+            JakartaVersion ver = projectInfo.getJakartaVersion();
+            LOGGER.info("version loaded from backend-----" + ver);
             if (projectUri == null) {
                 // Project URI not available, skip version selection and run diagnostics directly
                 triggerValidationFor(Arrays.asList(document.getUri()), null);
@@ -437,6 +440,14 @@ public class JakartaTextDocumentService implements TextDocumentService {
         documents.all().forEach(doc -> {
             jakartaLanguageServer.getLanguageClient().publishDiagnostics(new PublishDiagnosticsParams(doc.getUri(), new ArrayList<Diagnostic>()));
         });
+    }
+
+    /**
+     * Clears the in-memory version cache for all projects.
+     * Called during server shutdown before full cleanup.
+     */
+    public void clearVersionCache() {
+        projectVersions.clear();
     }
 
     /**
