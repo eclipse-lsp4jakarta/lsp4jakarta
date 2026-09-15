@@ -54,9 +54,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
@@ -75,6 +77,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
+import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 /**
  * Bean validation diagnostics participant that manages the use of validation
@@ -98,6 +102,12 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         if (unit == null) {
             return diagnostics;
         }
+
+        //--------------------
+        IJavaProject javaProject = context.getJavaProject();
+        IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
+        JakartaVersion jakartaVersion = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(),javaProject, entries);
+        //---------------------
 
         IType[] alltypes;
         IField[] allFields;

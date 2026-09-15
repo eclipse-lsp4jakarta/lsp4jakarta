@@ -37,6 +37,7 @@ import org.eclipse.lsp4jakarta.ls.api.JakartaJavaProjectLabelsProvider;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocuments;
 import org.eclipse.lsp4jakarta.ls.java.JakartaTextDocuments.JakartaTextDocument;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
 
 /**
  * Java Text documents registry which manages opened Java file.
@@ -53,7 +54,7 @@ public class JakartaTextDocuments extends TextDocuments<JakartaTextDocument> {
 
     private static final Logger LOGGER = Logger.getLogger(JakartaTextDocuments.class.getName());
 
-    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null);
+    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null, null);
 
     private final Map<String /* Java file URI */, CompletableFuture<ProjectLabelInfoEntry>> documentCache;
 
