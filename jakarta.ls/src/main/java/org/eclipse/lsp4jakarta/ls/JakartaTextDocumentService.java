@@ -50,11 +50,7 @@ import org.eclipse.lsp4jakarta.commons.DocumentFormat;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionResult;
-import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
-import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextResult;
-import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
-import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
 import org.eclipse.lsp4jakarta.ls.commons.ValidatorDelayer;
@@ -67,7 +63,6 @@ import org.eclipse.lsp4jakarta.settings.SharedSettings;
 import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4jakarta.snippets.SnippetContextForJava;
 import org.eclipse.lsp4jakarta.version.JakartaVersion;
-import org.eclipse.lsp4jakarta.version.JakartaVersionFinder;
 import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 public class JakartaTextDocumentService implements TextDocumentService {
@@ -550,12 +545,5 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 promptForVersionSelection(projectUri, "reset", versions);
             }
         }
-    }
-
-    /**
-     * Clear version handling Map
-     */
-    public void clearVersionCache() {
-        JakartaVersionManager.getInstance().clearVersions();
     }
 }
