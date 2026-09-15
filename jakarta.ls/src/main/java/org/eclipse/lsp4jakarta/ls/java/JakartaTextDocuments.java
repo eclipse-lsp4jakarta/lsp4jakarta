@@ -14,6 +14,7 @@
 package org.eclipse.lsp4jakarta.ls.java;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -54,7 +55,7 @@ public class JakartaTextDocuments extends TextDocuments<JakartaTextDocument> {
 
     private static final Logger LOGGER = Logger.getLogger(JakartaTextDocuments.class.getName());
 
-    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null, null);
+    private static final ProjectLabelInfoEntry PROJECT_INFO_LOADING = new ProjectLabelInfoEntry(null, null, null, Collections.emptyList());
 
     private final Map<String /* Java file URI */, CompletableFuture<ProjectLabelInfoEntry>> documentCache;
 

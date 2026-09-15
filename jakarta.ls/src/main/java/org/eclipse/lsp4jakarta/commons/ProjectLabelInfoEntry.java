@@ -27,18 +27,18 @@ import org.eclipse.lsp4jakarta.version.JakartaVersion;
  *
  */
 public class ProjectLabelInfoEntry {
-    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList(), JakartaVersion.UNKNOWN);
+    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList(), Collections.emptyList());
 
     private final String uri;
     private final String name;
     private final List<String> labels;
-    private final JakartaVersion jakartaVersion;
+    private final List<JakartaVersion> jakartaVersions;
 
-    public ProjectLabelInfoEntry(String uri, String name, List<String> labels, JakartaVersion jakartaVersion) {
+    public ProjectLabelInfoEntry(String uri, String name, List<String> labels, List<JakartaVersion> jakartaVersions) {
         this.uri = uri;
         this.name = name;
         this.labels = labels;
-        this.jakartaVersion = jakartaVersion;
+        this.jakartaVersions = jakartaVersions;
     }
 
     /**
@@ -82,8 +82,8 @@ public class ProjectLabelInfoEntry {
         return labels != null && labels.contains(label);
     }
 
-    public JakartaVersion getJakartaVersion() {
-        return jakartaVersion;
+    public List<JakartaVersion> getJakartaVersions() {
+        return jakartaVersions == null ? Collections.emptyList() : jakartaVersions;
     }
 
 }

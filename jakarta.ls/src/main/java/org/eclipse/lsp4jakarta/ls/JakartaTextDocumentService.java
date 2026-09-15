@@ -52,6 +52,7 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionResult;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaProjectLabelsParams;
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextResult;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
@@ -131,8 +132,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
             cancelChecker.checkCanceled();
 
-            JakartaVersion ver = projectInfo.getJakartaVersion();
-            LOGGER.info("ver-----" + ver);
+            List<JakartaVersion> versions = projectInfo.getJakartaVersions();
+            LOGGER.info("versions-----" + versions);
 
             return javaParticipantCompletionsFuture.thenApply((completionResult) -> {
                 cancelChecker.checkCanceled();
@@ -228,8 +229,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
         document.executeIfInJakartaProject((projectInfo, cancelChecker) -> {
             // Get the project URI from projectInfo - this is the project-level identifier
             String projectUri = projectInfo.getUri();
-            JakartaVersion ver = projectInfo.getJakartaVersion();
-            LOGGER.info("version loaded from backend-----" + ver);
+            List<JakartaVersion> detectedVersions = projectInfo.getJakartaVersions();
+            LOGGER.info("versions loaded from backend-----" + detectedVersions);
             if (projectUri == null) {
                 // Project URI not available, skip version selection and run diagnostics directly
                 triggerValidationFor(Arrays.asList(document.getUri()), null);
@@ -268,11 +269,11 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     }, diagnosticsExecutor);
                     return null;
                 }
-                // check classpath and find the list of available jakarta versions
-                List<String> versions = JakartaVersionManager.getAvailableVersions();
-                if (versions != null && versions.size() == 1) {
+                // Build version labels from the versions detected on the project's classpath
+                List<String> versions = detectedVersions.stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
+                if (versions.size() == 1) {
                     VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
-                    boolean written = JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
                     LOGGER.info("Loaded Jakarta EE version " + versionInfo.getVersion() + " from file for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
@@ -315,7 +316,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
                 if (selectedVersion != null) {
                     // Create VersionData object
-                    VersionData versionData = new VersionData(selectedVersion, "selected", JakartaVersionManager.getAvailableVersions());
+                    VersionData versionData = new VersionData(selectedVersion, "selected", versions);
 
                     // Store in memory cache
                     projectVersions.put(projectUri, versionData);
@@ -543,18 +544,26 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 existingRequest.cancel(true);
                 LOGGER.info("Cancelled in-flight version request for project: " + projectUri);
             }
-            // check classpath and find the list of available jakarta versions
-            List<String> versions = JakartaVersionManager.getAvailableVersions();
-            if (versions != null && versions.size() == 1) {
-                VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
-                boolean written = JakartaVersionManager.writeVersion(projectUri, versionInfo);
-                projectVersions.put(projectUri, versionInfo);
-                LOGGER.info("Loaded Jakarta EE version " + versionInfo.getVersion() + " from file for project: " + projectUri);
-                triggerValidationForAll(Set.of(projectUri));
-            } else {
-                // Prompt user to select a new version (reuses common logic)
-                promptForVersionSelection(projectUri, "reset", versions);
-            }
+            // Fetch project info for this specific project via JSON-RPC (jakarta/java/projectLabels)
+            // using the projectUri directly - same call getProjectInfoFromClient makes per document.
+            JakartaJavaProjectLabelsParams labelsParams = new JakartaJavaProjectLabelsParams();
+            labelsParams.setUri(projectUri);
+            jakartaLanguageServer.getJavaProjectLabels(labelsParams).thenAcceptAsync(projectInfo -> {
+                if (projectInfo == null) {
+                    LOGGER.warning("No project info found for project: " + projectUri);
+                    return;
+                }
+                List<String> versions = projectInfo.getJakartaVersions().stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
+                if (versions.size() == 1) {
+                    VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    projectVersions.put(projectUri, versionInfo);
+                    LOGGER.info("Auto-selected Jakarta EE version " + versionInfo.getVersion() + " for project: " + projectUri);
+                    triggerValidationForAll(Set.of(projectUri));
+                } else {
+                    promptForVersionSelection(projectUri, "reset", versions);
+                }
+            }, diagnosticsExecutor);
         }
     }
 }

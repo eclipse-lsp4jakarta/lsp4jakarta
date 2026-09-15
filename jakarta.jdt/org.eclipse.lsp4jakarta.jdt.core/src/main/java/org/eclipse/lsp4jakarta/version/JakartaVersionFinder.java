@@ -1,5 +1,8 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -166,5 +169,14 @@ public class JakartaVersionFinder {
         }
 
         return analyzeClasspath(entries, javaProject, strategy);
+    }
+
+    /**
+     * Returns a static list of all known Jakarta EE versions (highest first).
+     *
+     * @return all known Jakarta EE versions as a list
+     */
+    public static List<JakartaVersion> getAllKnownVersions() {
+        return Arrays.asList(JakartaVersion.EE_11, JakartaVersion.EE_10, JakartaVersion.EE_9, JakartaVersion.EE_8);
     }
 }

@@ -17,7 +17,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -81,7 +80,7 @@ public class ProjectLabelManager {
     private ProjectLabelInfoEntry getProjectLabelInfo(IProject project, List<String> types) {
         String uri = JDTJakartaUtils.getProjectURI(project);
         if (uri != null) {
-            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(project, types), getJakartaVersion(project));
+            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(project, types), getJakartaVersions(project));
         }
         return null;
     }
@@ -154,22 +153,20 @@ public class ProjectLabelManager {
         return projectLabels;
     }
 
-    private JakartaVersion getJakartaVersion(IProject project) {
+    private List<JakartaVersion> getJakartaVersions(IProject project) {
         IJavaProject javaProject = JavaCore.create(project);
 
         if (javaProject == null) {
-            return JakartaVersion.UNKNOWN;
+            return Collections.emptyList();
         }
 
         IClasspathEntry[] entries = null;
         try {
             entries = javaProject.getResolvedClasspath(true);
         } catch (JavaModelException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
-
     }
 
 }

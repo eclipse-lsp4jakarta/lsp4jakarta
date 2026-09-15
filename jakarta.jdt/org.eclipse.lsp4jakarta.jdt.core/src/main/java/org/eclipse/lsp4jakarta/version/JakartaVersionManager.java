@@ -1,6 +1,9 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -10,8 +13,8 @@ public class JakartaVersionManager {
 
     private static volatile JakartaVersionManager instance;
 
-    // HashMap to store project versions (key: project name, value: Jakarta version)
-    private Map<String, JakartaVersion> projectVersionMap;
+    // HashMap to store project versions (key: project name, value: list of Jakarta versions)
+    private Map<String, List<JakartaVersion>> projectVersionMap;
 
     private JakartaVersionManager() {
         projectVersionMap = new HashMap<>();
@@ -29,20 +32,19 @@ public class JakartaVersionManager {
         return instance;
     }
 
-    public void setVersion(String projectName, JakartaVersion version) {
-        projectVersionMap.put(projectName, version);
+    public void setVersions(String projectName, List<JakartaVersion> versions) {
+        projectVersionMap.put(projectName, versions);
     }
 
-    public JakartaVersion getVersion(String projectName, IJavaProject javaProject, IClasspathEntry[] entries) {
-        //if (!hasVersion(projectName)) {
-        this.setVersion(projectName, JakartaVersionFinder.analyzeClasspath(entries, javaProject));
-        //}
-        return projectVersionMap.get(projectName);
+    public List<JakartaVersion> getVersion(String projectName, IJavaProject javaProject, IClasspathEntry[] entries) {
+        JakartaVersion detected = JakartaVersionFinder.analyzeClasspath(entries, javaProject);
+        List<JakartaVersion> versions = JakartaVersionFinder.getAllKnownVersions();
+        this.setVersions(projectName, versions);
+        return versions;
     }
 
-    public JakartaVersion getVersion(String projectName) {
-
-        return projectVersionMap.get(projectName);
+    public List<JakartaVersion> getVersion(String projectName) {
+        return projectVersionMap.getOrDefault(projectName, Collections.emptyList());
     }
 
     public boolean hasVersion(String projectName) {
@@ -53,7 +55,7 @@ public class JakartaVersionManager {
         projectVersionMap.remove(projectName);
     }
 
-    public Map<String, JakartaVersion> getAllVersions() {
+    public Map<String, List<JakartaVersion>> getAllVersions() {
         return new HashMap<>(projectVersionMap);
     }
 
