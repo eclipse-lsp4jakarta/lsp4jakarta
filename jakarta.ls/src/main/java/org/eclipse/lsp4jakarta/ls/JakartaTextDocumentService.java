@@ -544,16 +544,28 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 existingRequest.cancel(true);
                 LOGGER.info("Cancelled in-flight version request for project: " + projectUri);
             }
-            // Fetch project info for this specific project via JSON-RPC (jakarta/java/projectLabels)
-            // using the projectUri directly - same call getProjectInfoFromClient makes per document.
+            // getJavaProjectLabels needs a file URI (not a project URI) — findProject calls
+            // utils.findFile(uri) which only resolves files, not directories.
+            // Use the first open file that belongs to this project.
+            String fileUri = documents.all().stream().map(TextDocument::getUri).filter(u -> u.startsWith(projectUri)).findFirst().orElse(null);
+
+            if (fileUri == null) {
+                LOGGER.warning("No open file found for project: " + projectUri + ", cannot reset version");
+                return;
+            }
+
             JakartaJavaProjectLabelsParams labelsParams = new JakartaJavaProjectLabelsParams();
-            labelsParams.setUri(projectUri);
+            labelsParams.setUri(fileUri);
             jakartaLanguageServer.getJavaProjectLabels(labelsParams).thenAcceptAsync(projectInfo -> {
                 if (projectInfo == null) {
-                    LOGGER.warning("No project info found for project: " + projectUri);
+                    LOGGER.warning("No project info found for file: " + fileUri);
                     return;
                 }
                 List<String> versions = projectInfo.getJakartaVersions().stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
+                if (versions.isEmpty()) {
+                    LOGGER.warning("No versions detected for project: " + projectUri);
+                    return;
+                }
                 if (versions.size() == 1) {
                     VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
