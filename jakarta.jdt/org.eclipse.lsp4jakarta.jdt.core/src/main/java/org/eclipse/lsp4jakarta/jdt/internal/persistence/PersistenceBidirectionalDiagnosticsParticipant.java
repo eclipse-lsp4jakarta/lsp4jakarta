@@ -14,13 +14,13 @@ package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -44,13 +45,15 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * <li>The inverse side of a bidirectional relationship must declare the
  * {@code mappedBy} attribute on its {@code @OneToMany}, {@code @OneToOne},
  * or {@code @ManyToMany} annotation.</li>
- * <li>The inverse side of a relationship must not carry a {@code @JoinTable}
- * annotation.</li>
+ * <li>The inverse side of a relationship must not carry {@code @JoinTable},
+ * {@code @JoinColumn}, or {@code @JoinColumns} annotations.</li>
  * </ol>
  *
- * <p>Cross-file analysis is performed via {@link PersistenceUtils#findAnnotatedEntityTypes},
- * which uses {@link org.eclipse.lsp4jakarta.jdt.internal.SourceTypeScanner} to traverse
- * the JDT project model directly and is always consistent with the current workspace state.
+ * <p>The target entity type is resolved per-member using
+ * {@link JDTTypeUtils#getResolvedTypeArguments} (for collection-typed fields)
+ * or {@link JDTTypeUtils#getResolvedMemberTypeName} (for single-valued fields),
+ * followed by {@link IJavaProject#findType(String)}. This avoids a full
+ * project-wide scan and is consistent with the current workspace state.
  *
  * <p>Specification reference:
  * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0
@@ -70,6 +73,7 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
             return diagnostics;
         }
 
+        IJavaProject javaProject = context.getJavaProject();
         IType[] allTypes = unit.getAllTypes();
         for (IType type : allTypes) {
             // Only process @Entity-annotated classes.
@@ -77,18 +81,14 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
                 continue;
             }
 
-            // Build a project-wide map of all @Entity types keyed by simple name.
-            Map<String, IType> entityTypeMap = PersistenceUtils.findAnnotatedEntityTypes(
-                                                                                         context.getJavaProject());
-
             // Validate relationship annotations on fields.
             for (IField field : type.getFields()) {
-                validateRelationshipMember(field, type, unit, entityTypeMap, context, diagnostics);
+                validateRelationshipMember(field, type, unit, javaProject, context, diagnostics);
             }
 
             // Validate relationship annotations on property getter methods.
             for (IMethod method : type.getMethods()) {
-                validateRelationshipMember(method, type, unit, entityTypeMap, context, diagnostics);
+                validateRelationshipMember(method, type, unit, javaProject, context, diagnostics);
             }
         }
 
@@ -101,24 +101,17 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
      * @param member the field or method to inspect
      * @param declaringType the entity type that owns the member
      * @param unit the compilation unit of the declaring type
-     * @param entityTypeMap project-wide map from simple class name to {@link IType}
+     * @param javaProject the Java project used to resolve target entity types
      * @param context the diagnostics context
      * @param diagnostics the list to append new diagnostics to
      * @throws JavaModelException if the JDT model cannot be accessed
      */
     private void validateRelationshipMember(IMember member, IType declaringType,
                                             ICompilationUnit unit,
-                                            Map<String, IType> entityTypeMap,
+                                            IJavaProject javaProject,
                                             JavaDiagnosticsContext context,
                                             List<Diagnostic> diagnostics) throws JavaModelException {
-        IAnnotation[] annotations;
-        if (member instanceof IField) {
-            annotations = ((IField) member).getAnnotations();
-        } else if (member instanceof IMethod) {
-            annotations = ((IMethod) member).getAnnotations();
-        } else {
-            return;
-        }
+        IAnnotation[] annotations = member instanceof IField ? ((IField) member).getAnnotations() : ((IMethod) member).getAnnotations();
 
         // Check for each relationship annotation that supports mappedBy.
         for (String relAnnotationFQ : Constants.INVERSE_CAPABLE_RELATIONSHIP_ANNOTATIONS) {
@@ -132,24 +125,27 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
                                                                             Constants.MAPPED_BY, String.class);
             boolean hasMappedBy = mappedByValue != null && !mappedByValue.isEmpty();
 
-            // Determine the target entity type referenced by this relationship.
-            IType targetType = resolveTargetEntityType(member, entityTypeMap);
-
             if (hasMappedBy) {
                 // This member is explicitly declared as the inverse side.
-                // Rule 2: @JoinTable must not be present on the inverse side.
-                if (DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.JOIN_TABLE)) {
-                    Range range = PositionUtils.toNameRange(member, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("JoinTableOnInverseSide"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.JoinTableOnInverseSide,
-                                                             DiagnosticSeverity.Error));
+                // Rule 2: owner-only annotations (@JoinTable, @JoinColumn, @JoinColumns)
+                // must not be present on the inverse side.
+                for (String ownerOnlyAnnotation : Constants.OWNER_ONLY_ANNOTATIONS) {
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, annotations, ownerOnlyAnnotation)) {
+                        String messageKey = Constants.JOIN_TABLE.equals(ownerOnlyAnnotation) ? "JoinTableOnInverseSide" : "JoinColumnOnInverseSide";
+                        ErrorCode errorCode = Constants.JOIN_TABLE.equals(ownerOnlyAnnotation) ? ErrorCode.JoinTableOnInverseSide : ErrorCode.JoinColumnOnInverseSide;
+                        Range range = PositionUtils.toNameRange(member, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                                 Messages.getMessage(messageKey),
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 errorCode,
+                                                                 DiagnosticSeverity.Error));
+                    }
                 }
             } else {
                 // No mappedBy — could be unidirectional (valid) or bidirectional without
                 // mappedBy (invalid). Rule 1: flag only when the target entity has a
                 // back-reference to this entity, proving a bidirectional relationship.
+                IType targetType = resolveTargetEntityType(member, javaProject);
                 if (targetType != null && isInverseSideOf(targetType, declaringType, relAnnotationFQ)) {
                     Range range = PositionUtils.toNameRange(member, context.getUtils());
                     diagnostics.add(context.createDiagnostic(context.getUri(),
@@ -274,25 +270,51 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
     }
 
     /**
-     * Resolves the target entity {@link IType} for the given relationship member
-     * by extracting the element type simple name from the member's type signature
-     * and looking it up in the project-wide entity map.
+     * Resolves the target entity {@link IType} for the given relationship member.
      *
-     * <p>For collection-typed fields ({@code List<Employee>}, {@code Set<Order>}),
-     * the simple type argument name is extracted. For single-valued fields the
-     * field type name is used directly.
+     * <p>For collection-typed members ({@code List<Employee>}, {@code Set<Order>}),
+     * the first resolved type argument FQN is used. For single-valued members the
+     * member's own resolved type FQN is used. The resolved FQN is then looked up
+     * via {@link IJavaProject#findType(String)}.
+     *
+     * <p>Only types annotated with {@code @Entity} are returned; non-entity types
+     * (e.g. plain value objects or Java library types) yield {@code null}.
      *
      * @param member the relationship field or method
-     * @param entityTypeMap project-wide map from simple name to {@link IType}
-     * @return the target {@link IType}, or {@code null} if it cannot be resolved
+     * @param javaProject the Java project used to look up types by FQN
+     * @return the target entity {@link IType}, or {@code null} if it cannot be resolved
      */
-    private IType resolveTargetEntityType(IMember member, Map<String, IType> entityTypeMap) {
+    private IType resolveTargetEntityType(IMember member, IJavaProject javaProject) {
+        // For collection-typed fields (List<Employee>, Set<Order>), resolve the first
+        // type argument FQN. For single-valued fields, resolve the member type FQN.
+        String fqName = null;
+        String[] typeArgs = JDTTypeUtils.getResolvedTypeArguments(member);
+        if (typeArgs != null && typeArgs.length > 0) {
+            fqName = typeArgs[0];
+        }
+        if (fqName == null) {
+            fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
+        }
+        if (fqName == null) {
+            return null;
+        }
+
+        IType targetType = JDTTypeUtils.findType(javaProject, fqName);
+        if (targetType == null) {
+            return null;
+        }
+
+        // Only consider @Entity-annotated types to avoid false positives.
         try {
-            String rawTypeSig = member instanceof IField ? ((IField) member).getTypeSignature() : ((IMethod) member).getReturnType();
-            String simpleName = DiagnosticUtils.getElementTypeSimpleName(rawTypeSig);
-            return simpleName != null ? entityTypeMap.get(simpleName) : null;
+            ICompilationUnit targetUnit = targetType.getCompilationUnit();
+            if (targetUnit == null
+                || !DiagnosticUtils.isMatchedAnnotation(targetUnit, targetType.getAnnotations(), Constants.ENTITY)) {
+                return null;
+            }
         } catch (JavaModelException e) {
             return null;
         }
+
+        return targetType;
     }
 }

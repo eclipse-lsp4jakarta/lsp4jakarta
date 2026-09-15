@@ -36,7 +36,8 @@ import org.junit.Test;
  * <ol>
  * <li>The inverse side of a bidirectional {@code @OneToMany}, {@code @OneToOne},
  * or {@code @ManyToMany} relationship must declare {@code mappedBy}.</li>
- * <li>The inverse side must not carry a {@code @JoinTable} annotation.</li>
+ * <li>The inverse side must not carry {@code @JoinTable}, {@code @JoinColumn},
+ * or {@code @JoinColumns} annotations.</li>
  * </ol>
  */
 public class PersistenceBidirectionalTest extends BaseJakartaTest {
@@ -159,6 +160,44 @@ public class PersistenceBidirectionalTest extends BaseJakartaTest {
                                                               DiagnosticSeverity.Error, "jakarta-persistence", "JoinTableOnInverseSide");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, joinTableOnManyToManyInverseDiagnostic);
+    }
+
+    @Test
+    public void testBidirectionalJoinColumnOnOneToOneInverse() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/bidirectional/BidirectionalInverseJoinColumn.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne(mappedBy=...) + @JoinColumn on the inverse side — invalid.
+        // Expected: diagnostic on the address field name (line 21, col 33..40)
+        Diagnostic joinColumnOnInverseDiagnostic = d(21, 33, 40,
+                                                     "The @JoinColumn annotation must not be used on the inverse side of a relationship. Move @JoinColumn to the owning side field or remove it.",
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "JoinColumnOnInverseSide");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, joinColumnOnInverseDiagnostic);
+    }
+
+    @Test
+    public void testBidirectionalJoinColumnsOnOneToOneInverse() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/bidirectional/BidirectionalInverseJoinColumns.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne(mappedBy=...) + @JoinColumns on the inverse side — invalid.
+        // Expected: diagnostic on the address field name (line 25, col 33..40)
+        Diagnostic joinColumnsOnInverseDiagnostic = d(25, 33, 40,
+                                                      "The @JoinColumn annotation must not be used on the inverse side of a relationship. Move @JoinColumn to the owning side field or remove it.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "JoinColumnOnInverseSide");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, joinColumnsOnInverseDiagnostic);
     }
 
     // -------------------------------------------------------------------------

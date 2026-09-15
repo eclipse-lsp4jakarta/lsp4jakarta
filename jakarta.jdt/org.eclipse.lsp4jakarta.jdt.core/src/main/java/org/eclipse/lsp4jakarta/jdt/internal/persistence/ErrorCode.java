@@ -61,7 +61,8 @@ public enum ErrorCode implements IJavaErrorCode {
     NamedNativeQueryOnInvalidClass,
     NamedNativeQueriesOnInvalidClass,
     InverseSideMissingMappedBy,
-    JoinTableOnInverseSide;
+    JoinTableOnInverseSide,
+    JoinColumnOnInverseSide;
 
     /**
      * {@inheritDoc}
