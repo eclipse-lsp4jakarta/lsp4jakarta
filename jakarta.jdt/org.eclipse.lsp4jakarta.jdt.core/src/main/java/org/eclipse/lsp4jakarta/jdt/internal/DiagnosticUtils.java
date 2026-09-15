@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,12 +12,18 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal;
 
+import java.beans.Introspector;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -29,10 +35,10 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
-import org.eclipse.lsp4jakarta.version.JakartaDiagnostic;
-import org.eclipse.lsp4jakarta.version.JakartaVersion;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
 
 /**
  *
@@ -43,6 +49,12 @@ import org.eclipse.lsp4jakarta.version.JakartaVersion;
 public class DiagnosticUtils {
 
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
+
+    public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
+    public static final String MUST_DECLARE_EXACTLY_ONE_PARAM = "MustDeclareExactlyOneParam";
+    public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
+    public static final String METHOD_MUST_BE_PUBLIC = "MethodMustBePublic";
+    public static final String FIELD_MUST_EXIST_IN_SETTER = "FieldMustExistInSetter";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -71,6 +83,24 @@ public class DiagnosticUtils {
                         return annotationFQName.equals(JavaModelUtil.concatenateName(fqName[0][0], fqName[0][1]));
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return true if any of the annotation in the array matches the given annotationFQName
+     *
+     * @param unit
+     * @param annotations
+     * @param annotationFQName
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isMatchedAnnotation(ICompilationUnit unit, IAnnotation[] annotations, String annotationFQName) throws JavaModelException {
+        for (IAnnotation annotation : annotations) {
+            if (isMatchedAnnotation(unit, annotation, annotationFQName)) {
+                return true;
             }
         }
         return false;
@@ -191,19 +221,14 @@ public class DiagnosticUtils {
      *         false otherwise.
      */
     public static boolean doesImplementInterfaces(IType type, String[] interfaceFQNames) throws JavaModelException {
-        String[] interfaceNames = type.getSuperInterfaceNames();
-
-        // should check import statements first for the performance?
-
-        // check super hierarchy
-        if (interfaceNames.length > 0) { // the type implements interface(s)
-            ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-            IType[] interfaces = typeHierarchy.getAllInterfaces();
-            for (IType interfase : interfaces) {
-                String fqName = interfase.getFullyQualifiedName();
-                if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
-                    return true;
-            }
+        // Walk the full supertype hierarchy so that interfaces implemented by a
+        // superclass (inherited implementation) are also considered.
+        ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        IType[] interfaces = typeHierarchy.getAllInterfaces();
+        for (IType interfase : interfaces) {
+            String fqName = interfase.getFullyQualifiedName();
+            if (Stream.of(interfaceFQNames).anyMatch(name -> fqName.equals(name)) == true)
+                return true;
         }
         return false;
     }
@@ -227,16 +252,17 @@ public class DiagnosticUtils {
 
     /**
      * Returns matched Java element fully qualified names.
+     * This is the core implementation that accepts Collections for maximum flexibility.
      *
      * @param type the type representing the class
-     * @param javaElementNames Java element names
-     * @param javaElementFQNames given fully qualified name array
+     * @param javaElementNames Java element names collection (Set or List)
+     * @param javaElementFQNames given fully qualified name collection (Set or List)
      * @return matched Java element fully qualified names
      */
-    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
-                                                          String[] javaElementFQNames) {
-        return Stream.of(javaElementFQNames).filter(fqName -> {
-            boolean anyMatch = Stream.of(javaElementNames).anyMatch(name -> {
+    public static List<String> getMatchedJavaElementNames(IType type, Collection<String> javaElementNames,
+                                                          Collection<String> javaElementFQNames) {
+        return javaElementFQNames.stream().filter(fqName -> {
+            boolean anyMatch = javaElementNames.stream().anyMatch(name -> {
                 try {
                     return isMatchedJavaElement(type, name, fqName);
                 } catch (JavaModelException e) {
@@ -246,6 +272,20 @@ public class DiagnosticUtils {
             });
             return anyMatch;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns matched Java element fully qualified names.
+     * Convenience overload that accepts arrays and delegates to the Collection-based method.
+     *
+     * @param type the type representing the class
+     * @param javaElementNames Java element names array
+     * @param javaElementFQNames given fully qualified name array
+     * @return matched Java element fully qualified names
+     */
+    public static List<String> getMatchedJavaElementNames(IType type, String[] javaElementNames,
+                                                          String[] javaElementFQNames) {
+        return getMatchedJavaElementNames(type, Arrays.asList(javaElementNames), Arrays.asList(javaElementFQNames));
     }
 
     /**
@@ -344,9 +384,214 @@ public class DiagnosticUtils {
         return uriString.matches(LEVEL1_URI_REGEX);
     }
 
-    public static boolean isApplicable(String code, JakartaVersion jakartaVersion) {
-        JakartaDiagnostic diagnostic = JakartaDiagnostic.getByCodeOrNull(code);
+    /**
+     * getDataTypeName
+     * Converts signature type name into its type name.
+     *
+     * @param type
+     * @return
+     */
+    public static String getDataTypeName(String type) {
+        int length = type.length();
+        if (length > 0 && type.charAt(0) == 'Q' && type.charAt(length - 1) == ';') {
+            return type.substring(1, length - 1);
+        }
+        return type;
+    }
 
-        return false;
+    /**
+     * isPublic
+     * Check if the given method is public or not
+     *
+     * @param method
+     * @return
+     * @throws JavaModelException
+     */
+    public static boolean isPublic(IMethod method) throws JavaModelException {
+        int flags = method.getFlags();
+        return Flags.isPublic(flags);
+    }
+
+    /**
+     * hasField
+     * Checks if the given type has a field matching the method name.
+     *
+     * @param methodName
+     * @param type
+     * @return
+     * @throws JavaModelException
+     */
+    private static boolean hasField(String methodName, IType type) throws JavaModelException {
+        if (methodName == null || methodName.length() <= 3) {
+            return false;
+        }
+        String expectedFieldName = Introspector.decapitalize(methodName.substring(3));
+        if (expectedFieldName.isEmpty()) {
+            return false;
+        }
+        IField field = type.getField(expectedFieldName);
+        return field.exists();
+    }
+
+    /**
+     * validateSetterMethod
+     * This is to check whether a method is a valid setter.
+     *
+     * @param method
+     * @param iType
+     * @return
+     * @throws JavaModelException
+     */
+    public static List<CommonErrorCode> validateSetterMethod(IMethod method, IType parentType) throws JavaModelException {
+
+        List<CommonErrorCode> errorCodes = new ArrayList<CommonErrorCode>();
+        String methodName = method.getElementName();
+        if (!methodName.startsWith("set")) {
+            errorCodes.add(CommonErrorCode.NameMustStartWithSet);
+        }
+        if (!hasField(methodName, parentType)) {
+            errorCodes.add(CommonErrorCode.FieldMustExistInSetter);
+        }
+        if (!"V".equalsIgnoreCase(method.getReturnType())) {
+            errorCodes.add(CommonErrorCode.ReturnTypeMustBeVoid);
+        }
+        if (method.getParameterTypes().length != 1) {
+            errorCodes.add(CommonErrorCode.MustDeclareExactlyOneParam);
+        }
+        if (!isPublic(method)) {
+            errorCodes.add(CommonErrorCode.MethodMustBePublic);
+        }
+        return errorCodes;
+    }
+
+    /**
+     * getAnnotationMemberValue
+     * Get an annotation member value with type casting.
+     *
+     * @param annotation the annotation
+     * @param memberName the member/attribute name
+     * @param type the expected type class
+     * @return the member value cast to the specified type, or null if not found or type mismatch
+     * @throws JavaModelException if there's an error accessing the annotation
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getAnnotationMemberValue(IAnnotation annotation, String memberName, Class<T> type) throws JavaModelException {
+        for (var pair : annotation.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object value = pair.getValue();
+                return type.isInstance(value) ? (T) value : null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns {@code true} if the given {@code @Priority} annotation carries a
+     * negative integer value.
+     *
+     * <p>Reads the {@code value} member and treats any {@link Number} whose
+     * {@link Number#intValue()} is less than zero as negative. Returns
+     * {@code false} when the member is absent, non-numeric, or a model error
+     * occurs.
+     *
+     * @param priorityAnnotation the {@code @Priority} annotation to inspect
+     * @return {@code true} if the priority value is negative; {@code false} otherwise
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean isNegativePriorityValue(IAnnotation priorityAnnotation) throws JavaModelException {
+        Number value = getAnnotationMemberValue(priorityAnnotation, "value", Number.class);
+        return value != null && value.intValue() < 0;
+    }
+
+    /**
+     * Helper method to extract annotation names from a field.
+     *
+     * @param field the field to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access field annotations
+     */
+    public static String[] getAnnotationNames(IField field) throws JavaModelException {
+        return Stream.of(field.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Helper method to extract annotation names from a method.
+     *
+     * @param method the method to extract annotations from
+     * @return array of annotation names
+     * @throws JavaModelException if unable to access method annotations
+     */
+    public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
+        return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Converts a list of fully qualified annotation names to a comma-separated
+     * string of simple names, each prefixed with the given {@code prefix}.
+     *
+     * <p>Use {@code prefix = "@"} to produce display strings such as
+     * {@code "@AfterBegin"}, or {@code prefix = ""} for plain simple names.
+     *
+     * @param annotations the fully qualified annotation names
+     * @param prefix the string to prepend to each simple name (e.g. {@code "@"})
+     * @return comma-separated simple annotation names with the given prefix
+     */
+    public static String getSimpleAnnotationNames(List<String> annotations, String prefix) {
+        return annotations.stream().map(fq -> prefix + getSimpleName(fq)).distinct().collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Returns the fully-qualified name of the first type argument from a parameterised
+     * superinterface on the given class binding.
+     *
+     * <p>For example, given a class that implements {@code ObserverMethod<AuditEvent>},
+     * this method returns {@code "java.lang.AuditEvent"} when called with
+     * {@code interfaceFQName = "jakarta.enterprise.inject.spi.ObserverMethod"}.
+     *
+     * @param classBinding the type binding of the class to inspect
+     * @param interfaceFQName the fully-qualified name of the superinterface to search for
+     * @return the FQN of the first type argument, or {@code "java.lang.Object"} if not found
+     */
+    public static String resolveTypeArgumentFQName(ITypeBinding classBinding, String interfaceFQName) {
+        for (ITypeBinding iface : classBinding.getInterfaces()) {
+            if (interfaceFQName.equals(iface.getErasure().getQualifiedName())) {
+                ITypeBinding[] args = iface.getTypeArguments();
+                if (args.length > 0 && args[0] != null) {
+                    return args[0].getQualifiedName();
+                }
+            }
+        }
+        return "java.lang.Object";
+    }
+
+    /**
+     * Returns {@code true} if the given JDT type signature represents a raw
+     * (unparameterized) {@code Event} type from {@code jakarta.enterprise.event}.
+     *
+     * <p>A raw {@code Event} has no type arguments, i.e. the signature has no
+     * {@code <…>} part. Parameterized forms such as {@code Event<String>} are valid
+     * and are not flagged. Array component types are unwrapped recursively so that
+     * {@code Event[]} is also treated as raw.
+     *
+     * <p>Callers should guard with
+     * {@link #isImportedJavaElement(ICompilationUnit, String)} before calling this
+     * method to avoid false positives from user-defined classes named {@code Event}.
+     *
+     * @param typeSignature the JDT type signature to check
+     * @return {@code true} if the signature is the raw {@code Event} type;
+     *         {@code false} otherwise
+     */
+    public static boolean isRawEventType(String typeSignature) {
+        if (StringUtils.isBlank(typeSignature)) {
+            return false;
+        }
+        // Unwrap array component types — Event[] would also be raw
+        if (Signature.getTypeSignatureKind(typeSignature) == Signature.ARRAY_TYPE_SIGNATURE) {
+            return isRawEventType(Signature.getElementType(typeSignature));
+        }
+        String erasure = Signature.getTypeErasure(typeSignature);
+        String simpleName = Signature.getSignatureSimpleName(erasure);
+        // Raw type has no type arguments
+        return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
     }
 }

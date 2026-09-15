@@ -1,0 +1,137 @@
+package io.openliberty.sample.jakarta.cdi;
+
+import jakarta.interceptor.Interceptor;
+import io.openliberty.sample.jakarta.interceptor.Monitored;
+import jakarta.decorator.Decorator;
+import jakarta.decorator.Delegate;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.SessionScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ConversationScoped;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import io.openliberty.sample.jakarta.cdi.AccountService;
+
+// ========== Valid Interceptors ==========
+
+// Valid interceptor with explicit @Dependent scope
+@Monitored
+@Interceptor
+@Dependent
+class ValidInterceptorWithDependent {
+}
+
+// Valid interceptor with no scope (defaults to @Dependent)
+@Monitored
+@Interceptor
+class ValidInterceptorWithNoScope {
+}
+
+// ========== Valid Decorators ==========
+
+// Valid decorator with explicit @Dependent scope
+@Decorator
+@Dependent
+class ValidDecoratorWithDependent implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// Valid decorator with no scope (defaults to @Dependent)
+@Decorator
+class ValidDecoratorWithNoScope implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// ========== Invalid Interceptors with Built-in Normal Scopes ==========
+
+// Invalid interceptor with @ApplicationScoped
+@Monitored
+@Interceptor
+@ApplicationScoped
+class InterceptorWithApplicationScoped {
+}
+
+// Invalid interceptor with @SessionScoped
+@Monitored
+@Interceptor
+@SessionScoped
+class InterceptorWithSessionScoped {
+}
+
+// Invalid interceptor with multiple scopes including illegal ones
+@Monitored
+@Interceptor
+@ApplicationScoped
+@SessionScoped
+class InterceptorWithMultipleIllegalScopes {
+}
+
+// ========== Invalid Decorators with Built-in Normal Scopes ==========
+
+// Invalid decorator with @ApplicationScoped
+@Decorator
+@ApplicationScoped
+class DecoratorWithApplicationScoped implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// Invalid decorator with @SessionScoped
+@Decorator
+@SessionScoped
+class DecoratorWithSessionScoped implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// Invalid decorator with multiple scopes including illegal ones
+@Decorator
+@RequestScoped
+@ConversationScoped
+class DecoratorWithMultipleIllegalScopes implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// ========== Invalid Interceptors/Decorators with Custom Normal Scopes ==========
+
+// Invalid interceptor with custom normal scope
+@Monitored
+@Interceptor
+@CustomNormalScope
+class InterceptorWithCustomNormalScope {
+}
+
+// Invalid decorator with custom normal scope
+@Decorator
+@CustomNormalScope
+class DecoratorWithCustomNormalScope implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}
+
+// Invalid interceptor with both built-in and custom normal scopes
+@Monitored
+@Interceptor
+@ApplicationScoped
+@CustomNormalScope
+class InterceptorWithMixedScopes {
+}
+
+// Invalid decorator with both built-in and custom normal scopes
+@Decorator
+@ApplicationScoped
+@CustomNormalScope
+class DecoratorWithMixedScopes implements AccountService {
+    @Inject
+    @Delegate
+    private AccountService delegate;
+}

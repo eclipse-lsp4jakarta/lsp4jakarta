@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2024 IBM Corporation and others.
+* Copyright (c) 2024, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,8 +13,8 @@
 package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -27,7 +27,9 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
  * Provides Managed Bean related utilities.
@@ -269,23 +271,25 @@ public class ManagedBean {
     }
 
     /**
-     * Returns true if the class represented by the input type object contains a default constructor or
-     * a constructor with the jakarta.inject.Inject annotation.
+     * Returns true if the class represented by the input type object contains a no-args constructor
+     * (with any access modifier) or a constructor with the jakarta.inject.Inject annotation.
      *
      * @param type The type object to check.
      *
-     * @return True if the class represented by the input type object contains a default constructor or
-     *         a constructor with the jakarta.inject.Inject annotation.
+     * @return True if the class represented by the input type object contains a no-args constructor
+     *         (regardless of access modifier) or a constructor with the jakarta.inject.Inject annotation.
      *
      * @throws JavaModelException
      */
     public static boolean containsValidConstructor(IType type) throws JavaModelException {
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+        // Check for no-args constructor
+        if (constructorInfo.hasNoArgsConstructor()) {
+            return true;
+        }
+        // Check for @Inject annotated constructor
         List<IMethod> constructors = getConstructors(type);
-
         for (IMethod constructor : constructors) {
-            if (constructor.getNumberOfParameters() == 0) {
-                return true;
-            }
             IAnnotation injectAnnotation = constructor.getAnnotation(INJECT_ANNOTATION);
             if (injectAnnotation != null && injectAnnotation.exists()) {
                 return true;
@@ -337,5 +341,36 @@ public class ManagedBean {
         }
 
         return resolvedClassName;
+    }
+
+    /**
+     * Checks if the given annotation is marked with a specific meta-annotation.
+     * While checking for meta-annotation, it gets the type of annotation passed
+     * and sees if it has source file or not. If not (.class), it uses the passed compilation unit
+     * for checking matched annotation. If it has source file, it calculates the compilation unit
+     * of the source type and passes it to check matched annotation. This way it resolves the
+     * identification of meta annotation if it exists as either .class or .java file.
+     *
+     * @param annotation the annotation to check
+     * @param type the type context for resolving the annotation
+     * @param cu the compilation unit
+     * @param metaAnnotationFQN the fully qualified name of the meta-annotation to
+     *            look for
+     * @return true if the annotation has the specified meta-annotation, false
+     *         otherwise
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    public static boolean hasMetaAnnotation(IAnnotation annotation, IType type, ICompilationUnit cu,
+                                            String metaAnnotationFQN) throws JavaModelException {
+        IType annotationType = getChildITypeByName(type, annotation.getElementName());
+        if (annotationType == null) {
+            return false;
+        }
+        // Use the annotation type's own compilation unit for source types, fall back to the provided cu for binary types.
+        ICompilationUnit annotationCU = annotationType.isBinary() ? cu : annotationType.getCompilationUnit();
+        if (annotationCU == null) {
+            return false;
+        }
+        return DiagnosticUtils.isMatchedAnnotation(annotationCU, annotationType.getAnnotations(), metaAnnotationFQN);
     }
 }

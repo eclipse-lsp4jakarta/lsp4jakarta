@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation and others.
+ * Copyright (c) 2021, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,9 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -32,12 +30,11 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -46,6 +43,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
+import org.eclipse.lsp4jakarta.commons.utils.AnnotationValueExpressionUtil;
 
 /**
  *
@@ -114,7 +112,6 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         boolean isField = declNode instanceof VariableDeclarationFragment;
         boolean isSingleVarDecl = declNode instanceof SingleVariableDeclaration;
-        boolean isSingleMemberAnnotation = declNode instanceof SingleMemberAnnotation;
 
         if (isField) {
             declNode = declNode.getParent();
@@ -122,50 +119,13 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         // if the Annotation is declared on a class field
         if (declNode.getNodeType() == ASTNode.FIELD_DECLARATION) {
-            AST ast = declNode.getAST();
-            ASTRewrite rewrite = ASTRewrite.create(ast);
+            return processFieldOrMethodDeclaration(declNode, imports, annotationShortNames, annotations,
+                                                   FieldDeclaration.MODIFIERS2_PROPERTY);
+        } else if (declNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
+            return processFieldOrMethodDeclaration(declNode, imports, annotationShortNames, annotations,
+                                                   MethodDeclaration.MODIFIERS2_PROPERTY);
 
-            ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
-            List<Annotation> existingAnnotations = new ArrayList<Annotation>();
-
-            List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(FieldDeclaration.MODIFIERS2_PROPERTY);
-
-            // for all existing annotations (that are the annotation we want)
-            for (ASTNode child : children) {
-                if (child instanceof Annotation) {
-                    Annotation annotation = (Annotation) child;
-                    boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::contains);
-
-                    // check if current child annotation has all attributes to add already or any to
-                    // remove
-                    if (containsAnnotation && child instanceof NormalAnnotation) {
-                        List<String> existingValues = (List<String>) ((NormalAnnotation) child).values().stream().map(mvp -> ((MemberValuePair) mvp).getName().toString()).collect(toList());
-
-                        boolean containsAllToAdd = this.attributesToAdd.stream().allMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
-                        boolean containsAnyToRemove = this.attributesToRemove.stream().anyMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
-
-                        if (!containsAllToAdd || containsAnyToRemove) {
-                            existingAnnotations.add(annotation);
-                            rewrite.remove(child, null);
-                        }
-                    }
-                }
-            }
-
-            // add new annotations to proposal (restoring those that were removed)
-            for (Annotation a : existingAnnotations) {
-                if (a instanceof NormalAnnotation) {
-                    NormalAnnotation marker = null;
-                    marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
-
-                    // add new annotation proposal to the rewrite text edit
-                    rewrite.getListRewrite(declNode,
-                                           isField ? FieldDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY).insertFirst(marker, null);
-                }
-            }
-
-            return rewrite;
-        } else if (declNode instanceof TypeDeclaration || isField || isSingleVarDecl) {
+        } else if (declNode instanceof TypeDeclaration || isSingleVarDecl) {
             // Annotation in question is set on a class declaration or is a method parameter declaration
             AST ast = declNode.getAST();
             ASTRewrite rewrite = ASTRewrite.create(ast);
@@ -174,8 +134,6 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             List<Annotation> existingAnnotations = new ArrayList<Annotation>();
             ChildListPropertyDescriptor property = isSingleVarDecl ? SingleVariableDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY;
             List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(property);
-
-            boolean isCompositeAnnotation = false;
 
             // find and save existing annotation, then remove it from ast
             // this will cause the entire annotation to be deleted from the file
@@ -212,14 +170,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                     newAnnotationToWrite = createNewAnnotation(ast, imports, importRewriteContext, annotation);
                 }
 
-                ChildListPropertyDescriptor newRewrite;
-                if (isSingleVarDecl) {
-                    newRewrite = SingleVariableDeclaration.MODIFIERS2_PROPERTY;
-                } else if (isField) {
-                    newRewrite = FieldDeclaration.MODIFIERS2_PROPERTY;
-                } else {
-                    newRewrite = TypeDeclaration.MODIFIERS2_PROPERTY;
-                }
+                ChildListPropertyDescriptor newRewrite = isSingleVarDecl ? SingleVariableDeclaration.MODIFIERS2_PROPERTY : TypeDeclaration.MODIFIERS2_PROPERTY;
 
                 // add new annotation proposal to the rewrite text edit
                 rewrite.getListRewrite(declNode, newRewrite).insertFirst(newAnnotationToWrite, null);
@@ -227,6 +178,75 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             return rewrite;
         }
         return null;
+    }
+
+    /**
+     * removeAttributes
+     * Remove attributes from existing annotation
+     *
+     * @param annotationShortNames
+     * @param rewrite
+     * @param existingAnnotations
+     * @param children
+     */
+    private void removeAttributes(String[] annotationShortNames, ASTRewrite rewrite, List<Annotation> existingAnnotations,
+                                  List<? extends ASTNode> children) {
+        for (ASTNode child : children) {
+            if (child instanceof Annotation) {
+                Annotation annotation = (Annotation) child;
+                boolean containsAnnotation = Arrays.stream(annotationShortNames).anyMatch(annotation.getTypeName().toString()::contains);
+
+                // check if current child annotation has all attributes to add already or any to
+                // remove
+                if (containsAnnotation && child instanceof NormalAnnotation) {
+                    List<String> existingValues = (List<String>) ((NormalAnnotation) child).values().stream().map(mvp -> ((MemberValuePair) mvp).getName().toString()).collect(toList());
+
+                    boolean containsAllToAdd = this.attributesToAdd.stream().allMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
+                    boolean containsAnyToRemove = this.attributesToRemove.stream().anyMatch(attr -> existingValues.stream().anyMatch(v -> v.equals(attr)));
+
+                    if (!containsAllToAdd || containsAnyToRemove) {
+                        existingAnnotations.add(annotation);
+                        rewrite.remove(child, null);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Process field or method declaration by removing and adding annotation attributes.
+     *
+     * @param declNode the declaration node (field or method)
+     * @param imports the import rewrite
+     * @param annotationShortNames the short names of annotations to process
+     * @param annotations the full qualified names of annotations
+     * @param modifiersProperty the property descriptor for modifiers (MODIFIERS2_PROPERTY)
+     * @return the AST rewrite with the changes
+     */
+    private ASTRewrite processFieldOrMethodDeclaration(ASTNode declNode, ImportRewrite imports,
+                                                       String[] annotationShortNames, String[] annotations,
+                                                       ChildListPropertyDescriptor modifiersProperty) {
+        AST ast = declNode.getAST();
+        ASTRewrite rewrite = ASTRewrite.create(ast);
+
+        ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(declNode, imports);
+        List<Annotation> existingAnnotations = new ArrayList<Annotation>();
+
+        List<? extends ASTNode> children = (List<? extends ASTNode>) declNode.getStructuralProperty(modifiersProperty);
+
+        removeAttributes(annotationShortNames, rewrite, existingAnnotations, children);
+
+        // add new annotations to proposal (restoring those that were removed)
+        for (Annotation a : existingAnnotations) {
+            if (a instanceof NormalAnnotation) {
+                NormalAnnotation marker = processNormalAnnotation(ast, imports, importRewriteContext, annotations, (NormalAnnotation) a);
+
+                // add new annotation proposal to the rewrite text edit
+                rewrite.getListRewrite(declNode, modifiersProperty).insertFirst(marker, null);
+            }
+        }
+
+        return rewrite;
     }
 
     private SingleMemberAnnotation processSingleMemberAnnotation(AST ast, ImportRewrite imports,
@@ -325,7 +345,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
             if (annotationToProcess == null) {
                 // We are adding a new required default @Resource annotation to an empty
                 // @Resources annotation.
-                addNewAttributes(ast, values);
+                addNewAttributes(ast, values, annotation, annotationToProcess);
             } else {
                 // get the existing name/value pairs from the existing NormalAnnotation that was
                 // passed into this method above
@@ -380,7 +400,7 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
                 }
 
                 // now add the attribute for this quickfix action to the new NormalAnnotation
-                values = addNewAttributes(ast, values);
+                values = addNewAttributes(ast, values, annotation, annotationToProcess);
             }
         }
         return newNormalAnnotation;
@@ -393,32 +413,26 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
 
         marker.setTypeName(ast.newName(imports.addImport(annotation, importRWCtx)));
         List<MemberValuePair> values = marker.values();
-
-        values = addNewAttributes(ast, values);
+        values = addNewAttributes(ast, values, annotation, marker);
 
         return marker;
 
     }
 
-    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values) {
-        // Add new attributes of type String or Class.
-        // For initial values, we use empty strings for String types and Object.class for Class types,
-        // since the user's intended values are unknown at this stage,
-        // These placeholders (e.g., name = "", type = Object.class) must be updated by the user as needed.
-        // when an annotation in Jakarta EE declares an attribute named type, it’s always of the form of Class<?>
+    private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values, String annotationFqn, NormalAnnotation annotationToProcess) {
 
         for (String newAttr : this.attributesToAdd) {
+
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {
                 MemberValuePair newMemberValuePair = ast.newMemberValuePair();
                 newMemberValuePair.setName(ast.newSimpleName(newAttr));
-                if ("type".equals(newAttr)) {
-                    TypeLiteral typeLiteral = ast.newTypeLiteral();
-                    typeLiteral.setType(ast.newSimpleType(ast.newSimpleName("Object")));
-                    newMemberValuePair.setValue(typeLiteral);
-                } else {
-                    StringLiteral stringValue = ast.newStringLiteral();
-                    stringValue.setLiteralValue("");
-                    newMemberValuePair.setValue(stringValue);
+                // Returns the default AST {@link Expression} for an annotation attribute.
+                // If the attribute has a declared default, that is used. Otherwise, a
+                // custom default is created based on the attribute type.
+                Expression valueExpr = AnnotationValueExpressionUtil.findDefaultAttributeValue(annotationToProcess, newAttr, ast, getCompilationUnit().getJavaProject(),
+                                                                                               annotationFqn);
+                if (valueExpr != null) {
+                    newMemberValuePair.setValue(valueExpr);
                 }
                 values.add(newMemberValuePair);
             }

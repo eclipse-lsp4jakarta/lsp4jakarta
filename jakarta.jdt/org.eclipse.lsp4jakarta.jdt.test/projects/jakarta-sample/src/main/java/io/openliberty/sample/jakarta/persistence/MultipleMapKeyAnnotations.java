@@ -8,6 +8,10 @@ import jakarta.persistence.MapKeyJoinColumn;
 
 @Entity
 public class MultipleMapKeyAnnotations {
+	
+	@Id
+	private int id;
+	
     @MapKeyJoinColumn()
     @MapKeyJoinColumn()
     Map<Integer, String> test1;

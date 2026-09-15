@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -21,7 +21,12 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidNumerOfJsonbCreatorAnnotationsInClass,
     InvalidJSonBindindAnnotationWithJsonbTransientOnField,
     InvalidJSonBindindAnnotationWithJsonbTransientOnAccessor,
-    InvalidPropertyNamesOnJsonbFields;
+    InvalidPropertyNamesOnJsonbFields,
+    InvalidJsonBNoArgsConstructorMissing,
+    InvalidJsonBNonStaticInnerClass,
+    InvalidJsonBNonPublicProtectedStaticNestedClass,
+    InvalidJsonbFromJsonNullParameter,
+    JsonbCloseableThreadSafety;
 
     /**
      * {@inheritDoc}

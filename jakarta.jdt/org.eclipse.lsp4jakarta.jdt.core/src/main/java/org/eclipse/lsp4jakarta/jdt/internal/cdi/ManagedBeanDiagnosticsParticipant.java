@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2025 IBM Corporation.
+ * Copyright (c) 2021, 2026 IBM Corporation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,18 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -27,6 +33,7 @@ import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -35,10 +42,12 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.Gson;
@@ -47,6 +56,9 @@ import com.google.gson.Gson;
  * CDI diagnostics participant that manages the use of a managed bean.
  */
 public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /** Logger object to record events for this class. */
+    private static final Logger LOGGER = Logger.getLogger(ManagedBeanDiagnosticsParticipant.class.getName());
 
     @Override
     public List<Diagnostic> collectDiagnostics(JavaDiagnosticsContext context, IProgressMonitor monitor) throws CoreException {
@@ -62,9 +74,13 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         String[] scopeFQNames = Constants.SCOPE_FQ_NAMES.toArray(String[]::new);
         for (IType type : types) {
-            List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                             Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
-                                                                                             scopeFQNames);
+            String[] typeAnnotations = Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+            List<String> managedBeanAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations, scopeFQNames);
+            boolean interceptorOrDecorator = !DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations, new String[] {
+                                                                                                                               Constants.INTERCEPTOR_FQ_NAME,
+                                                                                                                               Constants.DECORATOR_FQ_NAME
+            }).isEmpty();
+
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;
@@ -103,13 +119,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // Here we only look at the fields.
                 List<String> fieldInjects = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
                                                                                        injectAnnotations);
-                boolean isProducerField = false, isInjectField = false;
-                for (String annotation : fieldInjects) {
-                    if (Constants.PRODUCES_FQ_NAME.equals(annotation))
-                        isProducerField = true;
-                    else if (Constants.INJECT_FQ_NAME.equals(annotation))
-                        isInjectField = true;
-                }
+                boolean isProducerField = fieldInjects.contains(Constants.PRODUCES_FQ_NAME);
+                boolean isInjectField = fieldInjects.contains(Constants.INJECT_FQ_NAME);
                 if (isProducerField && fieldScopes.size() > 1) {
                     fieldScopes.add(Constants.PRODUCES_FQ_NAME);
                     Range range = PositionUtils.toNameRange(field, context.getUtils());
@@ -143,6 +154,22 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidFieldWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
 
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#declaring_resource
+                // Producer fields must not declare a bean name using @Named annotation.
+                // Bean naming is reserved for producer methods and managed beans.
+                if (isProducerField) {
+                    for (IAnnotation annotation : field.getAnnotations()) {
+                        if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage("ProducerFieldWithNamedAnnotation", field.getElementName()), range,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidProducerFieldWithNamedAnnotation, DiagnosticSeverity.Error));
+                            break;
+                        }
+                    }
+                }
+
             }
 
             IMethod[] methods = type.getMethods();
@@ -165,13 +192,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                        scopeFQNames);
                 List<String> methodInjects = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
                                                                                         injectAnnotations);
-                boolean isProducerMethod = false, isInjectMethod = false;
-                for (String annotation : methodInjects) {
-                    if (Constants.PRODUCES_FQ_NAME.equals(annotation))
-                        isProducerMethod = true;
-                    else if (Constants.INJECT_FQ_NAME.equals(annotation))
-                        isInjectMethod = true;
-                }
+                boolean isProducerMethod = methodInjects.contains(Constants.PRODUCES_FQ_NAME);
+                boolean isInjectMethod = methodInjects.contains(Constants.INJECT_FQ_NAME);
 
                 if (isProducerMethod && methodScopes.size() > 1) {
                     methodScopes.add(Constants.PRODUCES_FQ_NAME);
@@ -206,6 +228,110 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              ErrorCode.InvalidMethodWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
                 }
 
+                // Generate diagnostics for mutually exclusive observes and observesAsync annotations
+                //
+                // see: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#
+                // observer_methods
+                //
+                // Two scenarios to detect:
+                // 1. A single parameter with both @Observes AND @ObservesAsync
+                // 2. Multiple parameters where each has at least one of @Observes or @ObservesAsync
+                Set<String> conflictParams = new HashSet<>();
+                List<String> paramsWithObserverAnnotations = new ArrayList<>();
+                for (ILocalVariable param : method.getParameters()) {
+
+                    String[] annotationQualifiedNames = Stream.of(param.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+                    String[] conflictedParamAnnotations = Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS.toArray(String[]::new);
+                    Set<String> observesObservesAsync = new HashSet<>(DiagnosticUtils.getMatchedJavaElementNames(type, annotationQualifiedNames, conflictedParamAnnotations));
+
+                    // Scenario 1: Check if this parameter has both @Observes AND @ObservesAsync
+                    if (observesObservesAsync.equals(Constants.INVALID_OBSERVES_OBSERVES_ASYNC_CONFLICTED_PARAMS)) {
+                        conflictParams.add(param.getElementName());
+                    }
+
+                    // Scenario 2: Track parameters that have at least one observer annotation
+                    if (!observesObservesAsync.isEmpty()) {
+                        paramsWithObserverAnnotations.add(param.getElementName());
+                    }
+                }
+                if (interceptorOrDecorator && !paramsWithObserverAnnotations.isEmpty()) {
+                    Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidInterceptorOrDecoratorWithObserverMethod"),
+                                                             methodRange,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidInterceptorOrDecoratorWithObserverMethod,
+                                                             DiagnosticSeverity.Error));
+                } else if (!conflictParams.isEmpty()) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ManagedBeanObservesAndObservesAsyncParam", String.join(", ", conflictParams)), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidObservesObservesAsyncMethodParams, DiagnosticSeverity.Error));
+                } else if (paramsWithObserverAnnotations.size() > 1) {
+                    // Report error if method has more than one parameter with observer annotations
+                    // (even if each parameter has only one type of observer annotation)
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ManagedBeanMultipleObserverParams", String.join(", ", paramsWithObserverAnnotations)), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidMultipleObserverParams, DiagnosticSeverity.Error));
+                } else if (isDependent && hasConditionalObserverAnnotation(type, method)) {
+                    // Check for conditional observer methods on @Dependent scoped beans
+                    // Beans with scope @Dependent may not have conditional observer methods.
+                    // If a bean with scope @Dependent has an observer method declared notifyObserver=IF_EXISTS,
+                    // the container automatically detects the problem and treats it as a definition error.
+
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(
+                                                             uri,
+                                                             Messages.getMessage("ManagedBeanDependentScopeConditionalObserver", method.getElementName()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             null,
+                                                             ErrorCode.InvalidDependentScopeWithConditionalObserver,
+                                                             DiagnosticSeverity.Error));
+                }
+                // Check for @Disposes in interceptors/decorators
+                if (interceptorOrDecorator) {
+                    List<String> disposesParams = getDisposesParamNames(type, method);
+                    if (!disposesParams.isEmpty()) {
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
+                        String paramNames = String.join(", ", disposesParams);
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidInterceptorOrDecoratorWithDisposerMethod", paramNames),
+                                                                 methodRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE,
+                                                                 ErrorCode.InvalidInterceptorOrDecoratorWithDisposerMethod,
+                                                                 DiagnosticSeverity.Error));
+                    }
+                }
+
+                // Check for @Named annotation without value on non-field injection points
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#named_at_injection_point
+                // @Named on constructor/method parameters without value is a definition error
+                // Only field injection points can omit the value (field name is assumed)
+                if (DiagnosticUtils.isConstructorMethod(method) || isInjectMethod) {
+                    for (ILocalVariable param : method.getParameters()) {
+                        for (IAnnotation annotation : param.getAnnotations()) {
+                            if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
+                                // Check if the @Named annotation has a value attribute
+                                String namedValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "value", String.class);
+                                if (StringUtils.isBlank(namedValue)) {
+                                    // @Named without value on constructor/method parameter is invalid
+                                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                                    diagnostics.add(context.createDiagnostic(uri,
+                                                                             Messages.getMessage("InvalidNamedAnnotationOnNonFieldInjectionPoint"),
+                                                                             range,
+                                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                                             null,
+                                                                             ErrorCode.InvalidNamedAnnotationOnNonFieldInjectionPoint,
+                                                                             DiagnosticSeverity.Error));
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (isManagedBean && constructorMethods.size() > 0) {
@@ -215,27 +341,20 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // If there are no constructor methods, there is an implicit empty constructor
                 // generated by the compiler.
+
+                ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
+                boolean hasNoArgConstructor = constructorInfo.hasNoArgsConstructor();
+
                 List<IMethod> methodsNeedingDiagnostics = new ArrayList<IMethod>();
-                for (IMethod m : constructorMethods) {
-                    if (m.getNumberOfParameters() == 0) {
-                        methodsNeedingDiagnostics.clear();
-                        break;
-                    }
-                    IAnnotation[] annotations = m.getAnnotations();
-                    boolean hasParameterizedInjectConstructor = false;
-                    // look up '@Inject' annotation
-                    for (IAnnotation annotation : annotations) {
-                        if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                                 Constants.INJECT_FQ_NAME)) {
-                            hasParameterizedInjectConstructor = true;
+                if (!hasNoArgConstructor) {
+                    for (IMethod m : constructorMethods) {
+                        if (hasAnnotation(type, m.getAnnotations(), Constants.INJECT_FQ_NAME)) {
+                            methodsNeedingDiagnostics.clear();
                             break;
+                        } else {
+                            methodsNeedingDiagnostics.add(m);
                         }
                     }
-                    if (hasParameterizedInjectConstructor) {
-                        methodsNeedingDiagnostics.clear();
-                        break;
-                    } else
-                        methodsNeedingDiagnostics.add(m);
                 }
 
                 // Deliver a diagnostic on all parameterized constructors that they must add an
@@ -250,11 +369,23 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             if (isManagedBean) {
+                // Check if the class is a stateless session bean
+                boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                 new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
                 boolean isClassGeneric = type.getTypeParameters().length != 0;
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
+                validateSingletonSessionBean(context, uri, diagnostics, type, typeAnnotations, managedBeanAnnotations,
+                                             range);
+                // A stateless session bean must belong to the @Dependent scope only
+                // If it has multiple scopes, it's an error
+                if (isStateless && (!isDependent || hasMultipleScopes)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("StatelessSessionBeanWithIllegalScope"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidStatelessSessionBeanScope, DiagnosticSeverity.Error));
 
-                // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
-                if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
+                    // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
+                } else if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -274,7 +405,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
-
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
@@ -288,7 +418,11 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             // declaring_initializer
 
             invalidParamsCheck(context, uri, unit, diagnostics, type, Constants.INJECT_FQ_NAME);
-
+            // Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
+            // They should only use @Dependent scope
+            if (interceptorOrDecorator) {
+                validateinterceptorDecoratorScopes(context, uri, diagnostics, type);
+            }
             if (isManagedBean) {
 
                 // Produces and Disposes, Observes, ObservesAsync Annotations:
@@ -317,6 +451,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                                  Constants.INVALID_PRODUCER_PARAMS_FQ);
                             if (Constants.DISPOSES_FQ_NAME.equals(matchedAnnotation)) {
                                 numDisposes++;
+
                             } else if (Constants.OBSERVES_FQ_NAME.equals(matchedAnnotation)
                                        || Constants.OBSERVES_ASYNC_FQ_NAME.equals(matchedAnnotation)) {
                                 invalidAnnotations.add("@" + DiagnosticUtils.getSimpleName(annotation.getElementName()));
@@ -342,10 +477,109 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  ErrorCode.InvalidDisposerMethodParamAnnotation, DiagnosticSeverity.Error));
                     }
                 }
+
+                // A disposer method is only valid if the bean class declares a producer
+                // method or field whose return type is assignable to the @Disposes parameter.
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#disposer_method_resolution
+                checkOrphanDisposerMethods(context, uri, diagnostics, type, methods, fields);
             }
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that interceptors and decorators do not declare invalid scope annotations.
+     * Interceptors and decorators must not have normal scopes (ApplicationScoped, SessionScoped, etc.)
+     * and should only use @Dependent scope. Detects both built-in CDI scopes and custom @NormalScope annotations.
+     *
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the Java type being validated
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private void validateinterceptorDecoratorScopes(JavaDiagnosticsContext context, String uri,
+                                                    List<Diagnostic> diagnostics, IType type) throws JavaModelException {
+        List<String> foundInvalidScopes = new ArrayList<>();
+
+        // Check each annotation to see if it's an invalid scope
+        for (IAnnotation annotation : type.getAnnotations()) {
+            String annotationName = annotation.getElementName();
+
+            // Skip @Interceptor, @Decorator, and @Dependent annotations - these are not scopes we're checking
+            String matchedSkip = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                           new String[] {
+                                                                                          Constants.INTERCEPTOR_FQ_NAME,
+                                                                                          Constants.DECORATOR_FQ_NAME,
+                                                                                          Constants.DEPENDENT_FQ_NAME
+                                                                           });
+            if (matchedSkip != null) {
+                continue;
+            }
+
+            // Check if it's a built-in invalid scope
+            String matchedBuiltInScopes = DiagnosticUtils.getMatchedJavaElementName(type, annotationName,
+                                                                                    Constants.INVALID_INTERCEPTOR_DECORATOR_SCOPES);
+            if (matchedBuiltInScopes != null) {
+                foundInvalidScopes.add(matchedBuiltInScopes);
+            } else {
+                // Get the fully qualified name for the annotation
+                String fqName = ManagedBean.getFullyQualifiedClassName(type, annotationName);
+                if (fqName != null) {
+                    try {
+                        IType annotationType = type.getJavaProject().findType(fqName);
+                        if (annotationType != null &&
+                            ManagedBean.isAnnotatedClass(annotationType, Constants.NORMAL_SCOPE_FQ_NAME)) {
+
+                            foundInvalidScopes.add(fqName);
+                            // no break — continue checking other annotations
+                        }
+                    } catch (JavaModelException e) {
+                        LOGGER.log(Level.WARNING,
+                                   "Error checking for @NormalScope meta-annotation on: " + annotationName, e);
+                    }
+                }
+            }
+        }
+
+        if (!foundInvalidScopes.isEmpty()) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InterceptorOrDecoratorWithIllegalScope"), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(foundInvalidScopes)),
+                                                     ErrorCode.InvalidInterceptorOrDecorator, DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * validateSingletonSessionBean
+     * Singleton session bean scope validation
+     * A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.
+     * If a singleton bean declares any other scope, the container must treat it as a definition error.
+     *
+     * @param context
+     * @param uri
+     * @param diagnostics
+     * @param type
+     * @param typeAnnotations
+     * @param managedBeanAnnotations
+     * @param range
+     */
+    private void validateSingletonSessionBean(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
+                                              IType type, String[] typeAnnotations, List<String> managedBeanAnnotations, Range range) {
+        boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                                    new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
+        if (isSingletonSessionBean) {
+            boolean hasInvalidSingletonScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
+                                                                                                      && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
+            if (hasInvalidSingletonScope) {
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
+                                                         ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
+            }
+        }
     }
 
     private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, ICompilationUnit unit,
@@ -445,4 +679,177 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                && (!isDependent || hasMultipleScopes);
     }
 
+    /**
+     * isConditionalObserver
+     * Checks if the annotation is a conditional observer (notifyObserver=Reception.IF_EXISTS).
+     *
+     * @param type the type
+     * @param annotation the annotation to check
+     * @return true if the annotation is @Observes or @ObservesAsync with notifyObserver=Reception.IF_EXISTS
+     * @throws JavaModelException
+     */
+    private boolean isConditionalObserver(IType type, IAnnotation annotation) throws JavaModelException {
+        String matched = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                                   new String[] { Constants.OBSERVES_FQ_NAME, Constants.OBSERVES_ASYNC_FQ_NAME });
+        if (null != matched) {
+            String notifyObserverValue = DiagnosticUtils.getAnnotationMemberValue(annotation, "notifyObserver", String.class);
+            // Check for IF_EXISTS - can be "Reception.IF_EXISTS" or "jakarta.enterprise.event.Reception.IF_EXISTS"
+            // Use endsWith to match the enum value precisely
+            return notifyObserverValue != null && notifyObserverValue.endsWith("IF_EXISTS");
+        }
+        return false;
+    }
+
+    /**
+     * hasConditionalObserverAnnotation
+     * Checks if any parameter in the method has a conditional observer annotation.
+     *
+     * @param type the type
+     * @param method the method to check
+     * @return true if any parameter has a conditional observer annotation
+     */
+    private boolean hasConditionalObserverAnnotation(IType type, IMethod method) {
+        try {
+            return Arrays.stream(method.getParameters()).flatMap(param -> {
+                try {
+                    return Arrays.stream(param.getAnnotations());
+                } catch (JavaModelException e) {
+                    return Stream.empty();
+                }
+            }).anyMatch(annotation -> {
+                try {
+                    return isConditionalObserver(type, annotation);
+                } catch (JavaModelException e) {
+                    return false;
+                }
+            });
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occurred while checking ConditionalObserverAnnotation", e);
+            return false;
+        }
+    }
+
+    /**
+     * Get the names of all parameters annotated with @Disposes in a method.
+     *
+     * @param type the type being checked
+     * @param method the method to check
+     * @return list of parameter names that have @Disposes annotation
+     */
+    private List<String> getDisposesParamNames(IType type, IMethod method) {
+        List<String> paramNames = new ArrayList<>();
+        try {
+            for (ILocalVariable param : method.getParameters()) {
+                for (IAnnotation annotation : param.getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.DISPOSES_FQ_NAME)) {
+                        paramNames.add(param.getElementName());
+                        break;
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.SEVERE, "Error occurred while getting @Disposes parameter names", e);
+        }
+        return paramNames;
+    }
+
+    /**
+     * Checks whether any non-constructor method in the type has exactly one {@code @Disposes}
+     * parameter whose erased type has no matching {@code @Produces} producer (method or field)
+     * in the same class. Such a disposer is an orphan and the container must treat it as a
+     * definition error.
+     *
+     * <p>Methods with more than one {@code @Disposes} parameter are skipped — they are already
+     * flagged by {@code InvalidDisposesAnnotationOnMultipleMethodParams}.
+     *
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the bean class being analysed
+     * @param methods all methods declared on the type
+     * @param fields all fields declared on the type
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private void checkOrphanDisposerMethods(JavaDiagnosticsContext context, String uri,
+                                            List<Diagnostic> diagnostics, IType type,
+                                            IMethod[] methods, IField[] fields) throws JavaModelException {
+
+        // Collect erased FQ type names produced by @Produces methods and fields.
+        Set<String> producerTypes = new HashSet<>();
+        for (IMethod m : methods) {
+            if (!DiagnosticUtils.isConstructorMethod(m) && hasAnnotation(type, m.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
+                String fqn = resolveTypeSignature(type, m.getReturnType());
+                if (fqn != null)
+                    producerTypes.add(fqn);
+            }
+        }
+        for (IField f : fields) {
+            if (hasAnnotation(type, f.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
+                String fqn = resolveTypeSignature(type, f.getTypeSignature());
+                if (fqn != null)
+                    producerTypes.add(fqn);
+            }
+        }
+
+        // Flag disposer methods whose @Disposes parameter type has no matching producer.
+        for (IMethod method : methods) {
+            if (DiagnosticUtils.isConstructorMethod(method))
+                continue;
+
+            // Find the sole @Disposes param; skip if there are 0 or >1 (>1 is a separate error).
+            List<ILocalVariable> disposesParams = Arrays.stream(method.getParameters()).filter(p -> {
+                try {
+                    return hasAnnotation(type, p.getAnnotations(), Constants.DISPOSES_FQ_NAME);
+                } catch (JavaModelException e) {
+                    return false;
+                }
+            }).collect(Collectors.toList());
+            if (disposesParams.size() != 1)
+                continue;
+            ILocalVariable disposesParam = disposesParams.get(0);
+
+            String erasedFqn = resolveTypeSignature(type, disposesParam.getTypeSignature());
+            if (erasedFqn != null && !producerTypes.contains(erasedFqn)) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidOrphanDisposerMethod"),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidOrphanDisposerMethod, DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if any annotation in the array resolves to the given FQ annotation name.
+     */
+    private boolean hasAnnotation(IType type, IAnnotation[] annotations, String fqAnnotationName) throws JavaModelException {
+        for (IAnnotation ann : annotations) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), fqAnnotationName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Resolves a JDT type signature to an erased fully-qualified class name.
+     * Generic arguments are stripped first (e.g. {@code List<String>} → {@code java.util.List}),
+     * then the simple name is resolved via {@link ManagedBean#getFullyQualifiedClassName}.
+     *
+     * @param declaringType the type that owns the signature (used to resolve imports)
+     * @param typeSig a JDT type signature
+     * @return the erased FQ class name, or {@code null} if it cannot be resolved
+     */
+    private String resolveTypeSignature(IType declaringType, String typeSig) {
+        if (typeSig == null)
+            return null;
+        try {
+            String simpleName = Signature.toString(Signature.getTypeErasure(typeSig));
+            String fqn = ManagedBean.getFullyQualifiedClassName(declaringType, simpleName);
+            return fqn != null ? fqn : (simpleName.contains(".") ? simpleName : null);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Unable to resolve type signature: " + typeSig, e);
+            return null;
+        }
+    }
 }

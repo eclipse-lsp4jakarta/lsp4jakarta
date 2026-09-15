@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,4 +24,7 @@ public class Constants {
     public static final String CREATE_POINTER = "createPointer";
     public static final String JSON_FQ_NAME = "jakarta.json.Json";
     public static final String DIAGNOSTIC_CODE_CREATE_POINTER = "InvalidCreatePointerArg";
+    public static final String JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME = "jakarta.json.JsonObjectBuilder";
+    public static final String JAKARTA_JSON_BUILDER_ADD_METHOD = "add";
+    public static final String JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME = "jakarta.json.JsonArrayBuilder";
 }

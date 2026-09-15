@@ -16,13 +16,14 @@ package org.eclipse.lsp4jakarta.jdt.internal.core.java;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.SnippetTextEdit;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
@@ -109,9 +110,13 @@ public class ChangeUtil {
                 changes = new ArrayList<>();
                 root.setDocumentChanges(changes);
             }
-
-            VersionedTextDocumentIdentifier identifier = new VersionedTextDocumentIdentifier(uri, 0);
-            TextDocumentEdit documentEdit = new TextDocumentEdit(identifier, converter.convert());
+            //Modified for jdtls API upgrade 1.0.0 version
+            VersionedTextDocumentIdentifier identifier = new VersionedTextDocumentIdentifier();
+            identifier.setUri(uri);
+            identifier.setVersion(0);
+            TextDocumentEdit documentEdit = new TextDocumentEdit();
+            documentEdit.setTextDocument(identifier);
+            documentEdit.setEdits(converter.convert().stream().map(Either::<org.eclipse.lsp4j.TextEdit, SnippetTextEdit> forLeft).collect(Collectors.toList()));
             changes.add(Either.forLeft(documentEdit));
         } else {
 

@@ -12,7 +12,6 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
-import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
 
@@ -40,7 +39,7 @@ public class RemoveInjectAnnotationQuickFix extends RemoveAnnotationConflictQuic
      * {@inheritDoc}
      */
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveInjectAnnotation;
     }
 }

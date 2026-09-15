@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -48,6 +48,10 @@ public class Constants {
     public static final String URL_PATTERNS = "urlPatterns";
     public static final String VALUE = "value";
     public static final String SERVLET_NAMES = "servletNames";
+
+    /* @DeclareRoles */
+    public static final String DECLARE_ROLES_FQ_NAME = "jakarta.annotation.security.DeclareRoles";
+    public static final String SERVLET_FQ_NAME = "jakarta.servlet.Servlet";
 
     /* Diagnostics fields constants */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-servlet";

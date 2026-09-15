@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -23,6 +23,7 @@ public class Constants {
     public static final String RESOURCE_METHOD = "ResourceMethod";
     public static final String PATH_ANNOTATION = "jakarta.ws.rs.Path";
     public static final String PROVIDER_ANNOTATION = "jakarta.ws.rs.ext.Provider";
+    public static final String CONSTRAINT_ANNOTATION = "jakarta.validation.Constraint";
 
     public final static String[] SET_OF_METHOD_DESIGNATORS_ANNOTATIONS = {
                                                                            "jakarta.ws.rs.GET",

@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -30,7 +30,34 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidDisposerMethodParamAnnotation,
     InvalidProducerMethodParamAnnotation,
     InvalidInjectAnnotatedMethodParamAnnotation,
-    InvalidInjectAnnotationOnMultipleMethodParams;
+    InvalidInjectAnnotationOnMultipleMethodParams,
+    InvalidObservesObservesAsyncMethodParams,
+    InvalidInterceptorOrDecoratorWithObserverMethod,
+    InvalidInterceptorOrDecoratorWithDisposerMethod,
+    InvalidDependentScopeWithConditionalObserver,
+    InvalidSingletonSessionBeanScope,
+    InvalidMultipleObserverParams,
+    InvalidInterceptorOrDecorator,
+    InvalidStatelessSessionBeanScope,
+    InvalidProducerFieldWithNamedAnnotation,
+    InvalidDecoratorDelegateInjectionPoints,
+    InvalidDelegateInjectionPoint,
+    InvalidDecoratorDelegateTypeAssignability,
+    InvalidDecoratorWithNoDecoratedTypes,
+    InvalidWildcardTypeInInjectField,
+    InvalidWildcardTypeInInjectMethod,
+    InvalidWildcardTypeInProducerMethod,
+    InvalidWildcardTypeInProducerField,
+    InvalidNamedAnnotationOnNonFieldInjectionPoint,
+    InvalidProducerMethodWithBareTypeVariableReturnType,
+    InvalidProducerMethodWithTypeVariableAndNonDependentScope,
+    InvalidProducerFieldWithBareTypeVariableType,
+    InvalidProducerFieldWithTypeVariableAndNonDependentScope,
+    InvalidSpecializedBeanWithNamedAnnotation,
+    InvalidOrphanDisposerMethod,
+    InvalidSpecializesAnnotationOnNonBeanSuperclass,
+    InvalidObserverMethodWithoutNotify,
+    InvalidRawEventTypeInjectionPoint;
 
     /**
      * {@inheritDoc}

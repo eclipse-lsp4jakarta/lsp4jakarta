@@ -30,7 +30,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
-import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
+import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.ChangeCorrectionProposal;
 import org.eclipse.lsp4jakarta.jdt.core.java.corrections.proposal.RemoveAnnotationProposal;
 
@@ -104,7 +104,7 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
         List<String> annotationToRemoveList = (List<String>) data.getExtendedDataEntry(ANNOTATIONS_KEY);
         String[] annotationToRemove = annotationToRemoveList.toArray(String[]::new);
         String label = getLabel(annotationToRemove);
-        ChangeCorrectionProposal proposal = new RemoveAnnotationProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, context.getCoveredNode().getParent(), annotationToRemove);
+        ChangeCorrectionProposal proposal = new RemoveAnnotationProposal(label, context.getCompilationUnit(), context.getASTRoot(), parentType, 0, getDeclaringNode(context), annotationToRemove);
 
         try {
             toResolve.setEdit(context.convertToWorkspaceEdit(proposal));
@@ -113,6 +113,17 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
         }
 
         return toResolve;
+    }
+
+    /**
+     * Returns the declaring node for the annotation to be removed.
+     * Can be overridden by subclasses to provide a different node.
+     *
+     * @param context The resolve context
+     * @return The declaring node
+     */
+    protected ASTNode getDeclaringNode(JavaCodeActionResolveContext context) {
+        return context.getCoveredNode().getParent();
     }
 
     /**
@@ -209,5 +220,5 @@ public abstract class RemoveAnnotationConflictQuickFix implements IJavaCodeActio
      *
      * @return the id for this code action
      */
-    protected abstract ICodeActionId getCodeActionId();
+    protected abstract JakartaCodeActionId getCodeActionId();
 }

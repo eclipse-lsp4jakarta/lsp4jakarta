@@ -23,6 +23,9 @@ public enum SnippetContentType {
     @SerializedName("class")
     CLASS, //
 
+    @SerializedName("before-class")
+    BEFORE_CLASS, //
+
     @SerializedName("method")
     METHOD, //
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2025 IBM Corporation and others.
+* Copyright (c) 2023, 2026 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -50,14 +50,43 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> beanValidationSnippet = findByPrefix("@Email", registry);
         assertTrue("@Email Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
 
+        Optional<Snippet> constraintAnnotation = findByPrefix("validation_constraint_annotation", registry);
+        assertTrue("validation_constraint_annotation Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
+
+        Optional<Snippet> constraintValidator = findByPrefix("validation_constraint_validator", registry);
+        assertTrue("validation_constraint_validator Java snippet is not present in SnippetRegistry", beanValidationSnippet.isPresent());
+
         snippetsContextTest(beanValidationSnippet, "jakarta.validation.constraints.Email",
                             JavaCursorContextKind.BEFORE_METHOD);
+        snippetsContextTest(constraintAnnotation, "jakarta.validation.Constraint",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(constraintValidator, "jakarta.validation.ConstraintValidator",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+
+    }
+
+    /**
+     * Jakarta EJB snippets - @MessageDriven, Timer Service (programmatic)
+     */
+    @Test
+    public void ejbSnippetsTest() {
+        Optional<Snippet> ejbSnippet = findByPrefix("ejb_messagedriven_bean", registry);
+        assertTrue("ejb_messagedriven_bean Java snippet is not present in SnippetRegistry", ejbSnippet.isPresent());
+
+        Optional<Snippet> ejbTimerProgrammaticSnippet = findByPrefix("ejb_timer_programmatic", registry);
+        assertTrue("ejb_timer_programmatic Java snippet is not present in SnippetRegistry", ejbTimerProgrammaticSnippet.isPresent());
+
+        snippetsContextTest(ejbSnippet, "jakarta.jms.MessageListener",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(ejbTimerProgrammaticSnippet, "jakarta.ejb.TimerService",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
 
     }
 
     /**
      * Jakarta Persistence snippets. - persist_context, persist_context_extended,
-     * persist_context_extended_unsync, persist_entity.
+     * persist_context_extended_unsync, persist_entity, persist_named_entitygraph,
+     * persist_entity_listener, persist_named_query.
      */
     @Test
     public void persistenceSnippetsTest() {
@@ -76,6 +105,15 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> persistEntitySnippet = findByPrefix("persist_entity", registry);
         assertTrue("persist_entity Java snippet is not present in SnippetRegistry", persistEntitySnippet.isPresent());
 
+        Optional<Snippet> persistNamedEntityGraphSnippet = findByPrefix("persist_named_entitygraph", registry);
+        assertTrue("persist_named_entitygraph Java snippet is not present in SnippetRegistry", persistNamedEntityGraphSnippet.isPresent());
+
+        Optional<Snippet> persistEntityListener = findByPrefix("persist_entity_listener", registry);
+        assertTrue("persist_entity_listener Java snippet is not present in SnippetRegistry", persistEntityListener.isPresent());
+
+        Optional<Snippet> persistNamedQuerySnippet = findByPrefix("persist_named_query", registry);
+        assertTrue("persist_named_query Java snippet is not present in SnippetRegistry", persistNamedQuerySnippet.isPresent());
+
         snippetsContextTest(persistContextSnippet, "jakarta.persistence.PersistenceContextType",
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistContextExtendedSnippet, "jakarta.persistence.PersistenceContextType",
@@ -83,20 +121,23 @@ public class JakartaSnippetRegistryTest {
         snippetsContextTest(persistContextExtendedunsyncSnippet, "jakarta.persistence.PersistenceContextType",
                             JavaCursorContextKind.BEFORE_METHOD);
         snippetsContextTest(persistEntitySnippet, "jakarta.persistence.Entity", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(persistNamedEntityGraphSnippet, "jakarta.persistence.NamedEntityGraph", JavaCursorContextKind.BEFORE_CLASS);
+        snippetsContextTest(persistEntityListener, "jakarta.persistence.EntityListeners", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(persistNamedQuerySnippet, "jakarta.persistence.NamedQuery", JavaCursorContextKind.BEFORE_CLASS);
 
     }
 
     /**
-     * Jakarta RESTful Web Services snippets - rest_class, rest_get
+     * Jakarta RESTful Web Services snippets - jakarta_rest_class, jakarta_rest_get
      * rest_post, rest_put, rest_delete, rest_head
      */
     @Test
     public void restfulWebServicesSnippetsPrefixTest() {
-        Optional<Snippet> restClassSnippet = findByPrefix("rest_class", registry);
-        assertTrue("rest_class Java snippet is not present in SnippetRegistry", restClassSnippet.isPresent());
+        Optional<Snippet> restClassSnippet = findByPrefix("jakarta_rest_class", registry);
+        assertTrue("jakarta_rest_class Java snippet is not present in SnippetRegistry", restClassSnippet.isPresent());
 
-        Optional<Snippet> restGetSnippet = findByPrefix("rest_get", registry);
-        assertTrue("rest_get Java snippet is not present in SnippetRegistry", restGetSnippet.isPresent());
+        Optional<Snippet> restGetSnippet = findByPrefix("jakarta_rest_get", registry);
+        assertTrue("jakarta_rest_get Java snippet is not present in SnippetRegistry", restGetSnippet.isPresent());
 
         Optional<Snippet> restPostSnippet = findByPrefix("rest_post", registry);
         assertTrue("rest_post Java snippet is not present in SnippetRegistry", restPostSnippet.isPresent());
@@ -121,8 +162,20 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
+     * Jakarta RESTful Web Services RestClient snippets - rest_client_class,
+     * rest_client_simple, rest_client_get, rest_client_post
+     */
+    @Test
+    public void restfulWebServicesRestClientSnippetsTest() {
+        Optional<Snippet> restClientClassSnippet = findByPrefix("rest_client_class", registry);
+        assertTrue("rest_client_class Java snippet is not present in SnippetRegistry", restClientClassSnippet.isPresent());
+
+        snippetsContextTest(restClientClassSnippet, "jakarta.ws.rs.client.Client", JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
+    /**
      * Jakarta Servlet snippets - servlet_generic, servlet_doget
-     * servlet_dopost, servlet_webfilter
+     * servlet_dopost, servlet_webfilter, servlet_security
      */
     @Test
     public void ServletSnippetsTest() {
@@ -138,6 +191,15 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> servletWebFilterSnippet = findByPrefix("servlet_webfilter", registry);
         assertTrue("servlet_webfilter Java snippet is not present in SnippetRegistry",
                    servletWebFilterSnippet.isPresent());
+        Optional<Snippet> servletMultipartConfigSnippet = findByPrefix("servlet_multipartconfig", registry);
+        assertTrue("servlet_multipartconfig Java snippet is not present in SnippetRegistry",
+                   servletMultipartConfigSnippet.isPresent());
+        Optional<Snippet> servletWebListenerSnippet = findByPrefix("servlet_weblistener", registry);
+        assertTrue("servlet_weblistener Java snippet is not present in SnippetRegistry",
+                   servletWebListenerSnippet.isPresent());
+        Optional<Snippet> servletServletSecuritySnippet = findByPrefix("servlet_security", registry);
+        assertTrue("servletsecurity Java snippet is not present in SnippetRegistry",
+                   servletServletSecuritySnippet.isPresent());
 
         snippetsContextTest(servletGenericSnippet, "jakarta.servlet.GenericServlet",
                             JavaCursorContextKind.IN_EMPTY_FILE);
@@ -146,7 +208,22 @@ public class JakartaSnippetRegistryTest {
         snippetsContextTest(servletDoPostSnippet, "jakarta.servlet.http.HttpServlet",
                             JavaCursorContextKind.IN_EMPTY_FILE);
         snippetsContextTest(servletWebFilterSnippet, "jakarta.servlet.Filter", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(servletMultipartConfigSnippet, "jakarta.servlet.http.HttpServlet", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(servletWebListenerSnippet, "jakarta.servlet.ServletContextListener", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(servletServletSecuritySnippet, "jakarta.servlet.http.HttpServlet", JavaCursorContextKind.IN_EMPTY_FILE);
+    }
 
+    /**
+     * Jakarta Servlet - DataSourceDefinition snippet
+     */
+    @Test
+    public void dataSourceDefinitionSnippetTest() {
+        Optional<Snippet> dataSourceSnippet = findByPrefix("servlet_datasource_definition", registry);
+        assertTrue("servlet_datasource_definition Java snippet is not present in SnippetRegistry",
+                   dataSourceSnippet.isPresent());
+
+        snippetsContextTest(dataSourceSnippet, "jakarta.annotation.sql.DataSourceDefinition",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
     /**
@@ -175,9 +252,9 @@ public class JakartaSnippetRegistryTest {
 
     @Test
     public void websocketSnippetsTest() {
-        Optional<Snippet> wsServerSnippet = findByPrefix("server_endpoint", registry);
-        Optional<Snippet> wsClientSnippet = findByPrefix("client_endpoint", registry);
-        Optional<Snippet> wsProgrammaticSnippet = findByPrefix("programmatic_endpoint", registry);
+        Optional<Snippet> wsServerSnippet = findByPrefix("websocket_server_endpoint", registry);
+        Optional<Snippet> wsClientSnippet = findByPrefix("websocket_client_endpoint", registry);
+        Optional<Snippet> wsProgrammaticSnippet = findByPrefix("websocket_programmatic_endpoint", registry);
 
         assertTrue("server_endpoint Java snippet is not present in SnippetRegistry", wsServerSnippet.isPresent());
         assertTrue("client_endpoint Java snippet is not present in SnippetRegistry", wsClientSnippet.isPresent());
@@ -190,6 +267,52 @@ public class JakartaSnippetRegistryTest {
         snippetsContextTest(wsProgrammaticSnippet, "jakarta.websocket.Endpoint",
                             JavaCursorContextKind.IN_EMPTY_FILE);
 
+    }
+
+    /**
+     * Jakarta Interceptor snippet test - interceptor_class
+     */
+    @Test
+    public void InterceptorSnippetsTest() {
+        Optional<Snippet> interceptorAnnotationSnippet = findByPrefix("interceptor_class", registry);
+        assertTrue("interceptor_class Java snippet is not present in SnippetRegistry", interceptorAnnotationSnippet.isPresent());
+
+        snippetsContextTest(interceptorAnnotationSnippet, "jakarta.interceptor.Interceptor",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
+    /**
+     * Jakarta binding snippets test case- @Qualifier, @Scope
+     */
+    @Test
+    public void DISnippetsTest() {
+        Optional<Snippet> diQualifierAnnotationSnippet = findByPrefix("di_qualifier", registry);
+        Optional<Snippet> diScopeAnnotationSnippet = findByPrefix("di_scope_annotation", registry);
+
+        assertTrue("di_qualifier Java snippet is not present in SnippetRegistry", diQualifierAnnotationSnippet.isPresent());
+        assertTrue("di_scope_annotation Java snippet is not present in SnippetRegistry", diScopeAnnotationSnippet.isPresent());
+
+        snippetsContextTest(diQualifierAnnotationSnippet, "jakarta.inject.Qualifier",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(diScopeAnnotationSnippet, "jakarta.inject.Scope",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+    }
+
+    /**
+     * Jakarta Faces snippet test - faces_behavior, faces_flowscoped
+     */
+    @Test
+    public void FacesSnippetsTest() {
+        Optional<Snippet> facesBehaviorSnippet = findByPrefix("faces_behavior", registry);
+        assertTrue("faces_behavior Java snippet is not present in SnippetRegistry", facesBehaviorSnippet.isPresent());
+
+        Optional<Snippet> facesFlowScopedSnippet = findByPrefix("faces_flowscoped", registry);
+        assertTrue("faces_flowscoped Java snippet is not present in SnippetRegistry", facesFlowScopedSnippet.isPresent());
+
+        snippetsContextTest(facesBehaviorSnippet, "jakarta.faces.component.behavior.ClientBehaviorBase",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(facesFlowScopedSnippet, "jakarta.faces.flow.FlowScoped",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
     // Verify whether the snippet is present in the registry.

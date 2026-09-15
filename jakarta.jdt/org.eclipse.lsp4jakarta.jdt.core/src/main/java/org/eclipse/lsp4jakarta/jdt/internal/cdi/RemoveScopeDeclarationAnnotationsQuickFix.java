@@ -48,7 +48,7 @@ public class RemoveScopeDeclarationAnnotationsQuickFix extends RemoveAnnotationC
      * {@inheritDoc}
      */
     @Override
-    protected ICodeActionId getCodeActionId() {
+    protected JakartaCodeActionId getCodeActionId() {
         return JakartaCodeActionId.CDIRemoveScopeDeclarationAnnotationsButOne;
     }
 
