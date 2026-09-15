@@ -1,58 +1,38 @@
 package org.eclipse.lsp4jakarta.ls.version;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JakartaVersionFinder {
 
-    public static JakartaVersion analyzeClasspath(List<String> entries) {
-
-        // Regex to match JAR names and versions: matches "name-version.jar"
+    public static List<JakartaVersion> analyzeClasspathVersions(List<String> entries) {
+        List<JakartaVersion> detectedVersions = new ArrayList<>();
         Pattern jarPattern = Pattern.compile("([^/\\\\]+)-([0-9\\.]+[^/\\\\]*)\\.jar$");
 
-        JakartaVersion detectedVersion = JakartaVersion.UNKNOWN;
-
         for (String line : entries) {
-            System.out.println("Classpath entry: " + line);
-
-            if (line.isEmpty() || !line.endsWith(".jar"))
+            if (line.isEmpty() || !line.endsWith(".jar")) {
                 continue;
+            }
 
             Matcher matcher = jarPattern.matcher(line);
-            if (matcher.find()) {
-                String artifactName = matcher.group(1);
-                String version = matcher.group(2);
+            if (!matcher.find()) {
+                continue;
+            }
 
-                // Priority 1: Check for the Jakarta EE Platform base Jar
-                if (artifactName.contains("jakartaee-api") || artifactName.contains("jakartaee-web-api")
-                    || artifactName.contains("jakartaee-core-api")) {
-                    JakartaVersion v = getBaseVersion(version);
-                    if (v.getLevel() > detectedVersion.getLevel()) {
-                        detectedVersion = v;
+            String artifactName = matcher.group(1);
+            String version = matcher.group(2);
+            JakartaVersion baseVersion = getBaseVersion(version);
+            JakartaVersion moduleVersion = getModuleVersion(artifactName, version);
+            JakartaVersion detectedVersion = baseVersion.getLevel() >= moduleVersion.getLevel() ? baseVersion : moduleVersion;
 
-                    }
-                }
-
-                // Prority 2: check module version
-                JakartaVersion moduleVersion = getModuleVersion(artifactName, version);
-                if (moduleVersion.getLevel() > detectedVersion.getLevel()) {
-                    detectedVersion = moduleVersion;
-
-                }
+            if (detectedVersion != JakartaVersion.UNKNOWN && !detectedVersions.contains(detectedVersion)) {
+                detectedVersions.add(detectedVersion);
             }
         }
 
-        if (detectedVersion.equals(JakartaVersion.UNKNOWN)) {
-            System.out.println("UNKNOWN version : fall back to JEE9");
-            detectedVersion = JakartaVersion.EE_9;
-        }
-
-        System.out.println("------------------------------------------------------------------");
-        System.out.println("Identified Platform Version: " + detectedVersion.getLabel() + "-" + detectedVersion.getLevel());
-        System.out.println("------------------------------------------------------------------");
-
-        return detectedVersion;
+        return detectedVersions;
     }
 
     private static JakartaVersion getBaseVersion(String version) {

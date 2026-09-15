@@ -109,8 +109,6 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
         return document.executeIfInJakartaProject((projectInfo, cancelChecker) -> {
             JakartaJavaCompletionParams javaParams = new JakartaJavaCompletionParams(params.getTextDocument().getUri(), params.getPosition());
-            // getting jakarta version from version manager.
-            int jakartaVersion = JakartaVersionManager.getInstance().getVersion(params.getTextDocument().getUri(), projectInfo.getClassPath()).getLevel();
             // get the completion capabilities from the java language server component
             CompletableFuture<JakartaJavaCompletionResult> javaParticipantCompletionsFuture = jakartaLanguageServer.getLanguageClient().getJavaCompletion(javaParams);
 
@@ -261,9 +259,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     }, diagnosticsExecutor);
                     return null;
                 }
-                // check classpath and find the list of available jakarta versions
-                List<String> versions = JakartaVersionManager.getAvailableVersions();
-                if (versions != null && versions.size() == 1) {
+                List<String> versions = JakartaVersionManager.getInstance().getAvailableVersions(projectUri, projectInfo.getClassPath());
+                if (versions.size() == 1) {
                     VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
                     boolean written = JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
@@ -308,7 +305,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
                 if (selectedVersion != null) {
                     // Create VersionData object
-                    VersionData versionData = new VersionData(selectedVersion, "selected", JakartaVersionManager.getAvailableVersions());
+                    VersionData versionData = new VersionData(selectedVersion, "selected", List.of(selectedVersion));
 
                     // Store in memory cache
                     projectVersions.put(projectUri, versionData);
@@ -528,9 +525,8 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 existingRequest.cancel(true);
                 LOGGER.info("Cancelled in-flight version request for project: " + projectUri);
             }
-            // check classpath and find the list of available jakarta versions
-            List<String> versions = JakartaVersionManager.getAvailableVersions();
-            if (versions != null && versions.size() == 1) {
+            List<String> versions = JakartaVersionManager.getInstance().getAvailableVersions(projectUri);
+            if (versions.size() == 1) {
                 VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
                 boolean written = JakartaVersionManager.writeVersion(projectUri, versionInfo);
                 projectVersions.put(projectUri, versionInfo);
