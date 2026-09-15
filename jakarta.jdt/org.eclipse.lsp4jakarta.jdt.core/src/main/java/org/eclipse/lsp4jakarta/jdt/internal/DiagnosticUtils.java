@@ -31,6 +31,8 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.version.JakartaDiagnostic;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
 
 /**
  *
@@ -340,5 +342,11 @@ public class DiagnosticUtils {
      */
     public static boolean isValidLevel1URI(String uriString) {
         return uriString.matches(LEVEL1_URI_REGEX);
+    }
+
+    public static boolean isApplicable(String code, JakartaVersion jakartaVersion) {
+        JakartaDiagnostic diagnostic = JakartaDiagnostic.getByCodeOrNull(code);
+
+        return false;
     }
 }

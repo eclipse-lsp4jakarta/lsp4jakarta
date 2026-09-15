@@ -17,6 +17,8 @@ package org.eclipse.lsp4jakarta.commons;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
+
 /**
  * Stores labels for the project located at a specific project uri
  * Modified from https://github.com/eclipse/lsp4mp/blob/master/microprofile.ls/org.eclipse.lsp4mp.ls/src/main/java/org/eclipse/lsp4mp/commons/ProjectLabelInfoEntry.java
@@ -25,16 +27,18 @@ import java.util.List;
  *
  */
 public class ProjectLabelInfoEntry {
-    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList());
+    public static final ProjectLabelInfoEntry EMPTY_PROJECT_INFO = new ProjectLabelInfoEntry("", "", Collections.emptyList(), JakartaVersion.UNKNOWN);
 
     private final String uri;
     private final String name;
     private final List<String> labels;
+    private final JakartaVersion jakartaVersion;
 
-    public ProjectLabelInfoEntry(String uri, String name, List<String> labels) {
+    public ProjectLabelInfoEntry(String uri, String name, List<String> labels, JakartaVersion jakartaVersion) {
         this.uri = uri;
         this.name = name;
         this.labels = labels;
+        this.jakartaVersion = jakartaVersion;
     }
 
     /**
@@ -77,4 +81,9 @@ public class ProjectLabelInfoEntry {
         //return truth;
         return labels != null && labels.contains(label);
     }
+
+    public JakartaVersion getJakartaVersion() {
+        return jakartaVersion;
+    }
+
 }

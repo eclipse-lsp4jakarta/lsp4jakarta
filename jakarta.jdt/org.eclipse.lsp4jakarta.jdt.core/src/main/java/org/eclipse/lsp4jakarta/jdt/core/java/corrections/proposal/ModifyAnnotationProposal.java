@@ -401,11 +401,11 @@ public class ModifyAnnotationProposal extends InsertAnnotationProposal {
     }
 
     private List<MemberValuePair> addNewAttributes(AST ast, List<MemberValuePair> values) {
-    	// Add new attributes of type String or Class.
-    	// For initial values, we use empty strings for String types and Object.class for Class types,
-    	// since the user's intended values are unknown at this stage,
-    	// These placeholders (e.g., name = "", type = Object.class) must be updated by the user as needed.
-    	// when an annotation in Jakarta EE declares an attribute named type, it’s always of the form of Class<?>
+        // Add new attributes of type String or Class.
+        // For initial values, we use empty strings for String types and Object.class for Class types,
+        // since the user's intended values are unknown at this stage,
+        // These placeholders (e.g., name = "", type = Object.class) must be updated by the user as needed.
+        // when an annotation in Jakarta EE declares an attribute named type, it’s always of the form of Class<?>
 
         for (String newAttr : this.attributesToAdd) {
             if (values.stream().noneMatch(v -> v.getName().toString().equals(newAttr))) {

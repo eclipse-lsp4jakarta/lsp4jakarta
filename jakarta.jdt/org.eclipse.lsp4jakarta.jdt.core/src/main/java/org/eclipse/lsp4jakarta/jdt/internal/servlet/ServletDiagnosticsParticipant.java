@@ -19,7 +19,9 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.lsp4j.Diagnostic;
@@ -34,6 +36,8 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
+import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 /**
  * Servlet diagnostic participant.
@@ -55,6 +59,11 @@ public class ServletDiagnosticsParticipant implements IJavaDiagnosticsParticipan
         if (unit == null) {
             return diagnostics;
         }
+        //--------------------
+        IJavaProject javaProject = context.getJavaProject();
+        IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
+        JakartaVersion jakartaVersion = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(),javaProject, entries);
+        //---------------------
         IType[] alltypes;
         IAnnotation[] allAnnotations;
 

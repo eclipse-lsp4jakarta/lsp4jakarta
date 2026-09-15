@@ -48,6 +48,8 @@ import org.eclipse.lsp4jakarta.commons.JakartaJavaCompletionResult;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextResult;
+import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.TextDocument;
 import org.eclipse.lsp4jakarta.ls.commons.ValidatorDelayer;
@@ -59,6 +61,9 @@ import org.eclipse.lsp4jakarta.settings.JakartaTraceSettings;
 import org.eclipse.lsp4jakarta.settings.SharedSettings;
 import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4jakarta.snippets.SnippetContextForJava;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
+import org.eclipse.lsp4jakarta.version.JakartaVersionFinder;
+import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 public class JakartaTextDocumentService implements TextDocumentService {
 
@@ -92,6 +97,10 @@ public class JakartaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
 
+        LOGGER.info("uri-----" + params.getTextDocument().getUri());
+        //JakartaVersion v = JakartaVersionFinder.analyzeClasspath(params.getTextDocument().getUri());
+        //System.out.println("Jakarta  version--------v-------" + v.getLabel());
+
         JakartaTextDocument document = documents.get(params.getTextDocument().getUri());
 
         return document.executeIfInJakartaProject((projectInfo, cancelChecker) -> {
@@ -114,6 +123,9 @@ public class JakartaTextDocumentService implements TextDocumentService {
             boolean snippetsSupported = sharedSettings.getCompletionCapabilities().isCompletionSnippetsSupported();
 
             cancelChecker.checkCanceled();
+
+            JakartaVersion ver = projectInfo.getJakartaVersion();
+            LOGGER.info("ver-----" + ver);
 
             return javaParticipantCompletionsFuture.thenApply((completionResult) -> {
                 cancelChecker.checkCanceled();
@@ -294,5 +306,12 @@ public class JakartaTextDocumentService implements TextDocumentService {
     public void updateTraceSettings(JakartaTraceSettings newTrace) {
         JakartaTraceSettings trace = sharedSettings.getTraceSettings();
         trace.update(newTrace);
+    }
+
+    /**
+     * Clear version handling Map
+     */
+    public void clearVersionCache() {
+        JakartaVersionManager.getInstance().clearVersions();
     }
 }

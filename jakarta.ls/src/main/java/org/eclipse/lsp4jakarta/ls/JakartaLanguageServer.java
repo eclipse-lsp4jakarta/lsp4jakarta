@@ -139,6 +139,7 @@ public class JakartaLanguageServer implements LanguageServer, ProcessLanguageSer
     public CompletableFuture<Object> shutdown() {
         // Perform some clean up. During shutdown, TextDocumentService.didClose() may not be called properly.
         textDocumentService.cleanDiagnostics();
+        textDocumentService.clearVersionCache();
 
         // If requested by the client, on shutdown (i.e. last file closed), shutdown the language server.
         if (capabilityManager.getClientCapabilities().shouldLanguageServerExitOnShutdown()) {
