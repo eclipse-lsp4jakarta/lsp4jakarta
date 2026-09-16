@@ -11,7 +11,7 @@ import jakarta.enterprise.inject.Specializes;
  */
 @Specializes
 @ApplicationScoped
-public class ValidSpecializedBean {
+public class ValidSpecializedBean extends BaseServiceWithScope{
 
     public String greet() {
         return "Hello from ValidSpecializedBean";

@@ -82,24 +82,6 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                                                                                Constants.DECORATOR_FQ_NAME
             }).isEmpty();
 
-            // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization
-            // A specialized bean must not declare an explicit bean name using @Named.
-            // The name is inherited from the bean it specializes.
-            boolean isSpecializes = !DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                new String[] { Constants.SPECIALIZES_FQ_NAME }).isEmpty();
-            if (isSpecializes) {
-                for (IAnnotation annotation : type.getAnnotations()) {
-                    if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
-                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("SpecializedBeanWithNamedAnnotation", type.getElementName()), range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, null,
-                                                                 ErrorCode.InvalidSpecializedBeanWithNamedAnnotation, DiagnosticSeverity.Error));
-                        break;
-                    }
-                }
-            }
-
             boolean isManagedBean = managedBeanAnnotations.size() > 0;
             boolean isDependent = managedBeanAnnotations.stream().anyMatch(annotation -> Constants.DEPENDENT_FQ_NAME.equals(annotation));
             boolean hasMultipleScopes = managedBeanAnnotations.size() > 1;

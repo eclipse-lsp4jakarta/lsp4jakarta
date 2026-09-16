@@ -13,7 +13,9 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
@@ -22,6 +24,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeParameter;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -35,16 +39,17 @@ import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
- * CDI diagnostics participant that detects wildcard types in bean types.
+ * CDI diagnostics participant that detects illegal bean types related to wildcards and
+ * type variables in producer methods, producer fields, and injection points.
  *
- * According to CDI specification section 2.2.1:
- * "A parameterized type that contains a wildcard type parameter is not a legal bean type."
- *
- * This applies to:
- * - Injection points (@Inject fields and method parameters)
- * - Producer methods (@Produces methods)
- * - Producer fields (@Produces fields)
- * - Arrays whose component type contains wildcards
+ * <p>Rules enforced (CDI 3.0 spec sections 2.2.1, 3.2, and 3.3):
+ * <ul>
+ * <li>A parameterized type containing a wildcard is not a legal bean type.</li>
+ * <li>A producer method/field whose type is a bare type variable (e.g. {@code T}) or
+ * an array of one (e.g. {@code T[]}) is always a definition error.</li>
+ * <li>A producer method/field whose type is a parameterized type with a type variable
+ * (e.g. {@code List<T>}) must declare scope {@code @Dependent}.</li>
+ * </ul>
  */
 public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -62,73 +67,57 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
             return diagnostics;
         }
 
-        IType[] types = unit.getAllTypes();
-        for (IType type : types) {
-            // Check fields with @Inject and @Produces annotations
+        String[] scopeFQNames = Constants.SCOPE_FQ_NAMES.toArray(String[]::new);
+
+        for (IType type : unit.getAllTypes()) {
+            // Hoisted once per type — used by both field and method branches.
+            Set<String> typeParamNames = getTypeParameterNames(type);
+
             for (IField field : type.getFields()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
 
-                // Use if-else since @Inject and @Produces don't appear on the same field
-                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
-                    String typeSignature = field.getTypeSignature();
-                    if (containsWildcard(typeSignature)) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
+                if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
+                    if (containsWildcard(field.getTypeSignature())) {
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidWildcardTypeInInjectField"),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 null,
+                                                                 Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectField.name()),
+                                                                 PositionUtils.toNameRange(field, context.getUtils()),
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidWildcardTypeInInjectField,
                                                                  DiagnosticSeverity.Error));
                     }
-                } else if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
-                    String typeSignature = field.getTypeSignature();
-                    if (containsWildcard(typeSignature)) {
-                        Range range = PositionUtils.toNameRange(field, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidWildcardTypeInProducerField"),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 null,
-                                                                 ErrorCode.InvalidWildcardTypeInProducerField,
-                                                                 DiagnosticSeverity.Error));
-                    }
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
+                    checkProducerMember(context, uri, diagnostics, type, annotationNames,
+                                        field.getTypeSignature(), typeParamNames, scopeFQNames,
+                                        PositionUtils.toNameRange(field, context.getUtils()),
+                                        new ErrorCode[] { ErrorCode.InvalidWildcardTypeInProducerField,
+                                                          ErrorCode.InvalidProducerFieldWithBareTypeVariableType,
+                                                          ErrorCode.InvalidProducerFieldWithTypeVariableAndNonDependentScope });
                 }
             }
 
-            // Check methods with @Inject and @Produces annotations
             for (IMethod method : type.getMethods()) {
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
-                // Use if-else since @Inject and @Produces don't appear on the same method
-                if (hasAnnotation(type, annotationNames, Constants.INJECT_FQ_NAME)) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
                     // Check method parameters for wildcard types
                     String[] parameterTypes = method.getParameterTypes();
                     for (int i = 0; i < parameterTypes.length; i++) {
                         if (containsWildcard(parameterTypes[i])) {
-                            Range range = PositionUtils.toNameRange(method.getParameters()[i], context.getUtils());
                             diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("InvalidWildcardTypeInInjectMethod"),
-                                                                     range,
-                                                                     Constants.DIAGNOSTIC_SOURCE,
-                                                                     null,
-                                                                     ErrorCode.InvalidWildcardTypeInInjectField,
+                                                                     Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectMethod.name()),
+                                                                     PositionUtils.toNameRange(method.getParameters()[i], context.getUtils()),
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidWildcardTypeInInjectMethod,
                                                                      DiagnosticSeverity.Error));
                         }
                     }
-                } else if (hasAnnotation(type, annotationNames, Constants.PRODUCES_FQ_NAME)) {
-                    // Check return type for wildcard types
-                    String returnTypeSignature = method.getReturnType();
-                    if (containsWildcard(returnTypeSignature)) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("InvalidWildcardTypeInProducerMethod"),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE,
-                                                                 null,
-                                                                 ErrorCode.InvalidWildcardTypeInProducerMethod,
-                                                                 DiagnosticSeverity.Error));
-                    }
+                } else if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
+                    checkProducerMember(context, uri, diagnostics, type, annotationNames,
+                                        method.getReturnType(), typeParamNames, scopeFQNames,
+                                        PositionUtils.toNameRange(method, context.getUtils()),
+                                        new ErrorCode[] { ErrorCode.InvalidWildcardTypeInProducerMethod,
+                                                          ErrorCode.InvalidProducerMethodWithBareTypeVariableReturnType,
+                                                          ErrorCode.InvalidProducerMethodWithTypeVariableAndNonDependentScope });
                 }
             }
         }
@@ -137,79 +126,180 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * Checks if an annotation array contains a specific annotation.
+     * Applies the three CDI type-variable rules for a single {@code @Produces} member
+     * (field or method) and appends any violations to {@code diagnostics}.
      *
-     * @param type the type containing the annotations
-     * @param annotationNames array of annotation names to check
-     * @param annotationFQName the fully qualified name of the annotation to match
-     * @return true if the annotation is found, false otherwise
+     * <p>{@code errorCodes[0]} — wildcard in type (always invalid)<br>
+     * {@code errorCodes[1]} — bare type variable or array of one (always invalid)<br>
+     * {@code errorCodes[2]} — parameterized type with type variable and non-{@code @Dependent} scope
+     *
+     * @param context the diagnostics context
+     * @param uri the compilation unit URI
+     * @param diagnostics list to append diagnostics to
+     * @param type the enclosing type (used for annotation resolution)
+     * @param annotationNames the annotation names on the member
+     * @param typeSignature the JDT type signature of the field type / method return type
+     * @param typeParamNames class-level type parameter names (e.g. {@code {"T"}})
+     * @param scopeFQNames fully-qualified scope annotation names to check against
+     * @param range the LSP range for the diagnostic
+     * @param errorCodes three error codes indexed by rule (0 = wildcard, 1 = bare, 2 = scope);
+     *            the message key for each is derived via {@link ErrorCode#name()}
      */
-    private boolean hasAnnotation(IType type, String[] annotationNames, String annotationFQName) {
-        return DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
-                                                          new String[] { annotationFQName }).size() > 0;
+    private void checkProducerMember(JavaDiagnosticsContext context, String uri,
+                                     List<Diagnostic> diagnostics, IType type,
+                                     String[] annotationNames, String typeSignature,
+                                     Set<String> typeParamNames, String[] scopeFQNames,
+                                     Range range, ErrorCode[] errorCodes) throws JavaModelException {
+        // Rule 0: wildcard in type
+        if (containsWildcard(typeSignature)) {
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[0].name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     errorCodes[0], DiagnosticSeverity.Error));
+        }
+
+        if (typeParamNames.isEmpty()) {
+            return;
+        }
+
+        // Rule 1: bare type variable (T or T[]) — always invalid
+        if (isBareTypeVariable(typeSignature, typeParamNames)) {
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[1].name()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     errorCodes[1], DiagnosticSeverity.Error));
+        }
+        // Rule 2: parameterized type with type variable — requires @Dependent scope
+        else if (containsTypeVariable(typeSignature, typeParamNames)) {
+            boolean hasNonDependentScope = DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
+                                                                                      scopeFQNames).stream().anyMatch(s -> !Constants.DEPENDENT_FQ_NAME.equals(s));
+            if (hasNonDependentScope) {
+                diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[2].name()),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         errorCodes[2], DiagnosticSeverity.Error));
+            }
+        }
     }
 
     /**
-     * Checks if a type signature contains a wildcard type parameter.
+     * Returns the set of type parameter names declared on {@code type}
+     * (e.g. {@code {"T", "K", "V"}} for {@code class Foo<T, K, V>}).
      *
-     * This method recursively checks for wildcards in:
-     * - Direct wildcard types (?, ? extends T, ? super T)
-     * - Parameterized types with wildcard arguments (List<?>, Map<String, ?>)
-     * - Array types with wildcard component types (List<?>[], List<?>[][])
-     * - Nested generic types (Map<String, List<?>>)
+     * @param type the enclosing type
+     * @return a possibly-empty set of declared type parameter names
+     * @throws JavaModelException if the JDT model cannot be accessed
+     */
+    private Set<String> getTypeParameterNames(IType type) throws JavaModelException {
+        Set<String> names = new HashSet<>();
+        for (ITypeParameter tp : type.getTypeParameters()) {
+            names.add(tp.getElementName());
+        }
+        return names;
+    }
+
+    /**
+     * Returns {@code true} if {@code typeSignature} is a bare type variable (e.g. {@code T})
+     * or an array whose ultimate element type is a type variable (e.g. {@code T[]}).
      *
-     * Wildcards in Java type signatures are represented as:
-     * - '*' for unbounded wildcard (?)
-     * - '+' for upper bounded wildcard (? extends)
-     * - '-' for lower bounded wildcard (? super)
+     * <p>JDT source files use source-qualified references ({@code QT;}) for unresolved type
+     * parameters, so both the resolved ({@code TT;}) and unresolved ({@code QT;}) forms are
+     * recognised by comparing against {@code typeParamNames}.
      *
-     * @param typeSignature the type signature to check
-     * @return true if the signature contains a wildcard, false otherwise
+     * <p>Examples (assuming the enclosing class declares {@code <T>}):
+     * <ul>
+     * <li>{@code TT;} (resolved type variable) — returns {@code true}</li>
+     * <li>{@code QT;} (unresolved type variable) — returns {@code true}</li>
+     * <li>{@code [TT;} (array of type variable, i.e. {@code T[]}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<TT;>;} (parameterized, e.g. {@code List<T>}) — returns {@code false}</li>
+     * <li>{@code Ljava/lang/String;} (concrete type) — returns {@code false}</li>
+     * </ul>
+     *
+     * @param typeSignature the JDT type signature to check
+     * @param typeParamNames the class-level declared type parameter names
+     * @return {@code true} if the signature is a bare type variable or array of one
+     */
+    private boolean isBareTypeVariable(String typeSignature, Set<String> typeParamNames) {
+        if (typeSignature == null || typeSignature.isEmpty()) {
+            return false;
+        }
+        int kind = Signature.getTypeSignatureKind(typeSignature);
+        if (kind == Signature.TYPE_VARIABLE_SIGNATURE) {
+            return true;
+        }
+        if (kind == Signature.CLASS_TYPE_SIGNATURE) {
+            return typeParamNames.contains(Signature.getSignatureSimpleName(typeSignature));
+        }
+        if (kind == Signature.ARRAY_TYPE_SIGNATURE) {
+            return isBareTypeVariable(Signature.getElementType(typeSignature), typeParamNames);
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if {@code typeSignature} is a parameterized type that contains
+     * at least one type variable in its type arguments (recursively).
+     *
+     * <p>Examples (assuming the enclosing class declares {@code <T>}):
+     * <ul>
+     * <li>{@code Ljava/util/List<TT;>;} ({@code List<T>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/Map<Ljava/lang/String;TT;>;} ({@code Map<String, T>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<Ljava/util/Set<TT;>;>;} (nested, {@code List<Set<T>>}) — returns {@code true}</li>
+     * <li>{@code TT;} (bare type variable, not parameterized) — returns {@code false}</li>
+     * <li>{@code Ljava/util/List<Ljava/lang/String;>;} ({@code List<String>}) — returns {@code false}</li>
+     * </ul>
+     *
+     * @param typeSignature the JDT type signature to check
+     * @param typeParamNames the class-level declared type parameter names
+     * @return {@code true} if the signature is a parameterized type containing a type variable
+     */
+    private boolean containsTypeVariable(String typeSignature, Set<String> typeParamNames) {
+        if (typeSignature == null || typeSignature.isEmpty()) {
+            return false;
+        }
+        if (Signature.getTypeSignatureKind(typeSignature) == Signature.CLASS_TYPE_SIGNATURE) {
+            for (String typeArg : Signature.getTypeArguments(typeSignature)) {
+                if (isBareTypeVariable(typeArg, typeParamNames) || containsTypeVariable(typeArg, typeParamNames)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if {@code typeSignature} contains a wildcard type parameter
+     * ({@code ?}, {@code ? extends}, or {@code ? super}) anywhere in the type tree.
+     *
+     * <p>Examples:
+     * <ul>
+     * <li>{@code Ljava/util/List<*>;} ({@code List<?>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<+Ljava/lang/Number;>;} ({@code List<? extends Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<-Ljava/lang/Number;>;} ({@code List<? super Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Number;>;} ({@code Map<String, ? extends Number>}) — returns {@code true}</li>
+     * <li>{@code Ljava/util/List<Ljava/lang/String;>;} ({@code List<String>}) — returns {@code false}</li>
+     * <li>{@code [Ljava/util/List<*>;} (array of {@code List<?>}) — returns {@code true}</li>
+     * </ul>
+     *
+     * @param typeSignature the JDT type signature to check
+     * @return {@code true} if the signature contains a wildcard
      */
     private boolean containsWildcard(String typeSignature) {
         if (typeSignature == null || typeSignature.isEmpty()) {
             return false;
         }
-
-        // Check for array types - need to check the component type
-        if (Signature.getTypeSignatureKind(typeSignature) == Signature.ARRAY_TYPE_SIGNATURE) {
-            String elementType = Signature.getElementType(typeSignature);
-            return containsWildcard(elementType);
+        int kind = Signature.getTypeSignatureKind(typeSignature);
+        if (kind == Signature.ARRAY_TYPE_SIGNATURE) {
+            return containsWildcard(Signature.getElementType(typeSignature));
         }
-
-        // Check for parameterized types
-        if (Signature.getTypeSignatureKind(typeSignature) == Signature.CLASS_TYPE_SIGNATURE) {
-            String[] typeArguments = Signature.getTypeArguments(typeSignature);
-            for (String typeArg : typeArguments) {
-                // Check if this type argument is a wildcard
-                if (isWildcardSignature(typeArg)) {
+        if (kind == Signature.CLASS_TYPE_SIGNATURE) {
+            for (String typeArg : Signature.getTypeArguments(typeSignature)) {
+                char first = typeArg.charAt(0);
+                if (first == Signature.C_STAR || first == Signature.C_EXTENDS || first == Signature.C_SUPER) {
                     return true;
                 }
-                // Recursively check nested type arguments
                 if (containsWildcard(typeArg)) {
                     return true;
                 }
             }
         }
-
         return false;
-    }
-
-    /**
-     * Checks if a type signature represents a wildcard type.
-     *
-     * @param typeSignature the type signature to check
-     * @return true if the signature is a wildcard, false otherwise
-     */
-    private boolean isWildcardSignature(String typeSignature) {
-        if (typeSignature == null || typeSignature.isEmpty()) {
-            return false;
-        }
-
-        // Wildcard signatures start with '*', '+', or '-'
-        char firstChar = typeSignature.charAt(0);
-        return firstChar == Signature.C_STAR ||
-               firstChar == Signature.C_EXTENDS ||
-               firstChar == Signature.C_SUPER;
     }
 }

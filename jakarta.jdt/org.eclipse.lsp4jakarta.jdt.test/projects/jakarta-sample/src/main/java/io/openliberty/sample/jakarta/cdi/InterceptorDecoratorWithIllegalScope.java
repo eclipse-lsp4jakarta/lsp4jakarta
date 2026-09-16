@@ -10,6 +10,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.ConversationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import io.openliberty.sample.jakarta.cdi.AccountService;
 
 // ========== Valid Interceptors ==========
 
@@ -31,18 +32,18 @@ class ValidInterceptorWithNoScope {
 // Valid decorator with explicit @Dependent scope
 @Decorator
 @Dependent
-class ValidDecoratorWithDependent {
+class ValidDecoratorWithDependent implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // Valid decorator with no scope (defaults to @Dependent)
 @Decorator
-class ValidDecoratorWithNoScope {
+class ValidDecoratorWithNoScope implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // ========== Invalid Interceptors with Built-in Normal Scopes ==========
@@ -74,29 +75,29 @@ class InterceptorWithMultipleIllegalScopes {
 // Invalid decorator with @ApplicationScoped
 @Decorator
 @ApplicationScoped
-class DecoratorWithApplicationScoped {
+class DecoratorWithApplicationScoped implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // Invalid decorator with @SessionScoped
 @Decorator
 @SessionScoped
-class DecoratorWithSessionScoped {
+class DecoratorWithSessionScoped implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // Invalid decorator with multiple scopes including illegal ones
 @Decorator
 @RequestScoped
 @ConversationScoped
-class DecoratorWithMultipleIllegalScopes {
+class DecoratorWithMultipleIllegalScopes implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // ========== Invalid Interceptors/Decorators with Custom Normal Scopes ==========
@@ -111,10 +112,10 @@ class InterceptorWithCustomNormalScope {
 // Invalid decorator with custom normal scope
 @Decorator
 @CustomNormalScope
-class DecoratorWithCustomNormalScope {
+class DecoratorWithCustomNormalScope implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }
 
 // Invalid interceptor with both built-in and custom normal scopes
@@ -129,8 +130,8 @@ class InterceptorWithMixedScopes {
 @Decorator
 @ApplicationScoped
 @CustomNormalScope
-class DecoratorWithMixedScopes {
+class DecoratorWithMixedScopes implements AccountService {
     @Inject
     @Delegate
-    private Object delegate;
+    private AccountService delegate;
 }

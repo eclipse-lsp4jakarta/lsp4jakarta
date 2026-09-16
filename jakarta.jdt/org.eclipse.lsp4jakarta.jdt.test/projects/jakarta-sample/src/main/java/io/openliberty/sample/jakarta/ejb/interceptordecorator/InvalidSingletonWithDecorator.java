@@ -8,10 +8,11 @@ import jakarta.inject.Inject;
 // Invalid: @Singleton with @Decorator
 @Singleton
 @Decorator
-class InvalidSingletonWithDecorator {
+class InvalidSingletonWithDecorator implements EjbDecoratorService {
     @Inject @Delegate
-    private Object delegate;
+    private EjbDecoratorService delegate;
 
+    @Override
     public void businessMethod() {
     }
 }

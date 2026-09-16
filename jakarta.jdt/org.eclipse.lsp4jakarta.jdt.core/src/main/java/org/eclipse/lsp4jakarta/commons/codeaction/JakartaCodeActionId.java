@@ -60,6 +60,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertTemporalAnnotation,
     PersistenceChangeTemporalValue,
     PersistenceRemoveJPAIdentifierConflict,
+    PersistenceRemoveNamedJPAAnnotation,
+    PersistenceInsertEntityAnnotation,
+    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
     WBRemoveAnnotation,
@@ -99,6 +102,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
     CDIRemoveNamedFromSpecializedBean,
+    CDIInsertNotifyEventMethod,
+    CDIInsertNotifyEventContextMethod,
     //Interceptor
     InterceptorRemoveInterceptorMethodAnnotation,
     // Common modifier quick fixes
