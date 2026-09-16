@@ -547,7 +547,9 @@ public class JakartaTextDocumentService implements TextDocumentService {
             // getJavaProjectLabels needs a file URI (not a project URI) — findProject calls
             // utils.findFile(uri) which only resolves files, not directories.
             // Use the first open file that belongs to this project.
-            String fileUri = documents.all().stream().map(TextDocument::getUri).filter(u -> u.startsWith(projectUri)).findFirst().orElse(null);
+            // Document URIs are file:///path URIs; projectUri may be a plain path — normalise both.
+            String normalizedProjectUri = projectUri.startsWith("file://") ? projectUri : "file://" + projectUri;
+            String fileUri = documents.all().stream().map(TextDocument::getUri).filter(u -> u.startsWith(normalizedProjectUri)).findFirst().orElse(null);
 
             if (fileUri == null) {
                 LOGGER.warning("No open file found for project: " + projectUri + ", cannot reset version");

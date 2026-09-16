@@ -104,10 +104,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
         }
 
         //--------------------
-        IJavaProject javaProject = context.getJavaProject();
-        IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
-        List<JakartaVersion> jakartaVersions = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
-        JakartaVersion jakartaVersion = jakartaVersions.isEmpty() ? JakartaVersion.EE_9 : jakartaVersions.get(0);
+        LOGGER.log(Level.SEVERE, "$$$$$$$$$$$ context.getSettings().getSelectedVersion()" + context.getSettings().getSelectedVersion());
         //---------------------
 
         IType[] alltypes;
