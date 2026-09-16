@@ -379,9 +379,8 @@ public class ManagedBean {
      * present on the given annotation's type, or {@code null} if the meta-annotation
      * is absent, the member is missing, or the type cannot be resolved.
      *
-     * <p>Uses {@link #hasMetaAnnotation} as a pre-flight check, then applies the
-     * same CU-selection logic (annotation type's own CU for source types, the
-     * provided {@code cu} for binary types) when reading the attribute value.
+     * <p>The CU-selection logic - annotation type's own CU for source types, the
+     * provided {@code cu} for binary types, when reading the attribute value.
      *
      * @param <T> the expected type of the member value
      * @param annotation the annotation present on the bean class
@@ -396,13 +395,11 @@ public class ManagedBean {
     public static <T> T getMetaAnnotationMemberValue(IAnnotation annotation, IType type, ICompilationUnit cu,
                                                      String metaAnnotationFQN, String memberName,
                                                      Class<T> memberType) throws JavaModelException {
-        if (!hasMetaAnnotation(annotation, type, cu, metaAnnotationFQN)) {
-            return null;
-        }
         IType annotationType = getChildITypeByName(type, annotation.getElementName());
         if (annotationType == null) {
             return null;
         }
+        // Use the annotation type's own compilation unit for source types, fall back to the provided cu for binary types.
         ICompilationUnit annotationCU = annotationType.isBinary() ? cu : annotationType.getCompilationUnit();
         if (annotationCU == null) {
             return null;

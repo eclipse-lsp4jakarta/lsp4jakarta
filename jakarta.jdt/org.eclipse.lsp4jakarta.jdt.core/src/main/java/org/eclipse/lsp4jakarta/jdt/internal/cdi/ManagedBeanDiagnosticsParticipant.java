@@ -583,8 +583,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * Returns {@code true} if the given annotation is a custom passivating scope —
      * i.e. its annotation type is meta-annotated with {@code @NormalScope(passivating=true)}.
      *
-     * <p>Delegates entirely to {@link ManagedBean#getMetaAnnotationMemberValue}, which
-     * handles type resolution, CU selection, and attribute reading in one call.
+     * <p>Delegates to {@link ManagedBean#getMetaAnnotationMemberValue}, which resolves
+     * the annotation type once and reads the {@code passivating} attribute in a single pass.
      *
      * @param annotation the annotation present on the bean class
      * @param type the Java type being validated (used for name resolution)
