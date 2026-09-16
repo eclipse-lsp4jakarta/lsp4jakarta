@@ -57,8 +57,6 @@ public class Constants {
     public static final String NORMAL_SCOPE_FQ_NAME = "jakarta.enterprise.context.NormalScope";
     // Built-in passivating scopes (CDI 3.0 §6.6.4 — @NormalScope(passivating=true))
     public static final String[] BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES = { SESSION_SCOPED_FQ_NAME, CONVERSATION_SCOPED_FQ_NAME };
-    // Serializable interface required by passivation-capable beans (CDI 3.0 §6.6.4)
-    public static final String SERIALIZABLE_FQ_NAME = "java.io.Serializable";
     // Attribute name on @NormalScope that marks a scope as passivating
     public static final String NORMAL_SCOPE_PASSIVATING_ATTR = "passivating";
 

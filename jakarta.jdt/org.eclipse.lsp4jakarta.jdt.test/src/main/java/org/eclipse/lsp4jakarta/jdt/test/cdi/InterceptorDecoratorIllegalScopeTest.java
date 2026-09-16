@@ -84,6 +84,9 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
                                                   "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+        Diagnostic decoratorWithSessionScopedMissingSerializable = d(86, 6, 32,
+                                                                     "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
         // Decorator with multiple scopes (line 97) - THREE diagnostics
         Diagnostic decoratorMultipleScopesDecl = d(96, 6, 40,
@@ -124,10 +127,10 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         decoratorWithMixedScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                              "io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        Diagnostic interceptorWithSessionScopedMissingSerializable = d(60, 6, 34,
+        Diagnostic interceptorWithSessionScopedMissingSerializable = d(61, 6, 34,
                                                                        "A managed bean in a passivating scope must implement java.io.Serializable.",
                                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
-        Diagnostic interceptorWithMultipleScopesMissingSerializable = d(68, 6, 42,
+        Diagnostic interceptorWithMultipleScopesMissingSerializable = d(69, 6, 42,
                                                                         "A managed bean in a passivating scope must implement java.io.Serializable.",
                                                                         DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
