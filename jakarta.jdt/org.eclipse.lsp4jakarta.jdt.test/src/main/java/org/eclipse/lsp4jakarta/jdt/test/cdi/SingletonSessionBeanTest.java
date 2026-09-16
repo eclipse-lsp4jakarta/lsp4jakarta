@@ -91,8 +91,11 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
                                     "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+        Diagnostic missingSerializable = d(9, 13, 38,
+                                           "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, missingSerializable);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");
@@ -177,8 +180,11 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         multipleScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent",
                                                                    "jakarta.enterprise.context.SessionScoped")));
+        Diagnostic missingSerializable = d(10, 13, 50,
+                                           "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, multipleScopes);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, multipleScopes, missingSerializable);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");

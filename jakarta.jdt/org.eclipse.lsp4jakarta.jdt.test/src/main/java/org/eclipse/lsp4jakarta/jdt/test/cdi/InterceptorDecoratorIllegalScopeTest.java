@@ -84,12 +84,18 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
                                                   "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                   DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
         decoratorWithSessionScoped.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+        Diagnostic decoratorWithSessionScopedMissingSerializable = d(86, 6, 32,
+                                                                     "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        // Decorator with multiple scopes (line 97) - TWO diagnostics
+        // Decorator with multiple scopes (line 97) - THREE diagnostics
         Diagnostic decoratorMultipleScopesDecl = d(96, 6, 40,
                                                    "Scope type annotations must be specified by a managed bean class at most once.",
                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         decoratorMultipleScopesDecl.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ConversationScoped", "jakarta.enterprise.context.RequestScoped")));
+        Diagnostic decoratorWithMultipleScopesMissingSerializable = d(96, 6, 40,
+                                                                      "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                      DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
         Diagnostic decoratorWithMultipleScopes = d(96, 6, 40,
                                                    "Interceptors and decorators must be annotated with the @Dependent scope. Any other scope is invalid.",
                                                    DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecorator");
@@ -121,10 +127,20 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         decoratorWithMixedScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                              "io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, interceptorWithAppScoped, interceptorWithSessionScoped,
-                              interceptorMultipleScopesDecl, interceptorWithMultipleScopes, decoratorWithAppScoped, decoratorWithSessionScoped,
-                              decoratorMultipleScopesDecl, decoratorWithMultipleScopes, interceptorWithCustomScope, decoratorWithCustomScope,
-                              interceptorWithMixedScopes, decoratorWithMixedScopes);
+        Diagnostic interceptorWithSessionScopedMissingSerializable = d(61, 6, 34,
+                                                                       "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+        Diagnostic interceptorWithMultipleScopesMissingSerializable = d(69, 6, 42,
+                                                                        "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, decoratorWithMixedScopes, interceptorWithMixedScopes,
+                              decoratorWithCustomScope, interceptorWithCustomScope, decoratorMultipleScopesDecl,
+                              decoratorWithMultipleScopesMissingSerializable, decoratorWithMultipleScopes,
+                              decoratorWithSessionScopedMissingSerializable, decoratorWithSessionScoped, decoratorWithAppScoped,
+                              interceptorMultipleScopesDecl, interceptorWithMultipleScopesMissingSerializable,
+                              interceptorWithMultipleScopes, interceptorWithSessionScopedMissingSerializable,
+                              interceptorWithSessionScoped, interceptorWithAppScoped);
 
         // Test quickfix for interceptor with @ApplicationScoped (line 49)
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, interceptorWithAppScoped);
