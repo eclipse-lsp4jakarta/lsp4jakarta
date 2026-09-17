@@ -14,12 +14,14 @@
 package org.eclipse.lsp4jakarta.jdt.internal.interceptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -43,11 +45,14 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
+import org.eclipse.lsp4jakarta.jdt.internal.search.JakartaSearchSettings;
+import org.eclipse.lsp4jakarta.jdt.internal.search.ProjectWideNameScanner;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import java.util.logging.Level;
@@ -70,6 +75,14 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
         if (unit == null) {
             return diagnostics;
+        }
+        // @AroundConstruct cross-file superclass check
+        // Build the set of non-interceptor ancestor FQNs that are superclasses of some @Interceptor class in another file — only when the file actually
+        // contains a non-interceptor type with @AroundConstruct, and only when the project-wide search feature is enabled.
+        Set<String> interceptorAncestorFqns = Collections.emptySet();
+        if (fileHasNonInterceptorAroundConstruct(unit) && JakartaSearchSettings.SEARCH_ENGINE_DIAGNOSTICS_ENABLED) {
+            Map<String, Integer> ancestorMap = ProjectWideNameScanner.scan(context.getJavaProject(), this::extractInterceptorAncestors, monitor);
+            interceptorAncestorFqns = ancestorMap.keySet();
         }
 
         IType[] types = unit.getAllTypes();
@@ -120,6 +133,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
+            }
+
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, interceptorAncestorFqns);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -478,5 +496,101 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 return false;
             }
         });
+    }
+
+    /**
+     * Returns {@code true} if the file contains at least one non-{@code @Interceptor}
+     * type that has a method annotated with {@code @AroundConstruct}.
+     * Used as a cheap guard before the expensive project-wide scan.
+     *
+     * @param unit the compilation unit to inspect
+     * @return {@code true} if a scan is worth running
+     * @throws JavaModelException on JDT model errors
+     */
+    private boolean fileHasNonInterceptorAroundConstruct(ICompilationUnit unit) throws JavaModelException {
+        for (IType type : unit.getAllTypes()) {
+            if (InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                continue;
+            }
+            for (IMethod method : type.getMethods()) {
+                for (IAnnotation annotation : method.getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * For a given scanned type, if it is annotated with {@code @Interceptor},
+     * walks up its superclass chain and records the FQN of every ancestor that
+     * lives in a different source file than the interceptor class itself.
+     *
+     * <p>These ancestors are the non-interceptor superclasses that are permitted
+     * to declare {@code @AroundConstruct} (Jakarta Interceptors spec 2.0).
+     *
+     * <p>The superclass chain is collected via
+     * {@link TypeHierarchyUtils#collectSuperTypes(IType, Set)}.
+     *
+     * @param scannedType the type currently visited by {@link ProjectWideNameScanner}
+     * @param nameCount accumulator map; key = FQN, value = occurrence count
+     * @throws JavaModelException on JDT model errors
+     */
+    private void extractInterceptorAncestors(IType scannedType, Map<String, Integer> nameCount) throws JavaModelException {
+        // Only process @Interceptor-annotated classes.
+        if (!InterModuleCommonUtils.isInterceptorType(scannedType, scannedType.getCompilationUnit())) {
+            return;
+        }
+        // Collect the full superclass chain using the shared utility.
+        Set<IType> superTypes = new HashSet<>();
+        TypeHierarchyUtils.collectSuperTypes(scannedType, superTypes);
+        // Stream over ancestors, skipping the interceptor itself and same-file types, then merge each qualifying ancestor FQN into the name-count map.
+        ICompilationUnit interceptorUnit = scannedType.getCompilationUnit();
+        superTypes.stream().filter(superType -> !superType.equals(scannedType)).filter(superType -> superType.getCompilationUnit() != null
+                                                                                                    && !superType.getCompilationUnit().equals(interceptorUnit)).forEach(superType -> nameCount.merge(superType.getFullyQualifiedName(),
+                                                                                                                                                                                                     1,
+                                                                                                                                                                                                     Integer::sum));
+    }
+
+    /**
+     * Checks if a non-interceptor class declares a method annotated with
+     * {@code @AroundConstruct}, which is forbidden by the Jakarta Interceptors 2.0
+     * specification. The diagnostic is suppressed when the class is a superclass of
+     * an {@code @Interceptor}-annotated class declared in a different source file
+     * (spec permits {@code @AroundConstruct} in interceptor superclasses).
+     *
+     * @param type the non-interceptor type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param interceptorAncestorFqns FQNs of non-interceptor types that are superclasses
+     *            of an {@code @Interceptor} class in another file
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context,
+                                                   Set<String> interceptorAncestorFqns) throws JavaModelException {
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    // Suppress when this class is a superclass of an @Interceptor in another file.
+                    if (interceptorAncestorFqns.contains(type.getFullyQualifiedName())) {
+                        break;
+                    }
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+        }
     }
 }

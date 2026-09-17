@@ -25,7 +25,7 @@ public class Constants {
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-interceptor";
 
-    private static final String AROUND_CONSTRUCT_FQ_NAME = "jakarta.interceptor.AroundConstruct";
+    public static final String AROUND_CONSTRUCT_FQ_NAME = "jakarta.interceptor.AroundConstruct";
 
     private static final String POST_CONSTRUCT_FQ_NAME = "jakarta.annotation.PostConstruct";
 
@@ -38,7 +38,7 @@ public class Constants {
     public static final Set<String> INTERCEPTOR_METHODS = Set.of(AROUND_INVOKE_FQ_NAME, AROUND_CONSTRUCT_FQ_NAME, AROUND_TIMEOUT_FQ_NAME, PRE_DESTROY_FQ_NAME,
                                                                  POST_CONSTRUCT_FQ_NAME);
 
-    public static final Set<String> INTERCEPTOR_REFERENCES = Set.of(AROUND_INVOKE_FQ_NAME, AROUND_CONSTRUCT_FQ_NAME, AROUND_TIMEOUT_FQ_NAME);
+    public static final Set<String> INTERCEPTOR_REFERENCES = Set.of(AROUND_INVOKE_FQ_NAME, AROUND_TIMEOUT_FQ_NAME);
 
     public static final String[] LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS = { AROUND_CONSTRUCT_FQ_NAME, PRE_DESTROY_FQ_NAME, POST_CONSTRUCT_FQ_NAME };
 
