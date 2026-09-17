@@ -548,10 +548,10 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         TypeHierarchyUtils.collectSuperTypes(scannedType, superTypes);
         // Stream over ancestors, skipping the interceptor itself and same-file types, then merge each qualifying ancestor FQN into the name-count map.
         ICompilationUnit interceptorUnit = scannedType.getCompilationUnit();
-        superTypes.stream().filter(superType -> !superType.equals(scannedType))
-                        .filter(superType -> superType.getCompilationUnit() != null
-                                             && !superType.getCompilationUnit().equals(interceptorUnit)).forEach(superType -> nameCount.merge(superType.getFullyQualifiedName(), 1,
-                                                                                                                                              Integer::sum));
+        superTypes.stream().filter(superType -> !superType.equals(scannedType)).filter(superType -> superType.getCompilationUnit() != null
+                                                                                                    && !superType.getCompilationUnit().equals(interceptorUnit)).forEach(superType -> nameCount.merge(superType.getFullyQualifiedName(),
+                                                                                                                                                                                                     1,
+                                                                                                                                                                                                     Integer::sum));
     }
 
     /**

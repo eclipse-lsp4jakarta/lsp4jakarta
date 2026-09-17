@@ -304,6 +304,10 @@ public class InterceptorTest extends BaseJakartaTest {
                                                        "The class InvalidAroundConstructMethods should not contain the abstract modifier. If it contains the abstract modifier, the class should not be annotated with @Interceptor.",
                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorAnnotationOnAbstractClass");
 
+        Diagnostic invalidFinalMethodOnBindingClass = d(11, 24, 32,
+                                                        "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'logFinal'.",
+                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMethodOnInterceptorBindingClass");
+
         Diagnostic invalidMulipleModifierFinalDiagnostics = d(24, 31, 50,
                                                               "AroundConstruct interceptor method must not be declared as a final method.",
                                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnFinalMethod",
@@ -332,7 +336,7 @@ public class InterceptorTest extends BaseJakartaTest {
                               invalidMulipleModifierFinalDiagnostics, invalidMulipleModifierStaticDiagnostics, duplicateAroundConstruct3,
                               staticModifierDiagnostic, duplicateAroundConstruct2,
                               abstractModifierDiagnostic, duplicateAroundConstruct1, proceedDiagnostics,
-                              finalModifierDiagnostic, invalidAbstractClassDiagnostics);
+                              invalidFinalMethodOnBindingClass, finalModifierDiagnostic, invalidAbstractClassDiagnostics);
 
         // Test code actions for final modifier
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, finalModifierDiagnostic);
