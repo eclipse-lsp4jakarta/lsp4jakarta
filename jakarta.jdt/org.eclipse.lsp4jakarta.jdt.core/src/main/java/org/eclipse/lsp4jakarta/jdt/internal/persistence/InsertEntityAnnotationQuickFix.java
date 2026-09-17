@@ -10,37 +10,29 @@
 * Contributors:
 *     IBM Corporation - initial implementation
 *******************************************************************************/
-package org.eclipse.lsp4jakarta.jdt.internal.cdi;
+package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import org.eclipse.lsp4jakarta.commons.codeaction.ICodeActionId;
 import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
-import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveAnnotationConflictQuickFix;
+import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationMissingQuickFix;
 
 /**
- * Removes the @Stateless annotation from the declaring element.
+ * Inserts the @Entity annotation on a class that has @NamedEntityGraph but is
+ * missing the required @Entity annotation.
  */
-public class RemoveStatelessAnnotationQuickFix extends RemoveAnnotationConflictQuickFix {
+public class InsertEntityAnnotationQuickFix extends InsertAnnotationMissingQuickFix {
 
-    /**
-     * Constructor.
-     */
-    public RemoveStatelessAnnotationQuickFix() {
-        super(false, Constants.STATELESS_FQ_NAME);
+    public InsertEntityAnnotationQuickFix() {
+        super(Constants.ENTITY);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getParticipantId() {
-        return RemoveStatelessAnnotationQuickFix.class.getName();
+        return InsertEntityAnnotationQuickFix.class.getName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected JakartaCodeActionId getCodeActionId() {
-        return JakartaCodeActionId.CDIRemoveStatelessAnnotation;
+    protected ICodeActionId getCodeActionId() {
+        return JakartaCodeActionId.PersistenceInsertEntityAnnotation;
     }
 }

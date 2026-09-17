@@ -36,11 +36,30 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidValueInTemporalAnnotation,
     DuplicateVersionAnnotationInClass,
     DuplicateVersionAnnotationInHierarchy,
-    InvalidMapKeyTemporalOnNonTemporalType,
     InvalidVersionFieldOrPropertyType,
+    EmbeddedTypeNotAnnotatedWithEmbeddable,
     InvalidIdType,
+    InheritanceAnnotationOnNonEntityClass,
+    InheritanceAnnotationOnNonRootEntity,
+    InvalidMapKeyEnumeratedNotOnMapType,
+    InvalidMapKeyEnumeratedOnNonEnumType,
+    InvalidMapKeyTemporalOnNonTemporalType,
     MultipleEmbeddedIdAnnotations,
-    MixedIdentifierAnnotations;
+    MixedIdentifierAnnotations,
+    PersistenceContextNotInManagedComponent,
+    TableGeneratorInvalidEmptyName,
+    TableGeneratorsMissingTableGeneratorMapping,
+    SequenceGeneratorInvalidEmptyName,
+    SequenceGeneratorsMissingSequenceGeneratorMapping,
+    SecondaryTableInvalidEmptyName,
+    SecondaryTablesMissingSecondaryTableMapping,
+    ExtendedPersistenceContextInNonStatefulBean,
+    NamedEntityGraphOnNonEntityClass,
+    NamedEntityGraphsOnNonEntityClass,
+    NamedQueryOnInvalidClass,
+    NamedQueriesOnInvalidClass,
+    NamedNativeQueryOnInvalidClass,
+    NamedNativeQueriesOnInvalidClass;
 
     /**
      * {@inheritDoc}

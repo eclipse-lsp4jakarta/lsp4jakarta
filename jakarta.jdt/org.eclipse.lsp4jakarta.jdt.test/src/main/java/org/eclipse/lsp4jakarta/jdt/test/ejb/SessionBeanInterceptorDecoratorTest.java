@@ -54,12 +54,15 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         String uri = getFileUri("InvalidStatelessWithInterceptor.java");
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        // class InvalidStatelessWithInterceptor { — row 8, cols 6–37
+        // class InvalidStatelessWithInterceptor { — row 10, cols 6–37
+        Diagnostic notPublic = d(10, 6, 37,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 37,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Interceptor: from end of @Stateless (row 7, col 10) to end of @Interceptor (row 8, col 12)
@@ -81,11 +84,14 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidStatelessWithDecorator { — row 10, cols 6–35
+        Diagnostic notPublic = d(10, 6, 35,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 35,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Stateless: from start of @Stateless (row 8) to start of @Decorator (row 9)
@@ -106,12 +112,15 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         String uri = getFileUri("InvalidStatefulWithInterceptor.java");
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        // class InvalidStatefulWithInterceptor { — row 8, cols 6–36
+        // class InvalidStatefulWithInterceptor { — row 10, cols 6–36
+        Diagnostic notPublic = d(10, 6, 36,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 36,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Interceptor: from end of @Stateful (row 6, col 9) to end of @Interceptor (row 7, col 12)
@@ -133,11 +142,14 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidStatefulWithDecorator { — row 10, cols 6–34
+        Diagnostic notPublic = d(10, 6, 34,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 34,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Stateful: from start of @Stateful (row 8) to start of @Decorator (row 9)
@@ -158,12 +170,15 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         String uri = getFileUri("InvalidSingletonWithInterceptor.java");
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
-        // class InvalidSingletonWithInterceptor { — row 8, cols 6–37
+        // class InvalidSingletonWithInterceptor { — row 10, cols 6–37
+        Diagnostic notPublic = d(10, 6, 37,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 37,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Interceptor: from end of @Singleton (row 8, col 10) to end of @Interceptor (row 9, col 12)
@@ -185,11 +200,14 @@ public class SessionBeanInterceptorDecoratorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = createDiagnosticsParams(uri);
 
         // class InvalidSingletonWithDecorator { — row 10, cols 6–35
+        Diagnostic notPublic = d(10, 6, 35,
+                                 "A session bean class must be declared public.",
+                                 DiagnosticSeverity.Error, "jakarta-ejb", "InvalidModifierNotPublic");
         Diagnostic diagnostic = d(10, 6, 35,
                                   "Session beans must not be annotated with @Interceptor or @Decorator.",
                                   DiagnosticSeverity.Error, "jakarta-ejb", "InvalidSessionBeanWithInterceptorOrDecorator");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notPublic, diagnostic);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, diagnostic);
         // Remove @Singleton: from start of @Singleton (row 8) to start of @Decorator (row 9)

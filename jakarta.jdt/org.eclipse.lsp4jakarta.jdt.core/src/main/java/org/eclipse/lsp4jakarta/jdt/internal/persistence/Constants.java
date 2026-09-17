@@ -25,11 +25,34 @@ public class Constants {
     public static final String ENTITY = "jakarta.persistence.Entity";
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
+    public static final String EMBEDDED = "jakarta.persistence.Embedded";
+    public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    public static final String INHERITANCE = "jakarta.persistence.Inheritance";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
+    public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
+    public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
+    public static final String NAMEDQUERIES = "jakarta.persistence.NamedQueries";
+    public static final String NAMEDNATIVEQUERY = "jakarta.persistence.NamedNativeQuery";
+    public static final String NAMEDNATIVEQUERIES = "jakarta.persistence.NamedNativeQueries";
+
+    public static final String TABLE_GENERATOR = "jakarta.persistence.TableGenerator";
+    public static final String TABLE_GENERATORS = "jakarta.persistence.TableGenerators";
+    public static final String SEQUENCE_GENERATOR = "jakarta.persistence.SequenceGenerator";
+    public static final String SEQUENCE_GENERATORS = "jakarta.persistence.SequenceGenerators";
+    public static final String SECONDARY_TABLE = "jakarta.persistence.SecondaryTable";
+    public static final String SECONDARY_TABLES = "jakarta.persistence.SecondaryTables";
+
+    public static final String[] GENERATOR_AND_TABLE_ANNOTATIONS = {
+                                                                     TABLE_GENERATOR, TABLE_GENERATORS, SEQUENCE_GENERATOR, SEQUENCE_GENERATORS, SECONDARY_TABLE, SECONDARY_TABLES
+    };
+
+    public static final String VALUE = "value";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
@@ -66,10 +89,14 @@ public class Constants {
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-persistence";
 
-    public static final String[] SET_OF_PERSISTENCE_ANNOTATIONS = { MAPKEY, MAPKEYCLASS, MAPKEYJOINCOLUMN };
+    public static final String[] SET_OF_PERSISTENCE_ANNOTATIONS = { MAPKEY, MAPKEYCLASS, MAPKEYJOINCOLUMN, MAPKEYENUMERATED };
     public static final String[] SET_OF_PRIMARY_KEY_DATE_ANNOTATIONS = { ID, TEMPORAL };
 
     public static final String UTIL_DATE = "java.util.Date";
     public static final String UTIL_CALENDAR = "java.util.Calendar";
     public static final String TEMPORAL_TYPE_DATE = "TemporalType.DATE";
+    public static final String MAP_INTERFACE_FQDN = "java.util.Map";
+    public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
+    public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
+    public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "PersistenceContextType.EXTENDED";
 }

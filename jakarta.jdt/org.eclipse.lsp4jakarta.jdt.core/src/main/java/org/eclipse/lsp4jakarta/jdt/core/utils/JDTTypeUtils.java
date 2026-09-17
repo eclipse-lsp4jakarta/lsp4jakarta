@@ -109,6 +109,26 @@ public class JDTTypeUtils {
     }
 
     /**
+     * Returns the resolved type name for the given JDT type <code>signature</code>
+     * resolved against the given <code>context</code> type, and null otherwise.
+     *
+     * <p>Use this overload when you have a raw JDT signature string (e.g. a type
+     * argument extracted via {@link org.eclipse.jdt.core.Signature#getTypeArguments})
+     * and need to resolve it against a known declaring type rather than an element.
+     *
+     * @param signature the JDT type signature to resolve (e.g. {@code "QRoleType;"})
+     * @param context the type whose compilation unit is used to resolve imports
+     * @return the fully-qualified type name, or null if it cannot be resolved
+     */
+    public static String getResolvedTypeName(String signature, IType type) {
+        try {
+            return JavaModelUtil.getResolvedTypeName(signature, type);
+        } catch (JavaModelException e) {
+            return null;
+        }
+    }
+
+    /**
      * Returns the resolved return type name of the given <code>method</code> and
      * null otherwise
      *
@@ -423,5 +443,24 @@ public class JDTTypeUtils {
         }
         return null;
 
+    }
+
+    /**
+     * Returns the resolved fully qualified type name of a field or method member.
+     * For a field, returns the declared field type name.
+     * For a method, returns the method's return type name.
+     * Returns null if the member type cannot be resolved or the member is neither
+     * a field nor a method.
+     *
+     * @param member an {@link IField} or {@link IMethod}
+     * @return fully qualified type name, or null
+     */
+    public static String getResolvedMemberTypeName(IMember member) {
+        if (member instanceof IField) {
+            return getResolvedTypeName((IField) member);
+        } else if (member instanceof IMethod) {
+            return getResolvedResultTypeName((IMethod) member);
+        }
+        return null;
     }
 }
