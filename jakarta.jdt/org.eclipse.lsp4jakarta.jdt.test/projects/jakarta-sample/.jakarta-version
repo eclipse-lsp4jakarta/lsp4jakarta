@@ -1,0 +1,10 @@
+{
+  "version": "Jakarta EE 9 / 9.1",
+  "selectionMode": "selected",
+  "availableVersions": [
+    "Jakarta EE 11",
+    "Jakarta EE 10",
+    "Jakarta EE 9 / 9.1",
+    "Jakarta EE 8 / 8"
+  ]
+}

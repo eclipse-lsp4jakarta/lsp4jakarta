@@ -139,6 +139,10 @@ public class JakartaLanguageServer implements LanguageServer, ProcessLanguageSer
     public CompletableFuture<Object> shutdown() {
         // Perform some clean up. During shutdown, TextDocumentService.didClose() may not be called properly.
         textDocumentService.cleanDiagnostics();
+        textDocumentService.clearVersionCache();
+
+        // Shutdown text document service (cancels in-flight requests, stops executor)
+        textDocumentService.shutdown();
 
         // If requested by the client, on shutdown (i.e. last file closed), shutdown the language server.
         if (capabilityManager.getClientCapabilities().shouldLanguageServerExitOnShutdown()) {
@@ -237,5 +241,17 @@ public class JakartaLanguageServer implements LanguageServer, ProcessLanguageSer
     public void setTrace(SetTraceParams params) {
         // to avoid having UnsupportedOperationException, the method is implemented
         // FIXME : implement the behavior of this method.
+    }
+
+    /**
+     * Handles the jakarta/resetVersion notification from the client.
+     * Resets the Jakarta EE version for a project, prompts for re-selection,
+     * and re-validates all opened files in the project.
+     *
+     * @param projectUri The project URI to reset version for
+     */
+    public void resetJakartaVersion(String projectUri) {
+        LOGGER.info("Received jakarta/resetVersion notification for project: " + projectUri);
+        textDocumentService.resetVersionAndRevalidate(projectUri);
     }
 }

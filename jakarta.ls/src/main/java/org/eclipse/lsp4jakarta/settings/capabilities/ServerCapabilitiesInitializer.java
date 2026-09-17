@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.settings.capabilities;
 
 import static org.eclipse.lsp4jakarta.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_CODEACTION_OPTIONS;
 import static org.eclipse.lsp4jakarta.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_COMPLETION_OPTIONS;
+import static org.eclipse.lsp4jakarta.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_EXECUTE_COMMAND_OPTIONS;
 
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
@@ -46,6 +47,8 @@ public class ServerCapabilitiesInitializer {
         if (!clientCapabilities.isCodeActionDynamicRegistered()) {
             serverCapabilities.setCodeActionProvider(DEFAULT_CODEACTION_OPTIONS);
         }
+        // Register execute command capability
+        serverCapabilities.setExecuteCommandProvider(DEFAULT_EXECUTE_COMMAND_OPTIONS);
 
         return serverCapabilities;
     }

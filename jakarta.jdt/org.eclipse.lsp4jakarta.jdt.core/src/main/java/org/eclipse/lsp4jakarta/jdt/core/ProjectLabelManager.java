@@ -17,20 +17,23 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaProjectLabelsParams;
 import org.eclipse.lsp4jakarta.commons.ProjectLabelInfoEntry;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTJakartaUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ProjectLabelRegistry;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
+import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 /**
  * Project label manager which provides <code>ProjectLabelInfo</code> containing
@@ -77,7 +80,7 @@ public class ProjectLabelManager {
     private ProjectLabelInfoEntry getProjectLabelInfo(IProject project, List<String> types) {
         String uri = JDTJakartaUtils.getProjectURI(project);
         if (uri != null) {
-            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(project, types));
+            return new ProjectLabelInfoEntry(uri, project.getName(), getProjectLabels(project, types), getJakartaVersions(project));
         }
         return null;
     }
@@ -148,6 +151,22 @@ public class ProjectLabelManager {
         }
 
         return projectLabels;
+    }
+
+    private List<JakartaVersion> getJakartaVersions(IProject project) {
+        IJavaProject javaProject = JavaCore.create(project);
+
+        if (javaProject == null) {
+            return Collections.emptyList();
+        }
+
+        IClasspathEntry[] entries = null;
+        try {
+            entries = javaProject.getResolvedClasspath(true);
+        } catch (JavaModelException e) {
+            e.printStackTrace();
+        }
+        return JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
     }
 
 }

@@ -19,4 +19,4 @@ import org.eclipse.lsp4j.services.LanguageClient;
  * API of the client consuming the Language Server for Jakarta EE. Used to send
  * messages back to the client to ask for information about the Java project.
  */
-public interface JakartaLanguageClientAPI extends LanguageClient, JakartaJavaCompletionProvider, JakartaJavaProjectLabelsProvider, JakartaJavaFileInfoProvider, JakartaJavaDiagnosticsProvider, JakartaJavaCodeActionProvider, JakartaJavaCodeActionResolveProvider {}
+public interface JakartaLanguageClientAPI extends LanguageClient, JakartaJavaCompletionProvider, JakartaJavaProjectLabelsProvider, JakartaJavaFileInfoProvider, JakartaJavaDiagnosticsProvider, JakartaJavaCodeActionProvider, JakartaJavaCodeActionResolveProvider, JakartaVersionSelectorProvider {}

@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import org.eclipse.lsp4j.CodeActionOptions;
 import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.ExecuteCommandOptions;
 
 /**
  * Server Capabilities Constants
@@ -39,9 +40,17 @@ public class ServerCapabilitiesConstants {
 
     public static final CodeActionOptions DEFAULT_CODEACTION_OPTIONS = createDefaultCodeActionOptions();
 
+    public static final ExecuteCommandOptions DEFAULT_EXECUTE_COMMAND_OPTIONS = createDefaultExecuteCommandOptions();
+
     private static CodeActionOptions createDefaultCodeActionOptions() {
         CodeActionOptions options = new CodeActionOptions();
         options.setResolveProvider(Boolean.TRUE);
+        return options;
+    }
+
+    private static ExecuteCommandOptions createDefaultExecuteCommandOptions() {
+        ExecuteCommandOptions options = new ExecuteCommandOptions();
+        options.setCommands(Arrays.asList("jakarta.resetVersion"));
         return options;
     }
 

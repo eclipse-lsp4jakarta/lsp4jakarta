@@ -24,6 +24,8 @@ public class ExtendedClientCapabilities {
 
     private boolean shouldLanguageServerExitOnShutdown;
 
+    private boolean jakartaVersionSelector;
+
     /**
      * Sets the boolean permitting language server to exit on client
      * shutdown() request, without waiting for client to call exit()
@@ -42,5 +44,23 @@ public class ExtendedClientCapabilities {
      */
     public boolean shouldLanguageServerExitOnShutdown() {
         return shouldLanguageServerExitOnShutdown;
+    }
+
+    /**
+     * Sets whether the client supports Jakarta EE version selection UI.
+     *
+     * @param jakartaVersionSelector true if the client supports version selection
+     */
+    public void setJakartaVersionSelector(boolean jakartaVersionSelector) {
+        this.jakartaVersionSelector = jakartaVersionSelector;
+    }
+
+    /**
+     * Returns true if the client supports Jakarta EE version selection UI.
+     *
+     * @return true if the client supports version selection
+     */
+    public boolean isJakartaVersionSelector() {
+        return jakartaVersionSelector;
     }
 }

@@ -597,4 +597,13 @@
                   targetDiagnostic="jakarta-ejb#ImplementMessageListener"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.EjbMessageDrivenImplementInterfaceQuickFix" />
    </extension>
+
+   <!-- Jakarta Version -->
+  <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
+     <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.version.VersionDiagnosticsParticipant" />
+     <codeAction kind="quickfix"
+                 targetDiagnostic="jakarta-version#MultipleJakartaEEVersions"
+                 class="org.eclipse.lsp4jakarta.jdt.internal.version.ResetVersionQuickFix" />
+  </extension>  
+
 </plugin>

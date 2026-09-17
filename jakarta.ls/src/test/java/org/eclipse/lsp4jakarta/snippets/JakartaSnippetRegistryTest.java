@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import org.eclipse.lsp4jakarta.commons.JavaCursorContextKind;
@@ -328,11 +329,11 @@ public class JakartaSnippetRegistryTest {
         assertTrue(snippet.get().getPrefixes() + " snippet context is not a Java context",
                    context instanceof SnippetContextForJava);
 
-        ProjectLabelInfoEntry projectInfo = new ProjectLabelInfoEntry("", null, new ArrayList<>());
+        ProjectLabelInfoEntry projectInfo = new ProjectLabelInfoEntry("", null, new ArrayList<>(), Collections.emptyList());
         boolean match = ((SnippetContextForJava) context).isMatch(context(projectInfo, javaCursorContextKind));
         assertFalse("Project should not have " + contextType + " type", match);
 
-        ProjectLabelInfoEntry projectInfo1 = new ProjectLabelInfoEntry("", null, Arrays.asList(contextType));
+        ProjectLabelInfoEntry projectInfo1 = new ProjectLabelInfoEntry("", null, Arrays.asList(contextType), Collections.emptyList());
         boolean match1 = ((SnippetContextForJava) context).isMatch(context(projectInfo1, javaCursorContextKind,
                                                                            snippet.get().getPrefixes().isEmpty() ? "" : snippet.get().getPrefixes().get(0)));
         if (javaCursorContextKind.getValue() == 10) {

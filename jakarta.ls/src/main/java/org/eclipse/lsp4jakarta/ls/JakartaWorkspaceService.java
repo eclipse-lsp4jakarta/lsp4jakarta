@@ -13,11 +13,19 @@
 
 package org.eclipse.lsp4jakarta.ls;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import com.google.gson.JsonPrimitive;
+
 public class JakartaWorkspaceService implements WorkspaceService {
+
+    private static final String RESET_VERSION_COMMAND = "jakarta.resetVersion";
 
     private final JakartaLanguageServer jakartaLanguageServer;
 
@@ -33,6 +41,28 @@ public class JakartaWorkspaceService implements WorkspaceService {
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
         // Do nothing
+    }
+
+    @Override
+    public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
+        if (RESET_VERSION_COMMAND.equals(params.getCommand())) {
+            List<Object> arguments = params.getArguments();
+            if (arguments != null && !arguments.isEmpty()) {
+                Object firstArg = arguments.get(0);
+                String projectUri = null;
+
+                if (firstArg instanceof String) {
+                    projectUri = (String) firstArg;
+                } else if (firstArg instanceof JsonPrimitive) {
+                    projectUri = ((JsonPrimitive) firstArg).getAsString();
+                }
+
+                if (projectUri != null) {
+                    jakartaLanguageServer.resetJakartaVersion(projectUri);
+                }
+            }
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
 }

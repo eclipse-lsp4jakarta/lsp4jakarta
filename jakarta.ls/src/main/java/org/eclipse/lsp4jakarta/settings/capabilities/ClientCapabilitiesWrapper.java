@@ -112,4 +112,13 @@ public class ClientCapabilitiesWrapper {
                && capabilities.getTextDocument().getCodeAction().getResolveSupport().getProperties().contains("edit");
     }
 
+    /**
+     * Returns the extended client capabilities.
+     *
+     * @return the extended client capabilities
+     */
+    public ExtendedClientCapabilities getExtendedClientCapabilities() {
+        return extendedCapabilities != null ? extendedCapabilities : new ExtendedClientCapabilities();
+    }
+
 }
