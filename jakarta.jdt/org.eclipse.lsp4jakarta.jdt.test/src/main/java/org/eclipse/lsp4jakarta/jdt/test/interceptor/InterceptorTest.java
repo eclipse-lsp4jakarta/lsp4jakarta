@@ -805,4 +805,88 @@ public class InterceptorTest extends BaseJakartaTest {
         // No InvalidAroundConstructInTargetClass diagnostic should be reported on either class.
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testAroundConstructInSuperclassSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SeparateFileSuperclassWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared in a non-interceptor superclass whose
+        // @Interceptor-annotated subclass (SeparateFileInterceptorSubclass.java) lives
+        // in a separate source file.  The project-wide scan must recognise this class
+        // as an interceptor superclass and suppress the diagnostic.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructSuperclassNonInterceptorSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidSeparateFileSuperclassWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @AroundConstruct declared in a non-interceptor superclass whose
+        // only known subclass (InvalidSeparateFileTargetSubclass.java) is also a
+        // non-interceptor class defined in a separate file.
+        // No @Interceptor class extends this superclass, so the project-wide scan
+        // must NOT suppress the diagnostic — it must still fire.
+        Diagnostic aroundConstructInSeparateSuperclass = d(18, 16, 25,
+                                                           "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSeparateSuperclass);
+    }
+
+    @Test
+    public void testAroundConstructSharedAncestorTwoNonInterceptorSubclasses() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SharedAncestorWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @AroundConstruct declared in a common ancestor of two non-interceptor
+        // subclasses (NonInterceptorSubclassA, NonInterceptorSubclassB) in separate files.
+        // Neither subclass is @Interceptor, so the project-wide scan adds no entry for
+        // this ancestor's FQN — the diagnostic must still fire.
+        Diagnostic aroundConstructInSharedAncestor = d(19, 16, 25,
+                                                       "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                       DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSharedAncestor);
+    }
+
+    @Test
+    public void testAroundConstructSharedAncestorOneInterceptorOneNonInterceptorSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SharedAncestorInterceptorAndTarget.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct declared in a common ancestor of two subclasses in
+        // separate files — one @Interceptor (InterceptorSubclassOfShared) and one
+        // non-interceptor (NonInterceptorSubclassOfShared). Because the interceptor
+        // subclass drives the scan, the ancestor's FQN is added to interceptorAncestorFqns
+        // with a count of 1, and the diagnostic must be suppressed.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
