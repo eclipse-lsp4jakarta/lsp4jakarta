@@ -14,7 +14,6 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -24,6 +23,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -90,16 +90,12 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
             }
 
             // Rule 3: inconsistent specialization -- more than one bean specializes the same base
-            Map<String, List<IType>> specializersByBase = TypeHierarchyUtils.collectSourceTypesByKey(
-                                                                                                     unit.getJavaProject(),
-                                                                                                     this::ultimateBaseIfSpecializes);
             for (IType type : specializersInUnit) {
                 String supertypeFqName = resolveUltimateBaseFqName(type);
                 if (supertypeFqName == null) {
                     continue;
                 }
-                List<IType> allSpecializersOfBase = specializersByBase.get(supertypeFqName);
-                if (allSpecializersOfBase != null && allSpecializersOfBase.size() > 1) {
+                if (hasInconsistentSpecialization(type, supertypeFqName)) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("InconsistentSpecialization",
@@ -155,28 +151,38 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * Returns the ultimate base FQ name for {@code type} if it is annotated with
-     * {@code @Specializes}, or {@code null} otherwise. All {@link JavaModelException}s
-     * are handled internally; this method never throws.
+     * Returns {@code true} if more than one subtype of {@code ultimateBaseFqName}
+     * carries {@code @Specializes}, indicating inconsistent specialization.
      *
-     * <p>This signature is intentionally exception-free so it can be used as a
-     * {@link java.util.function.Function}{@code <IType, String>} reference.
+     * <p>Builds an {@link ITypeHierarchy} rooted at the ultimate base and checks
+     * all subtypes — both direct and transitive — for the {@code @Specializes}
+     * annotation.
      *
-     * @param type the type to inspect
-     * @return the ultimate base FQ name, or {@code null}
+     * @param specializerType the type being validated (used to resolve the project)
+     * @param ultimateBaseFqName the fully-qualified name of the ultimate base bean
+     * @return {@code true} if the specialization is inconsistent
+     * @throws JavaModelException if the Java model cannot be accessed
      */
-    private String ultimateBaseIfSpecializes(IType type) {
-        try {
-            if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(),
-                                                     type.getAnnotations(),
-                                                     Constants.SPECIALIZES_FQ_NAME)) {
-                return null;
-            }
-        } catch (JavaModelException e) {
-            LOGGER.log(Level.WARNING, "Could not read annotations on type: " + type.getElementName(), e);
-            return null;
+    private boolean hasInconsistentSpecialization(IType specializerType,
+                                                  String ultimateBaseFqName) throws JavaModelException {
+        IType baseType = specializerType.getJavaProject().findType(ultimateBaseFqName);
+        if (baseType == null) {
+            return false;
         }
-        return resolveUltimateBaseFqName(type);
+        ITypeHierarchy hierarchy = baseType.newTypeHierarchy(null);
+        IType[] subtypes = hierarchy.getAllSubtypes(baseType);
+        int specializerCount = 0;
+        for (IType subtype : subtypes) {
+            if (DiagnosticUtils.isMatchedAnnotation(subtype.getCompilationUnit(),
+                                                    subtype.getAnnotations(),
+                                                    Constants.SPECIALIZES_FQ_NAME)) {
+                specializerCount++;
+                if (specializerCount > 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

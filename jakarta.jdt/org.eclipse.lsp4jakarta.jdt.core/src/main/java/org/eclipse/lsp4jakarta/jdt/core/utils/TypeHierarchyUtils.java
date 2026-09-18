@@ -13,25 +13,17 @@
 
 package org.eclipse.lsp4jakarta.jdt.core.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
@@ -314,43 +306,4 @@ public class TypeHierarchyUtils {
         return ManagedBean.getChildITypeByName(type, superclassName);
     }
 
-    /**
-     * Scans all source types in {@code project} and returns a map from each
-     * unique key (produced by {@code keyExtractor}) to the list of source
-     * {@link IType} instances that map to that key.
-     *
-     * <p>Only source roots ({@link IPackageFragmentRoot#K_SOURCE}) are visited;
-     * binary roots (JARs, class folders) are skipped.
-     *
-     * <p>The extractor should return {@code null} to skip a type.
-     *
-     * @param project the Java project to scan
-     * @param keyExtractor maps a source {@link IType} to its grouping key,
-     *            or {@code null} to skip the type
-     * @return a map from key to list of matching source types (never {@code null})
-     * @throws JavaModelException if the Java model cannot be accessed
-     */
-    public static Map<String, List<IType>> collectSourceTypesByKey(IJavaProject project,
-                                                                   Function<IType, String> keyExtractor) throws JavaModelException {
-        Map<String, List<IType>> result = new HashMap<>();
-        for (IPackageFragmentRoot root : project.getPackageFragmentRoots()) {
-            if (root.getKind() != IPackageFragmentRoot.K_SOURCE) {
-                continue;
-            }
-            for (IJavaElement child : root.getChildren()) {
-                if (!(child instanceof IPackageFragment)) {
-                    continue;
-                }
-                for (ICompilationUnit cu : ((IPackageFragment) child).getCompilationUnits()) {
-                    for (IType type : cu.getAllTypes()) {
-                        String key = keyExtractor.apply(type);
-                        if (key != null) {
-                            result.computeIfAbsent(key, k -> new ArrayList<>()).add(type);
-                        }
-                    }
-                }
-            }
-        }
-        return result;
-    }
 }
