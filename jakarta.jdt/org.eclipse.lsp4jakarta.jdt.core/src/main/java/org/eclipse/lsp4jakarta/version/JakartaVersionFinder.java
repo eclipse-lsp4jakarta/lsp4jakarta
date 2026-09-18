@@ -1,5 +1,6 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,11 +46,11 @@ public class JakartaVersionFinder {
      * @param entries The classpath entries to analyze
      * @return The detected Jakarta version
      */
-    public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries) {
+    public static List<JakartaVersion> analyzeClasspath(IClasspathEntry[] entries) {
         return analyzeClasspath(entries, DetectionStrategy.MANIFEST_THEN_FILENAME);
     }
 
-    public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries, IJavaProject javaProject) {
+    public static List<JakartaVersion> analyzeClasspath(IClasspathEntry[] entries, IJavaProject javaProject) {
         return analyzeClasspath(entries, javaProject, DetectionStrategy.MANIFEST_THEN_FILENAME);
     }
 
@@ -60,7 +61,7 @@ public class JakartaVersionFinder {
      * @param strategy The detection strategy to use
      * @return The detected Jakarta version
      */
-    public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries, DetectionStrategy strategy) {
+    public static List<JakartaVersion> analyzeClasspath(IClasspathEntry[] entries, DetectionStrategy strategy) {
         return analyzeClasspath(entries, null, strategy);
     }
 
@@ -72,69 +73,69 @@ public class JakartaVersionFinder {
      * @param strategy The detection strategy to use
      * @return The detected Jakarta version
      */
-    public static JakartaVersion analyzeClasspath(IClasspathEntry[] entries, IJavaProject javaProject, DetectionStrategy strategy) {
-        JakartaVersion detectedVersion = JakartaVersion.UNKNOWN;
+    public static List<JakartaVersion> analyzeClasspath(IClasspathEntry[] entries, IJavaProject javaProject, DetectionStrategy strategy) {
+        List<JakartaVersion> detectedVersions = new ArrayList<>();
 
         switch (strategy) {
             case MANIFEST:
-                detectedVersion = manifestDetector.detectVersion(entries);
+                detectedVersions = manifestDetector.detectVersion(entries);
                 break;
 
             case FILENAME:
-                detectedVersion = filenameDetector.detectVersion(entries);
+                detectedVersions = filenameDetector.detectVersion(entries);
                 break;
 
             case CLASS_SIGNATURE:
                 if (javaProject != null) {
-                    detectedVersion = classSignatureDetector.detectVersion(javaProject);
+                    detectedVersions = classSignatureDetector.detectVersion(javaProject);
                 } else {
                     System.out.println("CLASS_SIGNATURE strategy requires IJavaProject, falling back to MANIFEST");
-                    detectedVersion = manifestDetector.detectVersion(entries);
+                    detectedVersions = manifestDetector.detectVersion(entries);
                 }
                 break;
 
             case MANIFEST_THEN_FILENAME:
-                detectedVersion = manifestDetector.detectVersion(entries);
-                if (detectedVersion == JakartaVersion.UNKNOWN) {
+                detectedVersions = manifestDetector.detectVersion(entries);
+                if (isUnknownVersion(detectedVersions)) {
                     System.out.println("Manifest detection inconclusive, trying filename detection...");
-                    detectedVersion = filenameDetector.detectVersion(entries);
+                    detectedVersions = filenameDetector.detectVersion(entries);
                 }
                 break;
 
             case FILENAME_THEN_MANIFEST:
-                detectedVersion = filenameDetector.detectVersion(entries);
-                if (detectedVersion == JakartaVersion.UNKNOWN) {
+                detectedVersions = filenameDetector.detectVersion(entries);
+                if (isUnknownVersion(detectedVersions)) {
                     System.out.println("Filename detection inconclusive, trying manifest detection...");
-                    detectedVersion = manifestDetector.detectVersion(entries);
+                    detectedVersions = manifestDetector.detectVersion(entries);
                 }
                 break;
 
             case CLASS_SIGNATURE_THEN_MANIFEST_THEN_FILENAME:
                 if (javaProject != null) {
-                    detectedVersion = classSignatureDetector.detectVersion(javaProject);
+                    detectedVersions = classSignatureDetector.detectVersion(javaProject);
                 }
-                if (detectedVersion == JakartaVersion.UNKNOWN) {
+                if (isUnknownVersion(detectedVersions)) {
                     System.out.println("Class signature detection inconclusive, trying manifest detection...");
-                    detectedVersion = manifestDetector.detectVersion(entries);
+                    detectedVersions = manifestDetector.detectVersion(entries);
                 }
-                if (detectedVersion == JakartaVersion.UNKNOWN) {
+                if (isUnknownVersion(detectedVersions)) {
                     System.out.println("Manifest detection inconclusive, trying filename detection...");
-                    detectedVersion = filenameDetector.detectVersion(entries);
+                    detectedVersions = filenameDetector.detectVersion(entries);
                 }
                 break;
 
             default:
-                detectedVersion = filenameDetector.detectVersion(entries);
+                detectedVersions = filenameDetector.detectVersion(entries);
                 break;
         }
 
         // Fallback to JEE9 if version is still unknown
-        if (detectedVersion == JakartaVersion.UNKNOWN) {
+        if (isUnknownVersion(detectedVersions)) {
             System.out.println("UNKNOWN version: fall back to JEE9");
-            detectedVersion = JakartaVersion.EE_9;
+            detectedVersions.add(JakartaVersion.EE_9);
         }
 
-        return detectedVersion;
+        return detectedVersions;
     }
 
     /**
@@ -144,7 +145,7 @@ public class JakartaVersionFinder {
      * @param uri The URI of the compilation unit
      * @return The detected Jakarta version
      */
-    public static JakartaVersion analyzeClasspath(String uri) {
+    public static List<JakartaVersion> analyzeClasspath(String uri) {
         return analyzeClasspath(uri, DetectionStrategy.FILENAME);
     }
 
@@ -155,7 +156,7 @@ public class JakartaVersionFinder {
      * @param strategy The detection strategy to use
      * @return The detected Jakarta version
      */
-    public static JakartaVersion analyzeClasspath(String uri, DetectionStrategy strategy) {
+    public static List<JakartaVersion> analyzeClasspath(String uri, DetectionStrategy strategy) {
         IJDTUtils utils = JDTUtilsLSImpl.getInstance();
         ICompilationUnit unit = utils.resolveCompilationUnit(uri);
         IJavaProject javaProject = unit.getJavaProject();
@@ -165,7 +166,9 @@ public class JakartaVersionFinder {
             entries = javaProject.getResolvedClasspath(true);
         } catch (JavaModelException e) {
             e.printStackTrace();
-            return JakartaVersion.EE_9; // Fallback
+            List<JakartaVersion> defaultVersion = new ArrayList<>();
+            defaultVersion.add(JakartaVersion.EE_9);
+            return defaultVersion;// Fallback
         }
 
         return analyzeClasspath(entries, javaProject, strategy);
@@ -178,5 +181,10 @@ public class JakartaVersionFinder {
      */
     public static List<JakartaVersion> getAllKnownVersions() {
         return Arrays.asList(JakartaVersion.EE_11, JakartaVersion.EE_10, JakartaVersion.EE_9, JakartaVersion.EE_8);
+    }
+
+    private static boolean isUnknownVersion(List<JakartaVersion> detectedVersions) {
+        return detectedVersions.isEmpty()
+               || detectedVersions.stream().allMatch(v -> v == JakartaVersion.UNKNOWN);
     }
 }

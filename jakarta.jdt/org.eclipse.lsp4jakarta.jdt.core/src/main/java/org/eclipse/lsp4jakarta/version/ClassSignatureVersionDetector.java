@@ -1,7 +1,9 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +30,8 @@ public class ClassSignatureVersionDetector {
      * @param javaProject The Java project for class resolution
      * @return The detected Jakarta version based on available classes
      */
-    public JakartaVersion detectVersion(IJavaProject javaProject) {
+    public List<JakartaVersion> detectVersion(IJavaProject javaProject) {
+        Map<Integer, JakartaVersion> availableVersions = new HashMap<>();
         Map<JakartaVersion, Integer> versionScores = new HashMap<>();
         versionScores.put(JakartaVersion.EE_11, 0);
         versionScores.put(JakartaVersion.EE_10, 0);
@@ -39,22 +42,22 @@ public class ClassSignatureVersionDetector {
         System.out.println("Class Signature Analysis (All Modules)-----------");
 
         // Check all modules for each version
-        checkServletVersion(javaProject, versionScores, detectedFeatures);
-        checkPersistenceVersion(javaProject, versionScores, detectedFeatures);
-        checkCDIVersion(javaProject, versionScores, detectedFeatures);
-        checkFacesVersion(javaProject, versionScores, detectedFeatures);
-        checkRESTVersion(javaProject, versionScores, detectedFeatures);
-        checkWebSocketVersion(javaProject, versionScores, detectedFeatures);
-        checkJSONVersion(javaProject, versionScores, detectedFeatures);
-        checkJSONBVersion(javaProject, versionScores, detectedFeatures);
-        checkAnnotationVersion(javaProject, versionScores, detectedFeatures);
-        checkEJBVersion(javaProject, versionScores, detectedFeatures);
-        checkTransactionVersion(javaProject, versionScores, detectedFeatures);
-        checkValidationVersion(javaProject, versionScores, detectedFeatures);
-        checkInterceptorVersion(javaProject, versionScores, detectedFeatures);
-        checkInjectVersion(javaProject, versionScores, detectedFeatures);
-        checkSecurityVersion(javaProject, versionScores, detectedFeatures);
-        checkDataVersion(javaProject, versionScores, detectedFeatures);
+        checkServletVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkPersistenceVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkCDIVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkFacesVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkRESTVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkWebSocketVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkJSONVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkJSONBVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkAnnotationVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkEJBVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkTransactionVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkValidationVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkInterceptorVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkInjectVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkSecurityVersion(javaProject, versionScores, detectedFeatures, availableVersions);
+        checkDataVersion(javaProject, versionScores, detectedFeatures, availableVersions);
 
         // Determine version based on highest score
         JakartaVersion detectedVersion = JakartaVersion.UNKNOWN;
@@ -68,210 +71,257 @@ public class ClassSignatureVersionDetector {
 
         System.out.println("Detected Features:");
         detectedFeatures.forEach(feature -> System.out.println("  - " + feature));
-        System.out.println("Version Scores: EE11=" + versionScores.get(JakartaVersion.EE_11) +
-                           ", EE10=" + versionScores.get(JakartaVersion.EE_10) +
-                           ", EE9=" + versionScores.get(JakartaVersion.EE_9));
+
         System.out.println("------------------------------------------------------------------");
-        System.out.println("Class Signature Detected Version: " + detectedVersion.getLabel() + "-" + detectedVersion.getLevel());
+        System.out.println("Class Signature Detected Version: ");
+        availableVersions.forEach((key, version) -> {
+            System.out.println(key + ":" + version);
+        });
         System.out.println("------------------------------------------------------------------");
 
-        return detectedVersion;
+        return new ArrayList<>(availableVersions.values());
     }
 
-    private void checkServletVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkServletVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.servlet.ServletConnection")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Servlet 6.1 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.servlet.ServletContext") &&
                    methodExists(project, "jakarta.servlet.ServletContext", "getRequestCharacterEncoding")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Servlet 6.0 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.servlet.Servlet")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("Servlet 5.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkPersistenceVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkPersistenceVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.persistence.criteria.CriteriaSelect")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Persistence 3.2 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.persistence.EntityManagerFactory") &&
                    methodExists(project, "jakarta.persistence.EntityManagerFactory", "runInTransaction")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Persistence 3.1 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.persistence.Entity")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("Persistence 3.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkCDIVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkCDIVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.enterprise.inject.build.compatible.spi.BuildCompatibleExtension")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("CDI 4.1 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.enterprise.inject.build.compatible.spi.BeanInfo")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("CDI 4.0 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.enterprise.context.ApplicationScoped")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("CDI 3.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkFacesVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkFacesVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.faces.annotation.View")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Faces 4.1 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.faces.push.Push")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Faces 4.0 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.faces.component.UIComponent")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("Faces 3.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkRESTVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkRESTVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.ws.rs.SeBootstrap") ||
             classExists(project, "jakarta.ws.rs.core.EntityPart")) {
             // REST 3.1/4.0 share the same API - both in EE 10 and EE 11
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             features.add("REST 3.1/4.0 (EE 10/11)");
         } else if (classExists(project, "jakarta.ws.rs.Path")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("REST 3.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkWebSocketVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkWebSocketVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.websocket.Session") &&
             methodExists(project, "jakarta.websocket.Session", "getRequestParameterMap")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("WebSocket 2.2 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.websocket.ClientEndpointConfig")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("WebSocket 2.1 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.websocket.Endpoint")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("WebSocket 2.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkJSONVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkJSONVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.json.JsonPatch")) {
             // JSON-P 2.1 is in both EE 10 and EE 11
             // We'll score both, but other modules will help differentiate
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             features.add("JSON-P 2.1 (EE 10/11)");
         } else if (classExists(project, "jakarta.json.JsonValue")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("JSON-P 2.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkJSONBVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkJSONBVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.json.bind.Jsonb")) {
             // JSON-B 3.0 is in both EE 10 and EE 11
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             features.add("JSON-B 3.0 (EE 10/11)");
         } else if (classExists(project, "jakarta.json.bind.JsonbBuilder")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("JSON-B 2.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkAnnotationVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkAnnotationVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.annotation.ManagedBean")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Annotation 3.0 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.annotation.sql.DataSourceDefinitions")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Annotation 2.1 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.annotation.PostConstruct")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("Annotation 2.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkEJBVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkEJBVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.ejb.Stateless")) {
             // EJB 4.0 is in EE 9, EE 10, and EE 11
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
             features.add("EJB 4.0 (EE 9/10/11)");
         }
     }
 
-    private void checkTransactionVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkTransactionVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.transaction.Transactional")) {
             // Transaction 2.0 is in EE 9, EE 10, and EE 11
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
             features.add("Transaction 2.0 (EE 9/10/11)");
         }
     }
 
-    private void checkValidationVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkValidationVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.validation.valueextraction.ValueExtractor")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Validation 3.1 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.validation.constraints.NotNull")) {
             // Validation 3.0 is in both EE 9 and EE 10
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
             features.add("Validation 3.0 (EE 9/10)");
         }
     }
 
-    private void checkInterceptorVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkInterceptorVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.interceptor.InvocationContext") &&
             methodExists(project, "jakarta.interceptor.InvocationContext", "getInterceptorBindings")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Interceptor 2.2 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.interceptor.InvocationContext") &&
                    methodExists(project, "jakarta.interceptor.InvocationContext", "getContextData")) {
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Interceptor 2.1 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.interceptor.Interceptor")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
             features.add("Interceptor 2.0 (EE 9)");
         }
     }
 
-    private void checkInjectVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkInjectVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.inject.Inject")) {
             // Inject 2.0 is in EE 9, EE 10, and EE 11
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
             features.add("Inject 2.0 (EE 9/10/11)");
         }
     }
 
-    private void checkSecurityVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkSecurityVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.security.enterprise.authentication.mechanism.http.OpenIdAuthenticationMechanismDefinition")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Security 4.0 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         } else if (classExists(project, "jakarta.security.enterprise.identitystore.IdentityStore")) {
             // Security 3.0 is in EE 10
             scores.put(JakartaVersion.EE_10, scores.get(JakartaVersion.EE_10) + 1);
             features.add("Security 3.0 (EE 10)");
+            availableVersions.put(JakartaVersion.EE_10.getLevel(), JakartaVersion.EE_10);
         } else if (classExists(project, "jakarta.security.enterprise.SecurityContext")) {
             scores.put(JakartaVersion.EE_9, scores.get(JakartaVersion.EE_9) + 1);
             features.add("Security 2.0 (EE 9)");
+            availableVersions.put(JakartaVersion.EE_9.getLevel(), JakartaVersion.EE_9);
         }
     }
 
-    private void checkDataVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features) {
+    private void checkDataVersion(IJavaProject project, Map<JakartaVersion, Integer> scores, Set<String> features, Map<Integer, JakartaVersion> availableVersions) {
         if (classExists(project, "jakarta.data.repository.Repository")) {
             scores.put(JakartaVersion.EE_11, scores.get(JakartaVersion.EE_11) + 1);
             features.add("Data 1.0 (EE 11)");
+            availableVersions.put(JakartaVersion.EE_11.getLevel(), JakartaVersion.EE_11);
         }
     }
 

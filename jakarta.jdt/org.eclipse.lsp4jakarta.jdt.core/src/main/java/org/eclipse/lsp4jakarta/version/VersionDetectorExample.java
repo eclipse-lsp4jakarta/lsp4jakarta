@@ -1,5 +1,7 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.List;
+
 import org.eclipse.jdt.core.IClasspathEntry;
 
 /**
@@ -18,38 +20,42 @@ public class VersionDetectorExample {
 
         // Example 1: Using default strategy (filename parsing - backward compatible)
         System.out.println("1. Default Strategy (Filename Parsing):");
-        JakartaVersion version1 = JakartaVersionFinder.analyzeClasspath(entries);
-        System.out.println("Detected: " + version1.getLabel() + "\n");
+        List<JakartaVersion> version1 = JakartaVersionFinder.analyzeClasspath(entries);
+        version1.forEach(v -> System.out.println("Detected: " + v.getLabel()));
+        System.out.println();
 
         // Example 2: Using manifest inspection
         System.out.println("2. Manifest Inspection Strategy:");
-        JakartaVersion version2 = JakartaVersionFinder.analyzeClasspath(entries,
-                                                                        JakartaVersionFinder.DetectionStrategy.MANIFEST);
-        System.out.println("Detected: " + version2.getLabel() + "\n");
+        List<JakartaVersion> version2 = JakartaVersionFinder.analyzeClasspath(entries,
+                                                                              JakartaVersionFinder.DetectionStrategy.MANIFEST);
+        version2.forEach(v -> System.out.println("Detected: " + v.getLabel()));
+        System.out.println();
 
         // Example 3: Try manifest first, fallback to filename
         System.out.println("3. Manifest Then Filename Strategy:");
-        JakartaVersion version3 = JakartaVersionFinder.analyzeClasspath(entries,
-                                                                        JakartaVersionFinder.DetectionStrategy.MANIFEST_THEN_FILENAME);
-        System.out.println("Detected: " + version3.getLabel() + "\n");
+        List<JakartaVersion> version3 = JakartaVersionFinder.analyzeClasspath(entries,
+                                                                              JakartaVersionFinder.DetectionStrategy.MANIFEST_THEN_FILENAME);
+        version3.forEach(v -> System.out.println("Detected: " + v.getLabel()));
+        System.out.println();
 
         // Example 4: Try filename first, fallback to manifest
         System.out.println("4. Filename Then Manifest Strategy:");
-        JakartaVersion version4 = JakartaVersionFinder.analyzeClasspath(entries,
-                                                                        JakartaVersionFinder.DetectionStrategy.FILENAME_THEN_MANIFEST);
-        System.out.println("Detected: " + version4.getLabel() + "\n");
+        List<JakartaVersion> version4 = JakartaVersionFinder.analyzeClasspath(entries,
+                                                                              JakartaVersionFinder.DetectionStrategy.FILENAME_THEN_MANIFEST);
+        version4.forEach(v -> System.out.println("Detected: " + v.getLabel()));
+        System.out.println();
 
         // Example 5: Using URI-based detection
         System.out.println("5. URI-based Detection (default strategy):");
-        // JakartaVersion version5 = JakartaVersionFinder.analyzeClasspath("file:///path/to/file.java");
-        // System.out.println("Detected: " + version5.getLabel() + "\n");
+        // List<JakartaVersion> version5 = JakartaVersionFinder.analyzeClasspath("file:///path/to/file.java");
+        // version5.forEach(v -> System.out.println("Detected: " + v.getLabel()));
 
         // Example 6: Using URI-based detection with custom strategy
         System.out.println("6. URI-based Detection (manifest strategy):");
-        // JakartaVersion version6 = JakartaVersionFinder.analyzeClasspath(
+        // List<JakartaVersion> version6 = JakartaVersionFinder.analyzeClasspath(
         //     "file:///path/to/file.java",
         //     JakartaVersionFinder.DetectionStrategy.MANIFEST);
-        // System.out.println("Detected: " + version6.getLabel() + "\n");
+        // version6.forEach(v -> System.out.println("Detected: " + v.getLabel()));
     }
 
     /**
@@ -62,13 +68,15 @@ public class VersionDetectorExample {
 
         // Using filename detector directly
         JarFilenameVersionDetector filenameDetector = new JarFilenameVersionDetector();
-        JakartaVersion filenameVersion = filenameDetector.detectVersion(entries);
-        System.out.println("Filename Detector: " + filenameVersion.getLabel() + "\n");
+        List<JakartaVersion> filenameVersions = filenameDetector.detectVersion(entries);
+        filenameVersions.forEach(v -> System.out.println("Filename Detector: " + v.getLabel()));
+        System.out.println();
 
         // Using manifest detector directly
         JarManifestVersionDetector manifestDetector = new JarManifestVersionDetector();
-        JakartaVersion manifestVersion = manifestDetector.detectVersion(entries);
-        System.out.println("Manifest Detector: " + manifestVersion.getLabel() + "\n");
+        List<JakartaVersion> manifestVersions = manifestDetector.detectVersion(entries);
+        manifestVersions.forEach(v -> System.out.println("Manifest Detector: " + v.getLabel()));
+        System.out.println();
     }
 }
 
