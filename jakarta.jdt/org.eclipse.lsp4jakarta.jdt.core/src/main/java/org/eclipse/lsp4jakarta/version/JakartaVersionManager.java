@@ -37,10 +37,9 @@ public class JakartaVersionManager {
     }
 
     public List<JakartaVersion> getVersion(String projectName, IJavaProject javaProject, IClasspathEntry[] entries) {
-        JakartaVersion detected = JakartaVersionFinder.analyzeClasspath(entries, javaProject);
-        List<JakartaVersion> versions = JakartaVersionFinder.getAllKnownVersions();
-        this.setVersions(projectName, versions);
-        return versions;
+        List<JakartaVersion> detectedVersions = JakartaVersionFinder.analyzeClasspath(entries, javaProject);
+        this.setVersions(projectName, detectedVersions);
+        return detectedVersions;
     }
 
     public List<JakartaVersion> getVersion(String projectName) {
