@@ -13,7 +13,6 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -24,10 +23,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
@@ -95,13 +90,15 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
             }
 
             // Rule 3: inconsistent specialization -- more than one bean specializes the same base
-            Map<String, List<IType>> specializersByUltimateBase = collectProjectSpecializersByUltimateBase(unit);
+            Map<String, List<IType>> specializersByBase = TypeHierarchyUtils.collectSourceTypesByKey(
+                                                                                                     unit.getJavaProject(),
+                                                                                                     this::ultimateBaseIfSpecializes);
             for (IType type : specializersInUnit) {
                 String supertypeFqName = resolveUltimateBaseFqName(type);
                 if (supertypeFqName == null) {
                     continue;
                 }
-                List<IType> allSpecializersOfBase = specializersByUltimateBase.get(supertypeFqName);
+                List<IType> allSpecializersOfBase = specializersByBase.get(supertypeFqName);
                 if (allSpecializersOfBase != null && allSpecializersOfBase.size() > 1) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
@@ -158,40 +155,28 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
     }
 
     /**
-     * Scans all source types in the project and builds a map from ultimate base FQ name
-     * to the list of @Specializes types that specialize it (directly or transitively).
+     * Returns the ultimate base FQ name for {@code type} if it is annotated with
+     * {@code @Specializes}, or {@code null} otherwise. All {@link JavaModelException}s
+     * are handled internally; this method never throws.
      *
-     * @param currentUnit the compilation unit being validated
-     * @return map of ultimate base FQ name to list of specializer types
-     * @throws JavaModelException if an error occurs accessing the Java model
+     * <p>This signature is intentionally exception-free so it can be used as a
+     * {@link java.util.function.Function}{@code <IType, String>} reference.
+     *
+     * @param type the type to inspect
+     * @return the ultimate base FQ name, or {@code null}
      */
-    private Map<String, List<IType>> collectProjectSpecializersByUltimateBase(ICompilationUnit currentUnit) throws JavaModelException {
-        Map<String, List<IType>> result = new HashMap<>();
-        IJavaProject javaProject = currentUnit.getJavaProject();
-
-        for (IPackageFragmentRoot root : javaProject.getPackageFragmentRoots()) {
-            if (root.getKind() != IPackageFragmentRoot.K_SOURCE) {
-                continue;
+    private String ultimateBaseIfSpecializes(IType type) {
+        try {
+            if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(),
+                                                     type.getAnnotations(),
+                                                     Constants.SPECIALIZES_FQ_NAME)) {
+                return null;
             }
-            for (IJavaElement child : root.getChildren()) {
-                if (!(child instanceof IPackageFragment)) {
-                    continue;
-                }
-                IPackageFragment pkg = (IPackageFragment) child;
-                for (ICompilationUnit cu : pkg.getCompilationUnits()) {
-                    for (IType type : cu.getAllTypes()) {
-                        if (!DiagnosticUtils.isMatchedAnnotation(cu, type.getAnnotations(), Constants.SPECIALIZES_FQ_NAME)) {
-                            continue;
-                        }
-                        String ultimateBaseFqName = resolveUltimateBaseFqName(type);
-                        if (ultimateBaseFqName != null) {
-                            result.computeIfAbsent(ultimateBaseFqName, k -> new ArrayList<>()).add(type);
-                        }
-                    }
-                }
-            }
+        } catch (JavaModelException e) {
+            LOGGER.log(Level.WARNING, "Could not read annotations on type: " + type.getElementName(), e);
+            return null;
         }
-        return result;
+        return resolveUltimateBaseFqName(type);
     }
 
     /**
