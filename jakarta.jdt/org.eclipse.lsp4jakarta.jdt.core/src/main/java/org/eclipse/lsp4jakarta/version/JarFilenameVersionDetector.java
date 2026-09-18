@@ -1,6 +1,10 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,9 +27,8 @@ public class JarFilenameVersionDetector {
      * @param entries The classpath entries to analyze
      * @return The detected Jakarta version
      */
-    public JakartaVersion detectVersion(IClasspathEntry[] entries) {
-        JakartaVersion detectedVersion = JakartaVersion.UNKNOWN;
-        Set<String> availableVersions = new HashSet<>();
+    public List<JakartaVersion> detectVersion(IClasspathEntry[] entries) {
+        Map<Integer, JakartaVersion> availableVersions = new HashMap<>();
 
         for (IClasspathEntry entry : entries) {
             IPath path = entry.getPath();
@@ -44,29 +47,27 @@ public class JarFilenameVersionDetector {
                 // Priority 1: Check for the Jakarta EE Platform base Jar
                 if (artifactName.contains("jakartaee-api") || artifactName.contains("jakartaee-web-api")
                     || artifactName.contains("jakartaee-core-api")) {
-                    JakartaVersion v = getBaseVersion(version);
-                    availableVersions.add(artifactName + ":" + version + " -> " + v.getLabel());
-                    if (v.getLevel() > detectedVersion.getLevel()) {
-                        detectedVersion = v;
+                    JakartaVersion filenameVersion = getBaseVersion(version);
+                    if (JakartaVersion.UNKNOWN != filenameVersion) {
+                        availableVersions.put(filenameVersion.getLevel(), filenameVersion);
                     }
                 }
 
                 // Priority 2: check module version
                 JakartaVersion moduleVersion = getModuleVersion(artifactName, version);
-                availableVersions.add(artifactName + ":" + version + " -> " + moduleVersion.getLabel());
-                if (moduleVersion.getLevel() > detectedVersion.getLevel()) {
-                    detectedVersion = moduleVersion;
-                }
+                availableVersions.put(moduleVersion.getLevel(), moduleVersion);
+
             }
         }
 
-        System.out.println("JAR Filename Analysis Results-----------");
-        availableVersions.forEach(System.out::println);
         System.out.println("------------------------------------------------------------------");
-        System.out.println("Filename Detected Version: " + detectedVersion.getLabel() + "-" + detectedVersion.getLevel());
+        System.out.println("Filename Detected Version: ");
+        availableVersions.forEach((key, version) -> {
+            System.out.println(key + ":" + version);
+        });
         System.out.println("------------------------------------------------------------------");
 
-        return detectedVersion;
+        return new ArrayList<>(availableVersions.values());
     }
 
     /**

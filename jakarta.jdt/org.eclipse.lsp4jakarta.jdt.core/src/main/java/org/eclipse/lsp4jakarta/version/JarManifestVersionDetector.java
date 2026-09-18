@@ -2,7 +2,11 @@ package org.eclipse.lsp4jakarta.version;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -25,9 +29,8 @@ public class JarManifestVersionDetector {
      * @param entries The classpath entries to analyze
      * @return The detected Jakarta version based on manifest inspection
      */
-    public JakartaVersion detectVersion(IClasspathEntry[] entries) {
-        JakartaVersion detectedVersion = JakartaVersion.UNKNOWN;
-        Set<String> manifestVersions = new HashSet<>();
+    public List<JakartaVersion> detectVersion(IClasspathEntry[] entries) {
+        Map<Integer, JakartaVersion> manifestVersions = new HashMap<>();
 
         for (IClasspathEntry entry : entries) {
             IPath path = entry.getPath();
@@ -40,24 +43,23 @@ public class JarManifestVersionDetector {
 
             try {
                 JakartaVersion manifestVersion = extractVersionFromManifest(jarPath);
-                if (manifestVersion != JakartaVersion.UNKNOWN) {
-                    manifestVersions.add(jarPath + " -> " + manifestVersion.getLabel());
-                    if (manifestVersion.getLevel() > detectedVersion.getLevel()) {
-                        detectedVersion = manifestVersion;
-                    }
+                if (JakartaVersion.UNKNOWN != manifestVersion) {
+                    manifestVersions.put(manifestVersion.getLevel(), manifestVersion);
                 }
+
             } catch (Exception e) {
                 System.err.println("Error reading manifest from: " + jarPath + " - " + e.getMessage());
             }
         }
 
-        System.out.println("JAR Manifest Analysis Results-----------");
-        manifestVersions.forEach(System.out::println);
         System.out.println("------------------------------------------------------------------");
-        System.out.println("Manifest Detected Version: " + detectedVersion.getLabel() + "-" + detectedVersion.getLevel());
+        System.out.println("Manifest Versions: ");
+        manifestVersions.forEach((key, version) -> {
+            System.out.println(key + ":" + version);
+        });
         System.out.println("------------------------------------------------------------------");
 
-        return detectedVersion;
+        return new ArrayList<>(manifestVersions.values());
     }
 
     /**
