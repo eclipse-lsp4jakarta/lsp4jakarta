@@ -54,6 +54,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfo
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.JsonArray;
@@ -902,13 +903,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                  "IdClassMustBePublic", ErrorCode.IdClassMustBePublic);
         }
 
-        boolean hasPublicNoArgConstructor = false;
-        for (IMethod method : idClass.getMethods()) {
-            if (method.isConstructor() && method.getNumberOfParameters() == 0 && Flags.isPublic(method.getFlags())) {
-                hasPublicNoArgConstructor = true;
-                break;
-            }
-        }
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(idClass);
+        boolean hasPublicNoArgConstructor = !constructorInfo.hasConstructor() || constructorInfo.hasValidPublicNoArgsConstructor();
         if (!hasPublicNoArgConstructor) {
             addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
                                  "IdClassMustHavePublicNoArgConstructor", ErrorCode.IdClassMustHavePublicNoArgConstructor);
@@ -966,45 +962,32 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @throws JavaModelException if the annotation cannot be inspected
      */
     private IType resolveIdClass(IType declaringType, IAnnotation annotation) throws JavaModelException {
-        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-            if (!Constants.VALUE.equals(pair.getMemberName()) || !(pair.getValue() instanceof String)) {
-                continue;
-            }
+        String keyClassName = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, String.class);
+        if (keyClassName == null || keyClassName.isBlank()) {
+            return null;
+        }
 
-            String simpleName = ((String) pair.getValue()).replace(".class", "");
-            String fqName = simpleName;
-            String[][] resolvedNames = declaringType.resolveType(simpleName);
-            if (resolvedNames != null && resolvedNames.length > 0) {
-                String packageName = resolvedNames[0][0];
-                String typeName = resolvedNames[0][1];
-                fqName = packageName == null || packageName.isEmpty() ? typeName : packageName + "." + typeName;
-            } else {
-                // resolveType may fail for secondary types in the same compilation unit;
-                // fall back to qualifying with the declaring type's package.
-                String packageName = declaringType.getPackageFragment().getElementName();
-                if (!packageName.isEmpty()) {
-                    fqName = packageName + "." + simpleName;
+        String fqName = ManagedBean.getFullyQualifiedClassName(declaringType, keyClassName);
+        if (fqName == null) {
+            // resolveType may fail for secondary types in the same compilation unit;
+            // fall back to qualifying with the declaring type's package.
+            String packageName = declaringType.getPackageFragment().getElementName();
+            fqName = packageName.isEmpty() ? keyClassName : packageName + "." + keyClassName;
+        }
+
+        // IJavaProject.findType() cannot locate secondary types (package-private
+        // top-level types whose file name differs from the type name). Search the
+        // declaring type's compilation unit first, then fall back to findType.
+        ICompilationUnit cu = declaringType.getCompilationUnit();
+        if (cu != null) {
+            for (IType type : cu.getAllTypes()) {
+                if (fqName.equals(type.getFullyQualifiedName('.'))) {
+                    return type;
                 }
-            }
-
-            // IJavaProject.findType() cannot locate secondary types (package-private
-            // top-level types whose file name differs from the type name). Search the
-            // declaring type's compilation unit first, then fall back to findType.
-            ICompilationUnit cu = declaringType.getCompilationUnit();
-            if (cu != null) {
-                for (IType type : cu.getAllTypes()) {
-                    if (fqName.equals(type.getFullyQualifiedName('.'))) {
-                        return type;
-                    }
-                }
-            }
-
-            IType idClass = declaringType.getJavaProject().findType(fqName);
-            if (idClass != null) {
-                return idClass;
             }
         }
-        return null;
+
+        return JDTTypeUtils.findType(declaringType.getJavaProject(), fqName);
     }
 
     /**
