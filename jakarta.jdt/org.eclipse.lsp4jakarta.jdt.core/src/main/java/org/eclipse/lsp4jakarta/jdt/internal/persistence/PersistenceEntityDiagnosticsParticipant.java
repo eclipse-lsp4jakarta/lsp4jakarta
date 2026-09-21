@@ -15,10 +15,8 @@ package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +32,6 @@ import org.eclipse.jdt.core.Flags;
  */
 
 // Imports
-import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -50,10 +47,10 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
-import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -167,11 +164,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
                     // Check @Embedded on getter methods
@@ -213,11 +210,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
                     // Check @Embedded on fields
@@ -676,7 +673,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @throws JavaModelException
      */
     private void validateFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                             JavaDiagnosticsContext context, String candidate) throws JavaModelException {
+                                             JavaDiagnosticsContext context, String candidate,
+                                             boolean entityHasIdClass) throws JavaModelException {
         String typeFQ = null;
         Range range = null;
         boolean isArrayType = false;
@@ -704,20 +702,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (Constants.ID.equals(candidate)) {
-            // Relationship @Id fields (@ManyToOne / @OneToOne) hold an entity type, not a
-            // basic type — skip the primitive/wrapper type check for them.
-            // IField and IMethod both implement IAnnotatable; IMember itself does not.
-            boolean isRelationshipId = false;
-            if (member instanceof IAnnotatable) {
-                for (IAnnotation ann : ((IAnnotatable) member).getAnnotations()) {
-                    if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.MANYTOONE)
-                        || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.ONETOONE)) {
-                        isRelationshipId = true;
-                        break;
-                    }
-                }
-            }
-            if (!isRelationshipId && (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ))) {
+            // When @IdClass is present the entity uses composite FK-based PKs (spec §2.4.1.1);
+            // @Id fields may hold entity types — InvalidIdType is not applicable.
+            // IdClassService validates correctness separately.
+            if (!entityHasIdClass && (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ))) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidIdType"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
