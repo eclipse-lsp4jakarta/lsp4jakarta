@@ -85,8 +85,7 @@ public class PersistenceEntityListenersDiagnosticsParticipant implements IJavaDi
      */
     private void collectEntityListenersDiagnostics(IType type, String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
-        IAnnotation[] annotations = type.getAnnotations();
-        for (IAnnotation annotation : annotations) {
+        for (IAnnotation annotation : type.getAnnotations()) {
             if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ENTITY_LISTENERS)) {
                 validateEntityListeners(annotation, type, uri, context, diagnostics);
             }
@@ -105,22 +104,18 @@ public class PersistenceEntityListenersDiagnosticsParticipant implements IJavaDi
      */
     private void validateEntityListeners(IAnnotation annotation, IType declaringType, String uri,
                                          JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
-        IMemberValuePair[] memberValuePairs = annotation.getMemberValuePairs();
         Set<IType> validatedListenerTypes = new HashSet<>();
         List<String> nonInstantiableListenerNames = new ArrayList<>();
         List<String> invalidConstructorListenerNames = new ArrayList<>();
 
-        for (IMemberValuePair pair : memberValuePairs) {
-            if (Constants.VALUE.equals(pair.getMemberName()) || pair.getMemberName() == null) {
-                Object value = pair.getValue();
-                if (value instanceof Object[]) {
-                    for (Object item : (Object[]) value) {
-                        checkListener(item, declaringType, validatedListenerTypes, nonInstantiableListenerNames, invalidConstructorListenerNames);
-                    }
-                } else if (value != null) {
-                    checkListener(value, declaringType, validatedListenerTypes, nonInstantiableListenerNames, invalidConstructorListenerNames);
-                }
+        Object value = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, Object.class);
+
+        if (value instanceof Object[]) {
+            for (Object item : (Object[]) value) {
+                checkListener(item, declaringType, validatedListenerTypes, nonInstantiableListenerNames, invalidConstructorListenerNames);
             }
+        } else if (value != null) {
+            checkListener(value, declaringType, validatedListenerTypes, nonInstantiableListenerNames, invalidConstructorListenerNames);
         }
 
         Range range = PositionUtils.toNameRange(annotation, context.getUtils());
