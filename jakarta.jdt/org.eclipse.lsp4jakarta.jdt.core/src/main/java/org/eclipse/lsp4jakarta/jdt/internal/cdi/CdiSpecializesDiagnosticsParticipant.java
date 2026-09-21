@@ -89,17 +89,20 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                 }
 
                 // Rule 3: inconsistent specialization -- more than one bean specializes the same base
-                String supertypeFqName = resolveUltimateBaseFqName(type);
-                if (supertypeFqName != null && hasInconsistentSpecialization(type, supertypeFqName)) {
-                    Range range = PositionUtils.toNameRange(type, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(uri,
-                                                            Messages.getMessage("InconsistentSpecialization",
-                                                                                type.getElementName(),
-                                                                                supertypeFqName),
-                                                            range,
-                                                            Constants.DIAGNOSTIC_SOURCE, null,
-                                                            ErrorCode.InvalidInconsistentSpecialization,
-                                                            DiagnosticSeverity.Error));
+                String superclassName = type.getSuperclassName();
+                if (superclassName != null) {
+                    String fqName = ManagedBean.getFullyQualifiedClassName(type, superclassName);
+                    if (fqName != null && hasInconsistentSpecialization(type, fqName)) {
+                        Range range = PositionUtils.toNameRange(type, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                Messages.getMessage("InconsistentSpecialization",
+                                                                                    type.getElementName(),
+                                                                                    fqName),
+                                                                range,
+                                                                Constants.DIAGNOSTIC_SOURCE, null,
+                                                                ErrorCode.InvalidInconsistentSpecialization,
+                                                                DiagnosticSeverity.Error));
+                    }
                 }
             }
         } catch (JavaModelException e) {

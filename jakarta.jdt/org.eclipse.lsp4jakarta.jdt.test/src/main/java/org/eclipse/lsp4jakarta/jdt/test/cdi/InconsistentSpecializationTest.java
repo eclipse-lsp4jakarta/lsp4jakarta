@@ -86,12 +86,12 @@ public class InconsistentSpecializationTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic d = d(8, 13, 25,
+        Diagnostic expectedDiagnostic = d(8, 13, 25,
                          msg("SpecializerA",
                              "io.openliberty.sample.jakarta.cdi.specializes.BaseBean"),
                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInconsistentSpecialization");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
     }
 
     /**
