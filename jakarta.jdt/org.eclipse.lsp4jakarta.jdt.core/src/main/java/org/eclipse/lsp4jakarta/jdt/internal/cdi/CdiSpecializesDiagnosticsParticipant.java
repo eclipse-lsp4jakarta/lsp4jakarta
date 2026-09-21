@@ -79,32 +79,27 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                     if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
                         Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("SpecializedBeanWithNamedAnnotation", type.getElementName()),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, null,
-                                                                 ErrorCode.InvalidSpecializedBeanWithNamedAnnotation,
-                                                                 DiagnosticSeverity.Error));
+                                                                Messages.getMessage("SpecializedBeanWithNamedAnnotation", type.getElementName()),
+                                                                range,
+                                                                Constants.DIAGNOSTIC_SOURCE, null,
+                                                                ErrorCode.InvalidSpecializedBeanWithNamedAnnotation,
+                                                                DiagnosticSeverity.Error));
                         break;
                     }
                 }
-            }
 
-            // Rule 3: inconsistent specialization -- more than one bean specializes the same base
-            for (IType type : specializersInUnit) {
+                // Rule 3: inconsistent specialization -- more than one bean specializes the same base
                 String supertypeFqName = resolveUltimateBaseFqName(type);
-                if (supertypeFqName == null) {
-                    continue;
-                }
-                if (hasInconsistentSpecialization(type, supertypeFqName)) {
+                if (supertypeFqName != null && hasInconsistentSpecialization(type, supertypeFqName)) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("InconsistentSpecialization",
-                                                                                 type.getElementName(),
-                                                                                 supertypeFqName),
-                                                             range,
-                                                             Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidInconsistentSpecialization,
-                                                             DiagnosticSeverity.Error));
+                                                            Messages.getMessage("InconsistentSpecialization",
+                                                                                type.getElementName(),
+                                                                                supertypeFqName),
+                                                            range,
+                                                            Constants.DIAGNOSTIC_SOURCE, null,
+                                                            ErrorCode.InvalidInconsistentSpecialization,
+                                                            DiagnosticSeverity.Error));
                 }
             }
         } catch (JavaModelException e) {
