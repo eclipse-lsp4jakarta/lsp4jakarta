@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
+import java.beans.Introspector;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ class IdClassService {
         // PK type, not the relationship type (spec §2.4.1.1, third bullet).
         Map<String, String> entityIdMap = new HashMap<>();
         for (IMember member : idMembers) {
-            String name = fieldAccess ? member.getElementName() : propertyNameFromGetter(member.getElementName());
+            String name = fieldAccess ? member.getElementName() : getterPropertyName(member.getElementName());
             if (name != null) {
                 entityIdMap.put(name, resolveExpectedKeyClassType(member, entityType));
             }
@@ -97,7 +98,7 @@ class IdClassService {
             }
         } else {
             for (IMethod method : keyClass.getMethods()) {
-                String propName = propertyNameFromGetter(method.getElementName());
+                String propName = getterPropertyName(method.getElementName());
                 if (propName != null && method.getNumberOfParameters() == 0) {
                     keyClassMap.put(propName, JDTTypeUtils.getResolvedResultTypeName(method));
                 }
@@ -106,7 +107,7 @@ class IdClassService {
 
         // Check every entity @Id member against the key class map.
         for (IMember idMember : idMembers) {
-            String memberName = fieldAccess ? idMember.getElementName() : propertyNameFromGetter(idMember.getElementName());
+            String memberName = fieldAccess ? idMember.getElementName() : getterPropertyName(idMember.getElementName());
             if (memberName == null) {
                 continue;
             }
@@ -174,14 +175,7 @@ class IdClassService {
             if (DiagnosticUtils.isMatchedAnnotation(parentCu, ann, Constants.IDCLASS)) {
                 String classLiteral = DiagnosticUtils.getAnnotationMemberValue(ann, Constants.VALUE, String.class);
                 if (classLiteral != null) {
-                    String simpleName = classLiteral.replace(".class", "");
-                    String[][] resolved = parentType.resolveType(simpleName);
-                    if (resolved != null && resolved.length > 0) {
-                        String pkg = resolved[0][0];
-                        String typeName = resolved[0][1];
-                        return (pkg == null || pkg.isEmpty()) ? typeName : pkg + "." + typeName;
-                    }
-                    return simpleName;
+                    return resolveClassLiteralFqn(parentType, classLiteral);
                 }
             }
         }
@@ -220,17 +214,7 @@ class IdClassService {
             return null;
         }
 
-        String simpleName = classLiteral.replace(".class", "");
-        String fqName;
-        String[][] resolvedNames = declaringType.resolveType(simpleName);
-        if (resolvedNames != null && resolvedNames.length > 0) {
-            String pkg = resolvedNames[0][0];
-            fqName = (pkg == null || pkg.isEmpty()) ? resolvedNames[0][1] : pkg + "." + resolvedNames[0][1];
-        } else {
-            // Fall back to qualifying with the declaring type's package (handles secondary types).
-            String pkg = declaringType.getPackageFragment().getElementName();
-            fqName = pkg.isEmpty() ? simpleName : pkg + "." + simpleName;
-        }
+        String fqName = resolveClassLiteralFqn(declaringType, classLiteral);
 
         // Search the declaring type's CU first (findType cannot locate secondary types).
         ICompilationUnit cu = declaringType.getCompilationUnit();
@@ -246,24 +230,47 @@ class IdClassService {
     }
 
     /**
-     * Derives a Java bean property name from a getter method name.
+     * Resolves a class literal annotation value (e.g. {@code "EmployeePK.class"}) to a
+     * fully-qualified class name relative to the given context type.
+     * Falls back to qualifying with the context type's package when {@link IType#resolveType}
+     * cannot resolve the name (e.g. for secondary types in a separate file).
+     *
+     * @param contextType the type used to resolve imports
+     * @param classLiteral the annotation value string (with or without trailing {@code ".class"})
+     * @return the fully-qualified class name
+     * @throws JavaModelException if the Java model cannot be inspected
+     */
+    private String resolveClassLiteralFqn(IType contextType, String classLiteral) throws JavaModelException {
+        String simpleName = classLiteral.replace(".class", "");
+        String[][] resolved = contextType.resolveType(simpleName);
+        if (resolved != null && resolved.length > 0) {
+            String pkg = resolved[0][0];
+            return (pkg == null || pkg.isEmpty()) ? resolved[0][1] : pkg + "." + resolved[0][1];
+        }
+        // Fall back to qualifying with the context type's package.
+        String pkg = contextType.getPackageFragment().getElementName();
+        return pkg.isEmpty() ? simpleName : pkg + "." + simpleName;
+    }
+
+    /**
+     * Derives a Java bean property name from a getter method name using
+     * {@link Introspector#decapitalize}, consistent with the approach in
+     * {@link PersistenceMapKeyDiagnosticsParticipant}.
      * Returns {@code null} if the method name does not follow getter conventions.
      *
      * @param methodName the getter method name (e.g. {@code "getName"}, {@code "isActive"})
      * @return the property name (e.g. {@code "name"}, {@code "active"}), or {@code null}
      */
-    private String propertyNameFromGetter(String methodName) {
+    private String getterPropertyName(String methodName) {
         if (methodName == null) {
             return null;
         }
-        String suffix;
         if (methodName.startsWith("get") && methodName.length() > 3) {
-            suffix = methodName.substring(3);
-        } else if (methodName.startsWith("is") && methodName.length() > 2) {
-            suffix = methodName.substring(2);
-        } else {
-            return null;
+            return Introspector.decapitalize(methodName.substring(3));
         }
-        return Character.toLowerCase(suffix.charAt(0)) + suffix.substring(1);
+        if (methodName.startsWith("is") && methodName.length() > 2) {
+            return Introspector.decapitalize(methodName.substring(2));
+        }
+        return null;
     }
 }
