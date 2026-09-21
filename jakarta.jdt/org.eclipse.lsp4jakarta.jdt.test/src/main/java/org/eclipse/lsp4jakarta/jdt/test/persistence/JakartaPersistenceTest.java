@@ -1799,4 +1799,122 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, insertEntityCodeAction, insertMappedSuperclassCodeAction, removeCodeAction);
     }
 
+    @Test
+    public void testIdClassMemberAlignmentValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberAlignmentValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id fields perfectly match key class members by name and type — no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testIdClassMemberNameMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberNameMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id field "firstName" has no match in key class — single diagnostic on the @Id field.
+        Diagnostic firstNameMissingInKeyClassDiagnostic = d(28, 19, 28,
+                                                            "The entity @Id field or property 'firstName' does not have a corresponding member in the @IdClass key class.",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberMissingInKeyClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstNameMissingInKeyClassDiagnostic);
+    }
+
+    @Test
+    public void testIdClassMemberTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id field "firstName" is String but key class field is int.
+        Diagnostic typeMismatchDiagnostic = d(28, 19, 28,
+                                              "The type of @Id field or property 'firstName' in the entity ('java.lang.String') does not match the type of the corresponding member in the @IdClass key class ('int').",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeMismatchDiagnostic);
+    }
+
+    @Test
+    public void testIdClassManyToOneValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassManyToOneValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @ManyToOne @Id field "dept" resolves to Department's PK type (int),
+        // and the key class holds int — types match, no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testIdClassManyToOneTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassManyToOneTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @ManyToOne @Id field "dept" resolves to Department's PK type (int),
+        // but the key class holds String — type mismatch expected.
+        Diagnostic deptTypeMismatchDiagnostic = d(35, 23, 27,
+                                                  "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic);
+    }
+
+    @Test
+    public void testIdClassOneToOneValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassOneToOneValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne @Id field "dept" resolves to Department's PK type (int),
+        // and the key class holds int — types match, no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testIdClassOneToOneTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassOneToOneTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne @Id field "dept" resolves to Department's PK type (int),
+        // but the key class holds String — type mismatch expected.
+        Diagnostic deptTypeMismatchDiagnostic = d(35, 23, 27,
+                                                  "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic);
+    }
+
 }
