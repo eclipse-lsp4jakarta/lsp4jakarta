@@ -15,8 +15,10 @@ package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +34,7 @@ import org.eclipse.jdt.core.Flags;
  */
 
 // Imports
+import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
@@ -93,6 +96,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IAnnotation namedQueriesAnnotation = null;
             IAnnotation namedNativeQueryAnnotation = null;
             IAnnotation namedNativeQueriesAnnotation = null;
+            IAnnotation idClassAnnotation = null;
 
             IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
@@ -113,6 +117,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     namedNativeQueryAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
                     namedNativeQueriesAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.IDCLASS)) {
+                    idClassAnnotation = annotation;
                 }
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
@@ -320,6 +327,12 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                 if (!versionMembers.isEmpty()) {
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
+                }
+
+                // Validate @IdClass member alignment when the entity uses composite keys
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a132
+                if (idClassAnnotation != null && idMembers.size() > 1) {
+                    validateIdClassMemberAlignment(type, idClassAnnotation, idMembers, context, uri, diagnostics);
                 }
 
                 // Check @Inheritance is only on the root of the entity hierarchy
@@ -691,7 +704,20 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (Constants.ID.equals(candidate)) {
-            if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
+            // Relationship @Id fields (@ManyToOne / @OneToOne) hold an entity type, not a
+            // basic type — skip the primitive/wrapper type check for them.
+            // IField and IMethod both implement IAnnotatable; IMember itself does not.
+            boolean isRelationshipId = false;
+            if (member instanceof IAnnotatable) {
+                for (IAnnotation ann : ((IAnnotatable) member).getAnnotations()) {
+                    if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.MANYTOONE)
+                        || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.ONETOONE)) {
+                        isRelationshipId = true;
+                        break;
+                    }
+                }
+            }
+            if (!isRelationshipId && (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ))) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidIdType"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -868,6 +894,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
+    }
+
+    private void validateIdClassMemberAlignment(IType entityType, IAnnotation idClassAnnotation,
+                                                List<IMember> idMembers,
+                                                JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics) throws JavaModelException {
+        new IdClassService().validate(entityType, idClassAnnotation, idMembers, context, uri, diagnostics);
     }
 
 }
