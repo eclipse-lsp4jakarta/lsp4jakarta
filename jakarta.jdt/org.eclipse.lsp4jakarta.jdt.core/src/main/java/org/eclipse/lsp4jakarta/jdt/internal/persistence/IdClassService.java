@@ -27,6 +27,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
@@ -175,7 +176,8 @@ class IdClassService {
             if (DiagnosticUtils.isMatchedAnnotation(parentCu, ann, Constants.IDCLASS)) {
                 String classLiteral = DiagnosticUtils.getAnnotationMemberValue(ann, Constants.VALUE, String.class);
                 if (classLiteral != null) {
-                    return resolveClassLiteralFqn(parentType, classLiteral);
+                    String simpleName = classLiteral.replace(".class", "");
+                    return ManagedBean.getFullyQualifiedClassName(parentType, simpleName);
                 }
             }
         }
@@ -196,12 +198,8 @@ class IdClassService {
     }
 
     /**
-     * Resolves the {@link IType} referenced by an {@code @IdClass} annotation.
-     *
-     * <p>The annotation value is a class literal (e.g. {@code @IdClass(EmployeePK.class)}).
-     * JDT represents this as a {@link String} member value. This method resolves that name
-     * against the declaring type's compilation unit, with a fall-back for secondary types
-     * (package-private top-level types whose file name differs from the type name).</p>
+     * Resolves the {@link IType} referenced by an {@code @IdClass} annotation using
+     * {@link ManagedBean#getChildITypeByName}.
      *
      * @param declaringType the type that carries the {@code @IdClass} annotation
      * @param annotation the {@code @IdClass} annotation
@@ -213,43 +211,7 @@ class IdClassService {
         if (classLiteral == null) {
             return null;
         }
-
-        String fqName = resolveClassLiteralFqn(declaringType, classLiteral);
-
-        // Search the declaring type's CU first (findType cannot locate secondary types).
-        ICompilationUnit cu = declaringType.getCompilationUnit();
-        if (cu != null) {
-            for (IType type : cu.getAllTypes()) {
-                if (fqName.equals(type.getFullyQualifiedName('.'))) {
-                    return type;
-                }
-            }
-        }
-
-        return declaringType.getJavaProject().findType(fqName);
-    }
-
-    /**
-     * Resolves a class literal annotation value (e.g. {@code "EmployeePK.class"}) to a
-     * fully-qualified class name relative to the given context type.
-     * Falls back to qualifying with the context type's package when {@link IType#resolveType}
-     * cannot resolve the name (e.g. for secondary types in a separate file).
-     *
-     * @param contextType the type used to resolve imports
-     * @param classLiteral the annotation value string (with or without trailing {@code ".class"})
-     * @return the fully-qualified class name
-     * @throws JavaModelException if the Java model cannot be inspected
-     */
-    private String resolveClassLiteralFqn(IType contextType, String classLiteral) throws JavaModelException {
-        String simpleName = classLiteral.replace(".class", "");
-        String[][] resolved = contextType.resolveType(simpleName);
-        if (resolved != null && resolved.length > 0) {
-            String pkg = resolved[0][0];
-            return (pkg == null || pkg.isEmpty()) ? resolved[0][1] : pkg + "." + resolved[0][1];
-        }
-        // Fall back to qualifying with the context type's package.
-        String pkg = contextType.getPackageFragment().getElementName();
-        return pkg.isEmpty() ? simpleName : pkg + "." + simpleName;
+        return ManagedBean.getChildITypeByName(declaringType, classLiteral.replace(".class", ""));
     }
 
     /**
