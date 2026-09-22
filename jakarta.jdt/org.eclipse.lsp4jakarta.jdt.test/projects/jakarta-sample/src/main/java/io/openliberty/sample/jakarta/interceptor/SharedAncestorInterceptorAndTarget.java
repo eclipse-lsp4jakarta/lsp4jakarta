@@ -9,10 +9,8 @@ import jakarta.interceptor.InvocationContext;
  *   - InterceptorSubclassOfShared.java  — annotated with @Interceptor
  *   - NonInterceptorSubclassOfShared.java — NOT annotated with @Interceptor
  *
- * Because at least one subclass IS an @Interceptor, the project-wide scan
- * adds this class's FQN to the interceptorAncestorFqns set, and the diagnostic
- * must be suppressed here. nameCount.merge() is called once (by the interceptor
- * subclass visit), resulting in a count of 1 for this FQN.
+ * Because at least one subclass IS an @Interceptor, the ITypeHierarchy subtype
+ * search finds it in the other file and suppresses the diagnostic.
  * No InvalidAroundConstructInTargetClass diagnostic should be reported.
  */
 public class SharedAncestorInterceptorAndTarget {

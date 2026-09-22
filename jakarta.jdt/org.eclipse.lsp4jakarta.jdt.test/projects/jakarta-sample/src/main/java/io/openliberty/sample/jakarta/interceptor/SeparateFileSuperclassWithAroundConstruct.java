@@ -9,9 +9,8 @@ import jakarta.interceptor.InvocationContext;
  * (SeparateFileInterceptorSubclass.java).
  *
  * The Jakarta Interceptors 2.0 spec permits @AroundConstruct in interceptor
- * classes AND their superclasses. When the interceptor subclass lives in a
- * different file, a file-only scan wrongly flags this class. The project-wide
- * scan via ProjectWideNameScanner must suppress the diagnostic here.
+ * classes AND their superclasses. The ITypeHierarchy subtype search discovers
+ * the @Interceptor subclass in the other file and suppresses the diagnostic.
  */
 public class SeparateFileSuperclassWithAroundConstruct {
 

@@ -960,8 +960,8 @@ public class InterceptorTest extends BaseJakartaTest {
 
         // Invalid: @AroundConstruct declared in a common ancestor of two non-interceptor
         // subclasses (NonInterceptorSubclassA, NonInterceptorSubclassB) in separate files.
-        // Neither subclass is @Interceptor, so the project-wide scan adds no entry for
-        // this ancestor's FQN — the diagnostic must still fire.
+        // Neither subclass is @Interceptor, so the ITypeHierarchy subtype search finds
+        // no @Interceptor subclass — the diagnostic must still fire.
         Diagnostic aroundConstructInSharedAncestor = d(19, 16, 25,
                                                        "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
@@ -982,9 +982,9 @@ public class InterceptorTest extends BaseJakartaTest {
 
         // Valid: @AroundConstruct declared in a common ancestor of two subclasses in
         // separate files — one @Interceptor (InterceptorSubclassOfShared) and one
-        // non-interceptor (NonInterceptorSubclassOfShared). Because the interceptor
-        // subclass drives the scan, the ancestor's FQN is added to interceptorAncestorFqns
-        // with a count of 1, and the diagnostic must be suppressed.
+        // non-interceptor (NonInterceptorSubclassOfShared). The ITypeHierarchy subtype
+        // search finds the @Interceptor subclass in the other file and suppresses the
+        // diagnostic.
         // No InvalidAroundConstructInTargetClass diagnostic should be reported.
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
