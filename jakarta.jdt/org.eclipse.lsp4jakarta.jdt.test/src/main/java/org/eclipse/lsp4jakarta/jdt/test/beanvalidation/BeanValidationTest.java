@@ -811,13 +811,13 @@ public class BeanValidationTest extends BaseJakartaTest {
 
         // line 70 (0-based 69): Map<String, @Size Boolean> — Boolean is not CharSequence/Collection/Map/Array
         Diagnostic sizeOnBooleanError = d(69, 39, 52,
-                                          "This annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
+                                          "The @Size annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
                                           DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeTypeUse",
                                           "jakarta.validation.constraints.Size");
 
         // line 73 (0-based 72): List<@NotEmpty Boolean> — Boolean is not CharSequence/Collection/Map/Array
         Diagnostic notEmptyOnBooleanError = d(72, 36, 53,
-                                              "This annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
+                                              "The @NotEmpty annotation can only be used on type arguments of type CharSequence, Collection, Array, or Map.",
                                               DiagnosticSeverity.Error, "jakarta-bean-validation", "InvalidAnnotationOnNonSizeTypeUse",
                                               "jakarta.validation.constraints.NotEmpty");
 
