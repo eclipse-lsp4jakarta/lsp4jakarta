@@ -435,6 +435,8 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             } else {
                 // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
                 // scope from a superclass via @Inherited CDI scope annotations.
+                // Note: @Stateful session beans have no CDI-mandated scope restriction
+                // (CDI 3.0 §3.2.4), so no inherited-scope check is needed for them.
                 if (isSingleton) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
                     validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
