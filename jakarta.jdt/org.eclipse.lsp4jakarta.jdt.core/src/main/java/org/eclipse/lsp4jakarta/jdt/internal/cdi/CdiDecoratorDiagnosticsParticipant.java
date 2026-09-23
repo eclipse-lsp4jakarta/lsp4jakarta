@@ -151,7 +151,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                            type, uri, context, diagnostics);
         } else {
             Range range = PositionUtils.toNameRange(element, context.getUtils());
-            String message = Messages.getMessage("DelegateOutsideDecorator");
+            String message = Messages.getMessage("InvalidDelegateOutsideDecorator");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidDelegateOutsideDecorator,
