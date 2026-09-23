@@ -27,7 +27,14 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidAnnotationOnNonSizeMethodOrField,
     InvalidAnnotationOnNonStringMethodOrField,
     ConflictingConstraintAnnotations,
-    InvalidValidAnnotationOnNonCascadableType;
+    InvalidValidAnnotationOnNonCascadableType,
+    InvalidAnnotationOnNonBooleanTypeUse,
+    InvalidAnnotationOnNonBigDecimalTypeUse,
+    InvalidAnnotationOnNonStringTypeUse,
+    InvalidAnnotationOnNonDateTimeTypeUse,
+    InvalidAnnotationOnNonMinMaxTypeUse,
+    InvalidAnnotationOnNonPositiveTypeUse,
+    InvalidAnnotationOnNonSizeTypeUse;
 
     /**
      * {@inheritDoc}

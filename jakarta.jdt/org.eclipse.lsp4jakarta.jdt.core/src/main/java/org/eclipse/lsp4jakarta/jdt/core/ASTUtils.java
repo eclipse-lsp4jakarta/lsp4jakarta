@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -103,6 +104,36 @@ public class ASTUtils {
         MethodDeclarationVisitor visitor = new ASTUtils().new MethodDeclarationVisitor();
         node.accept(visitor);
         return visitor.getMethodDeclarations();
+    }
+
+    /**
+     * This visitor visits an ASTNode and records all field declarations during its visit.
+     */
+    private static class FieldDeclarationVisitor extends ASTVisitor {
+        private final List<FieldDeclaration> declarations = new ArrayList<>();
+
+        @Override
+        public boolean visit(final FieldDeclaration f) {
+            declarations.add(f);
+            return super.visit(f);
+        }
+
+        public List<FieldDeclaration> getFieldDeclarations() {
+            return Collections.unmodifiableList(declarations);
+        }
+    }
+
+    /**
+     * Given a compilation unit returns a list of all field declarations.
+     *
+     * @param unit
+     * @return list of field declarations
+     */
+    public static List<FieldDeclaration> getFieldDeclarations(ICompilationUnit unit) {
+        ASTNode node = getASTNode(unit);
+        FieldDeclarationVisitor visitor = new FieldDeclarationVisitor();
+        node.accept(visitor);
+        return visitor.getFieldDeclarations();
     }
 
     /**
