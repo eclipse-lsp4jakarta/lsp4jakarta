@@ -357,10 +357,7 @@ public class BeanValidationDiagnosticsParticipant implements IJavaDiagnosticsPar
                     if (matched == null || matched.equals(VALID))
                         continue;
 
-                    // erasedName: strip type parameters (e.g. "java.util.List<X>" → "java.util.List")
-                    String qualifiedName = resolved.getQualifiedName();
-                    int paramStart = qualifiedName.indexOf('<');
-                    String erasedName = paramStart >= 0 ? qualifiedName.substring(0, paramStart) : qualifiedName;
+                    String erasedName = resolved.getErasure().getQualifiedName();
 
                     // Each case checks validity and emits the TYPE_USE-specific error code.
                     // Primitives are not valid generic type arguments (Java compile error), so
