@@ -913,4 +913,59 @@ public class InterceptorTest extends BaseJakartaTest {
         // Valid lifecycle callback signatures in superclass — no diagnostic must fire
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testSeparateFileSuperclassWithInvalidLifecycleCallbackSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        // Open the superclass file — its @Interceptor subclass lives in a separate file
+        // (SeparateFileInterceptorSubclassForLifecycle.java). The ITypeHierarchy subtype
+        // search must detect the @Interceptor subclass in the other file and trigger
+        // lifecycle callback signature validation on the superclass methods.
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SeparateFileSuperclassWithInvalidLifecycle.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        String signatureMsg = "Lifecycle callback interceptor methods declared in an interceptor class or its superclass must have one of the signatures: void <METHOD>(InvocationContext) or Object <METHOD>(InvocationContext).";
+
+        // @PreDestroy with wrong param type (line 19, method name "preDestroyWrongParam")
+        Diagnostic preDestroyWrongParam = d(19, 16, 36, signatureMsg,
+                                            DiagnosticSeverity.Error, "jakarta-interceptor",
+                                            "InvalidLifecycleCallbackInterceptorMethodSignature");
+
+        // @PostConstruct with String return type (line 23, method name "postConstructInvalidReturn")
+        Diagnostic postConstructInvalidReturn = d(23, 18, 44, signatureMsg,
+                                                  DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                  "InvalidLifecycleCallbackInterceptorMethodSignature");
+
+        // @AroundConstruct with String return type (line 29, method name "aroundConstructInvalidReturn")
+        Diagnostic aroundConstructInvalidReturn = d(29, 18, 46, signatureMsg,
+                                                    DiagnosticSeverity.Error, "jakarta-interceptor",
+                                                    "InvalidLifecycleCallbackInterceptorMethodSignature");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              preDestroyWrongParam, postConstructInvalidReturn, aroundConstructInvalidReturn);
+    }
+
+    @Test
+    public void testSeparateFileSuperclassWithValidLifecycleCallbackSignatures() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        // Open the superclass file — its @Interceptor subclass lives in a separate file
+        // (SeparateFileInterceptorSubclassValidLifecycle.java). All lifecycle callback
+        // signatures are valid — no diagnostic must fire.
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SeparateFileSuperclassWithValidLifecycle.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid signatures — no InvalidLifecycleCallbackInterceptorMethodSignature diagnostic
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
