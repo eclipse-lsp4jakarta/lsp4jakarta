@@ -401,17 +401,6 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * Converts a list of fully qualified annotation names to simple names.
-     *
-     * @param annotations the list of FQ annotation names
-     * @return comma-separated string of simple annotation names
-     * @throws JavaModelException if there's an error accessing the Java model
-     */
-    private String getSimpleAnnotationNames(List<String> annotations) throws JavaModelException {
-        return annotations.stream().map(DiagnosticUtils::getSimpleName).distinct().collect(Collectors.joining(", "));
-    }
-
-    /**
      * Checks if an interceptor class has a @Priority annotation with a negative value.
      * According to Jakarta Interceptors 2.0 specification, negative priority values are
      * reserved for future use and should not be used.

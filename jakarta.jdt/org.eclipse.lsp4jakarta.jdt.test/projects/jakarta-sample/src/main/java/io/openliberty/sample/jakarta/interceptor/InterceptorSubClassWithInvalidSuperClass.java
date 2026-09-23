@@ -24,7 +24,7 @@ class InterceptorSuperClassBase {
         return (String) ctx.proceed();
     }
     
- // Invalid: wrong return type — @PostConstruct
+    // Invalid: wrong return type — @PostConstruct
     @AroundConstruct
     public String aroundConstructInvalidReturn(InvocationContext ctx) throws Exception {
         return (String) ctx.proceed();
