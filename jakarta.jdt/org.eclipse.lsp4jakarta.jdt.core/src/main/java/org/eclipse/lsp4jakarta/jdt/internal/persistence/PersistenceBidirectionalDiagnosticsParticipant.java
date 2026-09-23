@@ -262,10 +262,7 @@ public class PersistenceBidirectionalDiagnosticsParticipant implements IJavaDiag
         if (Constants.ONE_TO_MANY.equals(relAnnotationFQ)) {
             return Constants.MANY_TO_ONE;
         }
-        if (Constants.MANY_TO_MANY.equals(relAnnotationFQ)) {
-            return Constants.MANY_TO_MANY;
-        }
-        // ONE_TO_ONE is self-mirroring.
+        // MANY_TO_MANY and ONE_TO_ONE are self-mirroring.
         return relAnnotationFQ;
     }
 
