@@ -1031,6 +1031,10 @@ public class InterceptorTest extends BaseJakartaTest {
                                             DiagnosticSeverity.Error, "jakarta-interceptor",
                                             "InvalidLifecycleCallbackInterceptorMethodSignature");
 
+        Diagnostic missingProceed = d(19, 16, 36, "Interceptor methods must always call the InvocationContext.proceed method.",
+                                      DiagnosticSeverity.Error, "jakarta-interceptor",
+                                      "InvalidInterceptorMethodsProceedMissing");
+
         // @PostConstruct with String return type (line 23, method name "postConstructInvalidReturn")
         Diagnostic postConstructInvalidReturn = d(23, 18, 44, signatureMsg,
                                                   DiagnosticSeverity.Error, "jakarta-interceptor",
@@ -1042,7 +1046,7 @@ public class InterceptorTest extends BaseJakartaTest {
                                                     "InvalidLifecycleCallbackInterceptorMethodSignature");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
-                              preDestroyWrongParam, postConstructInvalidReturn, aroundConstructInvalidReturn);
+                              preDestroyWrongParam, missingProceed, postConstructInvalidReturn, aroundConstructInvalidReturn);
     }
 
     @Test
