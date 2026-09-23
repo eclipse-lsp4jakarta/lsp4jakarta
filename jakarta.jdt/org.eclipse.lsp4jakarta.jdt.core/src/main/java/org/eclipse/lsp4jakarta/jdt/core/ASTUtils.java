@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -229,6 +231,28 @@ public class ASTUtils {
                 return (MethodDeclaration) currentNode;
             }
             currentNode = currentNode.getParent();
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the declaring {@link IType} of a {@link MethodDeclaration} by walking
+     *
+     * @param methodDecl the method declaration to resolve
+     * @return the declaring {@link IType}, or {@code null} if it cannot be resolved
+     */
+    public static IType getDeclaringType(MethodDeclaration methodDecl) {
+        IMethodBinding binding = methodDecl.resolveBinding();
+        if (binding == null) {
+            return null;
+        }
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
+            return null;
+        }
+        IJavaElement javaElement = declaringClass.getJavaElement();
+        if (javaElement instanceof IType) {
+            return (IType) javaElement;
         }
         return null;
     }

@@ -875,26 +875,26 @@ public class InterceptorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 27: final class InvalidFinalInterceptorBindingClass {
-        Diagnostic finalClassDiagnostic = d(26, 12, 47,
+        // Line 24: final class InvalidFinalInterceptorBindingClass {
+        Diagnostic finalClassDiagnostic = d(23, 12, 47,
                                             "A component class that declares or inherits a class-level interceptor binding must not be declared final.",
                                             DiagnosticSeverity.Error, "jakarta-interceptor",
                                             "InvalidFinalInterceptorBindingClass");
 
-        // Line 40: public final Object intercept(...) - non-static, non-private final method
-        Diagnostic finalInterceptDiagnostic = d(39, 24, 33,
+        // Line 36: public final Object intercept() - non-static, non-private final method
+        Diagnostic finalInterceptDiagnostic = d(35, 24, 33,
                                                 "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'intercept'.",
                                                 DiagnosticSeverity.Error, "jakarta-interceptor",
                                                 "InvalidMethodOnInterceptorBindingClass");
 
-        // Line 45: protected final void protectedHelper() - non-static, non-private final method
-        Diagnostic finalProtectedHelperDiagnostic = d(44, 25, 40,
+        // Line 41: protected final void protectedHelper() - non-static, non-private final method
+        Diagnostic finalProtectedHelperDiagnostic = d(40, 25, 40,
                                                       "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'protectedHelper'.",
                                                       DiagnosticSeverity.Error, "jakarta-interceptor",
                                                       "InvalidMethodOnInterceptorBindingClass");
 
-        // Line 49: final void packagePrivateHelper() - package-private (default) final method, non-static, non-private
-        Diagnostic finalPackagePrivateHelperDiagnostic = d(48, 15, 35,
+        // Line 45: final void packagePrivateHelper() - package-private (default) final method, non-static, non-private
+        Diagnostic finalPackagePrivateHelperDiagnostic = d(44, 15, 35,
                                                            "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'packagePrivateHelper'.",
                                                            DiagnosticSeverity.Error, "jakarta-interceptor",
                                                            "InvalidMethodOnInterceptorBindingClass");

@@ -24,13 +24,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -165,8 +162,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException if there is an error accessing the Java model
      */
     private boolean isInterceptorMethodWithUnwrappedProceed(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
-        return !isMatchedInvocationContextMethods(unit, methodDecl)
-               && ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)
+        return ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)
                && !ASTUtils.isProceedWrappedInTryCatch(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
     }
 
@@ -185,17 +181,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException
      */
     private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
-        IType targetClass = null;
-        IMethodBinding binding = methodDecl.resolveBinding();
-        if (binding != null) {
-            ITypeBinding declaringClass = binding.getDeclaringClass();
-            if (declaringClass != null) {
-                IJavaElement javaElement = declaringClass.getJavaElement();
-                if (javaElement instanceof IType) {
-                    targetClass = (IType) javaElement;
-                }
-            }
-        }
+        IType targetClass = ASTUtils.getDeclaringType(methodDecl);
         if (InterModuleCommonUtils.isInterceptorReferencedType(targetClass, unit)) {
             for (Object modifier : methodDecl.modifiers()) {
                 if (modifier instanceof Annotation) {

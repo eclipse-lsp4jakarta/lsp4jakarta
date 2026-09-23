@@ -14,7 +14,7 @@ import jakarta.annotation.Priority;
 @Priority(2100)
 public class ValidInterceptorWithBinding {
     
-    @AroundInvoke
+	@AroundInvoke
     public Object log(InvocationContext ctx) throws Exception {
         try {
             return ctx.proceed();
