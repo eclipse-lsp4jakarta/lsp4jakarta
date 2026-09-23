@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
@@ -25,13 +24,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -123,21 +119,51 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
-        //Used to get the list of method declarations for interceptor methods that doesn't use proceed method
-        List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(methodDecl -> {
+        List<MethodDeclaration> invocationContextMethodInvocations = new ArrayList<>();
+        List<MethodDeclaration> proceedNotInTryCatch = new ArrayList<>();
+        for (MethodDeclaration methodDecl : allMethodDeclarations) {
             try {
-                return isMatchedInvocationContextMethods(unit, methodDecl);
+                if (isMatchedInvocationContextMethods(unit, methodDecl)) {
+                    invocationContextMethodInvocations.add(methodDecl);
+                } else if (isInterceptorMethodWithUnwrappedProceed(unit, methodDecl)) {
+                    proceedNotInTryCatch.add(methodDecl);
+                }
             } catch (JavaModelException e) {
-                return false;
+                LOGGER.log(Level.WARNING, "Unable to validate interceptor method proceed usage", e);
             }
-        }).collect(Collectors.toList());
+        }
         for (MethodDeclaration m : invocationContextMethodInvocations) {
             Range range = JDTUtils.toRange(unit, m.getName().getStartPosition(), m.getName().getLength());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidInterceptorMethodsProceedMissing"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorMethodsProceedMissing,
                                                      DiagnosticSeverity.Error));
         }
+        for (MethodDeclaration m : proceedNotInTryCatch) {
+            Range range = JDTUtils.toRange(unit, m.getName().getStartPosition(), m.getName().getLength());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidInterceptorProceedNotInTryCatch"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorProceedNotInTryCatch,
+                                                     DiagnosticSeverity.Warning));
+        }
         return diagnostics;
+    }
+
+    /**
+     * Checks whether a method declaration is an interceptor method that calls {@code proceed()}
+     * but does NOT wrap that call in a try/catch/finally block.
+     *
+     * <p>According to the Jakarta Interceptors specification, exceptions and initialization
+     * and/or cleanup operations should typically be handled in try/catch/finally blocks
+     * around the proceed method.</p>
+     *
+     * @param unit the compilation unit
+     * @param methodDecl the method declaration to inspect
+     * @return {@code true} if the method is an interceptor method whose {@code proceed()} call
+     *         is not enclosed in a try statement; {@code false} otherwise
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    private boolean isInterceptorMethodWithUnwrappedProceed(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
+        return ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)
+               && !ASTUtils.isProceedWrappedInTryCatch(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
     }
 
     /**
@@ -155,17 +181,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException
      */
     private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
-        IType targetClass = null;
-        IMethodBinding binding = methodDecl.resolveBinding();
-        if (binding != null) {
-            ITypeBinding declaringClass = binding.getDeclaringClass();
-            if (declaringClass != null) {
-                IJavaElement javaElement = declaringClass.getJavaElement();
-                if (javaElement instanceof IType) {
-                    targetClass = (IType) javaElement;
-                }
-            }
-        }
+        IType targetClass = ASTUtils.getDeclaringType(methodDecl);
         if (InterModuleCommonUtils.isInterceptorReferencedType(targetClass, unit)) {
             for (Object modifier : methodDecl.modifiers()) {
                 if (modifier instanceof Annotation) {

@@ -42,6 +42,7 @@ import org.junit.Test;
 public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
+    private static final String PROCEED_NOT_IN_TRY_CATCH_MSG = "Exceptions and initialization and/or cleanup operations should typically be handled in try/catch/finally blocks around the proceed method.";
 
     @Test
     public void interceptorWithDisposer() throws Exception {
@@ -52,12 +53,16 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Test expected diagnostic
+        // Test expected diagnostics
         Diagnostic disposerDiag = d(17, 16, 23,
                                     "Interceptors and Decorators cannot have methods with parameter(s) 'conn' annotated with @Disposes.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithDisposerMethod");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, disposerDiag);
+        Diagnostic proceedNotInTryCatch = d(13, 18, 27,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, disposerDiag, proceedNotInTryCatch);
 
         // Test quickfix
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, disposerDiag);

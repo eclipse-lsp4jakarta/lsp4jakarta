@@ -12,9 +12,6 @@
  *******************************************************************************/
 package io.openliberty.sample.jakarta.interceptor;
 
-import jakarta.interceptor.AroundInvoke;
-import jakarta.interceptor.InvocationContext;
-
 /**
  * Valid dataset for issue #693:
  * A component class that declares or inherits a class-level interceptor binding
@@ -26,9 +23,9 @@ import jakarta.interceptor.InvocationContext;
 @Monitored
 public class ValidInterceptorBindingClassModifiers {
 
-    @AroundInvoke
-    public Object intercept(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
+    // Valid: public non-final method
+    public Object intercept() {
+        return null;
     }
 
     // Valid: public non-final method
