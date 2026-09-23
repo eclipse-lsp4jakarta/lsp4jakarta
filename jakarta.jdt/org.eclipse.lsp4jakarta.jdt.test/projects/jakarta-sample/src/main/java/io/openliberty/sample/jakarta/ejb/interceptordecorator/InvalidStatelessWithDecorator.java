@@ -8,10 +8,11 @@ import jakarta.inject.Inject;
 // Invalid: @Stateless with @Decorator
 @Stateless
 @Decorator
-class InvalidStatelessWithDecorator {
+class InvalidStatelessWithDecorator implements EjbDecoratorService {
     @Inject @Delegate
-    private Object delegate;
+    private EjbDecoratorService delegate;
 
+    @Override
     public void businessMethod() {
     }
 }
