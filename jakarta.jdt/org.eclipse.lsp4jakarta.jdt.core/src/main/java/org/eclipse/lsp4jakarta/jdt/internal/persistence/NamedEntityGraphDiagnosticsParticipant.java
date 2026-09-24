@@ -57,7 +57,7 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
             return diagnostics;
         }
         // Feature gate: disabled globally → no scan, no diagnostics.
-        if (!JakartaSearchSettings.SEARCH_ENGINE_DIAGNOSTICS_ENABLED) {
+        if (!JakartaSearchSettings.isSearchEngineDiagnosticsEnabled()) {
             return diagnostics;
         }
 

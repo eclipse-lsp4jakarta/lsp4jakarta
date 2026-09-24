@@ -33,30 +33,13 @@ import org.eclipse.jdt.core.search.SearchRequestor;
  * Builds a <em>name → occurrence-count</em> map by visiting every source type
  * in the project using a wildcard {@link SearchEngine} class-declaration query.
  *
- * <p>Only called when {@link JakartaSearchSettings#SEARCH_ENGINE_DIAGNOSTICS_ENABLED}
- * is {@code true}; callers must check that flag before invoking this class.
+ * <p>Only called when {@link JakartaSearchSettings#isSearchEngineDiagnosticsEnabled()}
+ * returns {@code true}; callers must check that before invoking this class.
  *
  * <p><b>Performance note:</b> every diagnostic call pays the full scan cost,
  * regardless of how many types actually carry the elements of interest.
  * With a large source set this cost grows linearly with the number of source types.
  *
- * <h3>Usage</h3>
- *
- * <pre>{@code
- * Map<String, Integer> counts = ProjectWideNameScanner.scan(
- *                                                           context.getJavaProject(),
- *                                                           (type, nameCount) -> {
- *                                                               for (IAnnotation ann : type.getAnnotations()) {
- *                                                                   if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(),
- *                                                                                                            Constants.NAMED_ENTITY_GRAPH)) {
- *                                                                       String name = getNameAttr(ann);
- *                                                                       if (name != null)
- *                                                                           nameCount.merge(name, 1, Integer::sum);
- *                                                                   }
- *                                                               }
- *                                                           },
- *                                                           monitor);
- * }</pre>
  */
 public final class ProjectWideNameScanner {
 
@@ -66,7 +49,7 @@ public final class ProjectWideNameScanner {
      * Scans every source type in {@code project} and returns a name → count map.
      *
      * <p>Only call this method after confirming
-     * {@link JakartaSearchSettings#SEARCH_ENGINE_DIAGNOSTICS_ENABLED} is {@code true}.
+     * {@link JakartaSearchSettings#isSearchEngineDiagnosticsEnabled()} returns {@code true}.
      *
      * @param project the Java project whose source scope is searched
      * @param extractor caller-supplied logic — decides what to collect from each type
