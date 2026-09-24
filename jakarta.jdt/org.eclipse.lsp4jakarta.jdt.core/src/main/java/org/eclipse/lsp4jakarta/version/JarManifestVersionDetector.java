@@ -151,7 +151,6 @@ public class JarManifestVersionDetector {
     private JakartaVersion mapManifestVersionToJakarta(String version, String bundleSymbolicName) {
         // Remove any parameters after semicolon (e.g., "jakarta.servlet-api;singleton:=true")
         String artifactIdentifier = bundleSymbolicName.split(";")[0].toLowerCase();
-        System.out.println("Using Bundle-SymbolicName: " + artifactIdentifier);
 
         // Check for Jakarta EE Platform JARs first
         if (artifactIdentifier.equals("jakarta.jakartaee-api") ||
@@ -162,7 +161,7 @@ public class JarManifestVersionDetector {
 
         // Parse version to double for module-specific mapping
         double ver = parseVersionDouble(version);
-
+        System.out.println(artifactIdentifier+":"+ver);
         // Map module-specific versions using ONLY -api suffix pattern
         if (artifactIdentifier.equals("jakarta.servlet-api")) {
             return mapToJakartaVersion(ver, 6.1, 6.0, 5.0);
