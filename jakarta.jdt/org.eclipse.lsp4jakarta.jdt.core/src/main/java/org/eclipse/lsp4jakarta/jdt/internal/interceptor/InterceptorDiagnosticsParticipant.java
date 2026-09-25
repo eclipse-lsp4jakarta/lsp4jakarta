@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -28,6 +27,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -120,6 +120,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
+            }
+
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, monitor);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -478,5 +483,73 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 return false;
             }
         });
+    }
+
+    /**
+     * Checks if a non-interceptor class declares a method annotated with
+     * {@code @AroundConstruct}, which is forbidden by the Jakarta Interceptors 2.0
+     * specification. The diagnostic is suppressed when the class is a superclass of
+     * an {@code @Interceptor}-annotated subclass declared in a different source file
+     * (spec permits {@code @AroundConstruct} in interceptor superclasses).
+     *
+     * @param type the non-interceptor type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context,
+                                                   IProgressMonitor monitor) throws CoreException {
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    // Suppress when an @Interceptor subclass exists in a different source file —
+                    // spec allows @AroundConstruct in interceptor superclasses.
+                    if (hasInterceptorSubclassInOtherFile(type, unit, monitor)) {
+                        break;
+                    }
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if {@code type} has at least one subclass (in any source
+     * file other than the one containing {@code type}) that is annotated with
+     * {@code @Interceptor}.
+     *
+     * <p>Uses {@link IType#newTypeHierarchy(IProgressMonitor)} to discover subtypes
+     * without a full project scan.
+     *
+     * @param type the type whose subtype hierarchy is to be searched
+     * @param unit the compilation unit that contains {@code type}
+     * @param monitor the progress monitor
+     * @return {@code true} if an {@code @Interceptor} subclass exists in another file
+     * @throws CoreException if there's an error building the type hierarchy
+     */
+    private boolean hasInterceptorSubclassInOtherFile(IType type, ICompilationUnit unit,
+                                                      IProgressMonitor monitor) throws CoreException {
+        ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
+        return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
+                                                                           && !subtype.getCompilationUnit().equals(unit)).anyMatch(subtype -> {
+                                                                               try {
+                                                                                   return InterModuleCommonUtils.isInterceptorType(subtype, subtype.getCompilationUnit());
+                                                                               } catch (JavaModelException e) {
+                                                                                   LOGGER.log(Level.WARNING, "Unable to check @Interceptor annotation on subtype", e);
+                                                                                   return false;
+                                                                               }
+                                                                           });
     }
 }
