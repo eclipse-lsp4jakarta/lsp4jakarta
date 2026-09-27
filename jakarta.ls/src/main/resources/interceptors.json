@@ -1,6 +1,7 @@
 {
     "Jakarta Interceptors - @Interceptor": {
       "prefix": "interceptor_class",
+      "version": "9",
       "body": [
 		"package ${1:packagename};",
 		"",

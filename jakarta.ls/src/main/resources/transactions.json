@@ -1,6 +1,7 @@
 {
     "Jakarta Transactions - UserTransaction object via injection": {
         "prefix": "tx_user_inject",
+        "version": "9",
         "body": [
             "@Resource",
             "UserTransaction ${1:transactionName};",
@@ -29,6 +30,7 @@
     },
     "Jakarta Transactions - UserTransaction object via JNDI lookup": {
         "prefix": "tx_user_jndi",
+        "version": "9",
         "body": [
             "Context context = new InitialContext();",
             "UserTransaction ${1:transactionName} = (UserTransaction) context.lookup(\"${2:address}\");",
@@ -55,6 +57,7 @@
     },
     "Jakarta Transactions - @Transactional": {
         "prefix": "@Transactional",
+        "version": "9",
         "body": [
             "@Transactional(",
             "\trollbackOn={SQLException.class, IOException.class},",

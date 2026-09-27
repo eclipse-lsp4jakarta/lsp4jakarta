@@ -151,6 +151,16 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 // that for snippet selection
                 JavaCursorContextResult cursorContext = completionResult.getCursorContext();
 
+                // Get selected version for this project
+                String projectUri = projectInfo != null ? projectInfo.getUri() : null;
+                String selectedVersion = null;
+                if (projectUri != null) {
+                    VersionData versionData = projectVersions.get(projectUri);
+                    if (versionData != null) {
+                        selectedVersion = versionData.getVersion();
+                    }
+                }
+
                 // calculate the snippet completion items based on the cursor context
                 JavaTextDocumentSnippetRegistry snippetRegistry = documents.getSnippetRegistry();
                 List<CompletionItem> snippetCompletionItems = snippetRegistry.getCompletionItems(
@@ -162,7 +172,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                                                                                                          return ((SnippetContextForJava) context).isMatch(new JavaSnippetCompletionContext(projectInfo, cursorContext));
                                                                                                      }
                                                                                                      return true;
-                                                                                                 }, projectInfo);
+                                                                                                 }, projectInfo, selectedVersion);
                 list.getItems().addAll(snippetCompletionItems);
 
                 // This reduces the number of completion requests to the server. See:

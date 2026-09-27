@@ -161,7 +161,7 @@ public class JarManifestVersionDetector {
 
         // Parse version to double for module-specific mapping
         double ver = parseVersionDouble(version);
-        System.out.println(artifactIdentifier+":"+ver);
+        System.out.println(artifactIdentifier + ":" + ver);
         // Map module-specific versions using ONLY -api suffix pattern
         if (artifactIdentifier.equals("jakarta.servlet-api")) {
             return mapToJakartaVersion(ver, 6.1, 6.0, 5.0);

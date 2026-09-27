@@ -39,6 +39,7 @@ class SnippetDeserializer implements JsonDeserializer<Snippet> {
     private static final String SCOPE_ELT = "scope";
     private static final String BODY_ELT = "body";
     private static final String CONTEXT_ELT = "context";
+    private static final String VERSION_ELT = "version";
 
     private final TypeAdapter<? extends ISnippetContext<?>> contextDeserializer;
 
@@ -93,6 +94,13 @@ class SnippetDeserializer implements JsonDeserializer<Snippet> {
         if (scopeElt != null) {
             String scope = scopeElt.getAsString();
             snippet.setScope(scope);
+        }
+
+        // version
+        JsonElement versionElt = snippetObj.get(VERSION_ELT);
+        if (versionElt != null) {
+            String version = versionElt.getAsString();
+            snippet.setVersion(version);
         }
 
         // context

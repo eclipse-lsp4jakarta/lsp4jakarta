@@ -42,6 +42,8 @@ public class Snippet {
 
     private ISnippetContext<?> context;
 
+    private String version;
+
     public String getLabel() {
         return label;
     }
@@ -104,6 +106,14 @@ public class Snippet {
 
     public void setContext(ISnippetContext<?> context) {
         this.context = context;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public boolean hasContext() {

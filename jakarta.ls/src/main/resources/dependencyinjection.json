@@ -1,6 +1,7 @@
 {
     "Jakarta DI - @Qualifier": {
       "prefix": "di_qualifier",
+      "version": "9",
       "body": [
 		"package ${1:packagename};",
 		"",
@@ -30,6 +31,7 @@
     },
 	"Jakarta DI - @Scope": {
       "prefix": "di_scope_annotation",
+      "version": "9",
       "body": [
 		"package ${1:packagename};",
 		"",

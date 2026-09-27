@@ -1,6 +1,7 @@
 {
     "Jakarta Persistence - entity manager injection": {
         "prefix": "persist_context",
+        "version": "9",
         "body": [
           "@PersistenceContext(name=\"${1:name}\")",
           "${2:EntityManager} ${3:em};"
@@ -13,6 +14,7 @@
     },
 	"Jakarta Persistence - entity manager injection with extended persistence context": {
 		"prefix": "persist_context_extended",
+		"version": "9",
 		"body": [
 		    "@PersistenceContext(type=PersistenceContextType.EXTENDED)",
 		    "${2:EntityManager} ${3:em};"
@@ -25,6 +27,7 @@
 	},
 	"Jakarta Persistence - entity manager injection with extended, unsynchronized persistence context": {
 	    "prefix": "persist_context_extended_unsync",
+	    "version": "9",
 	    "body": [
 	        "@PersistenceContext(type=PersistenceContextType.EXTENDED, synchronization = SynchronizationType.UNSYNCHRONIZED)",
 	        "${1:EntityManager} ${2:em};"
@@ -37,6 +40,7 @@
 	},
 	"Jakarta Persistence - generic entity model": {
 	    "prefix": "persist_entity",
+	    "version": "9",
 	    "body": [
 	      "package ${1:packagename};",
 	      "",
@@ -89,6 +93,7 @@
 	},
 	"Jakarta Persistence - named entitygraph annotation": {
 	    "prefix": "persist_named_entitygraph",
+	    "version": "9",
 	    "body": [
 			"// The @NamedEntityGraph annotation defines a reusable fetch plan, letting you declare which",
 			"// attributes to eagerly load instead of repeating JOIN FETCH in JPQL.",
@@ -107,6 +112,7 @@
 	},
 	"Jakarta Persistence - named query annotation": {
 	    "prefix": "persist_named_query",
+	    "version": "9",
 	    "body": [
 	        "@NamedQuery(",
 	        "\tname = \"${TM_FILENAME_BASE}.${1:findAll}\",",
@@ -121,6 +127,7 @@
 	},
 	"Jakarta Persistence - entity listener": {
 	    "prefix": "persist_entity_listener",
+	    "version": "9",
 	    "body": [
 			"package ${1:packagename};",
 		    "",
