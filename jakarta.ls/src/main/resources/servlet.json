@@ -1,7 +1,7 @@
 {
     "Jakarta Servlet - protocol independent servlet": {
         "prefix": "servlet_generic",
-        "version": "9",
+        "version": ["9", "10", "11"],
         "body": [
           "package ${1:packagename};",
           "",
@@ -27,7 +27,7 @@
     },
     "Jakarta Servlet - HTTPServlet GET request": {
         "prefix": "servlet_doget",
-        "version": "9",
+        "version": ["9", "10", "11"],
         "body": [
             "package ${1:packagename};",
             "",
@@ -55,7 +55,7 @@
     },
     "Jakarta Servlet - HTTPServlet POST request": {
         "prefix": "servlet_dopost",
-        "version": "9",
+        "version": ["9", "10", "11"],
         "body": [
             "package ${1:packagename};",
             "",
@@ -85,7 +85,7 @@
     },
     "Jakarta Servlet - WebFilter": {
         "prefix": "servlet_webfilter",
-        "version": "9",
+        "version": ["9", "10", "11"],
         "body": [
           "package ${1:packagename};",
           "",
@@ -114,7 +114,7 @@
       },
 	"Jakarta Servlet - MultipartConfig": {
 		"prefix": "servlet_multipartconfig",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -144,14 +144,14 @@
 			"}"
 		],
 		"description": "Servlet MultipartConfig",
-       		"context": {
+		"context": {
 			"type": "jakarta.servlet.http.HttpServlet",
 			"contentType": "class"
 		}
     },
 	"Jakarta Servlet - WebListener": {
 		"prefix": "servlet_weblistener",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -175,11 +175,11 @@
 		"context": {
 			"type": "jakarta.servlet.ServletContextListener",
             "contentType": "class"
-			}
+		}
 	},
 	"Jakarta Servlet - ServletSecurity": {
 		"prefix": "servlet_security",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -221,7 +221,7 @@
 	},
 	"Jakarta Servlet - DataSourceDefinition": {
 		"prefix": "servlet_datasource_definition",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",

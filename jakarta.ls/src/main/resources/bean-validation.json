@@ -1,7 +1,7 @@
 {
     "Jakarta Bean Validation - @Email": {
       "prefix": "@Email",
-      "version": "9",
+      "version": ["9", "10", "11"],
       "body": [
         "@Email",
         "\tprivate String emailAddress;"
@@ -14,7 +14,7 @@
 	},
 	"Jakarta Bean Validation - Custom Constraint Annotation": {
 		"prefix": "validation_constraint_annotation",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -48,7 +48,7 @@
 	},
 	"Jakarta Bean Validation - Custom Constraint Validator": {
 		"prefix": "validation_constraint_validator",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",

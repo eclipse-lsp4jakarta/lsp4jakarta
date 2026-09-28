@@ -1,16 +1,16 @@
 /*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License v. 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
-* which is available at https://www.apache.org/licenses/LICENSE-2.0.
-*
-* SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
-*
-* Contributors:
-*     Red Hat Inc. - initial API and implementation
-*******************************************************************************/
+ * Copyright (c) 2020 Red Hat Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ *
+ * Contributors:
+ *     Red Hat Inc. - initial API and implementation
+ *******************************************************************************/
 
 package org.eclipse.lsp4jakarta.ls.commons.snippets;
 
@@ -42,7 +42,7 @@ public class Snippet {
 
     private ISnippetContext<?> context;
 
-    private String version;
+    private List<String> versions;
 
     public String getLabel() {
         return label;
@@ -108,12 +108,12 @@ public class Snippet {
         this.context = context;
     }
 
-    public String getVersion() {
-        return version;
+    public List<String> getVersions() {
+        return versions;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setVersions(List<String> versions) {
+        this.versions = versions;
     }
 
     public boolean hasContext() {
@@ -126,6 +126,19 @@ public class Snippet {
             return true;
         }
         return contextFilter.test(getContext(), model);
+    }
+
+    /**
+     * Checks if the given version is supported by this snippet.
+     *
+     * @param version the version to check
+     * @return true if the snippet supports the given version, false otherwise
+     */
+    public boolean supportsVersion(String version) {
+        if (versions == null || versions.isEmpty()) {
+            return true; // no version restriction, support all versions
+        }
+        return versions.contains(version);
     }
 
 }

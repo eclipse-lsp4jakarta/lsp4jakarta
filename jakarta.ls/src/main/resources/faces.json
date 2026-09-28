@@ -1,7 +1,7 @@
 {
 	"Jakarta Faces - @FlowScoped": {
 		"prefix": "faces_flowscoped",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -46,7 +46,7 @@
 	},
 	"Jakarta Faces - @FacesBehavior": {
 		"prefix": "faces_behavior",
-		"version": "9",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",

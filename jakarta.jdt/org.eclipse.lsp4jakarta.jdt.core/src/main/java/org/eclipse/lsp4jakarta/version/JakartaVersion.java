@@ -1,5 +1,7 @@
 package org.eclipse.lsp4jakarta.version;
 
+import java.util.Arrays;
+
 public enum JakartaVersion {
 
     EE_11(11, "Jakarta EE 11"),
@@ -29,4 +31,26 @@ public enum JakartaVersion {
         return label;
     }
 
+    /**
+     * Finds the JakartaVersion enum constant by its label.
+     *
+     * @param label the label to search for (e.g., "Jakarta EE 11")
+     * @return the matching JakartaVersion, or UNKNOWN if not found
+     */
+    public static JakartaVersion fromLabel(String label) {
+        if (label == null) {
+            return UNKNOWN;
+        }
+        return Arrays.stream(values()).filter(v -> v.label.equals(label)).findFirst().orElse(UNKNOWN);
+    }
+
+    /**
+     * Finds the JakartaVersion enum constant by its level.
+     *
+     * @param level the level to search for (e.g., 11)
+     * @return the matching JakartaVersion, or UNKNOWN if not found
+     */
+    public static JakartaVersion fromLevel(int level) {
+        return Arrays.stream(values()).filter(v -> v.level == level).findFirst().orElse(UNKNOWN);
+    }
 }

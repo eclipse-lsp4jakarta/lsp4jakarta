@@ -1,16 +1,16 @@
 /*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License v. 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
-* which is available at https://www.apache.org/licenses/LICENSE-2.0.
-*
-* SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
-*
-* Contributors:
-*     Red Hat Inc. - initial API and implementation
-*******************************************************************************/
+ * Copyright (c) 2020 Red Hat Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ *
+ * Contributors:
+ *     Red Hat Inc. - initial API and implementation
+ *******************************************************************************/
 
 package org.eclipse.lsp4jakarta.ls.commons.snippets;
 
@@ -96,11 +96,19 @@ class SnippetDeserializer implements JsonDeserializer<Snippet> {
             snippet.setScope(scope);
         }
 
-        // version
+        // version (supports both string and array for backward compatibility)
         JsonElement versionElt = snippetObj.get(VERSION_ELT);
         if (versionElt != null) {
-            String version = versionElt.getAsString();
-            snippet.setVersion(version);
+            List<String> versions = new ArrayList<>();
+            if (versionElt.isJsonArray()) {
+                JsonArray versionArray = (JsonArray) versionElt;
+                versionArray.forEach(elt -> {
+                    versions.add(elt.getAsString());
+                });
+            } else if (versionElt.isJsonPrimitive()) {
+                versions.add(versionElt.getAsString());
+            }
+            snippet.setVersions(versions);
         }
 
         // context

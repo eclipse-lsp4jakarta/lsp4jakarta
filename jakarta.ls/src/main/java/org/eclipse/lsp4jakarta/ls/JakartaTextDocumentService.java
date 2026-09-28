@@ -157,7 +157,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 if (projectUri != null) {
                     VersionData versionData = projectVersions.get(projectUri);
                     if (versionData != null) {
-                        selectedVersion = versionData.getVersion();
+                        selectedVersion = String.valueOf(JakartaVersion.fromLabel(versionData.getVersion()).getLevel());
                     }
                 }
 

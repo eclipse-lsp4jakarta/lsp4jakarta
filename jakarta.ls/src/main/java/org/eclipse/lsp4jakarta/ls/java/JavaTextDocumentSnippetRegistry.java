@@ -180,21 +180,9 @@ public class JavaTextDocumentSnippetRegistry extends TextDocumentSnippetRegistry
         model.put(EE_NAMESPACE_KEY,
                   projectInfo.getLabels().contains(JAKARTA_FLAG_TYPE) ? JAKARTA_VALUE : JAVAX_VALUE);
 
-        // Wrap context filter to also enforce version filtering on each snippet
-        BiPredicate<ISnippetContext<?>, Map<String, String>> versionAwareFilter = selectedVersion == null ? contextFilter : (context, m) -> {
-            // Version check: find the snippet for this context using getSnippets() lookup
-            // The contextFilter.test is invoked per-snippet in SnippetRegistry via snippet.match()
-            // We check version by threading it through the model
-            return contextFilter.test(context, m);
-        };
-
-        if (selectedVersion != null) {
-            model.put("version", selectedVersion);
-        }
-
         // Get all items from parent, then post-filter by version using the model
         List<CompletionItem> items = super.getCompletionItems(document, completionOffset, canSupportMarkdown, snippetsSupported,
-                                                              versionAwareFilter, model);
+                                                              contextFilter, model);
 
         if (selectedVersion == null) {
             return items;
@@ -212,8 +200,7 @@ public class JavaTextDocumentSnippetRegistry extends TextDocumentSnippetRegistry
             Snippet snippet = snippetByPrefix.get(prefix);
             if (snippet == null)
                 return true; // unknown snippet, keep it
-            String snippetVersion = snippet.getVersion();
-            return snippetVersion == null || snippetVersion.equals(version);
+            return snippet.supportsVersion(version);
         }).collect(Collectors.toList());
     }
 
