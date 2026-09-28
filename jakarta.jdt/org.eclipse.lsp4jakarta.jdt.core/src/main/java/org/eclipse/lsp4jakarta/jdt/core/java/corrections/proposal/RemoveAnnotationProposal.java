@@ -118,7 +118,7 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                         // Resolving fully qualified name from Annotation to fix issue #567
                         ITypeBinding binding = annotation.resolveTypeBinding();
                         if (binding.getQualifiedName().equals(matchingFqn)) {
-                            if (followsOtherAnnotationOnSameLine(children, child)) {
+                            if (isTrailingAnnotationOnSameLine(children, child)) {
                                 rewrite.replace(child, rewrite.createStringPlaceholder("", ASTNode.MARKER_ANNOTATION),
                                                 null);
                             } else {
@@ -192,15 +192,14 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
      * @return {@code true} if a sibling node ends on the same line as
      *         {@code targetChild} starts; {@code false} otherwise
      */
-    private boolean followsOtherAnnotationOnSameLine(List<? extends ASTNode> children, ASTNode targetChild) {
+    private boolean isTrailingAnnotationOnSameLine(List<? extends ASTNode> children, ASTNode targetChild) {
         int targetLine = fInvocationNode.getLineNumber(targetChild.getStartPosition());
-        for (ASTNode child : children) {
-            if (child == targetChild || child.getStartPosition() >= targetChild.getStartPosition())
-                continue;
-            int childEndLine = fInvocationNode.getLineNumber(child.getStartPosition() + child.getLength() - 1);
-            if (childEndLine == targetLine)
-                return true;
-        }
-        return false;
+        int targetStart = targetChild.getStartPosition();
+
+        return children.stream().filter(child -> child != targetChild).filter(child -> child.getStartPosition() < targetStart).anyMatch(child -> {
+            int childEnd = child.getStartPosition() + child.getLength() - 1;
+            int childEndLine = fInvocationNode.getLineNumber(childEnd);
+            return childEndLine == targetLine;
+        });
     }
 }
