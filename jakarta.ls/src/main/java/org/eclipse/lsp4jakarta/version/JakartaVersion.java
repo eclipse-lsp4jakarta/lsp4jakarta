@@ -43,13 +43,4 @@ public enum JakartaVersion {
         return Arrays.stream(values()).filter(v -> v.label.equals(label)).findFirst().orElse(UNKNOWN);
     }
 
-    /**
-     * Finds the JakartaVersion enum constant by its level.
-     *
-     * @param level the level to search for (e.g., 11)
-     * @return the matching JakartaVersion, or UNKNOWN if not found
-     */
-    public static JakartaVersion fromLevel(int level) {
-        return Arrays.stream(values()).filter(v -> v.level == level).findFirst().orElse(UNKNOWN);
-    }
 }
