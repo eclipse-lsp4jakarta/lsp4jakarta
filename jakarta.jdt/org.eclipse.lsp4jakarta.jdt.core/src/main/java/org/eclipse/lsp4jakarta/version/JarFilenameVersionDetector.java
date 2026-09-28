@@ -55,7 +55,9 @@ public class JarFilenameVersionDetector {
 
                 // Priority 2: check module version
                 JakartaVersion moduleVersion = getModuleVersion(artifactName, version);
-                availableVersions.put(moduleVersion.getLevel(), moduleVersion);
+                if (JakartaVersion.UNKNOWN != moduleVersion) {
+                    availableVersions.put(moduleVersion.getLevel(), moduleVersion);
+                }
 
             }
         }
