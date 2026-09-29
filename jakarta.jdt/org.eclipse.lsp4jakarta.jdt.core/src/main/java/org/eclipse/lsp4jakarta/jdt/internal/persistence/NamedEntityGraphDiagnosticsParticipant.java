@@ -149,16 +149,32 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
         }
     }
 
+    /**
+     * Iterates every {@code @NamedEntityGraph} nested inside the given
+     * {@code @NamedEntityGraphs} container annotation and passes each to
+     * {@code consumer}.
+     *
+     * <p>JDT's {@link org.eclipse.jdt.core.IMemberValuePair#getValue()} returns:
+     * <ul>
+     * <li>{@code Object[]} (containing {@link IAnnotation} elements) when the container
+     * specifies multiple elements or array notation, e.g. {@code @NamedEntityGraphs({@NamedEntityGraph(...), ...})}</li>
+     * <li>A single {@link IAnnotation} instance when a single element is provided without array notation,
+     * e.g. {@code @NamedEntityGraphs(@NamedEntityGraph(...))}</li>
+     * </ul>
+     */
     private void forEachNestedGraph(IAnnotation container, AnnotationConsumer consumer) throws JavaModelException {
         Object val = DiagnosticUtils.getAnnotationMemberValue(container, "value", Object.class);
         if (val == null) {
             return;
         }
-        Object[] items = (val instanceof Object[]) ? (Object[]) val : new Object[] { val };
-        for (Object item : items) {
-            if (item instanceof IAnnotation) {
-                consumer.accept((IAnnotation) item);
+        if (val instanceof Object[]) {
+            for (Object item : (Object[]) val) {
+                if (item instanceof IAnnotation) {
+                    consumer.accept((IAnnotation) item);
+                }
             }
+        } else if (val instanceof IAnnotation) {
+            consumer.accept((IAnnotation) val);
         }
     }
 }

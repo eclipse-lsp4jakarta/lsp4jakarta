@@ -25,7 +25,9 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
+import org.eclipse.lsp4jakarta.jdt.internal.search.JakartaSearchSettings;
 import org.eclipse.lsp4jakarta.jdt.test.core.BaseJakartaTest;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -38,6 +40,11 @@ import org.junit.Test;
 public class NamedEntityGraphDiagnosticsTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
+
+    @After
+    public void tearDown() throws Exception {
+        JakartaSearchSettings.setSearchEngineDiagnosticsEnabled(true);
+    }
 
     /**
      * Tests that an entity class with a {@code @NamedEntityGraph} whose name
@@ -231,5 +238,30 @@ public class NamedEntityGraphDiagnosticsTest extends BaseJakartaTest {
                                                DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstSelfDuplicateDiag, secondSelfDuplicateDiag);
+    }
+
+    /**
+     * When {@link JakartaSearchSettings#setSearchEngineDiagnosticsEnabled(boolean)} is {@code false},
+     * the project-wide scan is disabled and no diagnostics must be produced, even for a file
+     * with known duplicate entity graph names.
+     */
+    @Test
+    public void searchEngineDiagnosticsDisabledProducesNoDiagnostics() throws Exception {
+        try {
+            JakartaSearchSettings.setSearchEngineDiagnosticsEnabled(false);
+
+            IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+            IFile javaFile = javaProject.getProject().getFile(
+                                                              new Path("src/main/java/io/openliberty/sample/jakarta/persistence/NamedEntityGraphDuplicate1.java"));
+            String uri = javaFile.getLocation().toFile().toURI().toString();
+
+            JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+            diagnosticsParams.setUris(Arrays.asList(uri));
+
+            // With search engine diagnostics disabled, zero diagnostics should be emitted.
+            assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+        } finally {
+            JakartaSearchSettings.setSearchEngineDiagnosticsEnabled(true);
+        }
     }
 }
