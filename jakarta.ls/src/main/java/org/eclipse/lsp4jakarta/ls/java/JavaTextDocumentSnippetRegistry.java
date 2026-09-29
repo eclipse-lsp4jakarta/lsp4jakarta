@@ -14,7 +14,6 @@
 package org.eclipse.lsp4jakarta.ls.java;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4jakarta.commons.ProjectLabelInfoEntry;
 import org.eclipse.lsp4jakarta.commons.utils.StringUtils;
-import org.eclipse.lsp4jakarta.ls.JakartaTextDocumentService;
 import org.eclipse.lsp4jakarta.ls.commons.BadLocationException;
 import org.eclipse.lsp4jakarta.ls.commons.snippets.ISnippetContext;
 import org.eclipse.lsp4jakarta.ls.commons.snippets.Snippet;
