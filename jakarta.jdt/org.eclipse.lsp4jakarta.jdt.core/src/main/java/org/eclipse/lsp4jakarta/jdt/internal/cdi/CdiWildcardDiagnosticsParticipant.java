@@ -77,12 +77,22 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(field);
 
                 if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.INJECT_FQ_NAME)) {
-                    if (containsWildcard(field.getTypeSignature())) {
+                    String fieldSig = field.getTypeSignature();
+                    Range fieldRange = PositionUtils.toNameRange(field, context.getUtils());
+                    if (containsWildcard(fieldSig)) {
                         diagnostics.add(context.createDiagnostic(uri,
                                                                  Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectField.name()),
-                                                                 PositionUtils.toNameRange(field, context.getUtils()),
+                                                                 fieldRange,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidWildcardTypeInInjectField,
+                                                                 DiagnosticSeverity.Error));
+                    } else if (!typeParamNames.isEmpty() && isBareTypeVariable(fieldSig, typeParamNames)) {
+                        // Rule: a bare type variable (T or T[]) is not a legal bean type
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage(ErrorCode.InvalidBareTypeVariableInInjectField.name()),
+                                                                 fieldRange,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidBareTypeVariableInInjectField,
                                                                  DiagnosticSeverity.Error));
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
@@ -99,15 +109,29 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
                 if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
-                    // Check method parameters for wildcard types
+                    // Check method parameters for wildcard types and bare type variables
                     String[] parameterTypes = method.getParameterTypes();
+                    Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                     for (int i = 0; i < parameterTypes.length; i++) {
-                        if (containsWildcard(parameterTypes[i])) {
+                        String paramSig = parameterTypes[i];
+                        Range paramRange = PositionUtils.toNameRange(method.getParameters()[i], context.getUtils());
+                        if (containsWildcard(paramSig)) {
                             diagnostics.add(context.createDiagnostic(uri,
                                                                      Messages.getMessage(ErrorCode.InvalidWildcardTypeInInjectMethod.name()),
-                                                                     PositionUtils.toNameRange(method.getParameters()[i], context.getUtils()),
+                                                                     paramRange,
                                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                                      ErrorCode.InvalidWildcardTypeInInjectMethod,
+                                                                     DiagnosticSeverity.Error));
+                        } else if (!typeParamNames.isEmpty() && isBareTypeVariable(paramSig, typeParamNames)) {
+                            // Rule: a bare type variable (T or T[]) is not a legal bean type.
+                            // Diagnostic is placed on the method name so RemoveAnnotationConflictQuickFix
+                            // can resolve the @Inject annotation on the method.
+                            String paramName = method.getParameters()[i].getElementName();
+                            diagnostics.add(context.createDiagnostic(uri,
+                                                                     Messages.getMessage(ErrorCode.InvalidBareTypeVariableInInjectMethodParam.name(), paramName),
+                                                                     methodRange,
+                                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                                     ErrorCode.InvalidBareTypeVariableInInjectMethodParam,
                                                                      DiagnosticSeverity.Error));
                         }
                     }
