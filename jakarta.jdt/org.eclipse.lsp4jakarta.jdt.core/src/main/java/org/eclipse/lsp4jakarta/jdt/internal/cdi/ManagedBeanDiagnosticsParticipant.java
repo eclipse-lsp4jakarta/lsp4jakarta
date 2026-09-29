@@ -412,8 +412,9 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
             // CDI 3.0 §6.6.4: Passivating scopes must be declared @NormalScope(passivating=true).
             // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
             // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
+            // Interceptors and decorators are excluded as per CDI 3.0 §6.6.4 / §6.2.
             // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
-            if (hasPassivatingScope(type, unit)) {
+            if (!interceptorOrDecorator && hasPassivatingScope(type, unit)) {
                 validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type);
             }
 
