@@ -178,9 +178,14 @@ public class InterceptorTest extends BaseJakartaTest {
                                                      "Interceptor methods must always call the InvocationContext.proceed method.",
                                                      DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundInvokeInvalidProceed, aroundConstructInvalidProceed,
-                              aroundTimeoutInvalidProceed, postConstructInvalidProceed, preDestroyInvalidProceed, aroundInvokeInvalidProceedChild,
-                              postConstructInvalidProceedChild, preDestroyInvalidProceedChild);
+        Diagnostic aroundConstructInTargetClassProceed = d(23, 18, 41,
+                                                           "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              preDestroyInvalidProceedChild, postConstructInvalidProceedChild, aroundInvokeInvalidProceedChild,
+                              preDestroyInvalidProceed, postConstructInvalidProceed, aroundTimeoutInvalidProceed,
+                              aroundConstructInTargetClassProceed, aroundConstructInvalidProceed, aroundInvokeInvalidProceed);
     }
 
     @Test
@@ -271,88 +276,96 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test diagnostics for invalid method modifiers
-        Diagnostic finalModifierDiagnostic = d(8, 24, 32,
+        // Note: line numbers are shifted +3 from the original due to added @Monitored, @Interceptor and import
+        Diagnostic finalModifierDiagnostic = d(11, 24, 32,
                                                "AroundConstruct interceptor method must not be declared as a final method.",
                                                DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnFinalMethod",
                                                new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
 
-        Diagnostic abstractModifierDiagnostic = d(13, 27, 38,
+        Diagnostic abstractModifierDiagnostic = d(16, 27, 38,
                                                   "AroundConstruct interceptor method must not be declared as an abstract method.",
                                                   DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnAbstractMethod",
                                                   new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
 
-        Diagnostic duplicateAroundConstruct1 = d(13, 27, 38,
+        Diagnostic duplicateAroundConstruct1 = d(16, 27, 38,
                                                  "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        Diagnostic proceedDiagnostics = d(13, 27, 38,
+        Diagnostic proceedDiagnostics = d(16, 27, 38,
                                           "Interceptor methods must always call the InvocationContext.proceed method.",
                                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodsProceedMissing");
 
-        Diagnostic staticModifierDiagnostic = d(16, 25, 34,
+        Diagnostic staticModifierDiagnostic = d(19, 25, 34,
                                                 "AroundConstruct lifecycle callback interceptor method must not be declared as static except in an application client.",
                                                 DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnStaticMethod",
                                                 new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
 
-        Diagnostic invalidAbstractClassDiagnostics = d(5, 22, 51,
+        Diagnostic invalidAbstractClassDiagnostics = d(8, 22, 51,
                                                        "The class InvalidAroundConstructMethods should not contain the abstract modifier. If it contains the abstract modifier, the class should not be annotated with @Interceptor.",
                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorAnnotationOnAbstractClass");
 
-        Diagnostic invalidMulipleModifierFinalDiagnostics = d(21, 31, 50,
+        Diagnostic invalidFinalMethodOnBindingClass = d(11, 24, 32,
+                                                        "A component class that declares or inherits a class-level interceptor binding must not have a non-static, non-private final method 'logFinal'.",
+                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMethodOnInterceptorBindingClass");
+
+        Diagnostic invalidMulipleModifierFinalDiagnostics = d(24, 31, 50,
                                                               "AroundConstruct interceptor method must not be declared as a final method.",
                                                               DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnFinalMethod",
                                                               new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
 
-        Diagnostic invalidMulipleModifierStaticDiagnostics = d(21, 31, 50,
+        Diagnostic invalidMulipleModifierStaticDiagnostics = d(24, 31, 50,
                                                                "AroundConstruct lifecycle callback interceptor method must not be declared as static except in an application client.",
                                                                DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorMethodAnnotationOnStaticMethod",
                                                                new Gson().toJsonTree(Arrays.asList("jakarta.interceptor.AroundConstruct")));
 
         // Test diagnostics for duplicate interceptor methods
-        Diagnostic duplicateAroundConstruct2 = d(16, 25, 34,
+        Diagnostic duplicateAroundConstruct2 = d(19, 25, 34,
                                                  "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        Diagnostic duplicateAroundConstruct3 = d(21, 31, 50,
+        Diagnostic duplicateAroundConstruct3 = d(24, 31, 50,
                                                  "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        Diagnostic duplicateAroundConstruct4 = d(26, 18, 26,
+        Diagnostic duplicateAroundConstruct4 = d(29, 18, 26,
                                                  "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, finalModifierDiagnostic, abstractModifierDiagnostic, duplicateAroundConstruct1,
-                              proceedDiagnostics, staticModifierDiagnostic, invalidAbstractClassDiagnostics, invalidMulipleModifierFinalDiagnostics,
-                              invalidMulipleModifierStaticDiagnostics, duplicateAroundConstruct2, duplicateAroundConstruct3, duplicateAroundConstruct4);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              duplicateAroundConstruct4,
+                              invalidMulipleModifierFinalDiagnostics, invalidMulipleModifierStaticDiagnostics, duplicateAroundConstruct3,
+                              staticModifierDiagnostic, duplicateAroundConstruct2,
+                              abstractModifierDiagnostic, duplicateAroundConstruct1, proceedDiagnostics,
+                              invalidFinalMethodOnBindingClass, finalModifierDiagnostic, invalidAbstractClassDiagnostics);
 
         // Test code actions for final modifier
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, finalModifierDiagnostic);
-        TextEdit removeAroundConstructOnFinalEdit = te(7, 1, 8, 4, "");
-        TextEdit removeFinalEdit = te(8, 10, 8, 16, "");
+        TextEdit removeAroundConstructOnFinalEdit = te(10, 1, 11, 4, "");
+        TextEdit removeFinalEdit = te(11, 10, 11, 16, "");
         CodeAction removeAroundConstructOnFinalAction = ca(uri, "Remove @AroundConstruct", finalModifierDiagnostic, removeAroundConstructOnFinalEdit);
         CodeAction removeFinalAction = ca(uri, "Remove the 'final' modifier", finalModifierDiagnostic, removeFinalEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAroundConstructOnFinalAction, removeFinalAction);
 
         // Test code actions for abstract modifier
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, abstractModifierDiagnostic);
-        TextEdit removeAroundConstructOnAbstractEdit = te(12, 4, 13, 4, "");
-        TextEdit removeAbstractEdit = te(13, 10, 13, 19, "");
+        TextEdit removeAroundConstructOnAbstractEdit = te(15, 4, 16, 4, "");
+        TextEdit removeAbstractEdit = te(16, 10, 16, 19, "");
         CodeAction removeAroundConstructOnAbstractAction = ca(uri, "Remove @AroundConstruct", abstractModifierDiagnostic, removeAroundConstructOnAbstractEdit);
         CodeAction removeAbstractAction = ca(uri, "Remove the 'abstract' modifier", abstractModifierDiagnostic, removeAbstractEdit);
         assertJavaCodeAction(codeActionParams1, IJDT_UTILS, removeAroundConstructOnAbstractAction, removeAbstractAction);
 
         // Test code actions for static modifier
         JakartaJavaCodeActionParams codeActionParams2 = createCodeActionParams(uri, staticModifierDiagnostic);
-        TextEdit removeAroundConstructOnStaticEdit = te(15, 4, 16, 4, "");
-        TextEdit removeStaticEdit = te(16, 10, 16, 17, "");
+        TextEdit removeAroundConstructOnStaticEdit = te(18, 4, 19, 4, "");
+        TextEdit removeStaticEdit = te(19, 10, 19, 17, "");
         CodeAction removeAroundConstructOnStaticAction = ca(uri, "Remove @AroundConstruct", staticModifierDiagnostic, removeAroundConstructOnStaticEdit);
         CodeAction removeStaticAction = ca(uri, "Remove the 'static' modifier", staticModifierDiagnostic, removeStaticEdit);
         assertJavaCodeAction(codeActionParams2, IJDT_UTILS, removeAroundConstructOnStaticAction, removeStaticAction);
 
         // Test code actions for multiple modifiers
         JakartaJavaCodeActionParams codeActionParams3 = createCodeActionParams(uri, invalidMulipleModifierFinalDiagnostics);
-        TextEdit removeAroundConstructOnFinalMultipleEdit = te(20, 4, 21, 4, "");
-        TextEdit removeFinalMultipleEdit = te(21, 17, 21, 23, "");
+        TextEdit removeAroundConstructOnFinalMultipleEdit = te(23, 4, 24, 4, "");
+        TextEdit removeFinalMultipleEdit = te(24, 17, 24, 23, "");
         CodeAction removeAroundConstructOnFinalMultipleAction = ca(uri, "Remove @AroundConstruct", invalidMulipleModifierFinalDiagnostics,
                                                                    removeAroundConstructOnFinalMultipleEdit);
         CodeAction removeFinalMultipleAction = ca(uri, "Remove the 'final' modifier", invalidMulipleModifierFinalDiagnostics, removeFinalMultipleEdit);
@@ -360,8 +373,8 @@ public class InterceptorTest extends BaseJakartaTest {
 
         // Test code actions for multiple modifiers
         JakartaJavaCodeActionParams codeActionParams4 = createCodeActionParams(uri, invalidMulipleModifierStaticDiagnostics);
-        TextEdit removeAroundConstructOnStaticMultipleEdit = te(20, 4, 21, 4, "");
-        TextEdit removeStaticMultipleEdit = te(21, 11, 21, 18, "");
+        TextEdit removeAroundConstructOnStaticMultipleEdit = te(23, 4, 24, 4, "");
+        TextEdit removeStaticMultipleEdit = te(24, 11, 24, 18, "");
         CodeAction removeAroundConstructOnStaticMultipleAction = ca(uri, "Remove @AroundConstruct", invalidMulipleModifierStaticDiagnostics,
                                                                     removeAroundConstructOnStaticMultipleEdit);
         CodeAction removeStaticMultipleAction = ca(uri, "Remove the 'static' modifier", invalidMulipleModifierStaticDiagnostics, removeStaticMultipleEdit);
@@ -820,6 +833,159 @@ public class InterceptorTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Test that valid class and methods with interceptor binding do NOT trigger any diagnostic
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructInTargetClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidAroundConstructInTargetClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic aroundConstructInTargetClass = d(14, 18, 27,
+                                                    "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                    DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInTargetClass);
+    }
+
+    @Test
+    public void testAroundConstructInSuperclassOfTargetClass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidAroundConstructInSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic aroundConstructInSuperclass = d(14, 18, 27,
+                                                   "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                   DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSuperclass);
+    }
+
+    @Test
+    public void testAroundConstructInInterceptorClassIsValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidAroundConstructInInterceptorClass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared inside a class annotated with @Interceptor.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructInInterceptorSuperclassIsValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidAroundConstructInInterceptorSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared in a superclass that is also an interceptor
+        // class (@Interceptor). The restriction only applies to target class superclasses.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported on either class.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructInSuperclassSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SeparateFileSuperclassWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct is declared in a non-interceptor superclass whose
+        // @Interceptor-annotated subclass (SeparateFileInterceptorSubclass.java) lives
+        // in a separate source file.  The project-wide scan must recognise this class
+        // as an interceptor superclass and suppress the diagnostic.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void testAroundConstructSuperclassNonInterceptorSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InvalidSeparateFileSuperclassWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @AroundConstruct declared in a non-interceptor superclass whose
+        // only known subclass (InvalidSeparateFileTargetSubclass.java) is also a
+        // non-interceptor class defined in a separate file.
+        // No @Interceptor class extends this superclass, so the project-wide scan
+        // must NOT suppress the diagnostic — it must still fire.
+        Diagnostic aroundConstructInSeparateSuperclass = d(18, 16, 25,
+                                                           "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                           DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSeparateSuperclass);
+    }
+
+    @Test
+    public void testAroundConstructSharedAncestorTwoNonInterceptorSubclasses() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SharedAncestorWithAroundConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Invalid: @AroundConstruct declared in a common ancestor of two non-interceptor
+        // subclasses (NonInterceptorSubclassA, NonInterceptorSubclassB) in separate files.
+        // Neither subclass is @Interceptor, so the ITypeHierarchy subtype search finds
+        // no @Interceptor subclass — the diagnostic must still fire.
+        Diagnostic aroundConstructInSharedAncestor = d(19, 16, 25,
+                                                       "Around-construct interceptor methods may be only declared in interceptor classes and/or its superclasses.",
+                                                       DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSharedAncestor);
+    }
+
+    @Test
+    public void testAroundConstructSharedAncestorOneInterceptorOneNonInterceptorSubclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/SharedAncestorInterceptorAndTarget.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid: @AroundConstruct declared in a common ancestor of two subclasses in
+        // separate files — one @Interceptor (InterceptorSubclassOfShared) and one
+        // non-interceptor (NonInterceptorSubclassOfShared). The ITypeHierarchy subtype
+        // search finds the @Interceptor subclass in the other file and suppresses the
+        // diagnostic.
+        // No InvalidAroundConstructInTargetClass diagnostic should be reported.
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }
