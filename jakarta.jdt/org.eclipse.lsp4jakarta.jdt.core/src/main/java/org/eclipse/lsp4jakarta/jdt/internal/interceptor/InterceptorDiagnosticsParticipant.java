@@ -508,7 +508,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
                     // Suppress when an @Interceptor subclass exists in a different source file —
                     // spec allows @AroundConstruct in interceptor superclasses.
-                    if (InterModuleCommonUtils.hasInterceptorSubclassInOtherFile(type, unit, monitor)) {
+                    if (InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor)) {
                         break;
                     }
                     Range range = PositionUtils.toNameRange(method, context.getUtils());

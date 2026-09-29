@@ -165,7 +165,7 @@ public class InterModuleCommonUtils {
      * @return {@code true} if an {@code @Interceptor} subclass exists in another file
      * @throws CoreException if there's an error building the type hierarchy
      */
-    public static boolean hasInterceptorSubclassInOtherFile(IType type, ICompilationUnit unit,
+    public static boolean hasInterceptorSubclass(IType type, ICompilationUnit unit,
                                                             IProgressMonitor monitor) throws CoreException {
         ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
         return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
