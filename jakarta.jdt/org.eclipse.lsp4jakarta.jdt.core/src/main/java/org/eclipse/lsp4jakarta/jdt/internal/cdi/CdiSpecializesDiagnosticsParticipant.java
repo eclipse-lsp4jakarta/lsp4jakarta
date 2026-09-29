@@ -19,8 +19,10 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Diagnostic;
@@ -33,16 +35,27 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
  * CDI diagnostics participant that validates specialization.
  *
- * A bean annotated with @Specializes must extend another bean. If the superclass
- * is not a bean (e.g., lacks a scope annotation, including custom @NormalScope-annotated
- * scopes), the specialization is invalid and is treated as a definition error.
+ * <p>Validates two separate specialization scenarios per the CDI 3.0 specification:</p>
  *
- * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization
+ * <ol>
+ *   <li><strong>Bean-level specialization</strong> (§3.1.4): A class annotated with
+ *       {@code @Specializes} must directly extend a CDI bean (a class with a scope
+ *       annotation). A specialized bean must also not declare an explicit bean name
+ *       using {@code @Named}.</li>
+ *   <li><strong>Producer method specialization</strong>
+ *       (§specialize_producer_method): A producer method annotated with
+ *       {@code @Specializes} must be non-static and must directly override another
+ *       producer method in the superclass.</li>
+ * </ol>
+ *
+ * @see <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#direct_and_indirect_specialization">CDI 3.0 §direct_and_indirect_specialization</a>
+ * @see <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#specialize_producer_method">CDI 3.0 §specialize_producer_method</a>
  */
 public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
@@ -77,6 +90,18 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                                      ErrorCode.InvalidSpecializedBeanWithNamedAnnotation, DiagnosticSeverity.Error));
                             break;
                         }
+                    }
+                }
+
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#specialize_producer_method
+                // A producer method annotated with @Specializes must:
+                //   1. Be non-static
+                //   2. Directly override another producer method in a superclass
+                for (IMethod method : type.getMethods()) {
+                    boolean hasSpecializes = DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.SPECIALIZES_FQ_NAME);
+                    boolean hasProduces = DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.PRODUCES_FQ_NAME);
+                    if (hasSpecializes && hasProduces) {
+                        validateSpecializesProducerMethod(method, type, unit, uri, context, diagnostics);
                     }
                 }
             }
@@ -130,5 +155,72 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                  ErrorCode.InvalidSpecializesAnnotationOnNonBeanSuperclass,
                                                  DiagnosticSeverity.Error));
+    }
+
+    /**
+     * Validates a producer method annotated with {@code @Specializes}.
+     *
+     * <p>Per CDI spec §specialize_producer_method, the method must:</p>
+     * <ol>
+     *   <li>Be non-static</li>
+     *   <li>Directly override another producer method (annotated with {@code @Produces})
+     *       in the direct superclass</li>
+     * </ol>
+     *
+     * <p>Both violations are reported independently — a static method that also fails
+     * the override check will produce two diagnostics.</p>
+     *
+     * @param method the producer method to validate
+     * @param type the declaring type
+     * @param unit the compilation unit
+     * @param uri the file URI
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private void validateSpecializesProducerMethod(IMethod method, IType type, ICompilationUnit unit,
+                                                   String uri, JavaDiagnosticsContext context,
+                                                   List<Diagnostic> diagnostics) throws JavaModelException {
+        // Rule 1: the method must not be static
+        if (Flags.isStatic(method.getFlags())) {
+            Range range = PositionUtils.toNameRange(method, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidSpecializesStaticProducerMethod"),
+                                                     range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidSpecializesStaticProducerMethod,
+                                                     DiagnosticSeverity.Error));
+        }
+
+        // Rule 2: the method must directly override a @Produces method in the superclass
+        String superclassName = type.getSuperclassName();
+        boolean overridesSuperProducer = false;
+        if (superclassName != null) {
+            IType superclassType = ManagedBean.getChildITypeByName(type, superclassName);
+            if (superclassType != null) {
+                for (IMethod superMethod : superclassType.getMethods()) {
+                    if (superMethod.getElementName().equals(method.getElementName())
+                            && superMethod.getParameterTypes().length == method.getParameterTypes().length) {
+                        boolean superHasProduces = DiagnosticUtils.isMatchedAnnotation(
+                                superclassType.getCompilationUnit(),
+                                superMethod.getAnnotations(),
+                                Constants.PRODUCES_FQ_NAME);
+                        if (superHasProduces) {
+                            overridesSuperProducer = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!overridesSuperProducer) {
+            Range range = PositionUtils.toNameRange(method, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidSpecializesProducerMethodNotOverriding"),
+                                                     range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.InvalidSpecializesProducerMethodNotOverriding,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 }
