@@ -974,4 +974,20 @@ public class InterceptorTest extends BaseJakartaTest {
         // All interceptor methods use proceed() inside try/catch/finally — no warnings expected
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    @Test
+    public void testValidInterceptorProceedInTryCatchAllFormsTest() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/ValidInterceptorProceedInTryCatchAllForms.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Covers all three try-statement forms: try/catch, try/finally, try/catch/finally.
+        // All three map to TryStatement in JDT — no warnings expected for any form.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
