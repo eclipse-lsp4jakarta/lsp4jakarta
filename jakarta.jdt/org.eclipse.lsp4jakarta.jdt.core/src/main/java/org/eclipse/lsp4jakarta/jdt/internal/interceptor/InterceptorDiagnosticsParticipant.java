@@ -163,7 +163,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      */
     private boolean isInterceptorMethodWithUnwrappedProceed(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
         return ASTUtils.containsMethodInvocation(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)
-               && !ASTUtils.isProceedWrappedInTryCatch(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
+               && !ASTUtils.isMethodWrappedInTryCatch(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT);
     }
 
     /**

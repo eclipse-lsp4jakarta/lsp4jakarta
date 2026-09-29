@@ -122,7 +122,8 @@ public class ASTUtils {
     /**
      * Checks whether the given MethodDeclaration contains a call to the specified method
      * on the specified parent type, and that call is enclosed within a try statement
-     * (i.e., inside a try/catch or try/finally block).
+     * (i.e., inside a try/catch, try/finally, or try/catch/finally block).
+     * All three forms map to the same JDT {@link TryStatement} AST node type.
      *
      * @param methodDecl the method declaration to inspect
      * @param targetMethod the method name to look for (e.g. "proceed")
@@ -130,7 +131,7 @@ public class ASTUtils {
      * @return {@code true} if the matching method invocation exists AND is inside a try statement;
      *         {@code false} otherwise
      */
-    public static boolean isProceedWrappedInTryCatch(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
+    public static boolean isMethodWrappedInTryCatch(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
         MethodInvocation match = findMethodInvocation(methodDecl, targetMethod, parentFQN);
         if (match == null) {
             return false;
