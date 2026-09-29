@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 public class Constants {
     /* Annotation Constants */
     public static final String ENTITY = "jakarta.persistence.Entity";
+    public static final String ENTITY_LISTENERS = "jakarta.persistence.EntityListeners";
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String EMBEDDED = "jakarta.persistence.Embedded";
