@@ -1799,4 +1799,81 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, insertEntityCodeAction, insertMappedSuperclassCodeAction, removeCodeAction);
     }
 
+    @Test
+    public void testInvalidIdClassStructure() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InvalidIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic idClassMustBePublic = d(20, 6, 20,
+                                           "A class referenced by @IdClass must be public.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBePublic");
+        Diagnostic idClassMustHavePublicNoArgConstructor = d(20, 6, 20,
+                                                             "A class referenced by @IdClass must have a public no-argument constructor.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustHavePublicNoArgConstructor");
+        Diagnostic idClassMustBeSerializable = d(20, 6, 20,
+                                                 "A class referenced by @IdClass must implement java.io.Serializable.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBeSerializable");
+        Diagnostic idClassMustDeclareEquals = d(20, 6, 20,
+                                                "A class referenced by @IdClass must declare an equals method.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareEquals");
+        Diagnostic idClassMustDeclareHashCode = d(20, 6, 20,
+                                                  "A class referenced by @IdClass must declare a hashCode method.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareHashCode");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              idClassMustBePublic, idClassMustHavePublicNoArgConstructor,
+                              idClassMustBeSerializable, idClassMustDeclareEquals,
+                              idClassMustDeclareHashCode);
+    }
+
+    @Test
+    public void testInvalidMappedSuperclassIdClassStructure() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InvalidMappedSuperclassIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic idClassMustBePublic = d(17, 6, 36,
+                                           "A class referenced by @IdClass must be public.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBePublic");
+        Diagnostic idClassMustHavePublicNoArgConstructor = d(17, 6, 36,
+                                                             "A class referenced by @IdClass must have a public no-argument constructor.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustHavePublicNoArgConstructor");
+        Diagnostic idClassMustBeSerializable = d(17, 6, 36,
+                                                 "A class referenced by @IdClass must implement java.io.Serializable.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBeSerializable");
+        Diagnostic idClassMustDeclareEquals = d(17, 6, 36,
+                                                "A class referenced by @IdClass must declare an equals method.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareEquals");
+        Diagnostic idClassMustDeclareHashCode = d(17, 6, 36,
+                                                  "A class referenced by @IdClass must declare a hashCode method.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareHashCode");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              idClassMustBePublic, idClassMustHavePublicNoArgConstructor,
+                              idClassMustBeSerializable, idClassMustDeclareEquals,
+                              idClassMustDeclareHashCode);
+    }
+
+    @Test
+    public void testValidIdClassInSeparateFile() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ValidIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
 }
