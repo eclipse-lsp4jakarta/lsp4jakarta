@@ -24,7 +24,10 @@ public class Constants {
     /* Annotation Constants */
     public static final String ENTITY = "jakarta.persistence.Entity";
     public static final String ID = "jakarta.persistence.Id";
+    public static final String IDCLASS = "jakarta.persistence.IdClass";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
+    public static final String MANYTOONE = "jakarta.persistence.ManyToOne";
+    public static final String ONETOONE = "jakarta.persistence.OneToOne";
     public static final String EMBEDDED = "jakarta.persistence.Embedded";
     public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";

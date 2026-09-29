@@ -46,6 +46,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyTemporalOnNonTemporalType,
     MultipleEmbeddedIdAnnotations,
     MixedIdentifierAnnotations,
+    IdClassMemberMissingInKeyClass,
+    IdClassMemberTypeMismatch,
     PersistenceContextNotInManagedComponent,
     TableGeneratorInvalidEmptyName,
     TableGeneratorsMissingTableGeneratorMapping,
