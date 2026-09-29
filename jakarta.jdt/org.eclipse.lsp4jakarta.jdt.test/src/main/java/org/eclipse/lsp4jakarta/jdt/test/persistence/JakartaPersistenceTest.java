@@ -1600,8 +1600,11 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                           "@NamedEntityGraph must only be applied to a class annotated with @Entity.",
                                           DiagnosticSeverity.Error, "jakarta-persistence", "NamedEntityGraphOnNonEntityClass",
                                           diagnosticsData);
+        Diagnostic duplicateDiagnostic = d(4, 0, 38,
+                                           "The @NamedEntityGraph name 'Graph.User' must be unique within the persistence unit.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic, duplicateDiagnostic);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, expectedDiagnostic);
         TextEdit insertEntityTextEdit = te(2, 0, 4, 0, "import jakarta.persistence.Entity;\nimport jakarta.persistence.NamedEntityGraph;\n\n@Entity\n");
@@ -1725,8 +1728,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                           "@NamedEntityGraphs must only be applied to a class annotated with @Entity.",
                                           DiagnosticSeverity.Error, "jakarta-persistence", "NamedEntityGraphsOnNonEntityClass",
                                           diagnosticsData);
+        Diagnostic duplicateUser = d(5, 21, 59,
+                                     "The @NamedEntityGraph name 'Graph.User' must be unique within the persistence unit.",
+                                     DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
+        Diagnostic duplicateOrder = d(5, 61, 100,
+                                      "The @NamedEntityGraph name 'Graph.Order' must be unique within the persistence unit.",
+                                      DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic, duplicateUser, duplicateOrder);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, expectedDiagnostic);
         TextEdit insertEntityTextEdit = te(2, 0, 5, 0,

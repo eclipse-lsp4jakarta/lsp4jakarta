@@ -52,8 +52,8 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
             return diagnostics;
         }
         // Guard: O(annotations-in-file) — skip the expensive scan if this file has
-        // no @Entity class that also carries @NamedEntityGraph or @NamedEntityGraphs.
-        if (!fileHasEntityWithGraphAnnotation(unit)) {
+        // no class that carries @NamedEntityGraph or @NamedEntityGraphs.
+        if (!fileHasGraphAnnotation(unit)) {
             return diagnostics;
         }
         // Feature gate: disabled globally → no scan, no diagnostics.
@@ -76,20 +76,12 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
     // File-level guard
     // -------------------------------------------------------------------------
 
-    private boolean fileHasEntityWithGraphAnnotation(ICompilationUnit unit) throws JavaModelException {
+    private boolean fileHasGraphAnnotation(ICompilationUnit unit) throws JavaModelException {
         for (IType type : unit.getAllTypes()) {
-            boolean hasEntity = false;
-            boolean hasGraph = false;
             for (IAnnotation annotation : type.getAnnotations()) {
                 String name = annotation.getElementName();
-                if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.ENTITY)) {
-                    hasEntity = true;
-                }
                 if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMED_ENTITY_GRAPH)
                     || DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMED_ENTITY_GRAPHS)) {
-                    hasGraph = true;
-                }
-                if (hasEntity && hasGraph) {
                     return true;
                 }
             }
