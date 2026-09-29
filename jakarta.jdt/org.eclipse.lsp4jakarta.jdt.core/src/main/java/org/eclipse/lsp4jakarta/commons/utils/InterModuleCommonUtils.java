@@ -16,11 +16,15 @@ package org.eclipse.lsp4jakarta.commons.utils;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.interceptor.Constants;
@@ -145,5 +149,33 @@ public class InterModuleCommonUtils {
                 return false;
             }
         });
+    }
+
+    /**
+     * Returns {@code true} if {@code type} has at least one subclass (in any source
+     * file other than the one containing {@code type}) that is annotated with
+     * {@code @Interceptor}.
+     *
+     * <p>Uses {@link IType#newTypeHierarchy(IProgressMonitor)} to discover subtypes
+     * without scanning all project types.
+     *
+     * @param type the type whose subtype hierarchy is to be searched
+     * @param unit the compilation unit that contains {@code type}
+     * @param monitor the progress monitor
+     * @return {@code true} if an {@code @Interceptor} subclass exists in another file
+     * @throws CoreException if there's an error building the type hierarchy
+     */
+    public static boolean hasInterceptorSubclass(IType type, ICompilationUnit unit,
+                                                            IProgressMonitor monitor) throws CoreException {
+        ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
+        return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
+                                                                           && !subtype.getCompilationUnit().equals(unit)).anyMatch(subtype -> {
+                                                                               try {
+                                                                                   return isInterceptorType(subtype, subtype.getCompilationUnit());
+                                                                               } catch (JavaModelException e) {
+                                                                                   LOGGER.log(Level.WARNING, "Unable to check @Interceptor annotation on subtype", e);
+                                                                                   return false;
+                                                                               }
+                                                                           });
     }
 }
