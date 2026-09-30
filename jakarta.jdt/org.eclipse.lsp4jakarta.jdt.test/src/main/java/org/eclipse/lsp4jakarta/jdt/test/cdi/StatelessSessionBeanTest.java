@@ -62,7 +62,7 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessSessionBean.java");
 
         Diagnostic invalidScope = d(9, 13, 33,
-                                    "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                    "Invalid scope @RequestScoped present in the class StatelessSessionBean. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
@@ -85,7 +85,7 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessWithSessionScoped.java");
 
         Diagnostic invalidScope = d(9, 13, 39,
-                                    "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                    "Invalid scope @SessionScoped present in the class StatelessWithSessionScoped. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
@@ -107,7 +107,7 @@ public class StatelessSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("StatelessWithMultipleScopes.java");
 
         Diagnostic invalidScope = d(10, 13, 40,
-                                    "A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
+                                    "Invalid scope @RequestScoped present in the class StatelessWithMultipleScopes. A stateless session bean belongs to the @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidStatelessSessionBeanScope");
 
         assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
