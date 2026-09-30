@@ -93,7 +93,7 @@
 	},
 	"Jakarta Persistence - named entitygraph annotation": {
 	    "prefix": "persist_named_entitygraph",
-	    "version": ["9", "10", "11"],
+	    "version": ["10", "11"],
 	    "body": [
 			"// The @NamedEntityGraph annotation defines a reusable fetch plan, letting you declare which",
 			"// attributes to eagerly load instead of repeating JOIN FETCH in JPQL.",
@@ -112,7 +112,7 @@
 	},
 	"Jakarta Persistence - named query annotation": {
 	    "prefix": "persist_named_query",
-	    "version": ["9", "10", "11"],
+	    "version": ["9", "10"],
 	    "body": [
 	        "@NamedQuery(",
 	        "\tname = \"${TM_FILENAME_BASE}.${1:findAll}\",",
@@ -127,7 +127,7 @@
 	},
 	"Jakarta Persistence - entity listener": {
 	    "prefix": "persist_entity_listener",
-	    "version": ["9", "10", "11"],
+	    "version": ["10", "11"],
 	    "body": [
 			"package ${1:packagename};",
 		    "",

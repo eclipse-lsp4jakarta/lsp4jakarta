@@ -30,8 +30,8 @@
       }
     },
 	"Jakarta DI - @Scope": {
-      "prefix": "di_scope_annotation",
-      "version": ["9", "10", "11"],
+	     "prefix": "di_scope_annotation",
+	     "version": ["9", "10"],
       "body": [
 		"package ${1:packagename};",
 		"",

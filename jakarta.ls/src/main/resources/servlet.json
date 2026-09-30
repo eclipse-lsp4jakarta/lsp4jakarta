@@ -179,7 +179,7 @@
 	},
 	"Jakarta Servlet - ServletSecurity": {
 		"prefix": "servlet_security",
-		"version": ["9", "10", "11"],
+		"version": ["9", "10"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -221,7 +221,7 @@
 	},
 	"Jakarta Servlet - DataSourceDefinition": {
 		"prefix": "servlet_datasource_definition",
-		"version": ["9", "10", "11"],
+		"version": ["10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
