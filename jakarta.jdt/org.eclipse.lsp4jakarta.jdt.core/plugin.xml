@@ -383,6 +383,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#SessionBeanFinalizeMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveFinalizeMethodQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidAfterCompletionMethodParams"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.FixAfterCompletionMethodParamsQuickFix" />
    </extension>
    
    <!-- CDI -->
