@@ -89,7 +89,7 @@ public class JakartaVersionManager {
                 if (!version.isEmpty()) {
                     LOGGER.info("Read Jakarta EE version " + version + " from " + versionFilePath + " (legacy format)");
                     // Create VersionData from legacy format
-                    return new VersionData(version, "selected", getAvailableVersions());
+                    return new VersionData(version, SelectionMode.USER_SELECTED, getAvailableVersions());
                 }
             }
         } catch (IOException e) {

@@ -212,14 +212,6 @@ public class JakartaTextDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         JakartaTextDocument document = documents.onDidOpenTextDocument(params);
 
-        // Check if version selection feature is enabled
-        // if (jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
-        // Feature disabled - run diagnostics immediately (preserve existing behavior)
-        //   validate(document, false);
-        //   return;
-        //  }
-
-        // Feature enabled - handle version selection before diagnostics
         handleVersionSelectionAndValidate(document);
     }
 
@@ -282,10 +274,18 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 // Build version labels from the versions detected on the project's classpath
                 List<String> versions = detectedVersions.stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
                 if (versions.size() == 1) {
-                    VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
+                    VersionData versionInfo = new VersionData(versions.get(0), SelectionMode.SINGLE_VERSION, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
                     LOGGER.info("Loaded Jakarta EE version " + versionInfo.getVersion() + " from file for project: " + projectUri);
+                    triggerValidationForAll(Set.of(projectUri));
+                    return null;
+                } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
+                    String defaultVersion = JakartaVersion.EE_9.getLabel();
+                    VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    projectVersions.put(projectUri, versionInfo);
+                    LOGGER.info("Client does not support version selection. Set default Jakarta EE version " + defaultVersion + " for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
                     return null;
                 }
@@ -326,7 +326,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
                 if (selectedVersion != null) {
                     // Create VersionData object
-                    VersionData versionData = new VersionData(selectedVersion, "selected", versions);
+                    VersionData versionData = new VersionData(selectedVersion, SelectionMode.USER_SELECTED, versions);
 
                     // Store in memory cache
                     projectVersions.put(projectUri, versionData);
@@ -579,10 +579,17 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     return;
                 }
                 if (versions.size() == 1) {
-                    VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
+                    VersionData versionInfo = new VersionData(versions.get(0), SelectionMode.SINGLE_VERSION, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
                     LOGGER.info("Auto-selected Jakarta EE version " + versionInfo.getVersion() + " for project: " + projectUri);
+                    triggerValidationForAll(Set.of(projectUri));
+                } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
+                    String defaultVersion = JakartaVersion.EE_9.getLabel();
+                    VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    projectVersions.put(projectUri, versionInfo);
+                    LOGGER.info("Client does not support version selection. Set default Jakarta EE version " + defaultVersion + " for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
                 } else {
                     promptForVersionSelection(projectUri, "reset", versions);

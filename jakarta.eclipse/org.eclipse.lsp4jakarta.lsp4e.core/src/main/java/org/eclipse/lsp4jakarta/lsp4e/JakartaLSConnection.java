@@ -105,6 +105,7 @@ public class JakartaLSConnection extends ProcessStreamConnectionProvider {
         // Set extended capabilities.
         Map<String, Object> extendedClientCapabilities = new HashMap<>();
         extendedClientCapabilities.put("shouldLanguageServerExitOnShutdown", Boolean.TRUE);
+        extendedClientCapabilities.put("jakartaVersionSelector", Boolean.TRUE);
         root.put("extendedClientCapabilities", extendedClientCapabilities);
 
         return root;
