@@ -195,17 +195,17 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
         // Line 14 (0-based): "    public void afterCompletion() {"
         // "    public void " = 16 chars -> method name starts at col 16
         // "afterCompletion" is 15 chars -> ends at col 31
-        Diagnostic d = d(14, 16, 31,
-                         "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
-                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
+        Diagnostic missingParamDiagnostic = d(14, 16, 31,
+                                              "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
+                                              DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingParamDiagnostic);
 
         // QuickFix: insert "boolean committed" into empty param list
         // Actual AST edit: col 32-32 (open paren + 1 for AST positioning)
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, missingParamDiagnostic);
         TextEdit insertParamEdit = te(14, 32, 14, 32, "boolean committed");
-        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", d, insertParamEdit);
+        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", missingParamDiagnostic, insertParamEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, fixAction);
     }
 
@@ -217,16 +217,16 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
         // Line 14 (0-based): "    public void afterCompletion(String status) {"
         // "    public void " = 16 chars -> method name starts at col 16
         // "afterCompletion" is 15 chars -> ends at col 31
-        Diagnostic d = d(14, 16, 31,
-                         "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
-                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
+        Diagnostic wrongParamTypeDiagnostic = d(14, 16, 31,
+                                                "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
+                                                DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, wrongParamTypeDiagnostic);
 
         // QuickFix: change "String" to "boolean" — actual AST range col 32-38
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, wrongParamTypeDiagnostic);
         TextEdit changeTypeEdit = te(14, 32, 14, 38, "boolean");
-        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", d, changeTypeEdit);
+        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", wrongParamTypeDiagnostic, changeTypeEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, fixAction);
     }
 
@@ -237,18 +237,18 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
 
         // Line 14 (0-based): "    public void afterCompletion(String status, boolean committed, int extra) {"
         // method name "afterCompletion" at col 16, ends at col 31
-        Diagnostic d = d(14, 16, 31,
-                         "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
-                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
+        Diagnostic multiParamWithBooleanDiagnostic = d(14, 16, 31,
+                                                       "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
+                                                       DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, multiParamWithBooleanDiagnostic);
 
         // QuickFix: AST ListRewrite batches the two removals into one edit
         // replacing "String status, boolean committed, int extra" (col 32-75)
         // with just the boolean param "boolean committed"
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, multiParamWithBooleanDiagnostic);
         TextEdit fixEdit = te(14, 32, 14, 75, "boolean committed");
-        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", d, fixEdit);
+        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", multiParamWithBooleanDiagnostic, fixEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, fixAction);
     }
 
@@ -259,17 +259,17 @@ public class SessionSyncMethodTest extends BaseJakartaTest {
 
         // Line 14 (0-based): "    public void afterCompletion(String status, int extra) {"
         // method name "afterCompletion" at col 16, ends at col 31
-        Diagnostic d = d(14, 16, 31,
-                         "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
-                         DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
+        Diagnostic multiParamNoBooleanDiagnostic = d(14, 16, 31,
+                                                     "@AfterCompletion session synchronization method must declare exactly one boolean parameter.",
+                                                     DiagnosticSeverity.Error, "jakarta-ejb", "InvalidAfterCompletionMethodParams");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, multiParamNoBooleanDiagnostic);
 
         // QuickFix: AST ListRewrite batches type change + removal into one edit
         // replacing "String status, int extra" (col 32-56) with "boolean status"
-        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d);
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, multiParamNoBooleanDiagnostic);
         TextEdit fixEdit = te(14, 32, 14, 56, "boolean status");
-        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", d, fixEdit);
+        CodeAction fixAction = ca(uri, "Fix @AfterCompletion method parameter to boolean", multiParamNoBooleanDiagnostic, fixEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, fixAction);
     }
 
