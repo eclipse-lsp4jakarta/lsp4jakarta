@@ -1,6 +1,7 @@
 {
     "Jakarta RESTful Web Services - new resource class": {
       "prefix": "jakarta_rest_class",
+      "version": ["9", "10"],
       "body": [
         "package ${1:packagename};",
         "",
@@ -27,6 +28,7 @@
     },
     "Jakarta RESTful Web Services - new GET resource method": {
       "prefix": "jakarta_rest_get",
+      "version": ["9", "10", "11"],
       "body": [
         "@GET",
         "@Produces(MediaType.TEXT_PLAIN)",
@@ -42,6 +44,7 @@
     },
     "Jakarta RESTful Web Services - new POST resource method": {
       "prefix": "rest_post",
+      "version": ["9", "10"],
       "body": [
         "@POST",
         "@Consumes(MediaType.TEXT_PLAIN)",
@@ -57,6 +60,7 @@
     },
     "Jakarta RESTful Web Services - new PUT resource method": {
       "prefix": "rest_put",
+      "version": ["10", "11"],
       "body": [
         "@PUT",
         "@Consumes(MediaType.TEXT_PLAIN)",
@@ -72,6 +76,7 @@
     },
     "Jakarta RESTful Web Services - new DELETE resource method": {
       "prefix": "rest_delete",
+      "version": ["9", "10", "11"],
       "body": [
         "@DELETE",
         "@Consumes(MediaType.TEXT_PLAIN)",
@@ -87,6 +92,7 @@
     },
     "Jakarta RESTful Web Services - new HEAD resource method": {
       "prefix": "rest_head",
+      "version": ["9", "10"],
       "body": [
         "@HEAD",
         "@Produces(MediaType.TEXT_PLAIN)",
@@ -102,6 +108,7 @@
     },
     "Jakarta RESTful Web Services - RestClient class": {
       "prefix": "rest_client_class",
+      "version": ["10", "11"],
       "body": [
         "package ${1:packagename};",
         "",

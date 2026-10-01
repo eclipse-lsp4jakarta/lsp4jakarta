@@ -1,6 +1,7 @@
 {
 	"Jakarta WebSocket - Server Endpoint class": {
 		"prefix": "websocket_server_endpoint",
+		"version": ["9", "10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -47,6 +48,7 @@
 	},
 	"Jakarta WebSocket - Client Endpoint class": {
 		"prefix": "websocket_client_endpoint",
+		"version": ["9", "10"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -93,6 +95,7 @@
 	},
 	"Jakarta WebSocket - Programmatic Endpoint class": {
 		"prefix": "websocket_programmatic_endpoint",
+		"version": ["10"],
 		"body": [
 			"package ${1:packagename};",
 			"",

@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4jakarta.commons.ProjectLabelInfoEntry;
@@ -143,6 +144,13 @@ public class JavaTextDocumentSnippetRegistry extends TextDocumentSnippetRegistry
     public List<CompletionItem> getCompletionItems(JakartaTextDocument document, int completionOffset,
                                                    boolean canSupportMarkdown, boolean snippetsSupported,
                                                    BiPredicate<ISnippetContext<?>, Map<String, String>> contextFilter, ProjectLabelInfoEntry projectInfo) {
+        return getCompletionItems(document, completionOffset, canSupportMarkdown, snippetsSupported,
+                                  contextFilter, projectInfo, null);
+    }
+
+    public List<CompletionItem> getCompletionItems(JakartaTextDocument document, int completionOffset,
+                                                   boolean canSupportMarkdown, boolean snippetsSupported,
+                                                   BiPredicate<ISnippetContext<?>, Map<String, String>> contextFilter, ProjectLabelInfoEntry projectInfo, String selectedVersion) {
         Map<String, String> model = new HashMap<>();
         String packageStatement = "";
         String packageName = document.getPackageName();
@@ -157,7 +165,6 @@ public class JavaTextDocumentSnippetRegistry extends TextDocumentSnippetRegistry
                             .append(lineDelimiter) //
                             .toString();
         } else {
-            // fill package name to replace in the snippets
             if (packageName.length() > 0) {
                 packageStatement = new StringBuilder("package ")//
                                 .append(document.getPackageName()) //
@@ -169,9 +176,30 @@ public class JavaTextDocumentSnippetRegistry extends TextDocumentSnippetRegistry
         }
         model.put(PACKAGENAME_KEY, packageStatement);
         model.put(EE_NAMESPACE_KEY,
-                  projectInfo.getLabels().contains(JavaTextDocumentSnippetRegistry.JAKARTA_FLAG_TYPE) ? JavaTextDocumentSnippetRegistry.JAKARTA_VALUE : JavaTextDocumentSnippetRegistry.JAVAX_VALUE);
-        return super.getCompletionItems(document, completionOffset, canSupportMarkdown, snippetsSupported,
-                                        contextFilter, model);
+                  projectInfo.getLabels().contains(JAKARTA_FLAG_TYPE) ? JAKARTA_VALUE : JAVAX_VALUE);
+
+        // Get all items from parent, then post-filter by version using the model
+        List<CompletionItem> items = super.getCompletionItems(document, completionOffset, canSupportMarkdown, snippetsSupported,
+                                                              contextFilter, model);
+
+        if (selectedVersion == null) {
+            return items;
+        }
+
+        // Post-filter: remove items for snippets whose version doesn't match.
+        // We identify them by matching each item back to its snippet via filterText (prefix).
+        Map<String, Snippet> snippetByPrefix = getSnippets().stream().filter(s -> s.getPrefixes() != null
+                                                                                  && !s.getPrefixes().isEmpty()).collect(Collectors.toMap(s -> s.getPrefixes().get(0), s -> s,
+                                                                                                                                          (a, b) -> a));
+
+        final String version = selectedVersion;
+        return items.stream().filter(item -> {
+            String prefix = item.getFilterText();
+            Snippet snippet = snippetByPrefix.get(prefix);
+            if (snippet == null)
+                return true; // unknown snippet, keep it
+            return snippet.supportsVersion(version);
+        }).collect(Collectors.toList());
     }
 
 }

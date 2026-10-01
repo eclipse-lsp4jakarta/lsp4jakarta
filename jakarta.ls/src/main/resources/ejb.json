@@ -1,6 +1,7 @@
 {
 	"Jakarta EJB - message-driven bean": {
 		"prefix": "ejb_messagedriven_bean",
+		"version": ["9", "10"],
 		"body": [
 			"package ${1:packagename};",
 			"",
@@ -30,6 +31,7 @@
 	},
 	"Jakarta EJB - timer service with programmatic scheduling": {
 		"prefix": "ejb_timer_programmatic",
+		"version": ["10", "11"],
 		"body": [
 			"package ${1:packagename};",
 			"",
