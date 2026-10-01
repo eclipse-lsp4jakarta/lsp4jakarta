@@ -13,12 +13,15 @@
 
 package org.eclipse.lsp4jakarta.ls;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,6 +73,16 @@ import org.eclipse.lsp4jakarta.version.JakartaVersion;
 public class JakartaTextDocumentService implements TextDocumentService {
 
     private static final Logger LOGGER = Logger.getLogger(JakartaTextDocumentService.class.getName());
+
+    private static final String DEFAULT_VERSION_PROPERTY_KEY = "jakarta.default.version";
+    private static String defaultVersionLabel = null;
+
+    private static synchronized String getDefaultVersionLabel() {
+        if (defaultVersionLabel == null) {
+            defaultVersionLabel = loadDefaultVersionFromProperties();
+        }
+        return defaultVersionLabel;
+    }
 
     private final JakartaLanguageServer jakartaLanguageServer;
     private final SharedSettings sharedSettings;
@@ -212,14 +225,6 @@ public class JakartaTextDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         JakartaTextDocument document = documents.onDidOpenTextDocument(params);
 
-        // Check if version selection feature is enabled
-        // if (jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
-        // Feature disabled - run diagnostics immediately (preserve existing behavior)
-        //   validate(document, false);
-        //   return;
-        //  }
-
-        // Feature enabled - handle version selection before diagnostics
         handleVersionSelectionAndValidate(document);
     }
 
@@ -282,10 +287,18 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 // Build version labels from the versions detected on the project's classpath
                 List<String> versions = detectedVersions.stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
                 if (versions.size() == 1) {
-                    VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
+                    VersionData versionInfo = new VersionData(versions.get(0), SelectionMode.SINGLE_VERSION, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
                     LOGGER.info("Loaded Jakarta EE version " + versionInfo.getVersion() + " from file for project: " + projectUri);
+                    triggerValidationForAll(Set.of(projectUri));
+                    return null;
+                } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
+                    String defaultVersion = getDefaultVersionLabel();
+                    VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    projectVersions.put(projectUri, versionInfo);
+                    LOGGER.info("Client does not support version selection. Set default Jakarta EE version " + defaultVersion + " for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
                     return null;
                 }
@@ -326,7 +339,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
                 if (selectedVersion != null) {
                     // Create VersionData object
-                    VersionData versionData = new VersionData(selectedVersion, "selected", versions);
+                    VersionData versionData = new VersionData(selectedVersion, SelectionMode.USER_SELECTED, versions);
 
                     // Store in memory cache
                     projectVersions.put(projectUri, versionData);
@@ -579,15 +592,53 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     return;
                 }
                 if (versions.size() == 1) {
-                    VersionData versionInfo = new VersionData(versions.get(0), "default", versions);
+                    VersionData versionInfo = new VersionData(versions.get(0), SelectionMode.SINGLE_VERSION, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
                     LOGGER.info("Auto-selected Jakarta EE version " + versionInfo.getVersion() + " for project: " + projectUri);
+                    triggerValidationForAll(Set.of(projectUri));
+                } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
+                    String defaultVersion = getDefaultVersionLabel();
+                    VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
+                    JakartaVersionManager.writeVersion(projectUri, versionInfo);
+                    projectVersions.put(projectUri, versionInfo);
+                    LOGGER.info("Client does not support version selection. Set default Jakarta EE version " + defaultVersion + " for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
                 } else {
                     promptForVersionSelection(projectUri, "reset", versions);
                 }
             }, diagnosticsExecutor);
         }
+    }
+
+    /**
+     * Loads the default Jakarta EE version label from application.properties.
+     * Falls back to Jakarta EE 9 if the file or property is not found.
+     *
+     * @return the default Jakarta EE version label
+     */
+    private static String loadDefaultVersionFromProperties() {
+        try {
+            ClassLoader classLoader = JakartaTextDocumentService.class.getClassLoader();
+            InputStream input = classLoader != null ? classLoader.getResourceAsStream("application.properties") : ClassLoader.getSystemResourceAsStream("application.properties");
+
+            if (input == null) {
+                input = JakartaTextDocumentService.class.getResourceAsStream("/application.properties");
+            }
+
+            if (input != null) {
+                try (InputStream is = input) {
+                    Properties prop = new Properties();
+                    prop.load(is);
+                    String versionVal = prop.getProperty(DEFAULT_VERSION_PROPERTY_KEY);
+                    if (versionVal != null && !versionVal.trim().isEmpty()) {
+                        return JakartaVersion.fromString(versionVal).getLabel();
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            LOGGER.warning("Could not load application.properties, falling back to Jakarta EE 9: " + t.getMessage());
+        }
+        return JakartaVersion.EE_9.getLabel();
     }
 }

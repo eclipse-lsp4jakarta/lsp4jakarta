@@ -43,4 +43,23 @@ public enum JakartaVersion {
         return Arrays.stream(values()).filter(v -> v.label.equals(label)).findFirst().orElse(UNKNOWN);
     }
 
+    /**
+     * Finds the JakartaVersion enum constant by its level or string representation.
+     *
+     * @param value the level as string (e.g., "9", "10", "11") or label
+     * @return the matching JakartaVersion, or EE_9 as fallback
+     */
+    public static JakartaVersion fromString(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return EE_9;
+        }
+        String trimmed = value.trim();
+        for (JakartaVersion v : values()) {
+            if (String.valueOf(v.level).equals(trimmed) || v.label.equalsIgnoreCase(trimmed) || v.name().equalsIgnoreCase(trimmed)) {
+                return v;
+            }
+        }
+        return EE_9;
+    }
+
 }

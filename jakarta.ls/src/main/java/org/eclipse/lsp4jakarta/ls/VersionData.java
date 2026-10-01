@@ -21,12 +21,12 @@ import java.util.List;
  */
 public class VersionData {
     private String version;
-    private String selectionMode;
+    private SelectionMode selectionMode;
     private List<String> availableVersions;
 
     public VersionData() {}
 
-    public VersionData(String version, String selectionMode, List<String> availableVersions) {
+    public VersionData(String version, SelectionMode selectionMode, List<String> availableVersions) {
         this.version = version;
         this.selectionMode = selectionMode;
         this.availableVersions = availableVersions;
@@ -40,11 +40,11 @@ public class VersionData {
         this.version = version;
     }
 
-    public String getSelectionMode() {
+    public SelectionMode getSelectionMode() {
         return selectionMode;
     }
 
-    public void setSelectionMode(String selectionMode) {
+    public void setSelectionMode(SelectionMode selectionMode) {
         this.selectionMode = selectionMode;
     }
 
