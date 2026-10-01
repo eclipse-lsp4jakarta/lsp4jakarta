@@ -75,7 +75,14 @@ public class JakartaTextDocumentService implements TextDocumentService {
     private static final Logger LOGGER = Logger.getLogger(JakartaTextDocumentService.class.getName());
 
     private static final String DEFAULT_VERSION_PROPERTY_KEY = "jakarta.default.version";
-    private static final String DEFAULT_VERSION_LABEL = loadDefaultVersionFromProperties();
+    private static String defaultVersionLabel = null;
+
+    private static synchronized String getDefaultVersionLabel() {
+        if (defaultVersionLabel == null) {
+            defaultVersionLabel = loadDefaultVersionFromProperties();
+        }
+        return defaultVersionLabel;
+    }
 
     private final JakartaLanguageServer jakartaLanguageServer;
     private final SharedSettings sharedSettings;
@@ -287,7 +294,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     triggerValidationForAll(Set.of(projectUri));
                     return null;
                 } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
-                    String defaultVersion = DEFAULT_VERSION_LABEL;
+                    String defaultVersion = getDefaultVersionLabel();
                     VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
@@ -591,7 +598,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                     LOGGER.info("Auto-selected Jakarta EE version " + versionInfo.getVersion() + " for project: " + projectUri);
                     triggerValidationForAll(Set.of(projectUri));
                 } else if (!jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector()) {
-                    String defaultVersion = DEFAULT_VERSION_LABEL;
+                    String defaultVersion = getDefaultVersionLabel();
                     VersionData versionInfo = new VersionData(defaultVersion, SelectionMode.DEFAULT, versions);
                     JakartaVersionManager.writeVersion(projectUri, versionInfo);
                     projectVersions.put(projectUri, versionInfo);
@@ -611,17 +618,26 @@ public class JakartaTextDocumentService implements TextDocumentService {
      * @return the default Jakarta EE version label
      */
     private static String loadDefaultVersionFromProperties() {
-        try (InputStream input = JakartaTextDocumentService.class.getClassLoader().getResourceAsStream("application.properties")) {
+        try {
+            ClassLoader classLoader = JakartaTextDocumentService.class.getClassLoader();
+            InputStream input = classLoader != null ? classLoader.getResourceAsStream("application.properties") : ClassLoader.getSystemResourceAsStream("application.properties");
+
+            if (input == null) {
+                input = JakartaTextDocumentService.class.getResourceAsStream("/application.properties");
+            }
+
             if (input != null) {
-                Properties prop = new Properties();
-                prop.load(input);
-                String versionVal = prop.getProperty(DEFAULT_VERSION_PROPERTY_KEY);
-                if (versionVal != null && !versionVal.trim().isEmpty()) {
-                    return JakartaVersion.fromString(versionVal).getLabel();
+                try (InputStream is = input) {
+                    Properties prop = new Properties();
+                    prop.load(is);
+                    String versionVal = prop.getProperty(DEFAULT_VERSION_PROPERTY_KEY);
+                    if (versionVal != null && !versionVal.trim().isEmpty()) {
+                        return JakartaVersion.fromString(versionVal).getLabel();
+                    }
                 }
             }
-        } catch (IOException e) {
-            LOGGER.warning("Could not load application.properties, falling back to Jakarta EE 9: " + e.getMessage());
+        } catch (Throwable t) {
+            LOGGER.warning("Could not load application.properties, falling back to Jakarta EE 9: " + t.getMessage());
         }
         return JakartaVersion.EE_9.getLabel();
     }
