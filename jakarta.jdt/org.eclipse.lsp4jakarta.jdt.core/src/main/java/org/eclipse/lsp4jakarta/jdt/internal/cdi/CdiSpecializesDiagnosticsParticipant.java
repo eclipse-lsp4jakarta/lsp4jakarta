@@ -57,25 +57,18 @@ public class CdiSpecializesDiagnosticsParticipant implements IJavaDiagnosticsPar
         try {
             IType[] typesInUnit = unit.getAllTypes();
 
-            // Collect types in this CU that are annotated with @Specializes
-            List<IType> specializersInUnit = new ArrayList<>();
+            // Validate each type annotated with @Specializes
             for (IType type : typesInUnit) {
-                if (DiagnosticUtils.isMatchedAnnotation(unit, type.getAnnotations(), Constants.SPECIALIZES_FQ_NAME)) {
-                    specializersInUnit.add(type);
+                IAnnotation[] annotations = type.getAnnotations();
+                if (!DiagnosticUtils.isMatchedAnnotation(unit, annotations, Constants.SPECIALIZES_FQ_NAME)) {
+                    continue;
                 }
-            }
 
-            if (specializersInUnit.isEmpty()) {
-                return diagnostics;
-            }
-
-            // Validate each @Specializes type in this CU
-            for (IType type : specializersInUnit) {
                 // Rule 1: direct superclass must be a scoped CDI bean
                 validateSpecializes(type, uri, context, diagnostics);
 
                 // Rule 2: must not declare an explicit bean name via @Named
-                for (IAnnotation annotation : type.getAnnotations()) {
+                for (IAnnotation annotation : annotations) {
                     if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.NAMED_FQ_NAME)) {
                         Range range = PositionUtils.toNameRange(annotation, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
