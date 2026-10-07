@@ -59,7 +59,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidObserverMethodWithoutNotify,
     InvalidRawEventTypeInjectionPoint,
     InvalidTypedAnnotationNonMatchingBeanType,
-    InvalidUserTransactionInjectionInCDIBean;
+    InvalidUserTransactionInjectionInCDIBean,
+    InvalidPassivatingScopedBeanWithoutSerializable;
 
     /**
      * {@inheritDoc}
