@@ -36,7 +36,7 @@ import org.junit.Test;
 
 public class InterceptorTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
-    private static final String PROCEED_NOT_IN_TRY_CATCH_MSG = "Exceptions and initialization and/or cleanup operations should typically be handled in try/catch/finally blocks around the proceed method.";
+    private static final String PROCEED_NOT_IN_TRY_CATCH_MSG = "Exceptions, initialization and/or cleanup operations should typically be handled in try/catch/finally blocks around the proceed method.";
 
     @Test
     public void invalidInterceptorTest() throws Exception {
