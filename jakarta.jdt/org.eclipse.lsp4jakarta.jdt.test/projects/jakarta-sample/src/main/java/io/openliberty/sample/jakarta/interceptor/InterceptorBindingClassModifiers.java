@@ -12,9 +12,6 @@
  *******************************************************************************/
 package io.openliberty.sample.jakarta.interceptor;
 
-import jakarta.interceptor.AroundInvoke;
-import jakarta.interceptor.InvocationContext;
-
 /**
  * Dataset for issue #693:
  * A component class that declares or inherits a class-level interceptor binding
@@ -26,9 +23,8 @@ import jakarta.interceptor.InvocationContext;
 @Monitored
 final class InvalidFinalInterceptorBindingClass {
 
-    @AroundInvoke
-    public Object intercept(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
+    public Object intercept() {
+        return null;
     }
 }
 
@@ -37,8 +33,8 @@ final class InvalidFinalInterceptorBindingClass {
 class InvalidMethodsOnInterceptorBindingClass {
 
     // ERROR: public final method (non-static, non-private)
-    public final Object intercept(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
+    public final Object intercept() {
+        return null;
     }
 
     // ERROR: protected final method (non-static, non-private)

@@ -29,7 +29,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidInterceptorMissingInterceptorBinding,
     InvalidFinalInterceptorBindingClass,
     InvalidMethodOnInterceptorBindingClass,
-    InvalidAroundConstructInTargetClass;
+    InvalidAroundConstructInTargetClass,
+    InvalidInterceptorProceedNotInTryCatch;
 
     /**
      * {@inheritDoc}
