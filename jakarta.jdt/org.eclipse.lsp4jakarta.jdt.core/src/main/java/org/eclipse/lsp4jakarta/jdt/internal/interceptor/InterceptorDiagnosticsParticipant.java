@@ -129,7 +129,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             // When a non-interceptor type is a superclass of an @Interceptor class in a
             // different file, its lifecycle callback methods must still satisfy the spec
             // signature constraint (Jakarta Interceptors 2.0).
-            if (!isInterceptorType && InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor)) {
+            if (!isInterceptorType && InterModuleCommonUtils.hasInterceptorSubclass(type, monitor)) {
                 for (IMethod method : type.getMethods()) {
                     validateLifecycleCallbackMethodSignature(context, uri, diagnostics, type, method);
                 }
