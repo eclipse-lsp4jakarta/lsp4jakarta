@@ -344,24 +344,26 @@ public class InterceptorTest extends BaseJakartaTest {
                                                  "Only one method with @AroundConstruct annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                                  DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
-        // InvalidInterceptorProceedNotInTryCatch warnings: logFinal (8,24,32), logStatic (16,25,34), logMulipleModifiers (21,31,50), logValid (26,18,26)
-        Diagnostic proceedNotInTryCatchFinal = d(8, 24, 32,
+        // InvalidInterceptorProceedNotInTryCatch warnings: logFinal (11,24,32), logStatic (19,25,34), logMulipleModifiers (24,31,50), logValid (29,18,26)
+        Diagnostic proceedNotInTryCatchFinal = d(11, 24, 32,
                                                  PROCEED_NOT_IN_TRY_CATCH_MSG,
                                                  DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic proceedNotInTryCatchStatic = d(16, 25, 34,
+        Diagnostic proceedNotInTryCatchStatic = d(19, 25, 34,
                                                   PROCEED_NOT_IN_TRY_CATCH_MSG,
                                                   DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic proceedNotInTryCatchMultiple = d(21, 31, 50,
+        Diagnostic proceedNotInTryCatchMultiple = d(24, 31, 50,
                                                     PROCEED_NOT_IN_TRY_CATCH_MSG,
                                                     DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic proceedNotInTryCatchValid = d(26, 18, 26,
+        Diagnostic proceedNotInTryCatchValid = d(29, 18, 26,
                                                  PROCEED_NOT_IN_TRY_CATCH_MSG,
                                                  DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, finalModifierDiagnostic, abstractModifierDiagnostic, duplicateAroundConstruct1,
-                              proceedDiagnostics, staticModifierDiagnostic, invalidAbstractClassDiagnostics, invalidMulipleModifierFinalDiagnostics,
-                              invalidMulipleModifierStaticDiagnostics, duplicateAroundConstruct2, duplicateAroundConstruct3, duplicateAroundConstruct4,
-                              proceedNotInTryCatchFinal, proceedNotInTryCatchStatic, proceedNotInTryCatchMultiple, proceedNotInTryCatchValid);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, duplicateAroundConstruct4, proceedNotInTryCatchValid,
+                              invalidMulipleModifierFinalDiagnostics, invalidMulipleModifierStaticDiagnostics,
+                              duplicateAroundConstruct3, proceedNotInTryCatchMultiple, staticModifierDiagnostic,
+                              duplicateAroundConstruct2, proceedNotInTryCatchStatic, abstractModifierDiagnostic,
+                              duplicateAroundConstruct1, proceedDiagnostics, invalidFinalMethodOnBindingClass,
+                              finalModifierDiagnostic, proceedNotInTryCatchFinal, invalidAbstractClassDiagnostics);
 
         // Test code actions for final modifier
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, finalModifierDiagnostic);
@@ -943,8 +945,11 @@ public class InterceptorTest extends BaseJakartaTest {
         Diagnostic aroundConstructInTargetClass = d(14, 18, 27,
                                                     "Around-construct interceptor methods may be only declared in interceptor classes and/or their superclasses.",
                                                     DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+        Diagnostic proceedNotInTryCatch = d(14, 18, 27,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInTargetClass);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInTargetClass, proceedNotInTryCatch);
     }
 
     @Test
@@ -961,8 +966,11 @@ public class InterceptorTest extends BaseJakartaTest {
         Diagnostic aroundConstructInSuperclass = d(14, 18, 27,
                                                    "Around-construct interceptor methods may be only declared in interceptor classes and/or their superclasses.",
                                                    DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+        Diagnostic proceedNotInTryCatch = d(14, 18, 27,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSuperclass);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSuperclass, proceedNotInTryCatch);
     }
 
     @Test
@@ -1036,8 +1044,11 @@ public class InterceptorTest extends BaseJakartaTest {
         Diagnostic aroundConstructInSeparateSuperclass = d(18, 16, 25,
                                                            "Around-construct interceptor methods may be only declared in interceptor classes and/or their superclasses.",
                                                            DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+        Diagnostic proceedNotInTryCatch = d(18, 16, 25,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSeparateSuperclass);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSeparateSuperclass, proceedNotInTryCatch);
     }
 
     @Test
@@ -1058,8 +1069,11 @@ public class InterceptorTest extends BaseJakartaTest {
         Diagnostic aroundConstructInSharedAncestor = d(19, 16, 25,
                                                        "Around-construct interceptor methods may be only declared in interceptor classes and/or their superclasses.",
                                                        DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+        Diagnostic proceedNotInTryCatch = d(19, 16, 25,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSharedAncestor);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSharedAncestor, proceedNotInTryCatch);
     }
 
     @Test
@@ -1100,10 +1114,13 @@ public class InterceptorTest extends BaseJakartaTest {
         Diagnostic aroundConstructInSameFileSuperclass = d(17, 16, 25,
                                                            "Around-construct interceptor methods may be only declared in interceptor classes and/or their superclasses.",
                                                            DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidAroundConstructInTargetClass");
+        Diagnostic proceedNotInTryCatch = d(17, 16, 25,
+                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
+                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSameFileSuperclass);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, aroundConstructInSameFileSuperclass, proceedNotInTryCatch);
     }
-  
+
     @Test
     public void testInterceptorProceedNotInTryCatchTest() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
@@ -1115,28 +1132,28 @@ public class InterceptorTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        Diagnostic aroundInvokeWarning = d(16, 18, 30,
+        Diagnostic aroundInvokeWarning = d(19, 18, 30,
                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic aroundConstructWarning = d(21, 18, 33,
+        Diagnostic aroundConstructWarning = d(24, 18, 33,
                                               PROCEED_NOT_IN_TRY_CATCH_MSG,
                                               DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic aroundTimeoutWarning = d(26, 18, 31,
+        Diagnostic aroundTimeoutWarning = d(29, 18, 31,
                                             PROCEED_NOT_IN_TRY_CATCH_MSG,
                                             DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic postConstructWarning = d(31, 16, 29,
+        Diagnostic postConstructWarning = d(34, 16, 29,
                                             PROCEED_NOT_IN_TRY_CATCH_MSG,
                                             DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-        Diagnostic preDestroyWarning = d(36, 16, 26,
+        Diagnostic preDestroyWarning = d(39, 16, 26,
                                          PROCEED_NOT_IN_TRY_CATCH_MSG,
                                          DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
 
         // Corner case: proceed() called outside the try block — should still warn
-        Diagnostic proceedOutsideTryWarning = d(42, 18, 35,
+        Diagnostic proceedOutsideTryWarning = d(45, 18, 35,
                                                 PROCEED_NOT_IN_TRY_CATCH_MSG,
                                                 DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
         // proceedOutsideTry is a second @AroundInvoke method — duplicate annotation diagnostic also fires
-        Diagnostic duplicateAroundInvoke = d(42, 18, 35,
+        Diagnostic duplicateAroundInvoke = d(45, 18, 35,
                                              "Only one method with @AroundInvoke annotation is allowed per class. Multiple methods with the same interceptor annotation type are not permitted.",
                                              DiagnosticSeverity.Error, "jakarta-interceptor", "InvalidMultipleInterceptorMethodsOfSameType");
 
