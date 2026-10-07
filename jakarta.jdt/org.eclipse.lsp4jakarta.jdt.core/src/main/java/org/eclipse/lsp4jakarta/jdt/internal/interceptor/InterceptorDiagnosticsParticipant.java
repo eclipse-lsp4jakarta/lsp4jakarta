@@ -503,14 +503,14 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                    List<Diagnostic> diagnostics,
                                                    JavaDiagnosticsContext context,
                                                    IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
         for (IMethod method : type.getMethods()) {
             for (IAnnotation annotation : method.getAnnotations()) {
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
-                    // Suppress when an @Interceptor subclass exists in a different source file —
-                    // spec allows @AroundConstruct in interceptor superclasses.
-                    if (InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor)) {
-                        break;
-                    }
                     Range range = PositionUtils.toNameRange(method, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
