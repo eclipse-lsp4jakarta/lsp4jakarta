@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -541,6 +540,46 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 return false;
             }
         });
+    }
+
+    /**
+     * Checks if a non-interceptor class declares a method annotated with
+     * {@code @AroundConstruct}, which is forbidden by the Jakarta Interceptors 2.0
+     * specification. The diagnostic is suppressed when the class is a superclass of
+     * an {@code @Interceptor}-annotated subclass declared in a different source file
+     * (spec permits {@code @AroundConstruct} in interceptor superclasses).
+     *
+     * @param type the non-interceptor type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context,
+                                                   IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+        }
     }
 
 }
