@@ -22,6 +22,8 @@ import java.util.Set;
  */
 public class Constants {
     /* Annotation Constants */
+    public static final String OBJECT_FQ_NAME = "java.lang.Object";
+    public static final String TYPED_FQ_NAME = "jakarta.enterprise.inject.Typed";
     public static final String PRODUCES_FQ_NAME = "jakarta.enterprise.inject.Produces";
     public static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
     public static final String NAMED_FQ_NAME = "jakarta.inject.Named";
