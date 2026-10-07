@@ -1066,4 +1066,31 @@ public class InterceptorTest extends BaseJakartaTest {
         // Valid signatures — no InvalidLifecycleCallbackInterceptorMethodSignature diagnostic
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    /**
+     * Validates that opening a standalone superclass file whose sole lifecycle
+     * callback method is {@code @PostConstruct void postConstruct(InvocationContext)}
+     * produces zero diagnostics — neither a signature diagnostic from the Interceptor
+     * participant nor a parameter/return-type diagnostic from the Annotation participant —
+     * when an {@code @Interceptor} subclass extends that superclass in a separate file
+     * (InterceptorSubclassOfPostConstructSuperclass.java).
+     */
+    @Test
+    public void testSuperclassWithValidPostConstructInInterceptorContext() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        // Open the standalone superclass file — its @Interceptor subclass is in a separate file.
+        // The @PostConstruct method uses the interceptor-valid void(InvocationContext) signature.
+        // Neither the Interceptor diagnostics participant nor the Annotation diagnostics
+        // participant should fire any diagnostic for this file.
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/interceptor/InterceptorSuperClassWithPostConstruct.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // 0 diagnostics expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
 }
