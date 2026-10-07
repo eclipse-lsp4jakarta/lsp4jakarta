@@ -125,6 +125,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
             }
 
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, monitor);
+            }
+
             // When a non-interceptor type is a superclass of an @Interceptor class in a
             // different file, its lifecycle callback methods must still satisfy the spec
             // signature constraint (Jakarta Interceptors 2.0).
@@ -562,7 +567,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                    JavaDiagnosticsContext context,
                                                    IProgressMonitor monitor) throws CoreException {
         // Evaluate once for the type
-        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor);
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, monitor);
         if (interceptorSubclassExists) {
             return;
         }
