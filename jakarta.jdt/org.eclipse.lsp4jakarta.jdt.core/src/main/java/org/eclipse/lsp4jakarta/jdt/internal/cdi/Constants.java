@@ -22,6 +22,8 @@ import java.util.Set;
  */
 public class Constants {
     /* Annotation Constants */
+    public static final String OBJECT_FQ_NAME = "java.lang.Object";
+    public static final String TYPED_FQ_NAME = "jakarta.enterprise.inject.Typed";
     public static final String PRODUCES_FQ_NAME = "jakarta.enterprise.inject.Produces";
     public static final String INJECT_FQ_NAME = "jakarta.inject.Inject";
     public static final String NAMED_FQ_NAME = "jakarta.inject.Named";
@@ -39,6 +41,9 @@ public class Constants {
     public static final String OBSERVER_METHOD_FQ_NAME = "jakarta.enterprise.inject.spi.ObserverMethod";
     public static final String EVENT_CONTEXT_FQ_NAME = "jakarta.enterprise.inject.spi.EventContext";
     public static final String NOTIFY_METHOD_NAME = "notify";
+    public static final String USER_TRANSACTION_FQ_NAME = "jakarta.transaction.UserTransaction";
+    public static final String CDI_DEFAULT_FQ_NAME = "jakarta.enterprise.inject.Default";
+    public static final String CDI_ANY_FQ_NAME = "jakarta.enterprise.inject.Any";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-cdi";
     public static final String DIAGNOSTIC_CODE = "InvalidManagedBeanAnnotation";
