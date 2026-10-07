@@ -25,6 +25,8 @@ public class Constants {
     public static final String ENTITY = "jakarta.persistence.Entity";
     public static final String ID = "jakarta.persistence.Id";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
+    public static final String EMBEDDED = "jakarta.persistence.Embedded";
+    public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
     public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
     public static final String EMBEDDED = "jakarta.persistence.Embedded";
@@ -44,6 +46,51 @@ public class Constants {
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
+    public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
+    public static final String NAMEDQUERIES = "jakarta.persistence.NamedQueries";
+    public static final String NAMEDNATIVEQUERY = "jakarta.persistence.NamedNativeQuery";
+    public static final String NAMEDNATIVEQUERIES = "jakarta.persistence.NamedNativeQueries";
+
+    public static final String TABLE_GENERATOR = "jakarta.persistence.TableGenerator";
+    public static final String TABLE_GENERATORS = "jakarta.persistence.TableGenerators";
+    public static final String SEQUENCE_GENERATOR = "jakarta.persistence.SequenceGenerator";
+    public static final String SEQUENCE_GENERATORS = "jakarta.persistence.SequenceGenerators";
+    public static final String SECONDARY_TABLE = "jakarta.persistence.SecondaryTable";
+    public static final String SECONDARY_TABLES = "jakarta.persistence.SecondaryTables";
+
+    public static final String[] GENERATOR_AND_TABLE_ANNOTATIONS = {
+                                                                     TABLE_GENERATOR, TABLE_GENERATORS, SEQUENCE_GENERATOR, SEQUENCE_GENERATORS, SECONDARY_TABLE, SECONDARY_TABLES
+    };
+
+    public static final String VALUE = "value";
+
+    /* Bidirectional relationship annotation constants */
+    public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
+    public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
+    public static final String MANY_TO_MANY = "jakarta.persistence.ManyToMany";
+    public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
+    public static final String JOIN_TABLE = "jakarta.persistence.JoinTable";
+    public static final String JOIN_COLUMN = "jakarta.persistence.JoinColumn";
+    public static final String JOIN_COLUMNS = "jakarta.persistence.JoinColumns";
+
+    /** All relationship annotations that support the {@code mappedBy} attribute. */
+    public static final String[] INVERSE_CAPABLE_RELATIONSHIP_ANNOTATIONS = {
+                                                                              ONE_TO_MANY, ONE_TO_ONE, MANY_TO_MANY
+    };
+
+    /**
+     * Annotations that are only valid on the owning side of a relationship
+     * and must not appear on the inverse side (i.e. the side that carries
+     * {@code mappedBy}).
+     */
+    public static final String[] OWNER_ONLY_ANNOTATIONS = {
+                                                            JOIN_TABLE, JOIN_COLUMN, JOIN_COLUMNS
+    };
+
+    /* Annotation attribute constants */
+    public static final String MAPPED_BY = "mappedBy";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";

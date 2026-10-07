@@ -93,9 +93,9 @@ public class JakartaFacesTest extends BaseJakartaTest {
 
         // expected: diagnostic on class name (line 9, col 22..44) — 0-based
         Diagnostic diagnostic = d(9, 22, 44,
-                                   "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
-                                   DiagnosticSeverity.Error, "jakarta-faces",
-                                   "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
+                                  "Classes annotated with @FacesValidator must implement the jakarta.faces.validator.Validator interface.",
+                                  DiagnosticSeverity.Error, "jakarta-faces",
+                                  "FacesValidatorAnnotatedClassNoValidatorInterfaceImpl");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
     }

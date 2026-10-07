@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
@@ -75,6 +74,8 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         IType[] types = unit.getAllTypes();
         for (IType type : types) {
             int typeFlag = type.getFlags();
+            // Component class with class-level interceptor binding constraints
+            checkInterceptorBindingConstraints(type, typeFlag, unit, uri, diagnostics, context);
             boolean isInterceptorType = InterModuleCommonUtils.isInterceptorReferencedType(type, unit);
             if (isInterceptorType) {
                 Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -118,6 +119,11 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
+            }
+
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, monitor);
             }
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
@@ -410,4 +416,112 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                      DiagnosticSeverity.Warning));
         }
     }
+
+    /**
+     * Checks constraints imposed by the Jakarta Interceptors 2.0 specification on a component
+     * class that declares or inherits a class-level interceptor binding:
+     * <ul>
+     * <li>The class must not be declared {@code final}.</li>
+     * <li>No non-static, non-private method may be declared {@code final}.</li>
+     * </ul>
+     * Does nothing if the class has no class-level interceptor binding.
+     *
+     * @param type the type to check
+     * @param typeFlag the type's modifier flags
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void checkInterceptorBindingConstraints(IType type, int typeFlag, ICompilationUnit unit,
+                                                    String uri, List<Diagnostic> diagnostics,
+                                                    JavaDiagnosticsContext context) throws JavaModelException {
+        if (!hasClassLevelInterceptorBinding(type, unit)) {
+            return;
+        }
+        if (Flags.isFinal(typeFlag)) {
+            Range range = PositionUtils.toNameRange(type, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidFinalInterceptorBindingClass"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidFinalInterceptorBindingClass,
+                                                     DiagnosticSeverity.Error));
+        }
+        for (IMethod method : type.getMethods()) {
+            int methodFlag = method.getFlags();
+            if (Flags.isFinal(methodFlag) && !Flags.isStatic(methodFlag) && !Flags.isPrivate(methodFlag)) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("InvalidMethodOnInterceptorBindingClass",
+                                                                             method.getElementName()),
+                                                         range, Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidMethodOnInterceptorBindingClass,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if the given type has a class-level interceptor binding, meaning it
+     * carries {@code @Interceptors(...)} or a custom annotation meta-annotated with
+     * {@code @InterceptorBinding}.
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @return {@code true} if a class-level interceptor binding is present
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private boolean hasClassLevelInterceptorBinding(IType type, ICompilationUnit unit) throws JavaModelException {
+        return Stream.of(type.getAnnotations()).anyMatch(annotation -> {
+            try {
+                return DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.INTERCEPTORS_FQ_NAME)
+                       || ManagedBean.hasMetaAnnotation(annotation, type, unit, Constants.INTERCEPTOR_BINDING_FQ_NAME);
+            } catch (JavaModelException e) {
+                LOGGER.log(Level.WARNING, "Unable to check class-level interceptor binding annotation", e);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Checks if a non-interceptor class declares a method annotated with
+     * {@code @AroundConstruct}, which is forbidden by the Jakarta Interceptors 2.0
+     * specification. The diagnostic is suppressed when the class is a superclass of
+     * an {@code @Interceptor}-annotated subclass declared in a different source file
+     * (spec permits {@code @AroundConstruct} in interceptor superclasses).
+     *
+     * @param type the non-interceptor type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context,
+                                                   IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, unit, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+        }
+    }
+
 }

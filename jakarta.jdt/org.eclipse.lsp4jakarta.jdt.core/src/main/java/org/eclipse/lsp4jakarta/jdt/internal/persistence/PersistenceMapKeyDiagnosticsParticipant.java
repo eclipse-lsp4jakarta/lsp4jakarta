@@ -208,12 +208,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                                                   List<Diagnostic> diagnostics) throws CoreException {
 
         // Get the resolved type name of the field or method return type
-        String resolvedTypeName = null;
-        if (member instanceof IMethod) {
-            resolvedTypeName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-        } else if (member instanceof IField) {
-            resolvedTypeName = JDTTypeUtils.getResolvedTypeName((IField) member);
-        }
+        String resolvedTypeName = JDTTypeUtils.getResolvedMemberTypeName(member);
 
         if (resolvedTypeName != null && JDTTypeUtils.isMap(resolvedTypeName)) {
             // Extract all type arguments from the parameterized Map type
@@ -247,11 +242,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         IType declaringType = member.getDeclaringType();
         IJavaProject javaProject = declaringType.getJavaProject();
 
-        if (member instanceof IMethod) {
-            fqName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-        } else if (member instanceof IField) {
-            fqName = JDTTypeUtils.getResolvedTypeName((IField) member);
-        }
+        fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
 
         if (fqName != null) {
             if (Constants.MAP_INTERFACE_FQDN.equals(fqName)) {
