@@ -166,7 +166,7 @@ public class InterModuleCommonUtils {
      * @throws CoreException if there's an error building the type hierarchy
      */
     public static boolean hasInterceptorSubclass(IType type, ICompilationUnit unit,
-                                                            IProgressMonitor monitor) throws CoreException {
+                                                 IProgressMonitor monitor) throws CoreException {
         ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
         return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
                                                                            && !subtype.getCompilationUnit().equals(unit)).anyMatch(subtype -> {
