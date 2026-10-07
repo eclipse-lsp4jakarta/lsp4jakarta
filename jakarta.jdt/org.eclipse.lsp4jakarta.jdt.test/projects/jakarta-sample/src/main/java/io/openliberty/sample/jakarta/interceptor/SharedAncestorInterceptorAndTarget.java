@@ -17,6 +17,10 @@ public class SharedAncestorInterceptorAndTarget {
 
     @AroundConstruct
     public void construct(InvocationContext ctx) throws Exception {
-        ctx.proceed();
+        try {
+            ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
