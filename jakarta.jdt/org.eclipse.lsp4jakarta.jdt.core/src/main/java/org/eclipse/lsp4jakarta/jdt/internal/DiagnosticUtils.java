@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,14 +32,19 @@ import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
 import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
+import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
+import org.eclipse.lsp4jakarta.jdt.internal.di.DIUtils;
 
 /**
  *
@@ -48,6 +54,8 @@ import org.eclipse.lsp4jakarta.jdt.internal.cdi.Constants;
 @SuppressWarnings("restriction")
 public class DiagnosticUtils {
 
+    private static final Logger LOGGER = Logger.getLogger(DiagnosticUtils.class.getName());
+
     private static final String LEVEL1_URI_REGEX = "(?:\\/(?:(?:\\{(\\w|-|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+\\})|(?:(\\w|%20|%21|%23|%24|%25|%26|%27|%28|%29|%2A|%2B|%2C|%2F|%3A|%3B|%3D|%3F|%40|%5B|%5D)+)))*\\/?";
 
     public static final String NAME_MUST_START_WITH_SET = "NameMustStartWithSet";
@@ -55,6 +63,9 @@ public class DiagnosticUtils {
     public static final String RETURN_TYPE_MUST_BE_VOID = "ReturnTypeMustBeVoid";
     public static final String METHOD_MUST_BE_PUBLIC = "MethodMustBePublic";
     public static final String FIELD_MUST_EXIST_IN_SETTER = "FieldMustExistInSetter";
+
+    /** Fully qualified name of {@code java.lang.Object}. */
+    public static final String OBJECT_FQ_NAME = "java.lang.Object";
 
     /**
      * Returns true if the given annotation matches the given annotation name and
@@ -231,6 +242,50 @@ public class DiagnosticUtils {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Returns the unrestricted set of bean types for a given type: the type itself,
+     * all superclasses (excluding {@code java.lang.Object}), and all directly or
+     * indirectly implemented interfaces.
+     *
+     * <p>Uses {@link ITypeHierarchy#newSupertypeHierarchy} to walk the full
+     * supertype hierarchy without manual recursion.</p>
+     *
+     * @param type the bean type to inspect
+     * @return list of fully qualified names of all unrestricted bean types;
+     *         empty if the hierarchy cannot be resolved
+     */
+    public static List<String> getUnrestrictedBeanTypes(IType type) {
+        try {
+            ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+            return Stream.concat(
+                                 Stream.of(type.getFullyQualifiedName()),
+                                 Stream.concat(
+                                               Arrays.stream(hierarchy.getAllSuperclasses(type)).map(IType::getFullyQualifiedName).filter(fqn -> !OBJECT_FQ_NAME.equals(fqn)),
+                                               Arrays.stream(hierarchy.getAllInterfaces()).map(IType::getFullyQualifiedName))).collect(Collectors.toList());
+        } catch (JavaModelException e) {
+            JakartaCorePlugin.logException("Error collecting unrestricted bean types for: " + type.getFullyQualifiedName(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Resolves a JDT type signature to an {@link IType} by erasing generic parameters
+     * and delegating name resolution to {@link ManagedBean#getChildITypeByName}.
+     *
+     * @param declaringType the type in whose context the signature should be resolved
+     * @param typeSignature the JDT type signature to resolve
+     * @return the resolved {@link IType}, or {@code null} if resolution fails
+     */
+    public static IType resolveTypeFromSignature(IType declaringType, String typeSignature) {
+        try {
+            String typeName = Signature.toString(Signature.getTypeErasure(typeSignature));
+            return ManagedBean.getChildITypeByName(declaringType, typeName);
+        } catch (Exception e) {
+            JakartaCorePlugin.logException("Error resolving type from signature: " + typeSignature, e);
+            return null;
+        }
     }
 
     /**
@@ -486,6 +541,36 @@ public class DiagnosticUtils {
     }
 
     /**
+     * Returns all class-literal values for a named member of an annotation.
+     *
+     * <p>JDT represents {@code Class<?>} literals in annotations as
+     * {@link IMemberValuePair#K_CLASS} pairs whose value is the class name as a
+     * {@link String} (the {@code .class} suffix is already stripped). A member
+     * may hold a single class ({@code @Foo(Bar.class)}) or an array
+     * ({@code @Foo({Bar.class, Baz.class})}); both forms are handled.</p>
+     *
+     * @param annotation the annotation to inspect
+     * @param memberName the member/attribute name whose class values are wanted
+     * @return an unordered list of class names (simple or fully qualified,
+     *         as stored by JDT); never {@code null}, empty when the member is
+     *         absent or carries no {@code K_CLASS} values
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static List<String> getAnnotationClassValues(IAnnotation annotation, String memberName) throws JavaModelException {
+        return Arrays.stream(annotation.getMemberValuePairs()).filter(pair -> memberName.equals(pair.getMemberName())
+                                                                              && pair.getValueKind() == IMemberValuePair.K_CLASS).flatMap(pair -> {
+                                                                                  Object raw = pair.getValue();
+                                                                                  if (raw instanceof Object[]) {
+                                                                                      return Arrays.stream((Object[]) raw).filter(String.class::isInstance).map(String.class::cast);
+                                                                                  } else if (raw instanceof String) {
+                                                                                      return Stream.of((String) raw);
+                                                                                  } else {
+                                                                                      return Stream.empty();
+                                                                                  }
+                                                                              }).collect(Collectors.toList());
+    }
+
+    /**
      * Returns {@code true} if the given {@code @Priority} annotation carries a
      * negative integer value.
      *
@@ -523,6 +608,58 @@ public class DiagnosticUtils {
      */
     public static String[] getAnnotationNames(IMethod method) throws JavaModelException {
         return Stream.of(method.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new);
+    }
+
+    /**
+     * Returns the annotations declared on a type, field, or method member.
+     *
+     * @param member the type, field, or method member
+     * @return array of annotations declared on the member
+     * @throws JavaModelException if unable to access member annotations
+     * @throws IllegalArgumentException if the member is not an {@link IType}, {@link IField}, or {@link IMethod}
+     */
+    public static IAnnotation[] getAnnotations(IMember member) throws JavaModelException {
+        if (member instanceof IType) {
+            return ((IType) member).getAnnotations();
+        } else if (member instanceof IField) {
+            return ((IField) member).getAnnotations();
+        } else if (member instanceof IMethod) {
+            return ((IMethod) member).getAnnotations();
+        }
+        throw new IllegalArgumentException("Unsupported IMember type: " + member.getClass().getName());
+    }
+
+    /**
+     * Extracts nested {@link IAnnotation} objects from a container annotation's
+     * named member (e.g. the {@code value} element of {@code @AttributeOverrides}
+     * or {@code @Resources}).
+     *
+     * <p>Handles both a single nested annotation and an array of nested annotations
+     * transparently.
+     *
+     * @param container the container annotation (e.g. {@code @AttributeOverrides})
+     * @param memberName the member element whose value holds the nested annotation(s)
+     *            (typically {@code "value"})
+     * @return a list of nested {@link IAnnotation} objects; never {@code null}
+     * @throws JavaModelException if the annotation model cannot be accessed
+     */
+    public static List<IAnnotation> getNestedAnnotations(IAnnotation container, String memberName) throws JavaModelException {
+        List<IAnnotation> result = new ArrayList<>();
+        for (IMemberValuePair pair : container.getMemberValuePairs()) {
+            if (memberName.equals(pair.getMemberName())) {
+                Object val = pair.getValue();
+                if (val instanceof Object[]) {
+                    for (Object item : (Object[]) val) {
+                        if (item instanceof IAnnotation) {
+                            result.add((IAnnotation) item);
+                        }
+                    }
+                } else if (val instanceof IAnnotation) {
+                    result.add((IAnnotation) val);
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -594,4 +731,96 @@ public class DiagnosticUtils {
         // Raw type has no type arguments
         return "Event".equals(simpleName) && Signature.getTypeArguments(typeSignature).length == 0;
     }
+
+    /**
+     * Returns true if the given set of annotations on an injection point carries only the implicit
+     * {@code @Default} qualifier — that is, no qualifier annotation other than {@code @Default} or
+     * {@code @Any} is present (excluding {@code @Inject} itself, which is not a qualifier).
+     *
+     * @param unit the compilation unit containing the injection point
+     * @param type the declaring type
+     * @param annotations the annotations on the injection point element (field or parameter)
+     * @return true if the injection point has the {@code @Default} qualifier
+     * @throws JavaModelException if there is an error accessing the Java model
+     */
+    public static boolean hasDefaultQualifier(ICompilationUnit unit, IType type,
+                                              IAnnotation[] annotations) throws JavaModelException {
+        boolean hasExplicitDefault = false;
+        boolean hasCustomQualifier = false;
+
+        for (IAnnotation annotation : annotations) {
+            // @Inject is not a qualifier; @Any is a built-in qualifier but not a custom one — skip both
+            if (isMatchedAnnotation(unit, annotation, Constants.INJECT_FQ_NAME)
+                || isMatchedAnnotation(unit, annotation, Constants.CDI_ANY_FQ_NAME)) {
+                continue;
+            }
+            if (isMatchedAnnotation(unit, annotation, Constants.CDI_DEFAULT_FQ_NAME)) {
+                hasExplicitDefault = true;
+            } else if (DIUtils.isQualifier(annotation, unit, type)) {
+                // Only count annotations that are actual CDI qualifiers (meta-annotated with @Qualifier)
+                hasCustomQualifier = true;
+            }
+        }
+
+        return hasExplicitDefault || !hasCustomQualifier;
+    }
+
+    /**
+     * Finds the first annotation in {@code annotations} whose fully-qualified name
+     * matches {@code annotationFQ} and returns it, or {@code null} if none matches.
+     *
+     * <p>This is the get-the-instance companion to
+     * {@link #isMatchedAnnotation(ICompilationUnit, IAnnotation[], String)}, which
+     * only returns a boolean. Use this overload when the caller needs the
+     * {@link IAnnotation} object itself (e.g. to read its member values).
+     *
+     * @param unit the compilation unit used for import resolution
+     * @param annotations the annotations to search through
+     * @param annotationFQ the fully-qualified annotation name to look for
+     * @return the first matching {@link IAnnotation}, or {@code null} if not found
+     * @throws JavaModelException if JDT cannot inspect the annotations
+     */
+    public static IAnnotation getMatchedAnnotation(ICompilationUnit unit, IAnnotation[] annotations,
+                                                   String annotationFQ) throws JavaModelException {
+        for (IAnnotation annotation : annotations) {
+            if (isMatchedAnnotation(unit, annotation, annotationFQ)) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the simple class name from a JDT type signature string.
+     *
+     * <p>Handles both simple reference types (e.g. {@code QDepartment;}) and
+     * parameterized collection types whose element type is of interest
+     * (e.g. {@code QList<QEmployee;>;} → {@code "Employee"}).
+     * For a parameterized type the first (and typically only) type argument is
+     * returned; for a simple reference type the reference name itself is returned.
+     *
+     * <p>This is intentionally a <em>simple-name</em> extraction — it does not
+     * resolve fully-qualified names. Callers that need the fully-qualified type
+     * name should use {@link JDTTypeUtils#getResolvedTypeArguments} instead.
+     *
+     * @param typeSignature a JDT type signature (e.g. from
+     *            {@link IField#getTypeSignature()} or {@link IMethod#getReturnType()})
+     * @return the simple class name extracted from the signature, or {@code null}
+     *         if the signature is {@code null} or cannot be parsed
+     */
+    public static String getElementTypeSimpleName(String typeSignature) {
+        if (typeSignature == null) {
+            return null;
+        }
+        // Parameterized type: extract first type argument — e.g. QList<QEmployee;>;
+        int angleOpen = typeSignature.indexOf('<');
+        int angleClose = typeSignature.lastIndexOf('>');
+        if (angleOpen != -1 && angleClose != -1) {
+            String inner = typeSignature.substring(angleOpen + 1, angleClose);
+            return getDataTypeName(inner);
+        }
+        // Simple reference type: QDepartment;
+        return getDataTypeName(typeSignature);
+    }
+
 }
