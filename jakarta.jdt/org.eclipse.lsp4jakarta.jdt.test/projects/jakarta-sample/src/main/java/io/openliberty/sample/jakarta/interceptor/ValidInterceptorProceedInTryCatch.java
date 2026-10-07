@@ -3,6 +3,7 @@ package io.openliberty.sample.jakarta.interceptor;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.AroundConstruct;
 import jakarta.interceptor.AroundTimeout;
+import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -11,6 +12,8 @@ import jakarta.annotation.PreDestroy;
  * Valid: interceptor methods call proceed() and the call is wrapped
  * in a try/catch/finally block.
  */
+@Monitored
+@Interceptor
 public class ValidInterceptorProceedInTryCatch {
 
     @AroundConstruct
