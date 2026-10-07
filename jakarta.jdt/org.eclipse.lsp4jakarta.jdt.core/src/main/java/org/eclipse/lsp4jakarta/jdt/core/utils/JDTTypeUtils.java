@@ -146,6 +146,23 @@ public class JDTTypeUtils {
         }
     }
 
+    /**
+     * Returns the resolved type name of the given {@code member}.
+     * For an {@link IMethod} this is the resolved return type; for an {@link IField}
+     * it is the resolved field type. Returns {@code null} if the type cannot be resolved.
+     *
+     * @param member the field or getter method
+     * @return the resolved type name, or {@code null}
+     */
+    public static String getResolvedTypeName(IMember member) {
+        if (member instanceof IMethod) {
+            return getResolvedResultTypeName((IMethod) member);
+        } else if (member instanceof IField) {
+            return getResolvedTypeName((IField) member);
+        }
+        return null;
+    }
+
     public static String getDefaultValue(IMethod method) {
         try {
             IMemberValuePair defaultValue = method.getDefaultValue();
