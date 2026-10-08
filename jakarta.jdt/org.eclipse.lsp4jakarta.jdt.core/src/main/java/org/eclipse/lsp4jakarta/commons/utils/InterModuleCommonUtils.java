@@ -152,24 +152,28 @@ public class InterModuleCommonUtils {
     }
 
     /**
-     * Returns {@code true} if {@code type} has at least one subclass (in any source
-     * file other than the one containing {@code type}) that is annotated with
+     * Returns {@code true} if {@code type} has at least one subclass (anywhere in the
+     * project, including within the same compilation unit) that is annotated with
      * {@code @Interceptor}.
      *
      * <p>Uses {@link IType#newTypeHierarchy(IProgressMonitor)} to discover subtypes
-     * without a full project scan.
+     * without scanning all project types.
+     *
+     * <p>The filter excludes {@code type} itself (to avoid a class being considered its
+     * own subtype) but intentionally includes same-file subtypes, so that a package-private
+     * base class declared in the same {@code .java} file as its {@code @Interceptor} subclass
+     * is also validated correctly.
      *
      * @param type the type whose subtype hierarchy is to be searched
-     * @param unit the compilation unit that contains {@code type}
      * @param monitor the progress monitor
-     * @return {@code true} if an {@code @Interceptor} subclass exists in another file
+     * @return {@code true} if an {@code @Interceptor} subclass exists anywhere in the project
      * @throws CoreException if there's an error building the type hierarchy
      */
-    public static boolean hasInterceptorSubclass(IType type, ICompilationUnit unit,
+    public static boolean hasInterceptorSubclass(IType type,
                                                  IProgressMonitor monitor) throws CoreException {
         ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
         return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
-                                                                           && !subtype.getCompilationUnit().equals(unit)).anyMatch(subtype -> {
+                                                                           && !subtype.equals(type)).anyMatch(subtype -> {
                                                                                try {
                                                                                    return isInterceptorType(subtype, subtype.getCompilationUnit());
                                                                                } catch (JavaModelException e) {
