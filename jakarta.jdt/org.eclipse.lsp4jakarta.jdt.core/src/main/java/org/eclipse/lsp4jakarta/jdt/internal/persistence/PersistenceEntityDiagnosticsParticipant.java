@@ -47,10 +47,10 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
-import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
@@ -94,6 +94,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IAnnotation namedQueriesAnnotation = null;
             IAnnotation namedNativeQueryAnnotation = null;
             IAnnotation namedNativeQueriesAnnotation = null;
+            IAnnotation idClassAnnotation = null;
 
             IAnnotation inheritanceAnnotation = null;
             IAnnotation idClassAnnotation = null;
@@ -115,6 +116,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     namedNativeQueryAnnotation = annotation;
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
                     namedNativeQueriesAnnotation = annotation;
+                }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.IDCLASS)) {
+                    idClassAnnotation = annotation;
                 }
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
@@ -169,11 +173,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
                     // Check @Embedded on methods
@@ -220,11 +224,11 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
                     // Check @Embedded on fields
@@ -339,6 +343,12 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
                 if (!versionMembers.isEmpty()) {
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
+                }
+
+                // Validate @IdClass member alignment when the entity uses composite keys
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a132
+                if (idClassAnnotation != null && idMembers.size() > 1) {
+                    validateIdClassMemberAlignment(type, idClassAnnotation, idMembers, context, uri, diagnostics);
                 }
 
                 // Check @Inheritance is only on the root of the entity hierarchy
@@ -682,7 +692,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @throws JavaModelException
      */
     private void validateFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                             JavaDiagnosticsContext context, String candidate) throws JavaModelException {
+                                             JavaDiagnosticsContext context, String candidate,
+                                             boolean entityHasIdClass) throws JavaModelException {
         String typeFQ = null;
         Range range = null;
         boolean isArrayType = false;
@@ -710,7 +721,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (Constants.ID.equals(candidate)) {
-            if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
+            // When @IdClass is present the entity uses composite FK-based PKs (spec §2.4.1.1);
+            // @Id fields may hold entity types — InvalidIdType is not applicable.
+            // IdClassService validates correctness separately.
+            if (!entityHasIdClass && (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ))) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidIdType"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -926,6 +940,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.IdClassTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
         }
+    }
+
+    private void validateIdClassMemberAlignment(IType entityType, IAnnotation idClassAnnotation,
+                                                List<IMember> idMembers,
+                                                JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics) throws JavaModelException {
+        new IdClassService().validate(entityType, idClassAnnotation, idMembers, context, uri, diagnostics);
     }
 
 }
