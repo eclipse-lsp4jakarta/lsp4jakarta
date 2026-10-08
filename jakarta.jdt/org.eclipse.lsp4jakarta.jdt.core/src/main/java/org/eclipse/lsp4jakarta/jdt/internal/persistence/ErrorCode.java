@@ -37,6 +37,8 @@ public enum ErrorCode implements IJavaErrorCode {
     DuplicateVersionAnnotationInClass,
     DuplicateVersionAnnotationInHierarchy,
     InvalidVersionFieldOrPropertyType,
+    EmbeddedTypeNotAnnotatedWithEmbeddable,
+    InvalidIdType,
     InheritanceAnnotationOnNonEntityClass,
     InheritanceAnnotationOnNonRootEntity,
     InvalidMapKeyEnumeratedNotOnMapType,
@@ -49,7 +51,20 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidIdType,
     InvalidConvertAnnotationMissingConverterOrDisable,
     InvalidConvertAnnotationOnRestrictedTarget,
-    MultipleConvertAnnotationOnSameAttribute;
+    MultipleConvertAnnotationOnSameAttribute,
+    TableGeneratorInvalidEmptyName,
+    TableGeneratorsMissingTableGeneratorMapping,
+    SequenceGeneratorInvalidEmptyName,
+    SequenceGeneratorsMissingSequenceGeneratorMapping,
+    SecondaryTableInvalidEmptyName,
+    SecondaryTablesMissingSecondaryTableMapping,
+    ExtendedPersistenceContextInNonStatefulBean,
+    NamedEntityGraphOnNonEntityClass,
+    NamedEntityGraphsOnNonEntityClass,
+    NamedQueryOnInvalidClass,
+    NamedQueriesOnInvalidClass,
+    NamedNativeQueryOnInvalidClass,
+    NamedNativeQueriesOnInvalidClass;
 
     /**
      * {@inheritDoc}
