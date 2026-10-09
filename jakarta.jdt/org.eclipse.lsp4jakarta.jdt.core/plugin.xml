@@ -231,6 +231,7 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityListenersDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceContextDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceBidirectionalDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalMethodInEntityAnnotatedClass"
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
@@ -248,6 +249,7 @@
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.InsertDefaultPublicConstructorQuickFix" />
 
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMappingDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
@@ -427,6 +429,10 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiDecoratorDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiObserverMethodDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiSpecializesDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.cdi.CdiTypedAnnotationDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidTypedAnnotationNonMatchingBeanType"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveTypedAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNumberOfScopedAnnotationsByManagedBean"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveScopeDeclarationAnnotationsQuickFix" />
@@ -547,7 +553,10 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidRawEventTypeInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
-   </extension>
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidUserTransactionInjectionInCDIBean"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+  </extension>
 
    <!-- Interceptor -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
