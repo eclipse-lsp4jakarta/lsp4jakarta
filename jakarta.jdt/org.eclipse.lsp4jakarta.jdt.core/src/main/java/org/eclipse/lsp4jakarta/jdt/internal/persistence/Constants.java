@@ -27,13 +27,26 @@ public class Constants {
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String EMBEDDED = "jakarta.persistence.Embedded";
     public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
+    public static final String IDCLASS = "jakarta.persistence.IdClass";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    public static final String ELEMENT_COLLECTION = "jakarta.persistence.ElementCollection";
+    public static final String ATTRIBUTE_OVERRIDE = "jakarta.persistence.AttributeOverride";
+    public static final String ATTRIBUTE_OVERRIDES = "jakarta.persistence.AttributeOverrides";
+    public static final String ASSOCIATION_OVERRIDE = "jakarta.persistence.AssociationOverride";
+    public static final String ASSOCIATION_OVERRIDES = "jakarta.persistence.AssociationOverrides";
+
+    /* @ElementCollection map prefix constants */
+    public static final String ATTRIBUTE_OVERRIDE_VALUE_PREFIX = "value.";
+    public static final String ATTRIBUTE_OVERRIDE_KEY_PREFIX = "key.";
+
     public static final String INHERITANCE = "jakarta.persistence.Inheritance";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
     public static final String MAPKEYENUMERATED = "jakarta.persistence.MapKeyEnumerated";
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
+    public static final String CONVERTER = "jakarta.persistence.Converter";
+    public static final String ATTRIBUTE_CONVERTER = "jakarta.persistence.AttributeConverter";
     public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
     public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
     public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
@@ -55,11 +68,33 @@ public class Constants {
     public static final String VALUE = "value";
 
     public static final String CONVERT = "jakarta.persistence.Convert";
-    public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
-    public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
-    public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
-    public static final String MANY_TO_MANY = "jakarta.persistence.ManyToMany";
     public static final String ENUMERATED = "jakarta.persistence.Enumerated";
+
+    /* Bidirectional relationship annotation constants */
+    public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
+    public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
+    public static final String MANY_TO_MANY = "jakarta.persistence.ManyToMany";
+    public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
+    public static final String JOIN_TABLE = "jakarta.persistence.JoinTable";
+    public static final String JOIN_COLUMN = "jakarta.persistence.JoinColumn";
+    public static final String JOIN_COLUMNS = "jakarta.persistence.JoinColumns";
+
+    /** All relationship annotations that support the {@code mappedBy} attribute. */
+    public static final String[] INVERSE_CAPABLE_RELATIONSHIP_ANNOTATIONS = {
+                                                                              ONE_TO_MANY, ONE_TO_ONE, MANY_TO_MANY
+    };
+
+    /**
+     * Annotations that are only valid on the owning side of a relationship
+     * and must not appear on the inverse side (i.e. the side that carries
+     * {@code mappedBy}).
+     */
+    public static final String[] OWNER_ONLY_ANNOTATIONS = {
+                                                            JOIN_TABLE, JOIN_COLUMN, JOIN_COLUMNS
+    };
+
+    /* Annotation attribute constants */
+    public static final String MAPPED_BY = "mappedBy";
 
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
@@ -92,7 +127,7 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
-    public static final String CONVERTER = "converter";
+    public static final String CONVERTER_ATTRIBUTE = "converter";
     public static final String DISABLE_CONVERSION = "disableConversion";
     public static final String ATTRIBUTE_NAME = "attributeName";
 
@@ -114,4 +149,6 @@ public class Constants {
     public static final String PERSISTENCE_CONTEXT = "jakarta.persistence.PersistenceContext";
     public static final String PERSISTENCE_CONTEXT_TYPE = "jakarta.persistence.PersistenceContextType";
     public static final String PERSISTENCE_CONTEXT_TYPE_EXTENDED = "PersistenceContextType.EXTENDED";
+
+    public static final int NOT_FOUND = -1;
 }

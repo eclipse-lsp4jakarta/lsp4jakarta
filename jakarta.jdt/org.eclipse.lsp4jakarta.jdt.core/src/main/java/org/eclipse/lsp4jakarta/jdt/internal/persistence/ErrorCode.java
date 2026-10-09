@@ -38,19 +38,24 @@ public enum ErrorCode implements IJavaErrorCode {
     DuplicateVersionAnnotationInHierarchy,
     InvalidVersionFieldOrPropertyType,
     EmbeddedTypeNotAnnotatedWithEmbeddable,
+    EmbeddedIdTypeNotAnnotatedWithEmbeddable,
+    IdClassTypeNotAnnotatedWithEmbeddable,
     InvalidIdType,
+    InvalidAttributeOverrideName,
+    InvalidAssociationOverrideName,
     InheritanceAnnotationOnNonEntityClass,
     InheritanceAnnotationOnNonRootEntity,
     InvalidMapKeyEnumeratedNotOnMapType,
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
     MultipleEmbeddedIdAnnotations,
-    MixedIdentifierAnnotations,
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean,
     InvalidConvertAnnotationMissingConverterOrDisable,
     InvalidConvertAnnotationOnRestrictedTarget,
     MultipleConvertAnnotationOnSameAttribute,
+    MixedIdentifierAnnotations,
+    ConverterMustImplementAttributeConverter,
     TableGeneratorInvalidEmptyName,
     TableGeneratorsMissingTableGeneratorMapping,
     SequenceGeneratorInvalidEmptyName,
@@ -62,7 +67,10 @@ public enum ErrorCode implements IJavaErrorCode {
     NamedQueryOnInvalidClass,
     NamedQueriesOnInvalidClass,
     NamedNativeQueryOnInvalidClass,
-    NamedNativeQueriesOnInvalidClass;
+    NamedNativeQueriesOnInvalidClass,
+    InverseSideMissingMappedBy,
+    JoinTableOnInverseSide,
+    JoinColumnOnInverseSide;
 
     /**
      * {@inheritDoc}

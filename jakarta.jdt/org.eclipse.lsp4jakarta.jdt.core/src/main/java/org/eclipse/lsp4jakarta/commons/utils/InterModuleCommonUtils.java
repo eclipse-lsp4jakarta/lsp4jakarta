@@ -16,11 +16,15 @@ package org.eclipse.lsp4jakarta.commons.utils;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.interceptor.Constants;
@@ -36,7 +40,7 @@ public class InterModuleCommonUtils {
      * Checks if type is of Interceptor type or uses interceptor-related features.
      * Returns true if:
      * The type has @Interceptor annotation
-     * The type or its methods use interceptor-specific annotations (AroundInvoke, AroundConstruct, AroundTimeout)
+     * The type or its methods use interceptor-specific annotations (AroundInvoke, AroundTimeout)
      * Any method uses InvocationContext parameter (indicating it's an interceptor method)
      *
      * Note: This excludes PostConstruct and PreDestroy as they belong to the annotations module.
@@ -76,7 +80,7 @@ public class InterModuleCommonUtils {
 
     /**
      * Checks if the type has any methods annotated with interceptor-specific annotations.
-     * Checks for: @AroundInvoke, @AroundConstruct, @AroundTimeout
+     * Checks for: @AroundInvoke, @AroundTimeout
      *
      * @param type the type to check
      * @param methods the methods array (pre-fetched to avoid redundant calls)
@@ -145,5 +149,37 @@ public class InterModuleCommonUtils {
                 return false;
             }
         });
+    }
+
+    /**
+     * Returns {@code true} if {@code type} has at least one subclass (anywhere in the
+     * project, including within the same compilation unit) that is annotated with
+     * {@code @Interceptor}.
+     *
+     * <p>Uses {@link IType#newTypeHierarchy(IProgressMonitor)} to discover subtypes
+     * without scanning all project types.
+     *
+     * <p>The filter excludes {@code type} itself (to avoid a class being considered its
+     * own subtype) but intentionally includes same-file subtypes, so that a package-private
+     * base class declared in the same {@code .java} file as its {@code @Interceptor} subclass
+     * is also validated correctly.
+     *
+     * @param type the type whose subtype hierarchy is to be searched
+     * @param monitor the progress monitor
+     * @return {@code true} if an {@code @Interceptor} subclass exists anywhere in the project
+     * @throws CoreException if there's an error building the type hierarchy
+     */
+    public static boolean hasInterceptorSubclass(IType type,
+                                                 IProgressMonitor monitor) throws CoreException {
+        ITypeHierarchy hierarchy = type.newTypeHierarchy(monitor);
+        return Stream.of(hierarchy.getAllSubtypes(type)).filter(subtype -> subtype.getCompilationUnit() != null
+                                                                           && !subtype.equals(type)).anyMatch(subtype -> {
+                                                                               try {
+                                                                                   return isInterceptorType(subtype, subtype.getCompilationUnit());
+                                                                               } catch (JavaModelException e) {
+                                                                                   LOGGER.log(Level.WARNING, "Unable to check @Interceptor annotation on subtype", e);
+                                                                                   return false;
+                                                                               }
+                                                                           });
     }
 }

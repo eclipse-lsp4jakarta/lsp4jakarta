@@ -264,7 +264,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             try {
                 List<IMemberValuePair> memberValues = Arrays.asList(convertAnnotation.getMemberValuePairs());
 
-                boolean hasConverter = memberValues.stream().anyMatch(mv -> Constants.CONVERTER.equals(mv.getMemberName()));
+                boolean hasConverter = memberValues.stream().anyMatch(mv -> Constants.CONVERTER_ATTRIBUTE.equals(mv.getMemberName()));
                 boolean hasDisableConversion = memberValues.stream().anyMatch(mv -> Constants.DISABLE_CONVERSION.equals(mv.getMemberName())
                                                                                     && Boolean.TRUE.equals(mv.getValue()));
 
