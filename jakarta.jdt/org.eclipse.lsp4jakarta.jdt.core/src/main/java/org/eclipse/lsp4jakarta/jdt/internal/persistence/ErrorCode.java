@@ -71,7 +71,6 @@ public enum ErrorCode implements IJavaErrorCode {
     JoinTableOnInverseSide,
     JoinColumnOnInverseSide;
 
-
     /**
      * {@inheritDoc}
      */
