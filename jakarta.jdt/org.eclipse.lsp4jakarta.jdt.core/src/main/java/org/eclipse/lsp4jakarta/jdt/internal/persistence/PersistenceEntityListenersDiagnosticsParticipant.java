@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMemberValuePair;
@@ -190,6 +191,11 @@ public class PersistenceEntityListenersDiagnosticsParticipant implements IJavaDi
     /**
      * Checks if the entity listener is missing a public no-argument constructor.
      *
+     * <p>When no constructors are declared the compiler synthesises a default no-arg constructor
+     * whose access modifier matches the class itself (JLS 8.8.9). For interface members the class
+     * is implicitly public, so {@link Flags#isPublic} already returns {@code true} for them —
+     * no special-casing is needed.
+     *
      * @param listenerType the listener type to check
      * @return {@code true} if the listener is missing a public no-arg constructor, {@code false} otherwise
      * @throws JavaModelException if an error occurs reading the Java model
@@ -197,9 +203,13 @@ public class PersistenceEntityListenersDiagnosticsParticipant implements IJavaDi
     private boolean isMissingPublicNoArgsConstructor(IType listenerType) throws JavaModelException {
         ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(listenerType);
 
-        // An entity listener must have a public no-arg constructor.
-        // If it declares no constructors, the compiler creates a default public constructor.
-        // If it declares constructor(s), at least one must be a valid public no-arg constructor.
-        return constructorInfo.hasConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor();
+        // If explicit constructor(s) are declared, at least one must be a public no-arg constructor.
+        if (constructorInfo.hasConstructor()) {
+            return !constructorInfo.hasValidPublicNoArgsConstructor();
+        }
+
+        // No declared constructors: the compiler synthesises a default no-arg constructor with the
+        // same access as the class (JLS 8.8.9). The listener is only valid when the class is public.
+        return !Flags.isPublic(listenerType.getFlags());
     }
 }

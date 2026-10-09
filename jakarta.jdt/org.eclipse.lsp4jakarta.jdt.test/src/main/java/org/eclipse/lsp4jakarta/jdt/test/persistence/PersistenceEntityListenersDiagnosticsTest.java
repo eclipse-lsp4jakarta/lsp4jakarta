@@ -169,4 +169,26 @@ public class PersistenceEntityListenersDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nonInstantiableDiagnostic, invalidConstructorDiagnostic);
     }
+
+    /**
+     * A package-private class with no declared constructors gets a synthetic package-private default
+     * constructor (JLS 8.8.9) — not public. Must produce an {@code InvalidConstructorInEntityListener}
+     * diagnostic.
+     */
+    @Test
+    public void testEntityListenersPackagePrivateImplicitConstructor() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitylisteners/EntityListenersPackagePrivateImplicitConstructor.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic expectedDiagnostic = d(7, 0, 65,
+                                          "The entity listener class(es) PackagePrivateImplicitConstructorListener must declare a public no-argument constructor.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidConstructorInEntityListener");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+    }
 }
