@@ -96,6 +96,23 @@ public class PersistenceEntityListenersDiagnosticsTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    /**
+     * A class nested directly inside an interface is implicitly static per JLS 9.5. It must
+     * NOT be flagged as a non-static inner class and must produce no diagnostic.
+     */
+    @Test
+    public void testEntityListenersInterfaceNestedListener() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitylisteners/EntityListenersInterfaceNestedListener.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
     @Test
     public void testEntityListenersAbstractAndPackagePrivateConstructor() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
