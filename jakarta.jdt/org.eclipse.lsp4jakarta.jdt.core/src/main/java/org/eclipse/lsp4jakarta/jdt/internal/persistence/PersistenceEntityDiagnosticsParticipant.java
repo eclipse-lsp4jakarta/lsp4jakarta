@@ -359,6 +359,33 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                          ErrorCode.InheritanceAnnotationOnNonEntityClass,
                                                          DiagnosticSeverity.Error));
             }
+
+            // @Converter: class must implement AttributeConverter
+            boolean isConverterAnnotated = false;
+            for (IAnnotation annotation : allAnnotations) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERTER)) {
+                    isConverterAnnotated = true;
+                    break;
+                }
+            }
+            if (isConverterAnnotated) {
+                ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+                boolean implementsAttributeConverter = false;
+                for (IType iface : typeHierarchy.getAllInterfaces()) {
+                    if (Constants.ATTRIBUTE_CONVERTER.equals(iface.getFullyQualifiedName())) {
+                        implementsAttributeConverter = true;
+                        break;
+                    }
+                }
+                if (!implementsAttributeConverter) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ConverterMustImplementAttributeConverter"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.ConverterMustImplementAttributeConverter,
+                                                             DiagnosticSeverity.Error));
+                }
+            }
         }
 
         return diagnostics;
