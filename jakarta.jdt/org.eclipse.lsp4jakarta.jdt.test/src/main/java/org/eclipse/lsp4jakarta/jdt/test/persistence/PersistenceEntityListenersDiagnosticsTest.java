@@ -113,6 +113,43 @@ public class PersistenceEntityListenersDiagnosticsTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
+    /**
+     * Single-class form {@code @EntityListeners(L.class)} with a valid listener must produce no diagnostic.
+     */
+    @Test
+    public void testEntityListenersSingleValidListener() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitylisteners/EntityListenersSingleValidListener.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Single-class form {@code @EntityListeners(L.class)} with an invalid listener (protected constructor)
+     * must produce an {@code InvalidConstructorInEntityListener} diagnostic.
+     */
+    @Test
+    public void testEntityListenersSingleInvalidListener() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitylisteners/EntityListenersSingleInvalidListener.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic expectedDiagnostic = d(7, 0, 52,
+                                          "The entity listener class(es) ProtectedConstructorListener must declare a public no-argument constructor.",
+                                          DiagnosticSeverity.Error, "jakarta-persistence", "InvalidConstructorInEntityListener");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+    }
+
     @Test
     public void testEntityListenersAbstractAndPackagePrivateConstructor() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
