@@ -67,6 +67,9 @@ public class Constants {
 
     public static final String VALUE = "value";
 
+    public static final String CONVERT = "jakarta.persistence.Convert";
+    public static final String ENUMERATED = "jakarta.persistence.Enumerated";
+
     /* Bidirectional relationship annotation constants */
     public static final String ONE_TO_MANY = "jakarta.persistence.OneToMany";
     public static final String ONE_TO_ONE = "jakarta.persistence.OneToOne";
@@ -124,6 +127,14 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
+    public static final String CONVERTER_ATTRIBUTE = "converter";
+    public static final String DISABLE_CONVERSION = "disableConversion";
+    public static final String ATTRIBUTE_NAME = "attributeName";
+
+    /* @Convert restricted-target annotations */
+    public static final String[] CONVERT_RESTRICTED_ANNOTATIONS = {
+                                                                    ID, VERSION, ONE_TO_ONE, ONE_TO_MANY, MANY_TO_ONE, MANY_TO_MANY, ENUMERATED, TEMPORAL
+    };
 
     /* Source */
     public static final String DIAGNOSTIC_SOURCE = "jakarta-persistence";
