@@ -132,6 +132,10 @@ public class ManagedBean {
     /**
      * Returns true if the class represented by the input type object is an inner class. False, otherwise.
      *
+     * <p>Enums, records, interfaces, and annotations that are member types are implicitly static per
+     * the Java Language Specification (JLS 8.9, 8.10, 9.5), so they are never inner classes regardless
+     * of what {@link org.eclipse.jdt.core.IType#getFlags()} reports for source types.
+     *
      * @param type The type object to check.
      *
      * @return True if the class represented by the input type object is an inner class. False, otherwise.
@@ -139,8 +143,23 @@ public class ManagedBean {
      * @throws JavaModelException
      */
     public static boolean isInnerClass(IType type) throws JavaModelException {
-        // A Non-static member class is an inner class.
-        return type.isMember() && !Flags.isStatic(type.getFlags());
+        if (!type.isMember()) {
+            return false;
+        }
+        // Enums, records, interfaces, and annotations are implicitly static member types per the JLS
+        // (8.9, 8.10, 9.5). getFlags() on a source type may not carry the ACC_STATIC bit for these
+        // kinds, so we check the kind explicitly before falling back to the flags.
+        if (type.isEnum() || type.isRecord() || type.isInterface() || type.isAnnotation()) {
+            return false;
+        }
+        // A class declared directly inside an interface is also implicitly static per JLS 9.5.
+        // The type itself appears as a plain class, so we must check its declaring type.
+        IType declaringType = type.getDeclaringType();
+        if (declaringType != null && declaringType.isInterface()) {
+            return false;
+        }
+        // A non-static member class is an inner class.
+        return !Flags.isStatic(type.getFlags());
     }
 
     /**
