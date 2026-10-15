@@ -60,7 +60,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidRawEventTypeInjectionPoint,
     InvalidTypedAnnotationNonMatchingBeanType,
     InvalidUserTransactionInjectionInCDIBean,
-    InvalidPassivatingScopedBeanWithoutSerializable;
+    InvalidPassivatingScopedBeanWithoutSerializable,
+    InvalidSpecializesStaticProducerMethod,
+    InvalidSpecializesProducerMethodNotOverriding;
 
     /**
      * {@inheritDoc}
