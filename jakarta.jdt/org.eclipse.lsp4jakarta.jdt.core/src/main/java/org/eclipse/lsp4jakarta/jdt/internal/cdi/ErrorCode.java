@@ -54,6 +54,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidProducerMethodWithTypeVariableAndNonDependentScope,
     InvalidProducerFieldWithBareTypeVariableType,
     InvalidProducerFieldWithTypeVariableAndNonDependentScope,
+    InvalidBareTypeVariableInInjectField,
+    InvalidBareTypeVariableInInjectMethodParam,
     InvalidSpecializedBeanWithNamedAnnotation,
     InvalidOrphanDisposerMethod,
     InvalidSpecializesAnnotationOnNonBeanSuperclass,
