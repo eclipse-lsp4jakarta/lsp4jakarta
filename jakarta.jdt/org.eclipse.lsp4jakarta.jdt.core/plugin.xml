@@ -233,6 +233,7 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceContextDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.NamedEntityGraphDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceBidirectionalDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.DerivedIdentityDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalMethodInEntityAnnotatedClass"
                   class="org.eclipse.lsp4jakarta.jdt.core.java.codeaction.RemoveFinalModifierQuickFix" />
