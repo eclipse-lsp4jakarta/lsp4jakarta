@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.TryStatement;
 
 public class ASTUtils {
 
@@ -146,30 +147,98 @@ public class ASTUtils {
      * @return boolean
      */
     public static boolean containsMethodInvocation(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
-        if (methodDecl == null || methodDecl.getBody() == null) {
-            return false;
+        return findMethodInvocation(methodDecl, targetMethod, parentFQN) != null;
+    }
+
+    /**
+     * Checks whether the given MethodDeclaration contains a call to the specified method
+     * on the specified parent type, and that call is NOT enclosed within a try statement
+     * (i.e., not inside a try/catch, try/finally, or try/catch/finally block).
+     * All three forms map to the same JDT {@link TryStatement} AST node type.
+     *
+     * <p>A method may contain multiple matching invocations (e.g. one inside a try and one
+     * outside). This method returns {@code true} if <em>any</em> of the matching invocations
+     * is outside a try statement, because each such call is unprotected.
+     *
+     * @param methodDecl the method declaration to inspect
+     * @param targetMethod the method name to look for (e.g. "proceed")
+     * @param parentFQN the fully qualified name of the declaring class (e.g. "jakarta.interceptor.InvocationContext")
+     * @return {@code true} if at least one matching invocation exists AND is not inside a try statement;
+     *         {@code false} if there are no matching invocations or all of them are inside a try statement
+     */
+    public static boolean isMethodInvocationOutsideTryCatch(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
+        List<MethodInvocation> matches = collectMethodInvocations(methodDecl, targetMethod, parentFQN, false);
+        for (MethodInvocation match : matches) {
+            ASTNode parent = match.getParent();
+            boolean insideTry = false;
+            while (parent != null && parent != methodDecl) {
+                if (parent instanceof TryStatement) {
+                    insideTry = true;
+                    break;
+                }
+                parent = parent.getParent();
+            }
+            if (!insideTry) {
+                return true;
+            }
         }
-        AtomicBoolean found = new AtomicBoolean(false);
+        return false;
+    }
+
+    /**
+     * Finds the first {@link MethodInvocation} within the given method declaration whose name
+     * matches {@code targetMethod} and whose declaring class matches {@code parentFQN}.
+     * Returns {@code null} if no such invocation exists or the method body is absent.
+     *
+     * @param methodDecl the method declaration to search
+     * @param targetMethod the method name to look for
+     * @param parentFQN the fully qualified name of the declaring class
+     * @return the first matching {@link MethodInvocation}, or {@code null}
+     */
+    private static MethodInvocation findMethodInvocation(MethodDeclaration methodDecl, String targetMethod, String parentFQN) {
+        List<MethodInvocation> results = collectMethodInvocations(methodDecl, targetMethod, parentFQN, true);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * Shared implementation for {@link #findMethodInvocation} and {@link #findAllMethodInvocations}.
+     * Walks the body of {@code methodDecl} collecting invocations whose name matches
+     * {@code targetMethod} and whose declaring class matches {@code parentFQN}.
+     *
+     * @param methodDecl the method declaration to search
+     * @param targetMethod the method name to look for
+     * @param parentFQN the fully qualified name of the declaring class
+     * @param stopAfterFirst if {@code true}, stops after the first match (early-exit)
+     * @return matching {@link MethodInvocation} nodes; at most one element when {@code stopAfterFirst} is {@code true}
+     */
+    private static List<MethodInvocation> collectMethodInvocations(MethodDeclaration methodDecl, String targetMethod,
+                                                                   String parentFQN, boolean stopAfterFirst) {
+        if (methodDecl == null || methodDecl.getBody() == null) {
+            return Collections.emptyList();
+        }
+        List<MethodInvocation> results = new ArrayList<>();
         methodDecl.accept(new ASTVisitor() {
             @Override
             public boolean visit(MethodInvocation node) {
-                if (found.get())
-                    return false; // stop descending if found
+                if (stopAfterFirst && !results.isEmpty()) {
+                    return false; // early-exit: already found one
+                }
                 if (targetMethod.equals(node.getName().getIdentifier())) {
                     IMethodBinding binding = node.resolveMethodBinding();
                     if (binding != null) {
                         ITypeBinding declaringClass = binding.getDeclaringClass();
-                        if (declaringClass != null &&
-                            parentFQN.equals(declaringClass.getQualifiedName())) {
-                            found.set(true);
-                            return false; // stop visiting children of this node
+                        if (declaringClass != null && parentFQN.equals(declaringClass.getQualifiedName())) {
+                            results.add(node);
+                            if (stopAfterFirst) {
+                                return false;
+                            }
                         }
                     }
                 }
-                return true; // keep traversing nodes until found
+                return true;
             }
         });
-        return found.get();
+        return results;
     }
 
     /**
@@ -221,6 +290,28 @@ public class ASTUtils {
                 return (MethodDeclaration) currentNode;
             }
             currentNode = currentNode.getParent();
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the declaring {@link IType} of a {@link MethodDeclaration} by walking
+     *
+     * @param methodDecl the method declaration to resolve
+     * @return the declaring {@link IType}, or {@code null} if it cannot be resolved
+     */
+    public static IType getDeclaringType(MethodDeclaration methodDecl) {
+        IMethodBinding binding = methodDecl.resolveBinding();
+        if (binding == null) {
+            return null;
+        }
+        ITypeBinding declaringClass = binding.getDeclaringClass();
+        if (declaringClass == null) {
+            return null;
+        }
+        IJavaElement javaElement = declaringClass.getJavaElement();
+        if (javaElement instanceof IType) {
+            return (IType) javaElement;
         }
         return null;
     }
