@@ -51,6 +51,7 @@ public enum ErrorCode implements IJavaErrorCode {
     MultipleEmbeddedIdAnnotations,
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean,
+    NamedAttributeNodeAttributeNotFound,
     InvalidConvertAnnotationMissingConverterOrDisable,
     InvalidConvertAnnotationOnRestrictedTarget,
     MultipleConvertAnnotationOnSameAttribute,

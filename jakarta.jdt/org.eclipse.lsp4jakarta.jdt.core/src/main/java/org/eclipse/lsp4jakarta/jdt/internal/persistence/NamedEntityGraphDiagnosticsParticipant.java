@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -100,25 +101,74 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
     }
 
     // -------------------------------------------------------------------------
-    // Validation — flags duplicates in the current file
+    // Validation — flags duplicates and invalid attributes
     // -------------------------------------------------------------------------
 
-    private void validateType(IType type, Map<String, Integer> graphNameOccurrences,
+    private void validateType(IType type, Map<String, Integer> counts,
                               List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
-        for (IAnnotation annotation : type.getAnnotations()) {
-            forEachGraph(type, annotation, nested -> checkForDuplicate(nested, graphNameOccurrences, diagnostics, context));
+        Set<String> entityAttributes = null;
+        for (IAnnotation ann : type.getAnnotations()) {
+            String elementName = ann.getElementName();
+            if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPH)) {
+                if (entityAttributes == null) {
+                    entityAttributes = DiagnosticUtils.getPropertyNames(type);
+                }
+                validateEntityGraph(ann, type, entityAttributes, counts, diagnostics, context);
+            } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPHS)) {
+                if (entityAttributes == null) {
+                    entityAttributes = DiagnosticUtils.getPropertyNames(type);
+                }
+                Set<String> attrs = entityAttributes;
+                forEachNestedGraph(ann, nested -> validateEntityGraph(nested, type, attrs, counts, diagnostics, context));
+            }
         }
     }
 
-    private void checkForDuplicate(IAnnotation annotation, Map<String, Integer> graphNameOccurrences,
+    private void validateEntityGraph(IAnnotation graphAnn, IType type, Set<String> entityAttributes,
+                                     Map<String, Integer> counts, List<Diagnostic> diagnostics,
+                                     JavaDiagnosticsContext context) throws JavaModelException {
+        checkForDuplicate(graphAnn, counts, diagnostics, context);
+        validateAttributeNodes(graphAnn, type, entityAttributes, diagnostics, context);
+    }
+
+    private void checkForDuplicate(IAnnotation ann, Map<String, Integer> counts,
                                    List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws JavaModelException {
-        String graphName = DiagnosticUtils.getAnnotationMemberValue(annotation, "name", String.class);
-        if (graphName != null && graphNameOccurrences.getOrDefault(graphName, 0) > 1) {
-            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+        String graphName = DiagnosticUtils.getAnnotationMemberValue(ann, "name", String.class);
+        if (graphName != null && counts.getOrDefault(graphName, 0) > 1) {
+            Range range = PositionUtils.toNameRange(ann, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage("DuplicateNamedEntityGraphName", graphName),
                                                      range, Constants.DIAGNOSTIC_SOURCE,
                                                      ErrorCode.DuplicateNamedEntityGraphName,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    private void validateAttributeNodes(IAnnotation parentAnnotation, IType targetType, Set<String> entityAttributes,
+                                        List<Diagnostic> diagnostics,
+                                        JavaDiagnosticsContext context) throws JavaModelException {
+        Object val = DiagnosticUtils.getAnnotationMemberValue(parentAnnotation, "attributeNodes", Object.class);
+        if (val == null) {
+            return;
+        }
+        Object[] items = (val instanceof Object[]) ? (Object[]) val : new Object[] { val };
+        for (Object item : items) {
+            if (item instanceof IAnnotation) {
+                validateSingleAttributeNode((IAnnotation) item, targetType, entityAttributes, diagnostics, context);
+            }
+        }
+    }
+
+    private void validateSingleAttributeNode(IAnnotation nodeAnn, IType targetType, Set<String> entityAttributes,
+                                             List<Diagnostic> diagnostics,
+                                             JavaDiagnosticsContext context) throws JavaModelException {
+        String attrName = DiagnosticUtils.getAnnotationMemberValue(nodeAnn, "value", String.class);
+        if (attrName != null && !attrName.isEmpty() && !entityAttributes.contains(attrName)) {
+            Range range = PositionUtils.toNameRange(nodeAnn, context.getUtils());
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage("NamedAttributeNodeAttributeNotFound", attrName, targetType.getElementName()),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.NamedAttributeNodeAttributeNotFound,
                                                      DiagnosticSeverity.Error));
         }
     }
@@ -167,14 +217,11 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
         if (val == null) {
             return;
         }
-        if (val instanceof Object[]) {
-            for (Object item : (Object[]) val) {
-                if (item instanceof IAnnotation) {
-                    consumer.accept((IAnnotation) item);
-                }
+        Object[] items = (val instanceof Object[]) ? (Object[]) val : new Object[] { val };
+        for (Object item : items) {
+            if (item instanceof IAnnotation) {
+                consumer.accept((IAnnotation) item);
             }
-        } else if (val instanceof IAnnotation) {
-            consumer.accept((IAnnotation) val);
         }
     }
 }
