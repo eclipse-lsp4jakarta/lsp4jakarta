@@ -346,4 +346,5 @@ public class TypeHierarchyUtils {
         }
         return ManagedBean.getChildITypeByName(type, superclassName);
     }
+
 }
