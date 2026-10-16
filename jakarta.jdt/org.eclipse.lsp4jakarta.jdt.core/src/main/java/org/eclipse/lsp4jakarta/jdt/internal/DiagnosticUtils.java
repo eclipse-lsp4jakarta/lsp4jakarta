@@ -839,4 +839,26 @@ public class DiagnosticUtils {
         return getDataTypeName(typeSignature);
     }
 
+    /**
+     * Derives a Java bean property name from a getter method name using
+     * {@link Introspector#decapitalize}.
+     * Returns {@code null} if the method name does not follow getter conventions
+     * ({@code get<Name>} or {@code is<Name>}).
+     *
+     * @param methodName the getter method name (e.g. {@code "getName"}, {@code "isActive"})
+     * @return the property name (e.g. {@code "name"}, {@code "active"}), or {@code null}
+     */
+    public static String getterPropertyName(String methodName) {
+        if (methodName == null) {
+            return null;
+        }
+        if (methodName.startsWith("get") && methodName.length() > 3) {
+            return Introspector.decapitalize(methodName.substring(3));
+        }
+        if (methodName.startsWith("is") && methodName.length() > 2) {
+            return Introspector.decapitalize(methodName.substring(2));
+        }
+        return null;
+    }
+
 }

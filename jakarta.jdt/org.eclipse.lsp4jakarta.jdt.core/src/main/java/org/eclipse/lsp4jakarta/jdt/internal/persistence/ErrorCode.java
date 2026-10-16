@@ -49,6 +49,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
     MultipleEmbeddedIdAnnotations,
+    IdClassMemberMissingInKeyClass,
+    IdClassMemberTypeMismatch,
     PersistenceContextNotInManagedComponent,
     ExtendedPersistenceContextInNonStatefulBean,
     InvalidConvertAnnotationMissingConverterOrDisable,
