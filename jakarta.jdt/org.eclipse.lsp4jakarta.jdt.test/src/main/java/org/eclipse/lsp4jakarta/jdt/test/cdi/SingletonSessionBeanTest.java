@@ -64,7 +64,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonSessionBean.java");
 
         Diagnostic invalidScope = d(9, 13, 33,
-                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    "Invalid scope @RequestScoped present in the class SingletonSessionBean. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.RequestScoped")));
 
@@ -88,11 +88,14 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonWithSessionScope.java");
 
         Diagnostic invalidScope = d(9, 13, 38,
-                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    "Invalid scope @SessionScoped present in the class SingletonWithSessionScope. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.SessionScoped")));
+        Diagnostic missingSerializable = d(9, 13, 38,
+                                           "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, missingSerializable);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");
@@ -136,7 +139,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonWithMixedInvalidAndApplicationScoped.java");
 
         Diagnostic invalidScope = d(11, 13, 58,
-                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    "Invalid scope @RequestScoped present in the class SingletonWithMixedInvalidAndApplicationScoped. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                  "jakarta.enterprise.context.RequestScoped")));
@@ -167,7 +170,7 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
         String uri = getFileUri("SingletonWithMixedInvalidAndDependent.java");
 
         Diagnostic invalidScope = d(10, 13, 50,
-                                    "A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.",
+                                    "Invalid scope @SessionScoped present in the class SingletonWithMixedInvalidAndDependent. A singleton session bean belongs to the @ApplicationScoped or @Dependent scope. Any other scope is invalid.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSingletonSessionBeanScope");
         invalidScope.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent",
                                                                  "jakarta.enterprise.context.SessionScoped")));
@@ -177,8 +180,11 @@ public class SingletonSessionBeanTest extends BaseJakartaTest {
                                       DiagnosticSeverity.Error, "jakarta-cdi", "InvalidNumberOfScopedAnnotationsByManagedBean");
         multipleScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.Dependent",
                                                                    "jakarta.enterprise.context.SessionScoped")));
+        Diagnostic missingSerializable = d(10, 13, 50,
+                                           "A managed bean in a passivating scope must implement java.io.Serializable.",
+                                           DiagnosticSeverity.Error, "jakarta-cdi", "InvalidPassivatingScopedBeanWithoutSerializable");
 
-        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, multipleScopes);
+        assertJavaDiagnostics(createDiagnosticsParams(uri), IJDT_UTILS, invalidScope, multipleScopes, missingSerializable);
 
         JakartaJavaCodeActionParams params = createCodeActionParams(uri, invalidScope);
         TextEdit removeSingleton = te(7, 0, 8, 0, "");

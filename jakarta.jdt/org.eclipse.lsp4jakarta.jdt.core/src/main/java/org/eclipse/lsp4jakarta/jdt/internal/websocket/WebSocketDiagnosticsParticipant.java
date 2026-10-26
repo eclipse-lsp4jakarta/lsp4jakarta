@@ -21,20 +21,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
-import org.eclipse.jdt.internal.core.JavaModel;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -44,8 +42,8 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsPartici
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
-import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -56,6 +54,24 @@ import com.google.gson.JsonArray;
  * WebSocket Diagnostic participant.
  */
 public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /**
+     * Lookup table mapping both FQN and simple WebSocket message-type names
+     * to their {@link Constants.MESSAGE_FORMAT}.
+     */
+    private static final Map<String, Constants.MESSAGE_FORMAT> MESSAGE_FORMAT_MAP = new HashMap<>();
+    static {
+        MESSAGE_FORMAT_MAP.put(Constants.STRING_CLASS_LONG, Constants.MESSAGE_FORMAT.TEXT);
+        MESSAGE_FORMAT_MAP.put(Constants.READER_CLASS_LONG, Constants.MESSAGE_FORMAT.TEXT);
+        MESSAGE_FORMAT_MAP.put(Constants.BYTEBUFFER_CLASS_LONG, Constants.MESSAGE_FORMAT.BINARY);
+        MESSAGE_FORMAT_MAP.put(Constants.INPUTSTREAM_CLASS_LONG, Constants.MESSAGE_FORMAT.BINARY);
+        MESSAGE_FORMAT_MAP.put(Constants.PONGMESSAGE_CLASS_LONG, Constants.MESSAGE_FORMAT.PONG);
+        MESSAGE_FORMAT_MAP.put(Constants.STRING_CLASS_SHORT, Constants.MESSAGE_FORMAT.TEXT);
+        MESSAGE_FORMAT_MAP.put(Constants.READER_CLASS_SHORT, Constants.MESSAGE_FORMAT.TEXT);
+        MESSAGE_FORMAT_MAP.put(Constants.BYTEBUFFER_CLASS_SHORT, Constants.MESSAGE_FORMAT.BINARY);
+        MESSAGE_FORMAT_MAP.put(Constants.INPUTSTREAM_CLASS_SHORT, Constants.MESSAGE_FORMAT.BINARY);
+        MESSAGE_FORMAT_MAP.put(Constants.PONGMESSAGE_CLASS_SHORT, Constants.MESSAGE_FORMAT.PONG);
+    }
 
     /**
      * {@inheritDoc}
@@ -71,402 +87,351 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
             return diagnostics;
         }
 
-        IType[] alltypes;
-        HashMap<String, Boolean> checkWSEnd = null;
-
-        alltypes = unit.getAllTypes();
-        for (IType type : alltypes) {
-            checkWSEnd = isWSEndpoint(type);
-            // checks if the class uses annotation to create a WebSocket endpoint
-            if (checkWSEnd.get(Constants.IS_ANNOTATION)) {
-                // WebSocket Invalid Parameters Diagnostic
-                invalidParamsCheck(context, uri, type, unit, diagnostics);
-
-                /* @PathParam Value Mismatch Warning */
-                List<String> endpointPathVars = findAndProcessEndpointURI(type);
-                /*
-                 * WebSocket endpoint annotations must be attached to a class, and thus is
-                 * guaranteed to be processed before any of the member method annotations
-                 */
-                if (endpointPathVars != null) {
-                    // PathParam URI Mismatch Warning Diagnostic
-                    uriMismatchWarningCheck(context, uri, type, endpointPathVars, diagnostics, unit);
-                }
-
-                // OnMessage validation for WebSocket message formats
-                onMessageWSMessageFormats(context, uri, type, diagnostics, unit);
-
-                // ServerEndpoint annotation diagnostics
-                serverEndpointErrorCheck(context, uri, type, diagnostics, unit);
-
-                publicNoArgsConstructorCheck(context, uri, type, diagnostics);
-
-                duplicateLifeCycleAnnotationCheck(context, uri, type, diagnostics);
+        for (IType type : unit.getAllTypes()) {
+            if (!isWSAnnotatedEndpoint(type)) {
+                continue;
             }
+
+            List<String> endpointPathVars = checkTypeAnnotations(context, uri, type, diagnostics);
+
+            publicNoArgsConstructorCheck(context, uri, type, diagnostics);
+
+            checkMethods(context, uri, type, endpointPathVars, diagnostics);
         }
 
         return diagnostics;
     }
 
-    private void duplicateLifeCycleAnnotationCheck(JavaDiagnosticsContext context, String uri, IType type,
-                                                   List<Diagnostic> diagnostics) throws JavaModelException {
+    // -----------------------------------------------------------------------
+    // Combined single-pass method check
+    // -----------------------------------------------------------------------
 
-        Set<String> visitedAnnotations = new HashSet<>();
+    /**
+     * Iterates {@code type.getMethods()} and performs all per-method
+     * diagnostic checks:
+     * <ul>
+     * <li>Duplicate lifecycle annotation ({@code @OnOpen}, {@code @OnClose}, {@code @OnError})</li>
+     * <li>Invalid parameter types for {@code @OnOpen} / {@code @OnClose} methods</li>
+     * <li>{@code @PathParam} value mismatch against the endpoint URI</li>
+     * <li>Duplicate {@code @OnMessage} handler for the same message format</li>
+     * </ul>
+     */
+    private void checkMethods(JavaDiagnosticsContext context, String uri, IType type,
+                              List<String> endpointPathVars, List<Diagnostic> diagnostics) throws JavaModelException {
+
+        // State shared across all methods for duplicate-lifecycle and duplicate-format checks.
+        Set<String> visitedLifecycleAnnotations = new HashSet<>();
+        Map<Constants.MESSAGE_FORMAT, IAnnotation> seenOnMessageFormats = new HashMap<>();
 
         for (IMethod method : type.getMethods()) {
+
+            // ---- 1. Resolve which WebSocket annotation (if any) is on this method ----
+            Set<String> specialParamTypes = null;
+            Set<String> rawSpecialParamTypes = null;
+            ErrorCode paramErrorCode = null;
+            String lifecycleAnnotName = null;
+            IAnnotation onMessageAnnotation = null;
+
             for (IAnnotation annotation : method.getAnnotations()) {
-                String annotationName = annotation.getElementName();
+                String name = annotation.getElementName();
 
-                if (isLifecycleAnnotation(type, annotationName)) {
-                    if (visitedAnnotations.contains(annotationName)) {
-                        JsonArray diagnosticsData = new JsonArray();
-                        diagnosticsData.add(Constants.WEBSOCKET_ANNOTATION_FQN.get(annotationName));
-                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                String matchedFQN = DiagnosticUtils.getMatchedJavaElementName(type, name, Constants.LIFECYCLE_ANNOTATIONS);
+                if (matchedFQN == null) {
+                    continue; // not a WebSocket annotation we care about
+                }
+                switch (matchedFQN) {
+                    case Constants.ON_OPEN:
+                        specialParamTypes = Constants.ON_OPEN_PARAM_OPT_TYPES;
+                        rawSpecialParamTypes = Constants.RAW_ON_OPEN_PARAM_OPT_TYPES;
+                        paramErrorCode = ErrorCode.InvalidOnOpenParams;
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_CLOSE:
+                        specialParamTypes = Constants.ON_CLOSE_PARAM_OPT_TYPES;
+                        rawSpecialParamTypes = Constants.RAW_ON_CLOSE_PARAM_OPT_TYPES;
+                        paramErrorCode = ErrorCode.InvalidOnCloseParams;
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_ERROR:
+                        lifecycleAnnotName = name;
+                        break;
+                    case Constants.ON_MESSAGE:
+                        onMessageAnnotation = annotation;
+                        continue; // @OnMessage is not a lifecycle annotation — skip the duplicate-lifecycle check below
+                }
 
-                        diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), annotationName),
-                                                                 range,
-                                                                 Constants.DIAGNOSTIC_SOURCE, diagnosticsData,
-                                                                 ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
-                    } else {
-                        visitedAnnotations.add(annotationName);
-                    }
+                // ---- 2. Duplicate lifecycle annotation check (@OnOpen/@OnClose/@OnError) ----
+                if (visitedLifecycleAnnotations.contains(lifecycleAnnotName)) {
+                    JsonArray data = new JsonArray();
+                    data.add(Constants.WEBSOCKET_ANNOTATION_FQN.get(lifecycleAnnotName));
+                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.DuplicateLifeCycleAnnotation.getCode(), lifecycleAnnotName),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, data,
+                                                             ErrorCode.DuplicateLifeCycleAnnotation, DiagnosticSeverity.Error));
+                } else {
+                    visitedLifecycleAnnotations.add(lifecycleAnnotName);
+                }
+            }
+
+            // ---- 3. Parameter checks — one pass over params covers both @OnOpen/@OnClose
+            //         validation and @PathParam mismatch. @OnMessage format check also runs here. ----
+            for (ILocalVariable param : method.getParameters()) {
+
+                // @OnOpen / @OnClose: validate parameter types
+                if (paramErrorCode != null) {
+                    checkParam(context, uri, type, param, specialParamTypes, rawSpecialParamTypes,
+                               paramErrorCode, lifecycleAnnotName, diagnostics);
+                }
+
+                // @PathParam mismatch (applies to all methods when endpoint URI vars are known)
+                if (endpointPathVars != null) {
+                    checkPathParamMismatch(context, uri, type, param, endpointPathVars, diagnostics);
+                }
+
+                // @OnMessage: duplicate format check (skip params that are @PathParam)
+                if (onMessageAnnotation != null && !hasPathParamAnnotation(type, param)) {
+                    checkOnMessageFormat(context, uri, type, param, onMessageAnnotation,
+                                         seenOnMessageFormats, diagnostics);
                 }
             }
         }
     }
 
-    private boolean isLifecycleAnnotation(IType type, String annotationName) throws JavaModelException {
-        return DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)
-               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)
-               || DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_ERROR);
+    // -----------------------------------------------------------------------
+    // Per-parameter helpers (called from the combined method pass)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Validates one parameter of an {@code @OnOpen} or {@code @OnClose} method:
+     * must be a permitted special type, a primitive/wrapper, or carry {@code @PathParam}.
+     */
+    private void checkParam(JavaDiagnosticsContext context, String uri, IType type,
+                            ILocalVariable param, Set<String> specialParamTypes,
+                            Set<String> rawSpecialParamTypes, ErrorCode errorCode,
+                            String annotationName, List<Diagnostic> diagnostics) throws JavaModelException {
+
+        String resolvedTypeName = JDTTypeUtils.getResolvedTypeName(param);
+        String formatSignature = param.getTypeSignature().replace("/", ".");
+        boolean isPrimitive = JavaModelUtil.isPrimitive(formatSignature);
+        boolean isSpecialType;
+        boolean isPrimWrapped;
+
+        if (resolvedTypeName != null) {
+            isSpecialType = specialParamTypes.contains(resolvedTypeName);
+            isPrimWrapped = isWrapper(resolvedTypeName);
+        } else {
+            String simpleParamType = Signature.getSignatureSimpleName(param.getTypeSignature());
+            isSpecialType = rawSpecialParamTypes.contains(simpleParamType);
+            isPrimWrapped = isWrapper(simpleParamType);
+        }
+
+        if (!(isSpecialType || isPrimWrapped || isPrimitive)) {
+            Range range = PositionUtils.toNameRange(param, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     createParamTypeDiagMsg(specialParamTypes, annotationName), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
+            return; // type already wrong — no need to check @PathParam
+        }
+
+        if (!isSpecialType && !hasPathParamAnnotation(type, param)) {
+            Range range = PositionUtils.toNameRange(param, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("PathParamsAnnotationMissing"), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.PathParamsMissingFromParam, DiagnosticSeverity.Error));
+        }
     }
 
-    private void invalidParamsCheck(JavaDiagnosticsContext context, String uri, IType type, ICompilationUnit unit,
-                                    List<Diagnostic> diagnostics) throws JavaModelException {
-        IMethod[] allMethods = type.getMethods();
-        for (IMethod method : allMethods) {
-            IAnnotation[] allAnnotations = method.getAnnotations();
-            Set<String> specialParamTypes = null, rawSpecialParamTypes = null;
-
-            for (IAnnotation annotation : allAnnotations) {
-                String annotationName = annotation.getElementName();
-                ErrorCode diagnosticErrorCode = null;
-
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_OPEN)) {
-                    specialParamTypes = Constants.ON_OPEN_PARAM_OPT_TYPES;
-                    rawSpecialParamTypes = Constants.RAW_ON_OPEN_PARAM_OPT_TYPES;
-                    diagnosticErrorCode = ErrorCode.InvalidOnOpenParams;
-                } else if (DiagnosticUtils.isMatchedJavaElement(type, annotationName, Constants.ON_CLOSE)) {
-                    specialParamTypes = Constants.ON_CLOSE_PARAM_OPT_TYPES;
-                    rawSpecialParamTypes = Constants.RAW_ON_CLOSE_PARAM_OPT_TYPES;
-                    diagnosticErrorCode = ErrorCode.InvalidOnCloseParams;
-                }
-                if (diagnosticErrorCode != null) {
-                    ILocalVariable[] allParams = method.getParameters();
-                    for (ILocalVariable param : allParams) {
-                        String signature = param.getTypeSignature();
-                        String formatSignature = signature.replace("/", ".");
-                        String resolvedTypeName = JavaModelUtil.getResolvedTypeName(formatSignature, type);
-                        boolean isPrimitive = JavaModelUtil.isPrimitive(formatSignature);
-                        boolean isSpecialType;
-                        boolean isPrimWrapped;
-
-                        if (resolvedTypeName != null) {
-                            isSpecialType = specialParamTypes.contains(resolvedTypeName);
-                            isPrimWrapped = isWrapper(resolvedTypeName);
-                        } else {
-                            String simpleParamType = Signature.getSignatureSimpleName(signature);
-                            isSpecialType = rawSpecialParamTypes.contains(simpleParamType);
-                            isPrimWrapped = isWrapper(simpleParamType);
-                        }
-
-                        // check parameters valid types
-                        if (!(isSpecialType || isPrimWrapped || isPrimitive)) {
-                            Range range = PositionUtils.toNameRange(param, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     createParamTypeDiagMsg(specialParamTypes, annotationName), range,
-                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     diagnosticErrorCode, DiagnosticSeverity.Error));
-                            continue;
-                        }
-
-                        if (!isSpecialType) {
-                            // check that if parameter is not a specialType, it has a @PathParam annotation
-                            IAnnotation[] param_annotations = param.getAnnotations();
-                            boolean hasPathParamAnnot = Arrays.asList(param_annotations).stream().anyMatch(annot -> {
-                                try {
-                                    return DiagnosticUtils.isMatchedJavaElement(type, annot.getElementName(),
-                                                                                Constants.PATH_PARAM_ANNOTATION);
-                                } catch (JavaModelException e) {
-                                    JakartaCorePlugin.logException("Failed to get matched annotation", e);
-                                    return false;
-                                }
-                            });
-                            if (!hasPathParamAnnot) {
-                                Range range = PositionUtils.toNameRange(param, context.getUtils());
-                                diagnostics.add(context.createDiagnostic(uri,
-                                                                         Messages.getMessage("PathParamsAnnotationMissing"), range,
-                                                                         Constants.DIAGNOSTIC_SOURCE, null,
-                                                                         ErrorCode.PathParamsMissingFromParam, DiagnosticSeverity.Error));
-                            }
-                        }
-                    }
-                }
+    /**
+     * For a single parameter that carries {@code @PathParam}, checks that the
+     * annotation's value matches a URI variable declared in the endpoint URI.
+     */
+    private void checkPathParamMismatch(JavaDiagnosticsContext context, String uri, IType type,
+                                        ILocalVariable param, List<String> endpointPathVars,
+                                        List<Diagnostic> diagnostics) throws JavaModelException {
+        for (IAnnotation annotation : param.getAnnotations()) {
+            if (!DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
+                                                      Constants.PATHPARAM_ANNOTATION)) {
+                continue;
+            }
+            String pathValue = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.ANNOTATION_VALUE, String.class);
+            if (pathValue != null && !endpointPathVars.contains(pathValue)) {
+                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("PathParamWarning"), range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.PathParamDoesNotMatchEndpointURI, DiagnosticSeverity.Warning));
             }
         }
     }
 
     /**
-     * Creates a warning diagnostic if a PathParam annotation does not match any
-     * variable parameters of the WebSocket EndPoint URI associated with the class
-     * in which the method is contained
+     * Checks whether a second {@code @OnMessage} method handles the same message
+     * format (TEXT / BINARY / PONG) as a previously seen one.
      *
-     * @param type representing the class list of diagnostics for this class
-     *            compilation unit with which the type is associated
+     * @param seenOnMessageFormats map tracking the first annotation per format,
+     *            shared across all methods
      */
-    private void uriMismatchWarningCheck(JavaDiagnosticsContext context, String uri, IType type,
-                                         List<String> endpointPathVars, List<Diagnostic> diagnostics,
-                                         ICompilationUnit unit) throws JavaModelException {
-        IMethod[] typeMethods = type.getMethods();
-        for (IMethod method : typeMethods) {
-            ILocalVariable[] methodParams = method.getParameters();
-            for (ILocalVariable param : methodParams) {
-                IAnnotation[] paramAnnotations = param.getAnnotations();
-                for (IAnnotation annotation : paramAnnotations) {
-                    if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                             Constants.PATHPARAM_ANNOTATION)) {
-                        IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-                        for (IMemberValuePair pair : valuePairs) {
-                            if (pair.getMemberName().equals(Constants.ANNOTATION_VALUE)
-                                && pair.getValueKind() == IMemberValuePair.K_STRING) {
-                                String pathValue = (String) pair.getValue();
-                                if (!endpointPathVars.contains(pathValue)) {
-                                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                                    diagnostics.add(context.createDiagnostic(uri,
-                                                                             Messages.getMessage("PathParamWarning"), range,
-                                                                             Constants.DIAGNOSTIC_SOURCE, null,
-                                                                             ErrorCode.PathParamDoesNotMatchEndpointURI, DiagnosticSeverity.Warning));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    private void checkOnMessageFormat(JavaDiagnosticsContext context, String uri, IType type,
+                                      ILocalVariable param, IAnnotation onMessageAnnotation,
+                                      Map<Constants.MESSAGE_FORMAT, IAnnotation> seenOnMessageFormats,
+                                      List<Diagnostic> diagnostics) throws JavaModelException {
+
+        String resolvedTypeName = JDTTypeUtils.getResolvedTypeName(param);
+        String lookupName = resolvedTypeName != null ? resolvedTypeName : Signature.getSignatureSimpleName(param.getTypeSignature());
+
+        Constants.MESSAGE_FORMAT format = MESSAGE_FORMAT_MAP.get(lookupName);
+        if (format == null) {
+            return; // not a message-type parameter
+        }
+
+        IAnnotation previous = seenOnMessageFormats.put(format, onMessageAnnotation);
+        if (previous != null) {
+            // Both the new and the previously seen @OnMessage get flagged.
+            addOnMessageDuplicateDiagnostic(context, uri, onMessageAnnotation, diagnostics);
+            addOnMessageDuplicateDiagnostic(context, uri, previous, diagnostics);
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Class-level annotation pass (single loop over type.getAnnotations())
+    // -----------------------------------------------------------------------
+
     /**
-     * Creates an error diagnostic if there exists more than one method annotated
-     * with @OnMessage for a given message format.
+     * Iterates {@code type.getAnnotations()} and performs all class-level
+     * annotation checks:
+     * <ul>
+     * <li>Validates {@code @ServerEndpoint} URI path (no slash, relative paths,
+     * level-1 template, duplicate variables)</li>
+     * <li>Extracts URI path-variable names for later {@code @PathParam} mismatch checking</li>
+     * </ul>
      *
-     * @param type
-     * @param diagnostics
-     * @param unit
-     * @throws JavaModel
+     * @return list of URI path-variable names, or {@code null} if no endpoint annotation
+     *         with a string {@code value} is found
      */
-    private void onMessageWSMessageFormats(JavaDiagnosticsContext context, String uri, IType type,
-                                           List<Diagnostic> diagnostics, ICompilationUnit unit) throws JavaModelException {
-        IMethod[] typeMethods = type.getMethods();
-        IAnnotation onMessageTextUsed = null;
-        IAnnotation onMessageBinaryUsed = null;
-        IAnnotation onMessagePongUsed = null;
-        for (IMethod method : typeMethods) {
-            IAnnotation[] allAnnotations = method.getAnnotations();
-            for (IAnnotation annotation : allAnnotations) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ON_MESSAGE)) {
-                    ILocalVariable[] allParams = method.getParameters();
-                    for (ILocalVariable param : allParams) {
-                        if (!isParamPath(type, param)) {
-                            String signature = param.getTypeSignature();
-                            String formatSignature = signature.replace("/", ".");
-                            String resolvedTypeName = JavaModelUtil.getResolvedTypeName(formatSignature, type);
-                            String typeName = null;
-                            if (resolvedTypeName == null) {
-                                typeName = Signature.getSignatureSimpleName(signature);
-                            }
-                            if ((resolvedTypeName != null
-                                 && Constants.LONG_MESSAGE_CLASSES.contains(resolvedTypeName))
-                                || Constants.SHORT_MESSAGE_CLASSES.contains(typeName)) {
-                                Constants.MESSAGE_FORMAT messageFormat = resolvedTypeName != null ? getMessageFormat(resolvedTypeName, true) : getMessageFormat(typeName, false);
-                                switch (messageFormat) {
-                                    case TEXT:
-                                        if (onMessageTextUsed != null) {
-                                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
+    private List<String> checkTypeAnnotations(JavaDiagnosticsContext context, String uri, IType type,
+                                              List<Diagnostic> diagnostics) throws JavaModelException {
+        String[] endpointAnnotations = { Constants.SERVER_ENDPOINT_ANNOTATION, Constants.CLIENT_ENDPOINT_ANNOTATION };
+        List<String> endpointPathVars = null;
 
-                                            range = PositionUtils.toNameRange(onMessageTextUsed, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
-                                        }
-                                        onMessageTextUsed = annotation;
-                                        break;
-                                    case BINARY:
-                                        if (onMessageBinaryUsed != null) {
-                                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
+        for (IAnnotation annotation : type.getAnnotations()) {
+            String name = annotation.getElementName();
 
-                                            range = PositionUtils.toNameRange(onMessageBinaryUsed, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
+            // Determine which (if any) endpoint annotation this is — single resolution call.
+            String matched = DiagnosticUtils.getMatchedJavaElementName(type, name, endpointAnnotations);
+            if (matched == null) {
+                continue;
+            }
+            boolean isServerEndpoint = Constants.SERVER_ENDPOINT_ANNOTATION.equals(matched);
 
-                                        }
-                                        onMessageBinaryUsed = annotation;
-                                        break;
-                                    case PONG:
-                                        if (onMessagePongUsed != null) {
-                                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
+            String path = getAnnotationStringValue(annotation);
+            if (path == null) {
+                continue;
+            }
 
-                                            range = PositionUtils.toNameRange(onMessagePongUsed, context.getUtils());
-                                            diagnostics.add(context.createDiagnostic(uri,
-                                                                                     Messages.getMessage("OnMessageDuplicateMethod"), range,
-                                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                                     ErrorCode.OnMessageDuplicateMethod,
-                                                                                     DiagnosticSeverity.Error));
-                                        }
-                                        onMessagePongUsed = annotation;
-                                        break;
-                                }
-                            }
-                        }
+            // Extract URI path-variables from the first endpoint annotation that has a value.
+            // Applies to both @ServerEndpoint and @ClientEndpoint.
+            if (endpointPathVars == null) {
+                endpointPathVars = new ArrayList<>();
+                for (String part : path.split(Constants.URI_SEPARATOR)) {
+                    if (part.startsWith(Constants.CURLY_BRACE_START) && part.endsWith(Constants.CURLY_BRACE_END)) {
+                        endpointPathVars.add(part.substring(1, part.length() - 1));
                     }
                 }
             }
-        }
-    }
 
-    /**
-     * Create an error diagnostic if a ServerEndpoint annotation's URI contains
-     * relative
-     * paths, missing a leading slash, or does not follow a valid level-1 template
-     * URI.
-     */
-    private void serverEndpointErrorCheck(JavaDiagnosticsContext context, String uri, IType type,
-                                          List<Diagnostic> diagnostics, ICompilationUnit unit) throws JavaModelException {
-        IAnnotation[] annotations = type.getAnnotations();
-        for (IAnnotation annotation : annotations) {
-            if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(),
-                                                     Constants.SERVER_ENDPOINT_ANNOTATION)) {
-                for (IMemberValuePair annotationMemberValuePair : annotation.getMemberValuePairs()) {
-                    if (annotationMemberValuePair.getMemberName().equals(Constants.ANNOTATION_VALUE)) {
-                        String path = annotationMemberValuePair.getValue().toString();
-                        if (!DiagnosticUtils.hasLeadingSlash(path)) {
-                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("ServerEndpointNoSlash"), range,
-                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     ErrorCode.InvalidEndpointPathWithNoStartingSlash,
-                                                                     DiagnosticSeverity.Error));
-                        }
-                        if (hasRelativePathURIs(path)) {
-                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("ServerEndpointRelative"), range,
-                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     ErrorCode.InvalidEndpointPathWithRelativePaths,
-                                                                     DiagnosticSeverity.Error));
-                        } else if (!DiagnosticUtils.isValidLevel1URI(path)) {
-                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("ServerEndpointNotLevel1"), range,
-                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     ErrorCode.InvalidEndpointPathNotTempleateOrPartialURI,
-                                                                     DiagnosticSeverity.Error));
-                        }
-                        if (hasDuplicateURIVariables(path)) {
-                            Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                            diagnostics.add(context.createDiagnostic(uri,
-                                                                     Messages.getMessage("ServerEndpointDuplicateVar"), range,
-                                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                                     ErrorCode.InvalidEndpointPathDuplicateVariable,
-                                                                     DiagnosticSeverity.Error));
-                        }
-                    }
+            // @ServerEndpoint-only URI validation diagnostics.
+            if (isServerEndpoint) {
+                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+
+                if (!DiagnosticUtils.hasLeadingSlash(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointNoSlash"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathWithNoStartingSlash, DiagnosticSeverity.Error));
+                }
+                if (hasRelativePathURIs(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointRelative"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathWithRelativePaths, DiagnosticSeverity.Error));
+                } else if (!DiagnosticUtils.isValidLevel1URI(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointNotLevel1"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathNotTempleateOrPartialURI, DiagnosticSeverity.Error));
+                }
+                if (hasDuplicateURIVariables(path)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ServerEndpointDuplicateVar"), range,
+                                                             Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidEndpointPathDuplicateVariable, DiagnosticSeverity.Error));
                 }
             }
         }
+
+        return endpointPathVars;
     }
 
     private void publicNoArgsConstructorCheck(JavaDiagnosticsContext context, String uri, IType type,
                                               List<Diagnostic> diagnostics) throws JavaModelException {
-
         ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(type);
-
         if (constructorInfo.hasParameterizedConstructor() && !constructorInfo.hasValidPublicNoArgsConstructor()) {
             Range range = PositionUtils.toNameRange(type, context.getUtils());
             diagnostics.add(context.createDiagnostic(uri,
                                                      Messages.getMessage("publicNoArgConstructorMissing", type.getElementName()), range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.missingPublicNoArgConstructor,
-                                                     DiagnosticSeverity.Error));
+                                                     ErrorCode.missingPublicNoArgConstructor, DiagnosticSeverity.Error));
         }
-
     }
 
     /**
-     * Finds a WebSocket EndPoint annotation and extracts all variable parameters in
-     * the EndPoint URI
-     *
-     * @param type representing the class
-     * @return List of variable parameters in the EndPoint URI if one exists, null
-     *         otherwise
+     * Returns the string {@code value} member of {@code annotation}, or {@code null}.
      */
-    private List<String> findAndProcessEndpointURI(IType type) throws JavaModelException {
-        String endpointURI = null;
-        IAnnotation[] typeAnnotations = type.getAnnotations();
-        String[] targetAnnotations = { Constants.SERVER_ENDPOINT_ANNOTATION, Constants.CLIENT_ENDPOINT_ANNOTATION };
-        for (IAnnotation annotation : typeAnnotations) {
-            String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
-                                                                                 targetAnnotations);
-            if (matchedAnnotation != null) {
-                IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-                for (IMemberValuePair pair : valuePairs) {
-                    if (pair.getMemberName().equals(Constants.ANNOTATION_VALUE)
-                        && pair.getValueKind() == IMemberValuePair.K_STRING) {
-                        endpointURI = (String) pair.getValue();
-                    }
-                }
-            }
+    private String getAnnotationStringValue(IAnnotation annotation) throws JavaModelException {
+        return DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.ANNOTATION_VALUE, String.class);
+    }
+
+    // -----------------------------------------------------------------------
+    // Predicate helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns {@code true} when {@code type} carries a WebSocket endpoint annotation
+     * ({@code @ServerEndpoint} or {@code @ClientEndpoint}).
+     */
+    private boolean isWSAnnotatedEndpoint(IType type) throws JavaModelException {
+        if (!type.isClass()) {
+            return false;
         }
-        if (endpointURI == null) {
-            return null;
-        }
-        List<String> endpointPathVars = new ArrayList<String>();
-        String[] endpointParts = endpointURI.split(Constants.URI_SEPARATOR);
-        for (String part : endpointParts) {
-            if (part.startsWith(Constants.CURLY_BRACE_START)
-                && part.endsWith(Constants.CURLY_BRACE_END)) {
-                endpointPathVars.add(part.substring(1, part.length() - 1));
-            }
-        }
-        return endpointPathVars;
+        String[] annotationNames = Stream.of(type.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new);
+        return !DiagnosticUtils.getMatchedJavaElementNames(type, annotationNames,
+                                                           Constants.WS_ANNOTATION_CLASS).isEmpty();
     }
 
     /**
-     * Check if valueClass is a wrapper object for a primitive value Based on
+     * Returns {@code true} if any annotation on {@code param} matches
+     * {@code @PathParam}. Any {@link JavaModelException} thrown during matching is
+     * logged and treated as a non-match.
+     */
+    private boolean hasPathParamAnnotation(IType type, ILocalVariable param) throws JavaModelException {
+        return Stream.of(param.getAnnotations()).anyMatch(annot -> {
+            try {
+                return DiagnosticUtils.isMatchedJavaElement(type, annot.getElementName(),
+                                                            Constants.PATH_PARAM_ANNOTATION);
+            } catch (JavaModelException e) {
+                JakartaCorePlugin.logException("Failed to get matched annotation", e);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Check if valueClass is a wrapper object for a primitive value. Based on
      * https://github.com/eclipse/lsp4mp/blob/9789a1a996811fade43029605c014c7825e8f1da/microprofile.jdt/org.eclipse.lsp4mp.jdt.core/src/main/java/org/eclipse/lsp4mp/jdt/core/utils/JDTTypeUtils.java#L294-L298
      *
-     * @param valueClass the resolved type of valueClass in string or the simple
-     *            type of valueClass
+     * @param valueClass the resolved type of valueClass in string or the simple type
      * @return if valueClass is a wrapper object
      */
     private boolean isWrapper(String valueClass) {
@@ -474,93 +439,28 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
                || Constants.RAW_WRAPPER_OBJS.contains(valueClass);
     }
 
-    /**
-     * Checks if type is a WebSocket endpoint by meeting one of the 2 conditions
-     * listed on
-     * https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#applications
-     * are met: class is annotated or class implements Endpoint class
-     *
-     * @param type the type representing the class
-     * @return the conditions for a class to be a WebSocket endpoint
-     * @throws JavaModelException
-     */
-    private HashMap<String, Boolean> isWSEndpoint(IType type) throws JavaModelException {
-        HashMap<String, Boolean> wsEndpoint = new HashMap<>();
+    // -----------------------------------------------------------------------
+    // Diagnostic creation helpers
+    // -----------------------------------------------------------------------
 
-        // check trivial case
-        if (!type.isClass()) {
-            wsEndpoint.put(Constants.IS_ANNOTATION, false);
-            wsEndpoint.put(Constants.IS_SUPERCLASS, false);
-            return wsEndpoint;
-        }
-
-        // Check that class follows
-        // https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#applications
-        List<String> endpointAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
-                                                                                      Stream.of(type.getAnnotations()).map(annotation -> annotation.getElementName()).toArray(String[]::new),
-                                                                                      Constants.WS_ANNOTATION_CLASS);
-
-        boolean useSuperclass = false;
-        try {
-            useSuperclass = TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.ENDPOINT_SUPERCLASS) >= 0;
-        } catch (CoreException e) {
-            JakartaCorePlugin.logException(Constants.DIAGNOSTIC_ERR_MSG, e);
-        }
-
-        wsEndpoint.put(Constants.IS_ANNOTATION, (endpointAnnotations.size() > 0));
-        wsEndpoint.put(Constants.IS_SUPERCLASS, useSuperclass);
-
-        return wsEndpoint;
-    }
-
-    private boolean isParamPath(IType type, ILocalVariable param) throws JavaModelException {
-        IAnnotation[] allVariableAnnotations = param.getAnnotations();
-        for (IAnnotation variableAnnotation : allVariableAnnotations) {
-            if (DiagnosticUtils.isMatchedJavaElement(type, variableAnnotation.getElementName(),
-                                                     Constants.PATH_PARAM_ANNOTATION)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private Constants.MESSAGE_FORMAT getMessageFormat(String typeName, boolean longName) {
-        if (longName) {
-            switch (typeName) {
-                case Constants.STRING_CLASS_LONG:
-                    return Constants.MESSAGE_FORMAT.TEXT;
-                case Constants.READER_CLASS_LONG:
-                    return Constants.MESSAGE_FORMAT.TEXT;
-                case Constants.BYTEBUFFER_CLASS_LONG:
-                    return Constants.MESSAGE_FORMAT.BINARY;
-                case Constants.INPUTSTREAM_CLASS_LONG:
-                    return Constants.MESSAGE_FORMAT.BINARY;
-                case Constants.PONGMESSAGE_CLASS_LONG:
-                    return Constants.MESSAGE_FORMAT.PONG;
-                default:
-                    throw new IllegalArgumentException("Invalid message format type");
-            }
-        }
-        switch (typeName) {
-            case Constants.STRING_CLASS_SHORT:
-                return Constants.MESSAGE_FORMAT.TEXT;
-            case Constants.READER_CLASS_SHORT:
-                return Constants.MESSAGE_FORMAT.TEXT;
-            case Constants.BYTEBUFFER_CLASS_SHORT:
-                return Constants.MESSAGE_FORMAT.BINARY;
-            case Constants.INPUTSTREAM_CLASS_SHORT:
-                return Constants.MESSAGE_FORMAT.BINARY;
-            case Constants.PONGMESSAGE_CLASS_SHORT:
-                return Constants.MESSAGE_FORMAT.PONG;
-            default:
-                throw new IllegalArgumentException("Invalid message format type");
-        }
+    /** Emits one {@link ErrorCode#OnMessageDuplicateMethod} diagnostic for {@code annotation}. */
+    private void addOnMessageDuplicateDiagnostic(JavaDiagnosticsContext context, String uri,
+                                                 IAnnotation annotation, List<Diagnostic> diagnostics) throws JavaModelException {
+        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+        diagnostics.add(context.createDiagnostic(uri,
+                                                 Messages.getMessage("OnMessageDuplicateMethod"), range,
+                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                 ErrorCode.OnMessageDuplicateMethod, DiagnosticSeverity.Error));
     }
 
     private String createParamTypeDiagMsg(Set<String> methodParamOptTypes, String methodAnnotTarget) {
         String paramMessage = String.join("\n- ", methodParamOptTypes);
         return Messages.getMessage("WebSocketParamType", "@" + methodAnnotTarget, paramMessage);
     }
+
+    // -----------------------------------------------------------------------
+    // URI validation helpers
+    // -----------------------------------------------------------------------
 
     /**
      * Check if a URI string contains any sequence with //, /./, or /../
@@ -573,23 +473,14 @@ public class WebSocketDiagnosticsParticipant implements IJavaDiagnosticsParticip
     }
 
     /**
-     * Check if a URI string has a duplicate variable
+     * Check if a URI string has a duplicate variable.
      *
      * @param uriString ServerEndpoint URI
      * @return if a URI has duplicate variables
      */
     private boolean hasDuplicateURIVariables(String uriString) {
-        HashSet<String> variables = new HashSet<String>();
-        for (String segment : uriString.split(Constants.URI_SEPARATOR)) {
-            if (segment.matches(Constants.REGEX_URI_VARIABLE)) {
-                String variable = segment.substring(1, segment.length() - 1);
-                if (variables.contains(variable)) {
-                    return true;
-                } else {
-                    variables.add(variable);
-                }
-            }
-        }
-        return false;
+        List<String> vars = Arrays.stream(uriString.split(Constants.URI_SEPARATOR)).filter(s -> s.matches(Constants.REGEX_URI_VARIABLE)).map(s -> s.substring(1, s.length()
+                                                                                                                                                                 - 1)).collect(Collectors.toList());
+        return vars.size() != new HashSet<>(vars).size();
     }
 }

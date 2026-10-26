@@ -252,8 +252,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.POST_CONSTRUCT_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        //Checks if @PostConstruct is not used in Interceptor class
-                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                        //Checks if @PostConstruct is not used in Interceptor class or superclass of one
+                        if (!isInterceptorContextType(method.getDeclaringType(), unit, monitor)) {
                             Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                             List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                             if (checkedExceptions.size() > 0) {
@@ -291,8 +291,8 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                                                                Constants.PRE_DESTROY_FQ_NAME)) {
                     if (element instanceof IMethod) {
                         IMethod method = (IMethod) element;
-                        //Checks if @PreDestroy is not used in Interceptor class
-                        if (!InterModuleCommonUtils.isInterceptorReferencedType(method.getDeclaringType(), unit)) {
+                        //Checks if @PreDestroy is not used in Interceptor class or superclass of one
+                        if (!isInterceptorContextType(method.getDeclaringType(), unit, monitor)) {
                             Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                             List<String> checkedExceptions = getCheckedExceptionsDeclared(method);
                             if (checkedExceptions.size() > 0) {
@@ -329,6 +329,33 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Returns {@code true} if the given type should be treated as being in an interceptor
+     * context for the purposes of {@code @PostConstruct} and {@code @PreDestroy} validation.
+     *
+     * <p>A type is in an interceptor context when:
+     * <ul>
+     * <li>it is itself an interceptor-referenced type (has {@code @Interceptor}, or uses
+     * {@code @AroundInvoke} / {@code @AroundConstruct} / {@code @AroundTimeout}), or</li>
+     * <li>it is a superclass of a type that is annotated with {@code @Interceptor}.</li>
+     * </ul>
+     *
+     * <p>When either condition holds, the Annotation diagnostics participant must suppress
+     * its parameter / return-type / exception checks because the Interceptor diagnostics
+     * participant owns those validations in that context.
+     *
+     * @param type the declaring type of the {@code @PostConstruct} or {@code @PreDestroy} method
+     * @param unit the compilation unit containing {@code type}
+     * @param monitor the progress monitor (used for the type-hierarchy search)
+     * @return {@code true} if annotation parameter/return-type checks must be suppressed
+     * @throws CoreException if there's an error accessing the Java model or building the hierarchy
+     */
+    private boolean isInterceptorContextType(IType type, ICompilationUnit unit,
+                                             IProgressMonitor monitor) throws CoreException {
+        return InterModuleCommonUtils.isInterceptorReferencedType(type, unit)
+               || InterModuleCommonUtils.hasInterceptorSubclass(type, monitor);
     }
 
     /**

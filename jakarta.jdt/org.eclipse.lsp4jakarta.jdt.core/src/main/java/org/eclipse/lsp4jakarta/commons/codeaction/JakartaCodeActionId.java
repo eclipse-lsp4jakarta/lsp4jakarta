@@ -63,6 +63,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertTemporalAnnotation,
     PersistenceChangeTemporalValue,
     PersistenceRemoveJPAIdentifierConflict,
+    PersistenceRemoveNamedJPAAnnotation,
+    PersistenceInsertEntityAnnotation,
+    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
     WBRemoveAnnotation,
@@ -89,6 +92,8 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIReplaceScopeAnnotations,
     // EJB
     EJBInsertPublicCtrtToClass,
+    EJBChangeReturnTypeToVoidForSessionSyncMethod,
+    EJBFixAfterCompletionMethodParams,
     EJBRemoveSessionBeanAnnotation,
     EJBRemoveInterceptorOrDecorator,
     EJBRemoveFinalizeMethod,
@@ -101,6 +106,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
     CDIRemoveNamedFromSpecializedBean,
+    CDIInsertNotifyEventMethod,
+    CDIInsertNotifyEventContextMethod,
+    CDIRemoveTypedAnnotation,
     //Interceptor
     InterceptorRemoveInterceptorMethodAnnotation,
     // Common modifier quick fixes
@@ -108,7 +116,10 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAbstractModifier,
     RemoveStaticModifier,
     //EJB
-    EJBMessageDrivenImplementation;
+    EJBMessageDrivenImplementation,
+    // Security
+    SecurityInsertApplicationScopedAnnotation,
+    SecurityReplaceWithApplicationScopedAnnotation;
 
     @Override
     public String getId() {
