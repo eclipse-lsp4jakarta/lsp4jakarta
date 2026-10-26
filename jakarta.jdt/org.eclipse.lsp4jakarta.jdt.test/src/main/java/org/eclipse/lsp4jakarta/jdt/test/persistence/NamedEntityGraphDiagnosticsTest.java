@@ -258,8 +258,8 @@ public class NamedEntityGraphDiagnosticsTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // @NamedAttributeNode("nonExistentField") is at 0-based line 25, cols 8-47.
-        Diagnostic invalidAttributeDiag = d(25, 8, 47,
+        // @NamedAttributeNode("nonExistentField") is at 0-based line 12, cols 8-47.
+        Diagnostic invalidAttributeDiag = d(12, 8, 47,
                                             "Attribute 'nonExistentField' does not exist on entity 'NamedEntityGraphInvalidAttribute'.",
                                             DiagnosticSeverity.Error, "jakarta-persistence", "NamedAttributeNodeAttributeNotFound");
 

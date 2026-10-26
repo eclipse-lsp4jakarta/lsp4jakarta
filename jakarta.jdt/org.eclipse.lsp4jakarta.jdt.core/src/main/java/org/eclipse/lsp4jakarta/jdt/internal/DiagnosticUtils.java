@@ -897,13 +897,14 @@ public class DiagnosticUtils {
     }
 
     /**
-     * Returns {@code true} if {@code type} or any superclass in its hierarchy
-     * declares a field with the given {@code fieldName}, using
-     * {@link IType#getField(String)} + {@link IField#exists()}.
+     * Returns {@code true} if {@code type} itself or any superclass in its
+     * hierarchy declares a field with the given {@code fieldName}.
+     * {@link TypeHierarchyUtils#collectSuperTypes} includes the starting type,
+     * so fields declared directly on the entity are found without a separate check.
      *
-     * @param type the type to start the search from
+     * @param type the type to start the search from (inclusive)
      * @param fieldName the simple field name to look for
-     * @return {@code true} if a matching field is found in the type hierarchy
+     * @return {@code true} if a matching field is found in {@code type} or any superclass
      * @throws JavaModelException if the Java model cannot be accessed
      */
     public static boolean hasFieldInHierarchy(IType type, String fieldName) throws JavaModelException {

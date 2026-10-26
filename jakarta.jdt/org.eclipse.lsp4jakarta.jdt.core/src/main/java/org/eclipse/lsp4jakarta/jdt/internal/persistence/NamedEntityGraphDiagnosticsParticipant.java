@@ -80,8 +80,8 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
         for (IType type : unit.getAllTypes()) {
             for (IAnnotation annotation : type.getAnnotations()) {
                 String name = annotation.getElementName();
-                if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMED_ENTITY_GRAPH)
-                    || DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMED_ENTITY_GRAPHS)) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMEDENTITYGRAPH)
+                    || DiagnosticUtils.isMatchedJavaElement(type, name, Constants.NAMEDENTITYGRAPHS)) {
                     return true;
                 }
             }
@@ -114,9 +114,9 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
 
         for (IAnnotation typeAnnotation : type.getAnnotations()) {
             String elementName = typeAnnotation.getElementName();
-            if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPH)) {
+            if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPH)) {
                 validateEntityGraph(typeAnnotation, type, fieldBased, graphNameOccurrences, diagnostics, context);
-            } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPHS)) {
+            } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPHS)) {
                 forEachNestedGraph(typeAnnotation, nested -> validateEntityGraph(nested, type, fieldBased, graphNameOccurrences, diagnostics, context));
             }
         }
@@ -178,9 +178,9 @@ public class NamedEntityGraphDiagnosticsParticipant implements IJavaDiagnosticsP
      */
     private void forEachGraph(IType type, IAnnotation annotation, AnnotationConsumer consumer) throws JavaModelException {
         String elementName = annotation.getElementName();
-        if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPH)) {
+        if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPH)) {
             consumer.accept(annotation);
-        } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMED_ENTITY_GRAPHS)) {
+        } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDENTITYGRAPHS)) {
             forEachNestedGraph(annotation, consumer);
         }
     }

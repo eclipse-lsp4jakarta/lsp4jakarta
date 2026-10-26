@@ -41,9 +41,8 @@ public class Constants {
     public static final String ATTRIBUTE_OVERRIDE_KEY_PREFIX = "key.";
 
     public static final String INHERITANCE = "jakarta.persistence.Inheritance";
-    public static final String NAMED_ENTITY_GRAPH = "jakarta.persistence.NamedEntityGraph";
-    public static final String NAMED_ENTITY_GRAPHS = "jakarta.persistence.NamedEntityGraphs";
-    public static final String NAMED_ATTRIBUTE_NODE = "jakarta.persistence.NamedAttributeNode";
+    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
     public static final String NAMED_SUBGRAPH = "jakarta.persistence.NamedSubgraph";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
@@ -52,8 +51,6 @@ public class Constants {
     public static final String MAPKEYTEMPORAL = "jakarta.persistence.MapKeyTemporal";
     public static final String CONVERTER = "jakarta.persistence.Converter";
     public static final String ATTRIBUTE_CONVERTER = "jakarta.persistence.AttributeConverter";
-    public static final String NAMEDENTITYGRAPH = "jakarta.persistence.NamedEntityGraph";
-    public static final String NAMEDENTITYGRAPHS = "jakarta.persistence.NamedEntityGraphs";
     public static final String NAMEDQUERY = "jakarta.persistence.NamedQuery";
     public static final String NAMEDQUERIES = "jakarta.persistence.NamedQueries";
     public static final String NAMEDNATIVEQUERY = "jakarta.persistence.NamedNativeQuery";
