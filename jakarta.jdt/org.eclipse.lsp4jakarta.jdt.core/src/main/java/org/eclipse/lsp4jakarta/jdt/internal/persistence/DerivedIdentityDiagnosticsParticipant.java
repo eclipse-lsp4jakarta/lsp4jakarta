@@ -159,7 +159,7 @@ public class DerivedIdentityDiagnosticsParticipant implements IJavaDiagnosticsPa
         // itself is the @Id (its type is the parent entity, not a key type).
         else if (!keyStrategy.hasIdClass
                  && !DiagnosticUtils.isMatchedAnnotation(unit, memberAnnotations, Constants.ID)) {
-            validateValuelessMapsId(member, context, diagnostics);
+            validateValuelessMapsId(member, unit, context, diagnostics);
         }
     }
 
@@ -170,14 +170,14 @@ public class DerivedIdentityDiagnosticsParticipant implements IJavaDiagnosticsPa
      * the primary key of the relational entity. Skipped when the relationship itself is the
      * {@code @Id}, or when the entity uses {@code @IdClass}.
      */
-    private void validateValuelessMapsId(IMember member,
+    private void validateValuelessMapsId(IMember member, ICompilationUnit unit,
                                          JavaDiagnosticsContext context,
                                          List<Diagnostic> diagnostics) throws JavaModelException {
         RelationalEntityPk relationalEntityPk = CompositeKeyResolver.resolveRelationalEntityPk(member);
         if (relationalEntityPk == null) {
             return;
         }
-        String ownPkType = CompositeKeyResolver.resolvePkType(member.getDeclaringType());
+        String ownPkType = CompositeKeyResolver.resolveIdOrEmbeddedIdType(member.getDeclaringType(), unit);
         if (ownPkType != null && !CompositeKeyResolver.typesCompatible(ownPkType, relationalEntityPk.pkFqType)) {
             addDiagnostic(member,
                           Messages.getMessage("MapsIdPrimaryKeyTypeMismatch",

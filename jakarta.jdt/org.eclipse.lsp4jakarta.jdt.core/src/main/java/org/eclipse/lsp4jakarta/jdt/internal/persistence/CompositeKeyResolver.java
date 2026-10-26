@@ -143,6 +143,15 @@ final class CompositeKeyResolver {
             String literal = DiagnosticUtils.getAnnotationMemberValue(idClass, Constants.VALUE, String.class);
             return literal == null ? null : ManagedBean.getFullyQualifiedClassName(entityType, literal);
         }
+        return resolveIdOrEmbeddedIdType(entityType, cu);
+    }
+
+    /**
+     * Returns the FQ type of the {@code @EmbeddedId} or simple {@code @Id} field or
+     * property of {@code entityType}, where {@code cu} is its compilation unit.
+     * Returns {@code null} if none can be determined.
+     */
+    static String resolveIdOrEmbeddedIdType(IType entityType, ICompilationUnit cu) throws JavaModelException {
         for (IField field : entityType.getFields()) {
             if (isIdOrEmbeddedId(cu, field.getAnnotations())) {
                 return JDTTypeUtils.getResolvedTypeName(field);
