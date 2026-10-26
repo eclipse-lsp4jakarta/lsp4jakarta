@@ -80,7 +80,7 @@ public class Constants {
     public static final String MANY_TO_ONE = "jakarta.persistence.ManyToOne";
     public static final String JOIN_TABLE = "jakarta.persistence.JoinTable";
     public static final String JOIN_COLUMN = "jakarta.persistence.JoinColumn";
-
+    public static final String JOIN_COLUMNS = "jakarta.persistence.JoinColumns";
 
     /** All relationship annotations that support the {@code mappedBy} attribute. */
     public static final String[] INVERSE_CAPABLE_RELATIONSHIP_ANNOTATIONS = {
@@ -131,7 +131,8 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
-    public static final String JOIN_COLUMNS = "joinColumns";
+    public static final String JOIN_COLUMNS_ATTRIBUTE = "joinColumns";
+    public static final String JOIN_TABLE_ATTRIBUTE = "joinTable";
     public static final String CONVERTER_ATTRIBUTE = "converter";
     public static final String DISABLE_CONVERSION = "disableConversion";
     public static final String ATTRIBUTE_NAME = "attributeName";
