@@ -510,7 +510,7 @@ public class JsonbDiagnosticsCollectorTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, nullFirstParamWithCast, nullSecondParam,
                               nullBothParamsFirst, nullBothParamsSecond, nullFirstParamNoCast);
     }
-  
+
     @Test
     public void JsonbLocalInstanceClosable() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");

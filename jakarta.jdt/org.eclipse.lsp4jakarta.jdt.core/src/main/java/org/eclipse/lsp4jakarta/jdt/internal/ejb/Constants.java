@@ -21,15 +21,43 @@ public class Constants {
     public static final String STATELESS_FQ_NAME = "jakarta.ejb.Stateless";
     public static final String STATEFUL_FQ_NAME = "jakarta.ejb.Stateful";
     public static final String SINGLETON_FQ_NAME = "jakarta.ejb.Singleton";
+    public static final String INTERCEPTOR_FQ_NAME = "jakarta.interceptor.Interceptor";
+    public static final String DECORATOR_FQ_NAME = "jakarta.decorator.Decorator";
+
+    /* Session synchronization annotation constants */
+    public static final String AFTER_BEGIN_FQ_NAME = "jakarta.ejb.AfterBegin";
+    public static final String BEFORE_COMPLETION_FQ_NAME = "jakarta.ejb.BeforeCompletion";
+    public static final String AFTER_COMPLETION_FQ_NAME = "jakarta.ejb.AfterCompletion";
 
     public static final String DIAGNOSTIC_SOURCE = "jakarta-ejb";
     public static final String DIAGNOSTIC_CODE_MISSING_PUBLIC_CONSTRUCTOR = "MissingPublicNoArgConstructor";
 
     public static final String FINALIZE_METHOD_NAME = "finalize";
 
+    /** JVM return-type descriptor for {@code void}. */
+    public static final String VOID_RETURN_TYPE = "V";
+
+    /** JDT type-signature for the primitive {@code boolean}. */
+    public static final String BOOLEAN_PRIMITIVE_SIGNATURE = "Z";
+
+    /** Fully qualified name of {@code java.lang.Boolean}. */
+    public static final String BOOLEAN_FQ_NAME = "java.lang.Boolean";
+
     public static final String[] SESSION_BEAN_ANNOTATIONS = {
                                                               STATELESS_FQ_NAME,
                                                               STATEFUL_FQ_NAME,
                                                               SINGLETON_FQ_NAME
+    };
+
+    public static final String[] SESSION_SYNC_ANNOTATIONS = {
+                                                              AFTER_BEGIN_FQ_NAME,
+                                                              BEFORE_COMPLETION_FQ_NAME,
+                                                              AFTER_COMPLETION_FQ_NAME
+    };
+
+    /** Annotations whose methods must declare no parameters. */
+    public static final String[] SESSION_SYNC_NO_PARAM_ANNOTATIONS = {
+                                                                       AFTER_BEGIN_FQ_NAME,
+                                                                       BEFORE_COMPLETION_FQ_NAME
     };
 }

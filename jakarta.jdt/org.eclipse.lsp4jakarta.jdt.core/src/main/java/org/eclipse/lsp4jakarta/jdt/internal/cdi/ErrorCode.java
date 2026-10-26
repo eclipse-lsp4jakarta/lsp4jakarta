@@ -45,10 +45,30 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidDelegateOutsideDecorator,
     InvalidDecoratorDelegateTypeAssignability,
     InvalidDecoratorDelegateTypeParamMismatch,
+    InvalidDelegateOnNonInjectionPoint,
+    InvalidDecoratorWithNoDecoratedTypes,
     InvalidWildcardTypeInInjectField,
+    InvalidWildcardTypeInInjectMethod,
     InvalidWildcardTypeInProducerMethod,
     InvalidWildcardTypeInProducerField,
-    InvalidNamedAnnotationOnNonFieldInjectionPoint;
+    InvalidNamedAnnotationOnNonFieldInjectionPoint,
+    InvalidProducerMethodWithBareTypeVariableReturnType,
+    InvalidProducerMethodWithTypeVariableAndNonDependentScope,
+    InvalidProducerFieldWithBareTypeVariableType,
+    InvalidProducerFieldWithTypeVariableAndNonDependentScope,
+    InvalidBareTypeVariableInInjectField,
+    InvalidBareTypeVariableInInjectMethodParam,
+    InvalidSpecializedBeanWithNamedAnnotation,
+    InvalidOrphanDisposerMethod,
+    InvalidSpecializesAnnotationOnNonBeanSuperclass,
+    InvalidObserverMethodWithoutNotify,
+    InvalidRawEventTypeInjectionPoint,
+    InvalidInconsistentSpecialization,
+    InvalidTypedAnnotationNonMatchingBeanType,
+    InvalidUserTransactionInjectionInCDIBean,
+    InvalidPassivatingScopedBeanWithoutSerializable,
+    InvalidSpecializesStaticProducerMethod,
+    InvalidSpecializesProducerMethodNotOverriding;
 
     /**
      * {@inheritDoc}

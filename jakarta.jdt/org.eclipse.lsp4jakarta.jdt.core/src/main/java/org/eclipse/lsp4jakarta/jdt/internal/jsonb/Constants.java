@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 IBM Corporation and others.
+ * Copyright (c) 2020, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -53,7 +53,7 @@ public class Constants {
     /* Jsonb fromJson constants */
     public static final String JSONB_FROM_JSON_PACKAGE = "jakarta.json.bind.Jsonb";
     public static final String FROM_JSON_METHOD = "fromJson";
-  
+
     // Individual thread-related type constants
     public static final String JAVA_LANG_THREAD = "java.lang.Thread";
     public static final String JAVA_LANG_RUNNABLE = "java.lang.Runnable";

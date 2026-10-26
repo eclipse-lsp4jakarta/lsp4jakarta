@@ -118,7 +118,12 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
                         // Resolving fully qualified name from Annotation to fix issue #567
                         ITypeBinding binding = annotation.resolveTypeBinding();
                         if (binding.getQualifiedName().equals(matchingFqn)) {
-                            rewrite.remove(child, null);
+                            if (isTrailingAnnotationOnSameLine(children, child)) {
+                                rewrite.replace(child, rewrite.createStringPlaceholder("", ASTNode.MARKER_ANNOTATION),
+                                                null);
+                            } else {
+                                rewrite.remove(child, null); // alone on its line: existing behavior is fine
+                            }
                         }
                     }
 
@@ -168,5 +173,33 @@ public class RemoveAnnotationProposal extends ASTRewriteCorrectionProposal {
 
     private static boolean matchesAnnotation(String fqn, String typeName) {
         return fqn.equals(typeName) || fqn.endsWith("." + typeName);
+    }
+
+    /**
+     * Returns {@code true} if any sibling modifier node in {@code children} ends on
+     * the same source line as {@code targetChild} starts, i.e. the annotation to be
+     * removed is preceded by another annotation on the same line.
+     * <p>
+     * This is used to decide the removal strategy: when the annotation shares its
+     * line with a predecessor it must be replaced with an empty placeholder rather
+     * than removed outright, because JDT's AST rewriter would otherwise extend the
+     * delete range forward past the trailing {@code \n} and collapse the annotation
+     * line into the next line.
+     * </p>
+     *
+     * @param children the full list of modifier nodes on the declaring node
+     * @param targetChild the annotation node that is about to be removed
+     * @return {@code true} if a sibling node ends on the same line as
+     *         {@code targetChild} starts; {@code false} otherwise
+     */
+    private boolean isTrailingAnnotationOnSameLine(List<? extends ASTNode> children, ASTNode targetChild) {
+        int targetLine = fInvocationNode.getLineNumber(targetChild.getStartPosition());
+        int targetStart = targetChild.getStartPosition();
+
+        return children.stream().filter(child -> child != targetChild).filter(child -> child.getStartPosition() < targetStart).anyMatch(child -> {
+            int childEnd = child.getStartPosition() + child.getLength() - 1;
+            int childEndLine = fInvocationNode.getLineNumber(childEnd);
+            return childEndLine == targetLine;
+        });
     }
 }

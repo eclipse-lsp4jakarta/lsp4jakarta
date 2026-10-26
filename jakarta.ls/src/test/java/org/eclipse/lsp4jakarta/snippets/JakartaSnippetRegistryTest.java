@@ -127,16 +127,16 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta RESTful Web Services snippets - rest_class, rest_get
+     * Jakarta RESTful Web Services snippets - jakarta_rest_class, jakarta_rest_get
      * rest_post, rest_put, rest_delete, rest_head
      */
     @Test
     public void restfulWebServicesSnippetsPrefixTest() {
-        Optional<Snippet> restClassSnippet = findByPrefix("rest_class", registry);
-        assertTrue("rest_class Java snippet is not present in SnippetRegistry", restClassSnippet.isPresent());
+        Optional<Snippet> restClassSnippet = findByPrefix("jakarta_rest_class", registry);
+        assertTrue("jakarta_rest_class Java snippet is not present in SnippetRegistry", restClassSnippet.isPresent());
 
-        Optional<Snippet> restGetSnippet = findByPrefix("rest_get", registry);
-        assertTrue("rest_get Java snippet is not present in SnippetRegistry", restGetSnippet.isPresent());
+        Optional<Snippet> restGetSnippet = findByPrefix("jakarta_rest_get", registry);
+        assertTrue("jakarta_rest_get Java snippet is not present in SnippetRegistry", restGetSnippet.isPresent());
 
         Optional<Snippet> restPostSnippet = findByPrefix("rest_post", registry);
         assertTrue("rest_post Java snippet is not present in SnippetRegistry", restPostSnippet.isPresent());
