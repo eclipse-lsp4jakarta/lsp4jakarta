@@ -12,16 +12,23 @@
 *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.test.persistence;
 
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaCodeAction;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.assertJavaDiagnostics;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.ca;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.createCodeActionParams;
 import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.d;
+import static org.eclipse.lsp4jakarta.jdt.test.core.JakartaForJavaAssert.te;
 
 import java.util.Arrays;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4jakarta.commons.JakartaJavaCodeActionParams;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsParams;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
@@ -47,6 +54,21 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
     public void validEmbeddableOverride_nodiagnostic() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/ValidEmbeddableOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
+    /**
+     * Valid: @AttributeOverride on @EmbeddedId field with name="city" which exists in Address.
+     */
+    @Test
+    public void validEmbeddedIdOverride_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/ValidEmbeddedIdOverride.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -530,4 +552,129 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, directorNotInDepartment);
     }
+
+    // -----------------------------------------------------------------------
+    // @AttributeOverride on non-embedded field/property (new diagnostic + quickfix)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: @AttributeOverride on a plain String field that is not annotated
+     * with @Embedded, @EmbeddedId, or @ElementCollection.
+     * Expected: diagnostic AttributeOverrideOnNonEmbeddedField and quickfix to remove the annotation.
+     */
+    @Test
+    public void attributeOverrideOnPlainField_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/InvalidAttributeOverrideOnPlainField.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 27 (0-based): @AttributeOverride(name = "city", column = @Column(name = "EMP_CITY"))
+        Diagnostic overrideOnPlainField = d(26, 4, 74,
+                                            "@AttributeOverride is only valid on a field or property annotated with @Embedded, @EmbeddedId or @ElementCollection.",
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "AttributeOverrideOnNonEmbeddedField");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, overrideOnPlainField);
+
+        // Quickfix: only @AttributeOverride is present → one action with its simple name
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, overrideOnPlainField);
+        TextEdit removeAttributeOverride = te(26, 4, 27, 4, "");
+        CodeAction removeAttributeOverrideAction = ca(uri, "Remove @AttributeOverride", overrideOnPlainField, removeAttributeOverride);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAttributeOverrideAction);
+    }
+
+    /**
+     * Invalid: @AttributeOverrides container on a plain Long @Id field that is not
+     * annotated with @Embedded, @EmbeddedId, or @ElementCollection.
+     * Expected: diagnostic AttributeOverrideOnNonEmbeddedField and quickfix to remove the container annotation.
+     */
+    @Test
+    public void attributeOverrideContainerOnIdField_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/InvalidAttributeOverrideOnIdField.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 26 (0-based): @AttributeOverrides({
+        Diagnostic overrideContainerOnIdField = d(25, 4, 27, 6,
+                                                  "@AttributeOverrides is only valid on a field or property annotated with @Embedded, @EmbeddedId or @ElementCollection.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "AttributeOverrideOnNonEmbeddedField");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, overrideContainerOnIdField);
+
+        // Quickfix: only @AttributeOverrides is present → one action with its simple name
+        JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, overrideContainerOnIdField);
+        TextEdit removeAttributeOverrides = te(25, 4, 28, 4, "");
+        CodeAction removeAttributeOverridesAction = ca(uri, "Remove @AttributeOverrides", overrideContainerOnIdField, removeAttributeOverrides);
+
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeAttributeOverridesAction);
+    }
+
+    // -----------------------------------------------------------------------
+    // Class-level @AttributeOverride — attribute must be inherited from a @MappedSuperclass
+    // -----------------------------------------------------------------------
+
+    /**
+     * Invalid: class-level @AttributeOverride on an entity with no superclass.
+     * "city" is declared in the entity itself, not inherited from a @MappedSuperclass.
+     */
+    @Test
+    public void classLevelOverrideNoSuperclass_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/InvalidOverrideNoSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 23 (0-based 22): @AttributeOverride(name = "city", column = @Column(name = "EMP_CITY"))
+        Diagnostic cityNotInheritedFromMappedSuperclass = d(22, 0, 70,
+                                                            "The name \"city\" in @AttributeOverride does not match any declared field or property in \"InvalidOverrideNoSuperclass\".",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAttributeOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, cityNotInheritedFromMappedSuperclass);
+    }
+
+    /**
+     * Invalid: class-level @AttributeOverride with name="city" which exists in PlainBase,
+     * but PlainBase is not annotated with @MappedSuperclass.
+     */
+    @Test
+    public void classLevelOverrideNonMappedSuperclass_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/InvalidOverrideNonMappedSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 23 (0-based 22): @AttributeOverride(name = "city", column = @Column(name = "EMP_CITY"))
+        Diagnostic cityInNonMappedSuperclass = d(22, 0, 70,
+                                                 "The name \"city\" in @AttributeOverride does not match any declared field or property in \"PlainBase\".",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "InvalidAttributeOverrideName");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, cityInNonMappedSuperclass);
+    }
+
+    /**
+     * Valid: name="address" resolves to Person.address (@MappedSuperclass) through
+     * the non-mapped intermediate class PlainPerson.
+     */
+    @Test
+    public void classLevelOverrideThroughNonMappedIntermediate_nodiagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/attributeoverride/ValidOverrideThroughNonMappedIntermediate.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS /* no diagnostics expected */);
+    }
+
 }

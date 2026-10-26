@@ -23,11 +23,12 @@ import java.util.stream.Stream;
 public class Constants {
     /* Annotation Constants */
     public static final String ENTITY = "jakarta.persistence.Entity";
+    public static final String ENTITY_LISTENERS = "jakarta.persistence.EntityListeners";
     public static final String ID = "jakarta.persistence.Id";
+    public static final String IDCLASS = "jakarta.persistence.IdClass";
     public static final String EMBEDDEDID = "jakarta.persistence.EmbeddedId";
     public static final String EMBEDDED = "jakarta.persistence.Embedded";
     public static final String EMBEDDABLE = "jakarta.persistence.Embeddable";
-    public static final String IDCLASS = "jakarta.persistence.IdClass";
     public static final String MAPPEDSUPERCLASS = "jakarta.persistence.MappedSuperclass";
     public static final String ELEMENT_COLLECTION = "jakarta.persistence.ElementCollection";
     public static final String ATTRIBUTE_OVERRIDE = "jakarta.persistence.AttributeOverride";
@@ -40,6 +41,8 @@ public class Constants {
     public static final String ATTRIBUTE_OVERRIDE_KEY_PREFIX = "key.";
 
     public static final String INHERITANCE = "jakarta.persistence.Inheritance";
+    public static final String NAMED_ENTITY_GRAPH = "jakarta.persistence.NamedEntityGraph";
+    public static final String NAMED_ENTITY_GRAPHS = "jakarta.persistence.NamedEntityGraphs";
     public static final String MAPKEY = "jakarta.persistence.MapKey";
     public static final String MAPKEYCLASS = "jakarta.persistence.MapKeyClass";
     public static final String MAPKEYJOINCOLUMN = "jakarta.persistence.MapKeyJoinColumn";
@@ -99,6 +102,7 @@ public class Constants {
     public static final String TEMPORAL = "jakarta.persistence.Temporal";
     public static final String VERSION = "jakarta.persistence.Version";
     public static final String OBJECT = "java.lang.Object";
+    public static final String SERIALIZABLE = "java.io.Serializable";
     public static final String SQL_TIMESTAMP = "java.sql.Timestamp";
 
     /* Valid @Version field types */

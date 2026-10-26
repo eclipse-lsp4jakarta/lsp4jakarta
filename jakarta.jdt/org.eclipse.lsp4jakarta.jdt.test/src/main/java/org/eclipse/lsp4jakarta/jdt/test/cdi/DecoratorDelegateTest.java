@@ -217,7 +217,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Expected diagnostics for all three invalid @Delegate locations
+        // DelegateOnNonInjectedField: @Delegate on a field without @Inject
         // Line 16 (0-based: 15), field name "delegate" starts at column 27, ends at column 35
         Diagnostic delegateFieldWithoutInjectDiagnostic = d(15, 27, 35,
                                                             "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
@@ -225,14 +225,17 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                             "jakarta-cdi",
                                                             "InvalidDelegateInjectionPoint");
 
-        // Line 33 (0-based: 32), method name "setDelegate" starts at column 16, ends at column 27
-        Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 16, 27,
-                                                                  "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
-                                                                  DiagnosticSeverity.Error,
-                                                                  "jakarta-cdi",
-                                                                  "InvalidDelegateInjectionPoint");
+        // DelegateOnNonInjectedMethodParam: @Delegate on a void method parameter without @Inject.
+        // @Inject is missing → InvalidDelegateInjectionPoint on the method (quickfix offered).
+        // Line 33 (0-based: 32), method name "setDelegate" starts at col 16, ends at col 27
+        Diagnostic missingDelegateOnNonInjectedMethodDiagnostic = d(32, 16, 27,
+                                                                    "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
+                                                                    DiagnosticSeverity.Error,
+                                                                    "jakarta-cdi",
+                                                                    "InvalidDelegateInjectionPoint");
 
-        // Line 52 (0-based: 51), constructor name "DelegateOnNonInjectedConstructorParam" starts at column 11, ends at column 48
+        // DelegateOnNonInjectedConstructorParam: @Delegate on a constructor parameter without @Inject
+        // Line 52 (0-based: 51), constructor name starts at column 11, ends at column 48
         Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 11, 48,
                                                                        "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
                                                                        DiagnosticSeverity.Error,
@@ -254,9 +257,37 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                                "jakarta-di",
                                                                "InjectionPointInvalidConstructorBean");
 
+        // DelegateOnNonVoidInjectMethod: @Inject present but method is non-void → not an initializer.
+        // InvalidDelegateOnNonInjectionPoint — no quickfix, tells user to fix the method.
+        // Line 130 (0-based: 129), method name "buildDelegate" col 26-39
+        Diagnostic invalidDelegateOnNonVoidMethodDiagnostic = d(129, 26, 39,
+                                                                "@Delegate on a method parameter is only valid if the method is a constructor or an initializer method. An initializer method must be non-static, void, and annotated with @Inject.",
+                                                                DiagnosticSeverity.Error,
+                                                                "jakarta-cdi",
+                                                                "InvalidDelegateOnNonInjectionPoint");
+
+        // DelegateOnStaticInjectMethod: @Inject present but method is static → not an initializer.
+        // InvalidDelegateOnNonInjectionPoint — no quickfix, tells user to fix the method.
+        // Line 149 (0-based: 148), method name "setDelegate" col 23-34
+        Diagnostic invalidDelegateOnStaticMethodDiagnostic = d(148, 23, 34,
+                                                               "@Delegate on a method parameter is only valid if the method is a constructor or an initializer method. An initializer method must be non-static, void, and annotated with @Inject.",
+                                                               DiagnosticSeverity.Error,
+                                                               "jakarta-cdi",
+                                                               "InvalidDelegateOnNonInjectionPoint");
+
+        // DI participant: @Inject on a static method is invalid
+        // Line 149 (0-based: 148), method name "setDelegate" col 23-34
+        Diagnostic injectOnStaticMethodDiagnostic = d(148, 23, 34,
+                                                      "The @Inject annotation must not define a static method.",
+                                                      DiagnosticSeverity.Error,
+                                                      "jakarta-di",
+                                                      "InvalidInjectAnnotationOnStaticMethod");
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, injectionPointConstructorBeanDiagnostic,
                               invalidManagedBeanConstructorDiagnostic, delegateConstructorParamWithoutInjectDiagnostic,
-                              delegateMethodParamWithoutInjectDiagnostic, delegateFieldWithoutInjectDiagnostic);
+                              missingDelegateOnNonInjectedMethodDiagnostic, delegateFieldWithoutInjectDiagnostic,
+                              invalidDelegateOnNonVoidMethodDiagnostic,
+                              injectOnStaticMethodDiagnostic, invalidDelegateOnStaticMethodDiagnostic);
 
         // Test code actions for field without @Inject
         JakartaJavaCodeActionParams fieldCodeActionParams = createCodeActionParams(uri, delegateFieldWithoutInjectDiagnostic);
@@ -264,10 +295,10 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         CodeAction fieldInjectAction = ca(uri, "Insert @Inject", delegateFieldWithoutInjectDiagnostic, fieldInjectEdit);
         assertJavaCodeAction(fieldCodeActionParams, IJDT_UTILS, fieldInjectAction);
 
-        // Test code actions for method parameter without @Inject
-        JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, delegateMethodParamWithoutInjectDiagnostic);
+        // Test code actions for void method parameter without @Inject
+        JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, missingDelegateOnNonInjectedMethodDiagnostic);
         TextEdit methodInjectEdit = te(32, 4, 32, 4, "@Inject\n\t");
-        CodeAction methodInjectAction = ca(uri, "Insert @Inject", delegateMethodParamWithoutInjectDiagnostic, methodInjectEdit);
+        CodeAction methodInjectAction = ca(uri, "Insert @Inject", missingDelegateOnNonInjectedMethodDiagnostic, methodInjectEdit);
         assertJavaCodeAction(methodCodeActionParams, IJDT_UTILS, methodInjectAction);
 
         // Test code actions for constructor parameter without @Inject

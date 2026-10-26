@@ -7,4 +7,17 @@ public class OrderIdMissingEmbeddable implements Serializable {
     private static final long serialVersionUID = 1L;
     private Long customerId;
     private Long orderNumber;
+
+    public OrderIdMissingEmbeddable() {
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof OrderIdMissingEmbeddable;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }

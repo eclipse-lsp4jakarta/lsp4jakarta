@@ -14,10 +14,12 @@ import jakarta.annotation.Priority;
 @Priority(2100)
 public class ValidInterceptorWithBinding {
     
-    @AroundInvoke
+	@AroundInvoke
     public Object log(InvocationContext ctx) throws Exception {
-        Object result = ctx.proceed();
-        return result;
+        try {
+            return ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
-

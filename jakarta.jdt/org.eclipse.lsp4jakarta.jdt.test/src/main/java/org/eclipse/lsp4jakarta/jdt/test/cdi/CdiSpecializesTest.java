@@ -64,8 +64,6 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 12 (1-based) = line 11 (0-based)
-        // class name "SpecializesWithNonBeanSuperclass" starts at col 13, ends at col 45
         Diagnostic unscopedSuperclassDiagnostic = d(11, 13, 45,
                                                     "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
                                                     DiagnosticSeverity.Error,
@@ -134,8 +132,6 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 14 (1-based) = line 13 (0-based)
-        // "SpecializesWithGrandparentBeanOnly" starts at col 13, ends at col 47 (34 chars)
         Diagnostic scopedGrandparentOnlyDiagnostic = d(13, 13, 47,
                                                        "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
                                                        DiagnosticSeverity.Error,
@@ -162,8 +158,6 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 14 (1-indexed) = line 13 (0-indexed), col 0..23
-        // @Named("customService") = 23 chars
         Diagnostic namedDiagnostic = d(13, 0, 23,
                                        msg("SpecializedBeanWithNamed"),
                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSpecializedBeanWithNamedAnnotation");
@@ -176,7 +170,7 @@ public class CdiSpecializesTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedDiagnostic, specializesDiagnostic);
 
-        // Quick-fix: remove "@Named("customService")\n" (lines 13→14, col 0→0)
+        // Quick-fix: remove @Named
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, namedDiagnostic);
         TextEdit removeNamedEdit = te(13, 0, 14, 0, "");
         CodeAction removeNamedAction = ca(uri, "Remove @Named", namedDiagnostic, removeNamedEdit);
@@ -193,8 +187,6 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 15 (0-indexed): @Specializes is first, then @Named on line 16 (0-indexed)
-        // @Named alone = 6 chars; col 0..6
         Diagnostic namedDiagnostic = d(15, 0, 6,
                                        msg("SpecializedBeanWithBareName"),
                                        DiagnosticSeverity.Error, "jakarta-cdi", "InvalidSpecializedBeanWithNamedAnnotation");
@@ -207,7 +199,7 @@ public class CdiSpecializesTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, namedDiagnostic, specializesDiagnostic);
 
-        // Quick-fix: remove "@Named\n" (lines 15→16, col 0→0)
+        // Quick-fix: remove @Named
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, namedDiagnostic);
         TextEdit removeNamedEdit = te(15, 0, 16, 0, "");
         CodeAction removeNamedAction = ca(uri, "Remove @Named", namedDiagnostic, removeNamedEdit);
@@ -334,8 +326,6 @@ public class CdiSpecializesTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Line 13 (1-based) = line 12 (0-based)
-        // "SpecializesWithNonNormalScopedSuperclass" starts at col 13, length 40
         Diagnostic nonNormalScopeDiagnostic = d(12, 13, 53,
                                                 "A bean annotated with @Specializes must directly extend the bean class of another CDI managed bean with a scope annotation.",
                                                 DiagnosticSeverity.Error,
@@ -365,5 +355,256 @@ public class CdiSpecializesTest extends BaseJakartaTest {
 
         // No diagnostics expected — direct superclass is annotated with a custom @NormalScope-based scope
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    // ── Producer method @Specializes tests ───────────────────────────────────
+
+    /**
+     * Tests that a producer method annotated with @Specializes that is static
+     * triggers two diagnostics:
+     * 1. InvalidSpecializesStaticProducerMethod — must not be static
+     * 2. InvalidSpecializesProducerMethodNotOverriding — no superclass producer to override
+     */
+    @Test
+    public void testSpecializesStaticProducerMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesStaticProducerMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic staticDiagnostic = d(17, 25, 32,
+                                        "A producer method annotated with @Specializes must not be static.",
+                                        DiagnosticSeverity.Error,
+                                        "jakarta-cdi",
+                                        "InvalidSpecializesStaticProducerMethod");
+
+        Diagnostic notOverridingDiagnostic = d(17, 25, 32,
+                                               "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, staticDiagnostic, notOverridingDiagnostic);
+    }
+
+    /**
+     * Tests that a non-static producer method annotated with @Specializes that has
+     * no superclass producer method to override triggers one diagnostic:
+     * InvalidSpecializesProducerMethodNotOverriding.
+     */
+    @Test
+    public void testSpecializesProducerMethodNoOverride() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesProducerMethodNoOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic notOverridingDiagnostic = d(17, 18, 25,
+                                               "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notOverridingDiagnostic);
+    }
+
+    /**
+     * Tests that a valid producer method annotated with @Specializes — non-static
+     * and overriding a @Produces method in the direct superclass — does NOT
+     * trigger any diagnostic.
+     */
+    @Test
+    public void testSpecializesValidProducerMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesValidProducerMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — non-static and directly overrides BaseProducer.produce()
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Tests that a valid producer method annotated with @Specializes that omits
+     * the @Override annotation does NOT trigger any diagnostic.
+     *
+     * @Override is optional in Java — its absence does not affect whether a method
+     *           actually overrides its superclass counterpart. The CDI spec requires the
+     *           override at the language level, not the annotation level.
+     */
+    @Test
+    public void testSpecializesValidProducerMethodWithoutOverrideAnnotation() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesValidProducerMethodNoOverrideAnnotation.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — @Override annotation is optional; the method
+        // still overrides BaseProducer.produce() at the Java language level
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Tests three flavours of @Specializes producer methods that do NOT properly
+     * override a superclass producer method, all in one class extending BaseProducer:
+     *
+     * Scenario A — same name as BaseProducer.produce() but with a parameter
+     * (overload, not override)
+     *
+     * Scenario B — completely different name, no params
+     *
+     * Scenario C — completely different name and param
+     *
+     * All three must trigger InvalidSpecializesProducerMethodNotOverriding.
+     */
+    @Test
+    public void testSpecializesProducerMethodNotOverridingFlavours() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesProducerMethodNotOverriding.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Scenario A: produce(String qualifier) — overload, not override
+        Diagnostic scenarioA = d(31, 18, 25,
+                                 "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                 DiagnosticSeverity.Error,
+                                 "jakarta-cdi",
+                                 "InvalidSpecializesProducerMethodNotOverriding");
+
+        // Scenario B: createValue() — different name entirely
+        Diagnostic scenarioB = d(38, 18, 29,
+                                 "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                 DiagnosticSeverity.Error,
+                                 "jakarta-cdi",
+                                 "InvalidSpecializesProducerMethodNotOverriding");
+
+        // Scenario C: build(int count) — different name and param
+        Diagnostic scenarioC = d(45, 18, 23,
+                                 "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                 DiagnosticSeverity.Error,
+                                 "jakarta-cdi",
+                                 "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, scenarioA, scenarioB, scenarioC);
+    }
+
+    /**
+     * Tests the grandparent chain case:
+     *
+     * GrandparentProducer - @Produces grandParentProduce()
+     * ParentProducerNoProduces - inherits grandParentProduce(), no @Produces
+     * SpecializesProducerMethodGrandparentChain - @Produces @Specializes grandParentProduce()
+     *
+     * The method overrides ParentProducerNoProduces.grandParentProduce() — but
+     * that method has no @Produces. The @Produces on GrandparentProducer is
+     * irrelevant because only the direct superclass is checked.
+     *
+     */
+    @Test
+    public void testSpecializesProducerMethodGrandparentChain() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesProducerMethodGrandparentChain.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // ParentProducerNoProduces.grandParentProduce() has no @Produces,
+        // so @Specializes here is invalid even though the grandparent has @Produces.
+        Diagnostic chainDiagnostic = d(24, 18, 36,
+                                       "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                       DiagnosticSeverity.Error,
+                                       "jakarta-cdi",
+                                       "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, chainDiagnostic);
+    }
+
+    /**
+     * Tests that a static producer method annotated with @Specializes that extends a
+     * superclass with a static @Produces method triggers both diagnostics:
+     * 1. InvalidSpecializesStaticProducerMethod — must not be static
+     * 2. InvalidSpecializesProducerMethodNotOverriding — static methods hide rather than override
+     */
+    @Test
+    public void testSpecializesStaticProducerMethodOverStaticSuperclass() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesStaticProducerMethodOverStaticSuperclass.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic staticDiagnostic = d(11, 25, 32,
+                                        "A producer method annotated with @Specializes must not be static.",
+                                        DiagnosticSeverity.Error,
+                                        "jakarta-cdi",
+                                        "InvalidSpecializesStaticProducerMethod");
+
+        Diagnostic notOverridingDiagnostic = d(11, 25, 32,
+                                               "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, staticDiagnostic, notOverridingDiagnostic);
+    }
+
+    /**
+     * Tests that a valid producer method annotated with @Specializes inside a static
+     * nested class does NOT trigger any diagnostic.
+     */
+    @Test
+    public void testSpecializesNestedProducerMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesNestedProducerMethod.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected — static nested class properly overrides BaseProducer.produce()
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Tests that a producer method annotated with @Specializes inside a static nested
+     * class that does NOT override a superclass producer method triggers a diagnostic.
+     */
+    @Test
+    public void testSpecializesNestedProducerMethodNoOverride() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/SpecializesNestedProducerMethodNoOverride.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic notOverridingDiagnostic = d(13, 22, 29,
+                                               "A producer method annotated with @Specializes must directly override another producer method in a superclass.",
+                                               DiagnosticSeverity.Error,
+                                               "jakarta-cdi",
+                                               "InvalidSpecializesProducerMethodNotOverriding");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, notOverridingDiagnostic);
     }
 }

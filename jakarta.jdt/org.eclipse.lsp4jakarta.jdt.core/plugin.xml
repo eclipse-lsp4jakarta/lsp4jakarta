@@ -229,7 +229,9 @@
    <!-- Persistence -->
    <extension point="org.eclipse.lsp4jakarta.jdt.core.javaFeatureParticipants">
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceEntityListenersDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceContextDiagnosticsParticipant" />
+      <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.NamedEntityGraphDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceBidirectionalDiagnosticsParticipant" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidFinalMethodInEntityAnnotatedClass"
@@ -249,6 +251,9 @@
 
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMappingDiagnosticsParticipant" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#AttributeOverrideOnNonEmbeddedField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveAttributeOverrideAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
@@ -386,6 +391,9 @@
                   targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNonVoid"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.ChangeReturnTypeToVoidForSessionSyncMethodQuickFix" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidSessionSyncMethodNoParamAnnotation"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.annotations.RemoveAllMethodParametersQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#InvalidModifierNotPublic"
                   class="org.eclipse.lsp4jakarta.jdt.internal.jsonb.ChangeModifierToPublicQuickFix" />
       <codeAction kind="quickfix"
@@ -418,6 +426,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-ejb#SessionBeanFinalizeMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.ejb.RemoveFinalizeMethodQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-ejb#InvalidAfterCompletionMethodParams"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.ejb.FixAfterCompletionMethodParamsQuickFix" />
    </extension>
    
    <!-- CDI -->
@@ -537,6 +548,12 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidBareTypeVariableInInjectField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidBareTypeVariableInInjectMethodParam"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveInjectAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidSpecializedBeanWithNamedAnnotation"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveNamedFromSpecializedBeanQuickFix" />

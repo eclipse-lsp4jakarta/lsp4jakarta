@@ -27,30 +27,50 @@ public class ValidInterceptorOneMethodPerType {
     // Valid: Only one @AroundInvoke method
     @AroundInvoke
     public Object log(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
+        try {
+            return ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     // Valid: Only one @AroundTimeout method
     @AroundTimeout
     public Object timeout(InvocationContext ctx) throws Exception {
-        return ctx.proceed();
+        try {
+            return ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     // Valid: Only one @PostConstruct method
     @PostConstruct
     public void init(InvocationContext ctx) throws Exception {
-        ctx.proceed();
+        try {
+            ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     // Valid: Only one @PreDestroy method
     @PreDestroy
     public void destroy(InvocationContext ctx) throws Exception {
-        ctx.proceed();
+        try {
+            ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     // Valid: Only one @AroundConstruct method
     @AroundConstruct
     public void construct(InvocationContext ctx) throws Exception {
-        ctx.proceed();
+        try {
+            ctx.proceed();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
