@@ -252,6 +252,9 @@
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMapKeyDiagnosticsParticipant" />
       <diagnostics class="org.eclipse.lsp4jakarta.jdt.internal.persistence.PersistenceMappingDiagnosticsParticipant" />
       <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-persistence#AttributeOverrideOnNonEmbeddedField"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveAttributeOverrideAnnotationQuickFix" />
+      <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-persistence#InvalidMapKeyAnnotationsOnSameMethod"
                   class="org.eclipse.lsp4jakarta.jdt.internal.persistence.RemoveMapKeyAnnotationsQuickFix" />
        <codeAction kind="quickfix"
@@ -542,6 +545,9 @@
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidDelegateInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertInjectAnnotationQuickFix" />
+      <codeAction kind="quickfix"
+                  targetDiagnostic="jakarta-cdi#InvalidDelegateOutsideDecorator"
+                  class="org.eclipse.lsp4jakarta.jdt.internal.cdi.RemoveDelegateAnnotationQuickFix" />
       <codeAction kind="quickfix"
                   targetDiagnostic="jakarta-cdi#InvalidNamedAnnotationOnNonFieldInjectionPoint"
                   class="org.eclipse.lsp4jakarta.jdt.internal.cdi.InsertNamedValueAttributeQuickFix" />

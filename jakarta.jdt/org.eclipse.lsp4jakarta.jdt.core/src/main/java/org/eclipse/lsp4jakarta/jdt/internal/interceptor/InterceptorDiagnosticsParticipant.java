@@ -124,6 +124,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
             // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
             if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
                 checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, monitor);
+                checkLifecycleCallbackMethodSignatureInTargetClass(type, unit, uri, diagnostics, context, monitor);
             }
 
             // When a non-interceptor type is a superclass of an @Interceptor class in a
@@ -584,4 +585,52 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
     }
 
+    /**
+     * Checks if a non-interceptor class (target class) or one of its superclasses
+     * declares a lifecycle callback interceptor method (@PostConstruct, @PreDestroy,
+     * @AroundConstruct) that does not have the required signature {@code void <METHOD>()}.
+     *
+     * <p>According to the Jakarta Interceptors 2.0 specification, lifecycle callback
+     * interceptor methods declared in a target class or in a superclass of a target class
+     * must have the following signature: {@code void <METHOD>()}. That is, the method
+     * must return void and must declare no parameters.</p>
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkLifecycleCallbackMethodSignatureInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                                    List<Diagnostic> diagnostics,
+                                                                    JavaDiagnosticsContext context,
+                                                                    IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type - suppress target class signature check if an @Interceptor subclass exists
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
+        for (IMethod method : type.getMethods()) {
+            List<String> lifecycleAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                           Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                           Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS);
+            if (lifecycleAnnotations.isEmpty()) {
+                continue;
+            }
+            // Violation: method has parameters or non-void return type
+            boolean hasParams = method.getNumberOfParameters() > 0;
+            boolean isNonVoid = !Constants.VOID_RETURN_TYPE.equals(method.getReturnType());
+            if (hasParams || isNonVoid) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage(ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass.name()),
+                                                         range,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
+    }
 }
