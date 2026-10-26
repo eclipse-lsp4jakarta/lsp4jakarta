@@ -582,14 +582,8 @@ public class DiagnosticUtils {
         if (value == null) {
             return List.of();
         }
-        Object[] items = (value instanceof Object[]) ? (Object[]) value : new Object[] { value };
-        List<T> result = new ArrayList<>();
-        for (Object item : items) {
-            if (elementType.isInstance(item)) {
-                result.add(elementType.cast(item));
-            }
-        }
-        return result;
+        Stream<?> items = (value instanceof Object[]) ? Arrays.stream((Object[]) value) : Stream.of(value);
+        return items.filter(elementType::isInstance).map(elementType::cast).collect(Collectors.toList());
     }
 
     /**
