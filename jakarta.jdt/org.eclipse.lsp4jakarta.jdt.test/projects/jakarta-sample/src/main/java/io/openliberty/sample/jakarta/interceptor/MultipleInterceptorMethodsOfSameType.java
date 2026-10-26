@@ -20,7 +20,6 @@ import jakarta.interceptor.AroundTimeout;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
-@Monitored
 @Interceptor
 public class MultipleInterceptorMethodsOfSameType {
 
@@ -85,7 +84,6 @@ public class MultipleInterceptorMethodsOfSameType {
     }
 
     // Nested class with duplicates
-    @Monitored
     @Interceptor
     public static class NestedInterceptor {
         @AroundInvoke

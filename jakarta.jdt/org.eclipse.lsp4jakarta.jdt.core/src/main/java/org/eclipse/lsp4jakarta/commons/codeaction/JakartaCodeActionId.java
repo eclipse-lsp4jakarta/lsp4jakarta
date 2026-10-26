@@ -52,7 +52,6 @@ public enum JakartaCodeActionId implements ICodeActionId {
     JSONBInsertProtectedConstructorToClass,
     MakeClassStatic,
     // Persistence
-    PersistenceRemoveAttributeOverrideAnnotation,
     PersistenceRemoveMapKeyAnnotation,
     PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
@@ -60,10 +59,6 @@ public enum JakartaCodeActionId implements ICodeActionId {
     PersistenceInsertProtectedCtrtToClass,
     PersistenceInsertTemporalAnnotation,
     PersistenceChangeTemporalValue,
-    PersistenceRemoveJPAIdentifierConflict,
-    PersistenceRemoveNamedJPAAnnotation,
-    PersistenceInsertEntityAnnotation,
-    PersistenceInsertEntityOrMappedSuperclassAnnotation,
     // WebSockets
     WBInsertPathParamAnnotationWithValueAttrib,
     WBRemoveAnnotation,
@@ -90,24 +85,17 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIReplaceScopeAnnotations,
     // EJB
     EJBInsertPublicCtrtToClass,
-    EJBChangeReturnTypeToVoidForSessionSyncMethod,
-    EJBFixAfterCompletionMethodParams,
-    EJBRemoveSessionBeanAnnotation,
-    EJBRemoveInterceptorOrDecorator,
     EJBRemoveFinalizeMethod,
-    EJBRemoveConflictingSessionBeanAnnotations,
     CDIRemoveConditionalObserverAnnotations,
     CDIRemoveNotifyObserverAttribute,
     CDIRemoveObserverConflictParams,
+    CDIRemoveSingletonAnnotation,
+    CDIRemoveStatelessAnnotation,
     CDIReplaceInvalidScopesWithDependent,
     CDIRemoveDisposesFromInterceptorDecorator,
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
     CDIRemoveDelegateAnnotation,
-    CDIRemoveNamedFromSpecializedBean,
-    CDIInsertNotifyEventMethod,
-    CDIInsertNotifyEventContextMethod,
-    CDIRemoveTypedAnnotation,
     //Interceptor
     InterceptorRemoveInterceptorMethodAnnotation,
     // Common modifier quick fixes
@@ -115,10 +103,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     RemoveAbstractModifier,
     RemoveStaticModifier,
     //EJB
-    EJBMessageDrivenImplementation,
-    // Security
-    SecurityInsertApplicationScopedAnnotation,
-    SecurityReplaceWithApplicationScopedAnnotation;
+    EJBMessageDrivenImplementation;
 
     @Override
     public String getId() {

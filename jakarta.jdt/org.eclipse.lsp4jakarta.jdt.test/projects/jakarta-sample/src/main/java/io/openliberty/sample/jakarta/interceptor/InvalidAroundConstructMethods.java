@@ -1,11 +1,8 @@
 package io.openliberty.sample.jakarta.interceptor;
 
 import jakarta.interceptor.AroundConstruct;
-import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
-@Monitored
-@Interceptor
 public abstract class InvalidAroundConstructMethods {
 
 	@AroundConstruct

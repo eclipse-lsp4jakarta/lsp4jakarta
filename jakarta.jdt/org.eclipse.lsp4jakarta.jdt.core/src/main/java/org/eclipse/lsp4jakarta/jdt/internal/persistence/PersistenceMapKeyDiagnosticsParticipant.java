@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2023, 2026 IBM Corporation and others.
+* Copyright (c) 2023, 2025 IBM Corporation and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,10 +16,7 @@ import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.eclipse.jdt.core.Signature;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.CoreException;
@@ -50,11 +47,12 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
  * Persistence diagnostic participant that manages the use
- * of @MapKeyClass, @MapKey, @MapKeyJoinColumn, and @Convert annotations.
+ * of @MapKeyClass, @MapKey, and @MapKeyJoinColumn annotations.
  */
 public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
 
     private static final Logger LOGGER = Logger.getLogger(PersistenceMapKeyDiagnosticsParticipant.class.getName());
+    final String MAP_INTERFACE_FQDN = "java.util.Map";
 
     /**
      * {@inheritDoc}
@@ -127,9 +125,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         List<IAnnotation> mapKeyJoinCols = null;
         boolean hasMapKeyAnnotation = false;
         boolean hasMapKeyClassAnnotation = false, hasTypeDiagnostics = false;
-        boolean hasMapKeyEnumeratedAnnotation = false;
         boolean hasMapKeyTemporalAnnotation = false;
-
         IAnnotation[] allAnnotations = null;
 
         // Go through each method/field to ensure they do not have both MapKey and MapKeyColumn Annotations
@@ -137,9 +133,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             mapKeyJoinCols = new ArrayList<IAnnotation>();
             hasMapKeyAnnotation = false;
             hasMapKeyClassAnnotation = false;
-            hasMapKeyEnumeratedAnnotation = false;
             hasMapKeyTemporalAnnotation = false;
-
             allAnnotations = null;
 
             if (member instanceof IMethod) {
@@ -147,9 +141,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             } else if (member instanceof IField) {
                 allAnnotations = ((IField) member).getAnnotations();
             }
-
-            // Collect @Convert annotations on this member for later validation
-            List<IAnnotation> convertAnnotations = new ArrayList<IAnnotation>();
 
             for (IAnnotation annotation : allAnnotations) {
                 String matchedAnnotation = DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
@@ -161,8 +152,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                         hasMapKeyClassAnnotation = true;
                     else if (Constants.MAPKEYJOINCOLUMN.equals(matchedAnnotation)) {
                         mapKeyJoinCols.add(annotation);
-                    } else if (Constants.MAPKEYENUMERATED.equals(matchedAnnotation)) {
-                        hasMapKeyEnumeratedAnnotation = true;
                     }
                 }
 
@@ -171,11 +160,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                                                                                        new String[] { Constants.MAPKEYTEMPORAL });
                 if (mapKeyTemporalMatch != null) {
                     hasMapKeyTemporalAnnotation = true;
-                }
-
-                // Collect @Convert annotations
-                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERT)) {
-                    convertAnnotations.add(annotation);
                 }
             }
 
@@ -193,14 +177,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 collectMapKeyAnnotationsDiagnostics(member, context, diagnostics);
             }
 
-            if (hasMapKeyEnumeratedAnnotation) {
-                collectMapKeyEnumeratedDiagnostics(member, type, context, diagnostics);
-            }
-
             // Check for @MapKeyTemporal on non-temporal map key types
             if (hasMapKeyTemporalAnnotation) {
                 collectMapKeyTemporalDiagnostics(member, context, diagnostics);
-
             }
 
             // If we have multiple MapKeyJoinColumn annotations on a single method/field
@@ -209,87 +188,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 validateMapKeyJoinColumnAnnotations(context, context.getUri(), mapKeyJoinCols, member, unit,
                                                     diagnostics);
             }
-
-            // Validate @Convert annotation rules
-            if (!convertAnnotations.isEmpty()) {
-                collectConvertDiagnostics(member, type, convertAnnotations, allAnnotations, context, diagnostics);
-            }
-        }
-    }
-
-    /**
-     * Validates {@code @Convert} annotation rules on a single field or method:
-     *
-     * @param member the field or method
-     * @param type the enclosing type
-     * @param convertAnnotations all {@code @Convert} annotations found on this member
-     * @param allAnnotations all annotations on this member (for co-annotation checks)
-     * @param context the diagnostics context
-     * @param diagnostics the list to which violations are added
-     * @throws CoreException if the JDT model cannot be accessed
-     */
-    private void collectConvertDiagnostics(IMember member, IType type, List<IAnnotation> convertAnnotations,
-                                           IAnnotation[] allAnnotations, JavaDiagnosticsContext context,
-                                           List<Diagnostic> diagnostics) throws CoreException {
-
-        // Rule: Multiple @Convert on the same attribute
-        if (convertAnnotations.size() > 1) {
-            try {
-                Range range = PositionUtils.toNameRange(member, context.getUtils());
-                diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                         Messages.getMessage("ConvertAnnotationMultipleOnSameAttribute"),
-                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.MultipleConvertAnnotationOnSameAttribute,
-                                                         DiagnosticSeverity.Error));
-            } catch (JavaModelException e) {
-                JakartaCorePlugin.logException("Error computing range for @Convert on member " + member.getElementName(), e);
-            }
-        }
-
-        // Determine whether this member carries any restricted co-annotation and capture its name
-        String restrictedAnnotationName = null;
-        for (IAnnotation otherAnnotation : allAnnotations) {
-            for (String restrictedFQN : Constants.CONVERT_RESTRICTED_ANNOTATIONS) {
-                if (DiagnosticUtils.isMatchedJavaElement(type, otherAnnotation.getElementName(), restrictedFQN)) {
-                    restrictedAnnotationName = "@" + DiagnosticUtils.getSimpleName(restrictedFQN);
-                    break;
-                }
-            }
-            if (restrictedAnnotationName != null) {
-                break;
-            }
-        }
-
-        for (IAnnotation convertAnnotation : convertAnnotations) {
-            try {
-                List<IMemberValuePair> memberValues = Arrays.asList(convertAnnotation.getMemberValuePairs());
-
-                boolean hasConverter = memberValues.stream().anyMatch(mv -> Constants.CONVERTER_ATTRIBUTE.equals(mv.getMemberName()));
-                boolean hasDisableConversion = memberValues.stream().anyMatch(mv -> Constants.DISABLE_CONVERSION.equals(mv.getMemberName())
-                                                                                    && Boolean.TRUE.equals(mv.getValue()));
-
-                // Rule: Neither converter nor disableConversion=true specified
-                if (!hasConverter && !hasDisableConversion) {
-                    Range range = PositionUtils.toNameRange(member, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("ConvertAnnotationMissingConverterOrDisable"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidConvertAnnotationMissingConverterOrDisable,
-                                                             DiagnosticSeverity.Error));
-                }
-
-                // Rule: @Convert on a restricted target
-                if (restrictedAnnotationName != null) {
-                    Range range = PositionUtils.toNameRange(member, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("ConvertAnnotationOnRestrictedTarget", restrictedAnnotationName),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.InvalidConvertAnnotationOnRestrictedTarget,
-                                                             DiagnosticSeverity.Error));
-                }
-            } catch (JavaModelException e) {
-                JakartaCorePlugin.logException("Error while validating @Convert on member " + member.getElementName(), e);
-            }
         }
     }
 
@@ -297,7 +195,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                                                   List<Diagnostic> diagnostics) throws CoreException {
 
         // Get the resolved type name of the field or method return type
-        String resolvedTypeName = JDTTypeUtils.getResolvedMemberTypeName(member);
+        String resolvedTypeName = null;
+        if (member instanceof IMethod) {
+            resolvedTypeName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+        } else if (member instanceof IField) {
+            resolvedTypeName = JDTTypeUtils.getResolvedTypeName((IField) member);
+        }
 
         if (resolvedTypeName != null && JDTTypeUtils.isMap(resolvedTypeName)) {
             // Extract all type arguments from the parameterized Map type
@@ -331,10 +234,14 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         IType declaringType = member.getDeclaringType();
         IJavaProject javaProject = declaringType.getJavaProject();
 
-        fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
+        if (member instanceof IMethod) {
+            fqName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
+        } else if (member instanceof IField) {
+            fqName = JDTTypeUtils.getResolvedTypeName((IField) member);
+        }
 
         if (fqName != null) {
-            if (Constants.MAP_INTERFACE_FQDN.equals(fqName)) {
+            if (MAP_INTERFACE_FQDN.equals(fqName)) {
                 isMap = true;
             } else {
                 IType returnType = javaProject.findType(fqName);
@@ -342,7 +249,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 IType[] interfaces = hierarchy.getAllSuperInterfaces(returnType);
 
                 for (IType superInterface : interfaces) {
-                    if (Constants.MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
+                    if (MAP_INTERFACE_FQDN.equals(superInterface.getFullyQualifiedName())) {
                         isMap = true;
                     }
                 }
@@ -430,98 +337,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
                 diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey), range,
                                                          Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Warning));
             }
-        }
-    }
-
-    /**
-     * Validates that {@code @MapKeyEnumerated} (Jakarta Persistence spec section
-     * 11.1.34) is used correctly:
-     *
-     * <ul>
-     * <li><b>Type check</b>: the field/property must be of type
-     * {@code java.util.Map} (or a sub-type). Applying it to a {@code List},
-     * {@code Set}, or any plain non-collection type is invalid because those
-     * types have no concept of a map key.</li>
-     * <li><b>Key-type check</b>: when the type is a {@code Map}, its first type
-     * argument (the key) must be an enum. A non-enum key type makes the
-     * annotation meaningless and violates the specification.</li>
-     * </ul>
-     *
-     * <p>Specification Reference (section 11.1.34):
-     * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a15433
-     */
-    private void collectMapKeyEnumeratedDiagnostics(IMember member, IType declaringType,
-                                                    JavaDiagnosticsContext context,
-                                                    List<Diagnostic> diagnostics) throws CoreException {
-
-        IJavaProject javaProject = declaringType.getJavaProject();
-
-        // Step 1 — confirm field/method is typed as java.util.Map (or a sub-type).
-        // getResolvedTypeName / getResolvedResultTypeName return the FQ type name.
-        String fqName = null;
-        if (member instanceof IMethod) {
-            fqName = JDTTypeUtils.getResolvedResultTypeName((IMethod) member);
-        } else if (member instanceof IField) {
-            fqName = JDTTypeUtils.getResolvedTypeName((IField) member);
-        }
-
-        if (fqName == null) {
-            return;
-        }
-
-        boolean isMap = false;
-        if (Constants.MAP_INTERFACE_FQDN.equals(fqName)) {
-            isMap = true;
-        } else {
-            IType fieldType = javaProject.findType(fqName);
-            if (fieldType != null) {
-                ITypeHierarchy hierarchy = fieldType.newTypeHierarchy(null);
-                isMap = Arrays.stream(hierarchy.getAllSuperInterfaces(fieldType)).map(IType::getFullyQualifiedName).anyMatch(Constants.MAP_INTERFACE_FQDN::equals);
-            }
-        }
-
-        // Not a Map — @MapKeyEnumerated is invalid on List, Set, or plain fields.
-        if (!isMap) {
-            Range range = PositionUtils.toNameRange(member, context.getUtils());
-            diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("MapKeyEnumeratedOnNonMapType"),
-                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidMapKeyEnumeratedNotOnMapType,
-                                                     DiagnosticSeverity.Error));
-            return;
-        }
-
-        // Step 2 — extract the Map key type argument from the raw JDT signature and
-        // check whether it resolves to an enum.
-        // IField.getTypeSignature() / IMethod.getReturnType() preserve generics,
-        // e.g. "QMap<QRoleType;QString;>;" for Map<RoleType, String>.
-        boolean mapKeyIsEnum = false;
-        try {
-            String rawSignature = (member instanceof IField) ? ((IField) member).getTypeSignature() : ((IMethod) member).getReturnType();
-
-            // Signature.getTypeArguments returns ["QRoleType;", "QString;"] for the above.
-            String[] typeArgs = Signature.getTypeArguments(rawSignature);
-            if (typeArgs != null && typeArgs.length >= 1) {
-                // JDTTypeUtils.getResolvedTypeName resolves a JDT signature against the
-                // declaring type's compilation unit, handling imports and inner types.
-                String keyTypeName = JDTTypeUtils.getResolvedTypeName(typeArgs[0], declaringType);
-                if (keyTypeName != null) {
-                    IType keyType = javaProject.findType(keyTypeName);
-                    mapKeyIsEnum = keyType != null && keyType.isEnum();
-                }
-            }
-        } catch (JavaModelException e) {
-            LOGGER.log(Level.SEVERE, "Error while checking map key type for @MapKeyEnumerated", e);
-            return;
-        }
-
-        if (!mapKeyIsEnum) {
-            Range range = PositionUtils.toNameRange(member, context.getUtils());
-            diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage("MapKeyEnumeratedOnNonEnumType"),
-                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidMapKeyEnumeratedOnNonEnumType,
-                                                     DiagnosticSeverity.Error));
         }
     }
 

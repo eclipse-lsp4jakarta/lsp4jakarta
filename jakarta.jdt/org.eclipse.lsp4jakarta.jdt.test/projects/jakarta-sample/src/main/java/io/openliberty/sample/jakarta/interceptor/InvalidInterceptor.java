@@ -2,7 +2,6 @@ package io.openliberty.sample.jakarta.interceptor;
 
 import jakarta.interceptor.Interceptor;
 
-@Monitored
 @Interceptor
 public class InvalidInterceptor {
 
@@ -30,7 +29,6 @@ public class InvalidInterceptor {
 		this.config = config;
 	}
 
-	@Monitored
 	@Interceptor
 	public class InnerInvalidInterceptor{
 

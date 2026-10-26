@@ -35,8 +35,6 @@ import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
-import com.google.gson.Gson;
-
 /**
  * Jakarta Security diagnostics participant that validates identity store definition beans.
  *
@@ -111,7 +109,7 @@ public class SecurityIdentityStoreDiagnosticsParticipant implements IJavaDiagnos
                                                                                      wrongScopeSimpleName),
                                                                  range,
                                                                  Constants.DIAGNOSTIC_SOURCE,
-                                                                 new Gson().toJsonTree(foundScopes),
+                                                                 null,
                                                                  ErrorCode.InvalidScopeOnIdentityStoreDefinition,
                                                                  DiagnosticSeverity.Error));
                     }

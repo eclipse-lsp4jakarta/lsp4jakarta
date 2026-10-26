@@ -13,6 +13,7 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,6 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -36,7 +36,6 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
-import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
@@ -50,11 +49,33 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * Validates:
  * 1. A decorator must declare exactly one injection point annotated with @Delegate
  * 2. The delegate type must implement or extend all decorated types of the decorator
+ * with exactly the same type parameters
  *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#decorator_bean
  */
 public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParticipant {
+
+    /**
+     * Holds a decorated type's fully qualified name together with its raw
+     * (erased) type signature and its type-argument signatures as declared on
+     * the decorator's {@code implements} clause.
+     */
+    private static final class DecoratedTypeInfo {
+        /** Fully qualified name of the raw (erased) type, e.g. {@code "com.example.Processor"} */
+        final String fqName;
+        /**
+         * Type-argument signatures from the decorator's {@code implements} clause,
+         * e.g. {@code ["Ljava.lang.String;"]} for {@code implements Processor<String>}.
+         * Empty array when the decorated type is not parameterized.
+         */
+        final String[] typeArgs;
+
+        DecoratedTypeInfo(String fqName, String[] typeArgs) {
+            this.fqName = fqName;
+            this.typeArgs = typeArgs;
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger(CdiDecoratorDiagnosticsParticipant.class.getName());
 
@@ -104,28 +125,12 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
 
         List<IJavaElement> delegateElements = new ArrayList<>();
         for (IField field : type.getFields()) {
-            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements, false, isDecorator);
+            validateDelegate(type, field, field, uri, context, diagnostics, delegateElements, isDecorator);
         }
         for (IMethod method : type.getMethods()) {
             IAnnotation[] methodAnnotations = method.getAnnotations();
-
-            // Per CDI spec §3.7 / §8.1.2, @Delegate is only valid on injection points:
-            // fields, bean constructor parameters, or initializer method parameters.
-            // An initializer method is a non-constructor, non-static, void method
-            // annotated with @Inject.
-            boolean isConstructor = DiagnosticUtils.isConstructorMethod(method);
-            boolean isInitializerMethod = !isConstructor
-                                          && !Flags.isStatic(method.getFlags())
-                                          && JDTTypeUtils.isVoidReturnType(method)
-                                          && DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), methodAnnotations, Constants.INJECT_FQ_NAME);
-            // True when the method is not a valid @Delegate injection-point context.
-            // Parameters of such methods still need to be scanned so that any @Delegate
-            // annotation on them produces InvalidDelegateOnNonInjectionPoint.
-            boolean isNonInjectionPointMethod = !isConstructor && !isInitializerMethod;
-
             for (ILocalVariable parameter : method.getParameters()) {
-                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements,
-                                 isNonInjectionPointMethod, isDecorator, methodAnnotations);
+                validateDelegate(type, method, parameter, uri, context, diagnostics, delegateElements, isDecorator, methodAnnotations);
             }
         }
 
@@ -148,17 +153,12 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      *
      * @param owner The element to report diagnostics on (field or method).
      * @param element The actual element annotated with @Delegate.
-     * @param isNonInjectionPointMethod true when the enclosing method is not a valid
-     *            injection-point context (not a constructor and not an @Inject void method).
-     *            When true the element is NOT counted as a delegate injection point but
-     *            InvalidDelegateOnNonInjectionPoint is reported if @Delegate is present.
      * @param isDecorator Whether the enclosing class is annotated with @Decorator.
      * @param methodAnnotations Annotations from the enclosing method, if any.
      */
     private void validateDelegate(IType type, IJavaElement owner, IJavaElement element, String uri,
                                   JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                  List<IJavaElement> delegateElements, boolean isNonInjectionPointMethod,
-                                  boolean isDecorator,
+                                  List<IJavaElement> delegateElements, boolean isDecorator,
                                   IAnnotation... methodAnnotations) throws JavaModelException {
 
         IAnnotation[] annotations = (element instanceof IAnnotatable) ? ((IAnnotatable) element).getAnnotations() : new IAnnotation[0];
@@ -171,10 +171,10 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             delegateElements.add(element);
             validateDelegateInjectionPoint(owner,
                                            methodAnnotations.length > 0 ? methodAnnotations : annotations,
-                                           type, uri, context, diagnostics, isNonInjectionPointMethod);
+                                           type, uri, context, diagnostics);
         } else {
             Range range = PositionUtils.toNameRange(element, context.getUtils());
-            String message = Messages.getMessage("InvalidDelegateOutsideDecorator");
+            String message = Messages.getMessage("DelegateOutsideDecorator");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidDelegateOutsideDecorator,
@@ -190,7 +190,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param context the diagnostics context
      * @param diagnostics the list to add diagnostics to
      * @param delegateElements the list of fields/parameters annotated with @Delegate
-     * @param delegateCount the number of valid @Delegate injection points found
+     * @param delegateCount the number of @Delegate injection points found
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private void reportInvalidDelegateCountDiagnostics(IType type, String uri, JavaDiagnosticsContext context,
@@ -198,7 +198,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                        int delegateCount) throws JavaModelException {
         // Report diagnostics based on delegate count
         if (delegateCount == 0) {
-            // No valid @Delegate injection point found - report at class level
+            // No @Delegate found - report at class level
             Range range = PositionUtils.toNameRange(type, context.getUtils());
             String message = Messages.getMessage("MissingDelegateInDecorator");
             diagnostics.add(context.createDiagnostic(uri, message, range,
@@ -229,37 +229,27 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param uri the file URI
      * @param context the diagnostics context
      * @param diagnostics the list to add diagnostics to
-     * @param isNonInjectionPointMethod true when the enclosing method is not a valid injection-point
-     *            context; in that case the missing-@Inject diagnostic is reported regardless of whether
-     * @Inject is present on the method (the method itself is not a valid injection point)
      * @throws JavaModelException if an error occurs accessing the Java model
      */
     private void validateDelegateInjectionPoint(IJavaElement diagnosticTarget,
                                                 IAnnotation[] annotations, IType type, String uri,
-                                                JavaDiagnosticsContext context, List<Diagnostic> diagnostics,
-                                                boolean isNonInjectionPointMethod) throws JavaModelException {
+                                                JavaDiagnosticsContext context, List<Diagnostic> diagnostics) throws JavaModelException {
+        // Check if element or its containing method/constructor has @Inject annotation
         if (!DiagnosticUtils.isMatchedAnnotation(type.getCompilationUnit(), annotations, Constants.INJECT_FQ_NAME)) {
-            // @Inject is missing — offer "Insert @Inject" quickfix regardless of method kind.
+            // @Delegate without @Inject - report diagnostic on the target element
+            // For fields, target is the field itself; for parameters, target is the method
             Range range = PositionUtils.toNameRange(diagnosticTarget, context.getUtils());
             String message = Messages.getMessage("InvalidDelegateInjectionPoint");
             diagnostics.add(context.createDiagnostic(uri, message, range,
                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                      ErrorCode.InvalidDelegateInjectionPoint,
                                                      DiagnosticSeverity.Error));
-        } else if (isNonInjectionPointMethod) {
-            // @Inject is present but the method is not a valid injection-point context
-            // (e.g. non-void, static). No quickfix — the user needs to fix the method itself.
-            Range range = PositionUtils.toNameRange(diagnosticTarget, context.getUtils());
-            String message = Messages.getMessage("InvalidDelegateOnNonInjectionPoint");
-            diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                     Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.InvalidDelegateOnNonInjectionPoint,
-                                                     DiagnosticSeverity.Error));
         }
     }
 
     /**
-     * Validates that the delegate type implements or extends all decorated types of the decorator.
+     * Validates that the delegate type implements or extends all decorated types of the decorator
+     * with exactly the same type parameters.
      *
      * Per CDI 3.0 specification section 8.1.3:
      * "The delegate type of a decorator must implement or extend every decorated type
@@ -267,60 +257,49 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * or extend a decorated type of the decorator (or specifies different type parameters),
      * the container automatically detects the problem and treats it as a definition error."
      *
-     * @param decoratorClass the decorator class
+     * @param decoratorType the decorator class
      * @param delegateElement the delegate injection point (field or parameter)
      * @param uri the file URI
      * @param context the diagnostics context
      * @param diagnostics the list to add diagnostics to
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private void validateDelegateTypeAssignability(IType decoratorClass, IJavaElement delegateElement,
+    private void validateDelegateTypeAssignability(IType decoratorType, IJavaElement delegateElement,
                                                    String uri, JavaDiagnosticsContext context,
                                                    List<Diagnostic> diagnostics) throws JavaModelException {
         try {
-            String rawTypeSignature = null;
-            if (delegateElement instanceof IField) {
-                rawTypeSignature = ((IField) delegateElement).getTypeSignature();
-            } else if (delegateElement instanceof ILocalVariable) {
-                rawTypeSignature = ((ILocalVariable) delegateElement).getTypeSignature();
-            }
-            if (rawTypeSignature == null) {
+            String delegateFullTypeSig = delegateElement instanceof IField ? ((IField) delegateElement).getTypeSignature() : delegateElement instanceof ILocalVariable ? ((ILocalVariable) delegateElement).getTypeSignature() : null;
+            if (delegateFullTypeSig == null) {
                 return;
             }
-            // Primitives are never valid bean types — report immediately without further resolution.
-            if (Signature.getTypeSignatureKind(rawTypeSignature) == Signature.BASE_TYPE_SIGNATURE) {
-                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorDelegateTypeAssignability.name(),
-                                          Signature.toString(rawTypeSignature), "",
-                                          ErrorCode.InvalidDecoratorDelegateTypeAssignability,
-                                          uri, context, diagnostics);
-                return;
-            }
-            String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorClass,
-                                                                             Signature.toString(rawTypeSignature));
-            if (delegateTypeName == null) {
-                return; // Cannot resolve delegate type, skip validation
-            }
-            IType delegateType = decoratorClass.getJavaProject().findType(delegateTypeName);
+
+            IType delegateType = ManagedBean.getChildITypeByName(decoratorType,
+                                                                 Signature.toString(Signature.getTypeErasure(delegateFullTypeSig)));
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
-            // Get all decorated types (interfaces of the decorator, excluding java.io.Serializable)
-            List<String> decoratedTypes = getDecoratedTypes(decoratorClass);
+
+            List<DecoratedTypeInfo> decoratedTypes = getDecoratedTypes(decoratorType);
             if (decoratedTypes.isEmpty()) {
-                // Decorator has no decorated types — definition error
-                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorWithNoDecoratedTypes.name(),
-                                          null, null, ErrorCode.InvalidDecoratorWithNoDecoratedTypes,
-                                          uri, context, diagnostics);
-                return;
+                return; // No decorated types to validate against
             }
-            // Check if delegate type implements/extends all decorated types
-            for (String decoratedTypeFQN : decoratedTypes) {
-                if (!TypeHierarchyUtils.inheritsFrom(delegateType, decoratedTypeFQN)) {
-                    reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorDelegateTypeAssignability.name(),
-                                              delegateType.getElementName(), DiagnosticUtils.getSimpleName(decoratedTypeFQN),
-                                              ErrorCode.InvalidDecoratorDelegateTypeAssignability,
-                                              uri, context, diagnostics);
-                    return;
+
+            String[] delegateTypeArgs = Signature.getTypeArguments(delegateFullTypeSig);
+            Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
+            String delegateTypeSimpleName = delegateType.getElementName();
+
+            for (DecoratedTypeInfo decorated : decoratedTypes) {
+                if (!TypeHierarchyUtils.inheritsFrom(delegateType, decorated.fqName)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidDecoratorDelegateTypeAssignability", delegateTypeSimpleName),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeAssignability, DiagnosticSeverity.Error));
+                } else if (decorated.typeArgs.length > 0 && !typeArgsMatch(decorated.typeArgs, delegateTypeArgs)) {
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("InvalidDecoratorDelegateTypeParamMismatch",
+                                                                                 delegateTypeSimpleName, DiagnosticUtils.getSimpleName(decorated.fqName)),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.InvalidDecoratorDelegateTypeParamMismatch, DiagnosticSeverity.Error));
                 }
             }
         } catch (CoreException e) {
@@ -329,53 +308,61 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Reports a decorator validation diagnostic on the given delegate element.
+     * Returns true when two type-argument signature arrays represent the same types,
+     * comparing element by element after erasing to their binary names.
      *
-     * @param delegateElement the delegate injection point (field or parameter)
-     * @param messageKey the message key (e.g., "InvalidDecoratorDelegateTypeAssignability")
-     * @param delegateTypeName the simple name of the delegate type (may be null)
-     * @param decoratedTypeName the simple name of the decorated type (may be empty/null)
-     * @param errorCode the error code for the diagnostic
-     * @param uri the file URI
-     * @param context the diagnostics context
-     * @param diagnostics the list to add the diagnostic to
+     * <p>An empty {@code decoratedArgs} means the decorated type is raw/non-parameterized;
+     * in that case any delegate type args are considered matching (no constraint).
+     *
+     * @param decoratedArgs type arguments from the decorator's {@code implements} clause
+     * @param delegateArgs type arguments from the delegate field/parameter signature
+     * @return true if the arrays are element-wise equal after erasure
      */
-    private void reportDecoratorDiagnostic(IJavaElement delegateElement, String messageKey,
-                                           String delegateTypeName, String decoratedTypeName,
-                                           ErrorCode errorCode, String uri,
-                                           JavaDiagnosticsContext context,
-                                           List<Diagnostic> diagnostics) throws JavaModelException {
-        Range range = PositionUtils.toNameRange(delegateElement, context.getUtils());
-        String message = Messages.getMessage(messageKey, delegateTypeName, decoratedTypeName);
-        diagnostics.add(context.createDiagnostic(uri, message, range,
-                                                 Constants.DIAGNOSTIC_SOURCE, null,
-                                                 errorCode,
-                                                 DiagnosticSeverity.Error));
+    private boolean typeArgsMatch(String[] decoratedArgs, String[] delegateArgs) {
+        return decoratedArgs.length == 0
+               || (decoratedArgs.length == delegateArgs.length
+                   && Arrays.equals(decoratedArgs, delegateArgs,
+                                    (a, b) -> Signature.getTypeErasure(a).equals(Signature.getTypeErasure(b)) ? 0 : 1));
     }
 
     /**
-     * Gets all decorated types of the decorator (Java interfaces only, excluding java.io.Serializable).
+     * Gets all decorated types of the decorator (interfaces and superclasses, excluding Object)
+     * together with their type-argument signatures as declared on the {@code implements} clause.
      *
-     * Per CDI 3.0 specification section 8.1.3:
-     * "The set of decorated types of a decorator includes all bean types of the managed bean
-     * which are Java interfaces, except for java.io.Serializable. The decorator bean class and
-     * its superclasses are not decorated types of the decorator."
-     *
-     * @param decoratorClass the decorator class
-     * @return list of decorated type fully qualified names (interfaces only)
+     * @param decoratorType the decorator class
+     * @return list of {@link DecoratedTypeInfo} objects with FQN and type arguments
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private List<String> getDecoratedTypes(IType decoratorClass) throws JavaModelException {
-        List<String> decoratedTypes = new ArrayList<>();
+    private List<DecoratedTypeInfo> getDecoratedTypes(IType decoratorType) throws JavaModelException {
+        List<DecoratedTypeInfo> decoratedTypes = new ArrayList<>();
 
-        // Get all interfaces implemented by the decorator and its superclasses (transitively)
-        IType[] interfaces = TypeHierarchyUtils.getAllInterfaces(decoratorClass);
-        for (IType interfaceType : interfaces) {
-            String fqName = interfaceType.getFullyQualifiedName();
-            if (!Constants.SERIALIZABLE_FQ_NAME.equals(fqName)) {
-                decoratedTypes.add(fqName);
-            }
+        for (String sig : decoratorType.getSuperInterfaceTypeSignatures()) {
+            addDecoratedType(sig, decoratorType, decoratedTypes);
         }
+
+        String superclassSig = decoratorType.getSuperclassTypeSignature();
+        if (superclassSig != null) {
+            addDecoratedType(superclassSig, decoratorType, decoratedTypes);
+        }
+
         return decoratedTypes;
+    }
+
+    /**
+     * Resolves a type signature to its fully-qualified name and adds a
+     * {@link DecoratedTypeInfo} entry to {@code list}, unless the type resolves
+     * to {@code java.lang.Object} or cannot be resolved.
+     *
+     * @param sig type signature (possibly parameterized) from the decorator's hierarchy
+     * @param decoratorType the decorator class used as the resolution context
+     * @param list the list to add to
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private void addDecoratedType(String sig, IType decoratorType, List<DecoratedTypeInfo> list) throws JavaModelException {
+        String fqName = ManagedBean.getFullyQualifiedClassName(decoratorType,
+                                                               Signature.toString(Signature.getTypeErasure(sig)));
+        if (fqName != null && !fqName.equals(Constants.JAVA_LANG_OBJECT_FQ_NAME)) {
+            list.add(new DecoratedTypeInfo(fqName, Signature.getTypeArguments(sig)));
+        }
     }
 }

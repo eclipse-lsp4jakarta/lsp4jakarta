@@ -217,7 +217,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // DelegateOnNonInjectedField: @Delegate on a field without @Inject
+        // Expected diagnostics for all three invalid @Delegate locations
         // Line 16 (0-based: 15), field name "delegate" starts at column 27, ends at column 35
         Diagnostic delegateFieldWithoutInjectDiagnostic = d(15, 27, 35,
                                                             "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
@@ -225,17 +225,14 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                             "jakarta-cdi",
                                                             "InvalidDelegateInjectionPoint");
 
-        // DelegateOnNonInjectedMethodParam: @Delegate on a void method parameter without @Inject.
-        // @Inject is missing → InvalidDelegateInjectionPoint on the method (quickfix offered).
-        // Line 33 (0-based: 32), method name "setDelegate" starts at col 16, ends at col 27
-        Diagnostic missingDelegateOnNonInjectedMethodDiagnostic = d(32, 16, 27,
-                                                                    "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
-                                                                    DiagnosticSeverity.Error,
-                                                                    "jakarta-cdi",
-                                                                    "InvalidDelegateInjectionPoint");
+        // Line 33 (0-based: 32), method name "setDelegate" starts at column 16, ends at column 27
+        Diagnostic delegateMethodParamWithoutInjectDiagnostic = d(32, 16, 27,
+                                                                  "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
+                                                                  DiagnosticSeverity.Error,
+                                                                  "jakarta-cdi",
+                                                                  "InvalidDelegateInjectionPoint");
 
-        // DelegateOnNonInjectedConstructorParam: @Delegate on a constructor parameter without @Inject
-        // Line 52 (0-based: 51), constructor name starts at column 11, ends at column 48
+        // Line 52 (0-based: 51), constructor name "DelegateOnNonInjectedConstructorParam" starts at column 11, ends at column 48
         Diagnostic delegateConstructorParamWithoutInjectDiagnostic = d(51, 11, 48,
                                                                        "@Delegate must be applied to an injected field, or to a parameter of an initializer or constructor method.",
                                                                        DiagnosticSeverity.Error,
@@ -257,37 +254,9 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
                                                                "jakarta-di",
                                                                "InjectionPointInvalidConstructorBean");
 
-        // DelegateOnNonVoidInjectMethod: @Inject present but method is non-void → not an initializer.
-        // InvalidDelegateOnNonInjectionPoint — no quickfix, tells user to fix the method.
-        // Line 130 (0-based: 129), method name "buildDelegate" col 26-39
-        Diagnostic invalidDelegateOnNonVoidMethodDiagnostic = d(129, 26, 39,
-                                                                "@Delegate on a method parameter is only valid if the method is a constructor or an initializer method. An initializer method must be non-static, void, and annotated with @Inject.",
-                                                                DiagnosticSeverity.Error,
-                                                                "jakarta-cdi",
-                                                                "InvalidDelegateOnNonInjectionPoint");
-
-        // DelegateOnStaticInjectMethod: @Inject present but method is static → not an initializer.
-        // InvalidDelegateOnNonInjectionPoint — no quickfix, tells user to fix the method.
-        // Line 149 (0-based: 148), method name "setDelegate" col 23-34
-        Diagnostic invalidDelegateOnStaticMethodDiagnostic = d(148, 23, 34,
-                                                               "@Delegate on a method parameter is only valid if the method is a constructor or an initializer method. An initializer method must be non-static, void, and annotated with @Inject.",
-                                                               DiagnosticSeverity.Error,
-                                                               "jakarta-cdi",
-                                                               "InvalidDelegateOnNonInjectionPoint");
-
-        // DI participant: @Inject on a static method is invalid
-        // Line 149 (0-based: 148), method name "setDelegate" col 23-34
-        Diagnostic injectOnStaticMethodDiagnostic = d(148, 23, 34,
-                                                      "The @Inject annotation must not define a static method.",
-                                                      DiagnosticSeverity.Error,
-                                                      "jakarta-di",
-                                                      "InvalidInjectAnnotationOnStaticMethod");
-
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, injectionPointConstructorBeanDiagnostic,
                               invalidManagedBeanConstructorDiagnostic, delegateConstructorParamWithoutInjectDiagnostic,
-                              missingDelegateOnNonInjectedMethodDiagnostic, delegateFieldWithoutInjectDiagnostic,
-                              invalidDelegateOnNonVoidMethodDiagnostic,
-                              injectOnStaticMethodDiagnostic, invalidDelegateOnStaticMethodDiagnostic);
+                              delegateMethodParamWithoutInjectDiagnostic, delegateFieldWithoutInjectDiagnostic);
 
         // Test code actions for field without @Inject
         JakartaJavaCodeActionParams fieldCodeActionParams = createCodeActionParams(uri, delegateFieldWithoutInjectDiagnostic);
@@ -295,10 +264,10 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         CodeAction fieldInjectAction = ca(uri, "Insert @Inject", delegateFieldWithoutInjectDiagnostic, fieldInjectEdit);
         assertJavaCodeAction(fieldCodeActionParams, IJDT_UTILS, fieldInjectAction);
 
-        // Test code actions for void method parameter without @Inject
-        JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, missingDelegateOnNonInjectedMethodDiagnostic);
+        // Test code actions for method parameter without @Inject
+        JakartaJavaCodeActionParams methodCodeActionParams = createCodeActionParams(uri, delegateMethodParamWithoutInjectDiagnostic);
         TextEdit methodInjectEdit = te(32, 4, 32, 4, "@Inject\n\t");
-        CodeAction methodInjectAction = ca(uri, "Insert @Inject", missingDelegateOnNonInjectedMethodDiagnostic, methodInjectEdit);
+        CodeAction methodInjectAction = ca(uri, "Insert @Inject", delegateMethodParamWithoutInjectDiagnostic, methodInjectEdit);
         assertJavaCodeAction(methodCodeActionParams, IJDT_UTILS, methodInjectAction);
 
         // Test code actions for constructor parameter without @Inject
@@ -323,48 +292,31 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // Expected diagnostic on InvalidDelegateType class (field-level)
-        // Line 22 (0-based: 21), field name "delegate" starts at column 19, ends at column 27
-        Diagnostic invalidDelegateTypeDiagnostic = d(21, 19, 27,
-                                                     "Delegate type 'Logger' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
+        // Line 18 (0-based: 17), field name "delegate" starts at column 19, ends at column 27
+        Diagnostic invalidDelegateTypeDiagnostic = d(17, 19, 27,
+                                                     "The delegate type 'Logger' must implement or extend all decorated types.",
                                                      DiagnosticSeverity.Error,
                                                      "jakarta-cdi",
                                                      "InvalidDecoratorDelegateTypeAssignability");
 
         // Expected diagnostic on InvalidDelegateTypePrimitive class (field-level)
-        // Line 88 (0-based: 87), field name "delegate" starts at column 19, ends at column 27
-        Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(87, 19, 27,
-                                                              "Delegate type 'String' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
+        // Line 72 (0-based: 71), field name "delegate" starts at column 19, ends at column 27
+        Diagnostic invalidDelegateTypePrimitiveDiagnostic = d(71, 19, 27,
+                                                              "The delegate type 'String' must implement or extend all decorated types.",
                                                               DiagnosticSeverity.Error,
                                                               "jakarta-cdi",
                                                               "InvalidDecoratorDelegateTypeAssignability");
 
         // Expected diagnostic on InvalidDelegateTypeOnMethod class (method-level)
-        // Line 111 (0-based: 110), parameter name "delegate" starts at column 45, ends at column 53
-        Diagnostic invalidDelegateTypeOnMethodDiagnostic = d(110, 45, 53,
-                                                             "Delegate type 'Logger' does not implement the decorated type 'PaymentService'. A delegate must implement or extend the decorated type(s).",
+        // Line 91 (0-based: 90), parameter name "delegate" starts at column 45, ends at column 53
+        Diagnostic invalidDelegateTypeOnMethodDiagnostic = d(90, 45, 53,
+                                                             "The delegate type 'Logger' must implement or extend all decorated types.",
                                                              DiagnosticSeverity.Error,
                                                              "jakarta-cdi",
                                                              "InvalidDecoratorDelegateTypeAssignability");
 
-        // Expected diagnostic on InvalidDelegateTypeTruePrimitive class (field-level)
-        // Line 160 (0-based: 159), field name "delegate" starts at column 16, ends at column 24
-        Diagnostic invalidDelegateTypeTruePrimitiveDiagnostic = d(159, 16, 24,
-                                                                  "Delegate type 'int' does not implement the decorated type ''. A delegate must implement or extend the decorated type(s).",
-                                                                  DiagnosticSeverity.Error,
-                                                                  "jakarta-cdi",
-                                                                  "InvalidDecoratorDelegateTypeAssignability");
-
-        // Expected diagnostic on DecoratorWithDelegateButNoDecoratedTypes class (field-level): no decorated types exist
-        // Line 184 (0-based: 183), field name "delegate" starts at column 27, ends at column 35
-        Diagnostic noDecoratedTypesDiagnostic = d(183, 27, 35,
-                                                  "Decorator has no decorated types. A decorator must implement at least one interface (other than java.io.Serializable).",
-                                                  DiagnosticSeverity.Error,
-                                                  "jakarta-cdi",
-                                                  "InvalidDecoratorWithNoDecoratedTypes");
-
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, invalidDelegateTypeDiagnostic,
-                              invalidDelegateTypePrimitiveDiagnostic, invalidDelegateTypeOnMethodDiagnostic,
-                              invalidDelegateTypeTruePrimitiveDiagnostic, noDecoratedTypesDiagnostic);
+                              invalidDelegateTypePrimitiveDiagnostic, invalidDelegateTypeOnMethodDiagnostic);
     }
 
     /**
@@ -488,6 +440,114 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // No diagnostics expected: @Delegate inside a @Decorator class is valid
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a decorator whose delegate type has a mismatched generic type parameter
+     * triggers an InvalidDecoratorDelegateTypeAssignability diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3:
+     * "The delegate type of a decorator must implement or extend every decorated type
+     * with exactly the same type parameters."
+     *
+     * Example: @Decorator class LoggingDecorator implements Processor<String> but the
+     * delegate field is Processor<Object> — type parameter mismatch, definition error.
+     *
+     * Expected: Error on the delegate field.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    private Processor<Object> delegate;"
+        // field name "delegate" starts at column 30, ends at column 38
+        Diagnostic typeParamMismatchDiagnostic = d(20, 30, 38,
+                                                   "The delegate type 'Processor' does not implement or extend the decorated type 'Processor' with exactly the same type parameters.",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDecoratorDelegateTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose delegate type has the exact same generic type parameter
+     * as the decorated type does NOT trigger a diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — matching type parameters is valid.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> delegate matches Processor<String> decorated type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has a mismatched generic
+     * type parameter triggers an InvalidDecoratorDelegateTypeAssignability diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — type parameter mismatch on an initializer method
+     * delegate is also a definition error.
+     *
+     * Example: @Decorator class implements Processor<String> but the @Inject method parameter
+     * is Processor<Object> — definition error.
+     *
+     * Expected: Error on the delegate method parameter.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    public void setDelegate(@Delegate Processor<Object> delegate) {"
+        // parameter name "delegate" starts at column 56, ends at column 64
+        Diagnostic typeParamMismatchDiagnostic = d(20, 56, 64,
+                                                   "The delegate type 'Processor' does not implement or extend the decorated type 'Processor' with exactly the same type parameters.",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDecoratorDelegateTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has the exact same generic
+     * type parameter as the decorated type does NOT trigger a diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3 — matching type parameters on an initializer method
+     * delegate is valid.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> parameter matches Processor<String> decorated type
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 }

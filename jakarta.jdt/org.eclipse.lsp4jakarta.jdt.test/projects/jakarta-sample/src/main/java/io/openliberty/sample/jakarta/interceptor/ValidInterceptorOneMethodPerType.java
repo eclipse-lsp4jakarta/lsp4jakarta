@@ -20,57 +20,36 @@ import jakarta.interceptor.AroundTimeout;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
-@Monitored
 @Interceptor
 public class ValidInterceptorOneMethodPerType {
 
     // Valid: Only one @AroundInvoke method
     @AroundInvoke
     public Object log(InvocationContext ctx) throws Exception {
-        try {
-            return ctx.proceed();
-        } catch (Exception e) {
-            throw e;
-        }
+        return ctx.proceed();
     }
 
     // Valid: Only one @AroundTimeout method
     @AroundTimeout
     public Object timeout(InvocationContext ctx) throws Exception {
-        try {
-            return ctx.proceed();
-        } catch (Exception e) {
-            throw e;
-        }
+        return ctx.proceed();
     }
 
     // Valid: Only one @PostConstruct method
     @PostConstruct
     public void init(InvocationContext ctx) throws Exception {
-        try {
-            ctx.proceed();
-        } catch (Exception e) {
-            throw e;
-        }
+        ctx.proceed();
     }
 
     // Valid: Only one @PreDestroy method
     @PreDestroy
     public void destroy(InvocationContext ctx) throws Exception {
-        try {
-            ctx.proceed();
-        } catch (Exception e) {
-            throw e;
-        }
+        ctx.proceed();
     }
 
     // Valid: Only one @AroundConstruct method
     @AroundConstruct
     public void construct(InvocationContext ctx) throws Exception {
-        try {
-            ctx.proceed();
-        } catch (Exception e) {
-            throw e;
-        }
+        ctx.proceed();
     }
 }

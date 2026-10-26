@@ -42,7 +42,6 @@ import org.junit.Test;
 public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
-    private static final String PROCEED_NOT_IN_TRY_CATCH_MSG = "Exceptions, initialization and/or cleanup operations should typically be handled in try/catch/finally blocks around the proceed method.";
 
     @Test
     public void interceptorWithDisposer() throws Exception {
@@ -53,20 +52,16 @@ public class InterceptorDecoratorDisposerTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Test expected diagnostics
-        Diagnostic disposerDiag = d(17, 16, 23,
+        // Test expected diagnostic
+        Diagnostic disposerDiag = d(15, 16, 23,
                                     "Interceptors and Decorators cannot have methods with parameter(s) 'conn' annotated with @Disposes.",
                                     DiagnosticSeverity.Error, "jakarta-cdi", "InvalidInterceptorOrDecoratorWithDisposerMethod");
 
-        Diagnostic proceedNotInTryCatch = d(13, 18, 27,
-                                            PROCEED_NOT_IN_TRY_CATCH_MSG,
-                                            DiagnosticSeverity.Warning, "jakarta-interceptor", "InvalidInterceptorProceedNotInTryCatch");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, disposerDiag, proceedNotInTryCatch);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, disposerDiag);
 
         // Test quickfix
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, disposerDiag);
-        TextEdit removeDisposes = te(17, 24, 17, 34, "");
+        TextEdit removeDisposes = te(15, 24, 15, 34, "");
         CodeAction removeDisposesAction = ca(uri, "Remove the '@Disposes' modifier from parameter 'conn'", disposerDiag, removeDisposes);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, removeDisposesAction);
     }
