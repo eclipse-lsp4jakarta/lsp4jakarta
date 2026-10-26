@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
@@ -36,6 +37,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.DefaultWorkingCopyOwner;
+import org.eclipse.jdt.internal.corext.util.MethodOverrideTester;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 
@@ -283,7 +285,8 @@ public class TypeHierarchyUtils {
         if (superclassType == null) {
             return false;
         }
-        return DiagnosticUtils.isMatchedAnnotation(superclassType.getCompilationUnit(),
+        ICompilationUnit superclassCU = superclassType.isBinary() ? type.getCompilationUnit() : superclassType.getCompilationUnit();
+        return DiagnosticUtils.isMatchedAnnotation(superclassCU,
                                                    superclassType.getAnnotations(),
                                                    annotationFQName);
     }
@@ -321,13 +324,58 @@ public class TypeHierarchyUtils {
         if (superclassType == null) {
             return false;
         }
+        ICompilationUnit fallbackCU = superclassType.isBinary() ? type.getCompilationUnit() : superclassType.getCompilationUnit();
         return Arrays.stream(superclassType.getAnnotations()).anyMatch(annotation -> {
             try {
-                return ManagedBean.hasMetaAnnotation(annotation, superclassType, superclassType.getCompilationUnit(), metaAnnotationFQName);
+                return ManagedBean.hasMetaAnnotation(annotation, superclassType, fallbackCU, metaAnnotationFQName);
             } catch (JavaModelException e) {
                 return false;
             }
         });
+    }
+
+    /**
+     * Returns {@code true} if {@code method} directly overrides a method in the
+     * <em>direct</em> (immediate) superclass of {@code type}, and that overridden
+     * method carries {@code annotationFQName}.
+     *
+     * <p>This is used to validate producer method specialization: per CDI spec
+     * §specialize_producer_method, a method annotated with {@code @Specializes}
+     * must directly override a method in the superclass that carries the same
+     * producer annotation (e.g. {@code @Produces}).</p>
+     *
+     * <p>Only the <em>direct</em> superclass is inspected — grandparents are not
+     * considered. The override check uses {@link MethodOverrideTester}, which
+     * handles generics, type erasure, and covariant return types.</p>
+     *
+     * @param type the declaring type of the method being validated
+     * @param method the method to check for a direct override of an annotated superclass method
+     * @param annotationFQName the fully-qualified annotation name the overridden superclass
+     *            method must carry (e.g. {@code "jakarta.enterprise.inject.Produces"})
+     * @return {@code true} if {@code method} directly overrides a method in the direct
+     *         superclass that carries {@code annotationFQName}; {@code false} if there is
+     *         no direct superclass, it cannot be resolved, no override exists, or the
+     *         overridden method does not carry the annotation
+     * @throws JavaModelException if the Java model cannot be accessed
+     */
+    public static boolean isDirectlyOverridingAnnotatedMethodInSuperclass(IType type, IMethod method,
+                                                                          String annotationFQName) throws JavaModelException {
+        IType superclassType = resolveDirectSuperclass(type);
+        if (superclassType == null) {
+            return false;
+        }
+        // Use MethodOverrideTester (from org.eclipse.jdt.core.manipulation)
+        // for override check that handles generics, type erasure, and covariant return types
+        ITypeHierarchy hierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+        MethodOverrideTester tester = new MethodOverrideTester(type, hierarchy);
+        IMethod overriddenMethod = tester.findOverriddenMethodInType(superclassType, method);
+        if (overriddenMethod == null) {
+            return false;
+        }
+        ICompilationUnit superclassCU = superclassType.isBinary() ? type.getCompilationUnit() : superclassType.getCompilationUnit();
+        return DiagnosticUtils.isMatchedAnnotation(superclassCU,
+                                                   overriddenMethod.getAnnotations(),
+                                                   annotationFQName);
     }
 
     /**

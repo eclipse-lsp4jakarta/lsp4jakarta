@@ -42,6 +42,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidProducerFieldWithNamedAnnotation,
     InvalidDecoratorDelegateInjectionPoints,
     InvalidDelegateInjectionPoint,
+    InvalidDelegateOutsideDecorator,
     InvalidDelegateOnNonInjectionPoint,
     InvalidDecoratorDelegateTypeAssignability,
     InvalidDecoratorWithNoDecoratedTypes,
@@ -54,6 +55,8 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidProducerMethodWithTypeVariableAndNonDependentScope,
     InvalidProducerFieldWithBareTypeVariableType,
     InvalidProducerFieldWithTypeVariableAndNonDependentScope,
+    InvalidBareTypeVariableInInjectField,
+    InvalidBareTypeVariableInInjectMethodParam,
     InvalidSpecializedBeanWithNamedAnnotation,
     InvalidOrphanDisposerMethod,
     InvalidSpecializesAnnotationOnNonBeanSuperclass,
@@ -62,7 +65,9 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidInconsistentSpecialization,
     InvalidTypedAnnotationNonMatchingBeanType,
     InvalidUserTransactionInjectionInCDIBean,
-    InvalidPassivatingScopedBeanWithoutSerializable;
+    InvalidPassivatingScopedBeanWithoutSerializable,
+    InvalidSpecializesStaticProducerMethod,
+    InvalidSpecializesProducerMethodNotOverriding;
 
     /**
      * {@inheritDoc}

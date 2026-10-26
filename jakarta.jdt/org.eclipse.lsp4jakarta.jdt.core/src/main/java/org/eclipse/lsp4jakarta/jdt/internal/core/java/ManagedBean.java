@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.JakartaCorePlugin;
+import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 
 /**
@@ -346,7 +347,7 @@ public class ManagedBean {
      * @param parentType The parent type object to check.
      * @param simpleName The simple name of the class within the specified parent type.
      *
-     * @return The IType associated with the input class name or null if not found.
+     * @return The fully qualified class name, or null if not found.
      *
      * @throws JavaModelException
      */
@@ -360,6 +361,42 @@ public class ManagedBean {
         }
 
         return resolvedClassName;
+    }
+
+    /**
+     * Returns the IType associated with the input simple name or null if not found.
+     * Resolves imports, falls back to the declaring type's package, and searches
+     * the compilation unit for secondary types before delegating to the Java project.
+     *
+     * @param declaringType The declaring type used for name resolution.
+     * @param simpleName The simple name of the class to resolve.
+     *
+     * @return The IType associated with the input simple name or null if not found.
+     *
+     * @throws JavaModelException
+     */
+    public static IType resolveType(IType declaringType, String simpleName) throws JavaModelException {
+        String fqName = getFullyQualifiedClassName(declaringType, simpleName);
+        if (fqName == null) {
+            // resolveType() may fail for class-literal strings that are not imports.
+            // Fall back to qualifying with the declaring type's package.
+            String packageName = declaringType.getPackageFragment().getElementName();
+            fqName = packageName.isEmpty() ? simpleName : packageName + "." + simpleName;
+        }
+
+        // IJavaProject.findType() cannot locate secondary types (package-private top-level
+        // types whose file name differs from the type name). Search the declaring type's
+        // compilation unit first, then fall back to findType.
+        ICompilationUnit cu = declaringType.getCompilationUnit();
+        if (cu != null) {
+            for (IType type : cu.getAllTypes()) {
+                if (fqName.equals(type.getFullyQualifiedName('.'))) {
+                    return type;
+                }
+            }
+        }
+
+        return JDTTypeUtils.findType(declaringType.getJavaProject(), fqName);
     }
 
     /**

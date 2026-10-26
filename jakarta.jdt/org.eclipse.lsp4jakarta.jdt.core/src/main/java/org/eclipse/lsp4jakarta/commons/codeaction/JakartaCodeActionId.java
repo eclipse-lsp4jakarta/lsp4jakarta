@@ -52,6 +52,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     JSONBInsertProtectedConstructorToClass,
     MakeClassStatic,
     // Persistence
+    PersistenceRemoveAttributeOverrideAnnotation,
     PersistenceRemoveMapKeyAnnotation,
     PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,
@@ -102,6 +103,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     CDIRemoveDisposesFromInterceptorDecorator,
     CDIRemoveNamedAnnotation,
     CDIInsertNamedValueAttribute,
+    CDIRemoveDelegateAnnotation,
     CDIRemoveNamedFromSpecializedBean,
     CDIInsertNotifyEventMethod,
     CDIInsertNotifyEventContextMethod,

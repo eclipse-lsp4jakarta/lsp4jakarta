@@ -9,4 +9,17 @@ public class OrderIdWithEmbeddable implements Serializable {
     private static final long serialVersionUID = 1L;
     private Long customerId;
     private Long orderNumber;
+
+    public OrderIdWithEmbeddable() {
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof OrderIdWithEmbeddable;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }
