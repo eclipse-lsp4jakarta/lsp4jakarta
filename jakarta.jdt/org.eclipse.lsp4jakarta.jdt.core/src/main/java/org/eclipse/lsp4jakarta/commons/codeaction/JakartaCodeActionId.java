@@ -54,7 +54,7 @@ public enum JakartaCodeActionId implements ICodeActionId {
     // Persistence
     PersistenceRemoveAttributeOverrideAnnotation,
     PersistenceRemoveAssociationOverrideAnnotation,
-    PersistenceAddEntityAnnotation,
+    PersistenceInsertEntityMappedSuperclassOrEmbeddableAnnotation,
     PersistenceRemoveMapKeyAnnotation,
     PersistenceRemoveMapKeyTemporalAnnotation,
     PersistenceInsertAttributesToMKJCAnnotation,

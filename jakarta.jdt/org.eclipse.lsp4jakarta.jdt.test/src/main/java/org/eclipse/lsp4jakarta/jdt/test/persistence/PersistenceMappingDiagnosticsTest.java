@@ -703,19 +703,28 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, overrideOnPlainClass);
 
-        // Quickfix 1: add @Entity (returned first by the framework)
+        // Quickfixes 1-3: add @Embeddable, @Entity or @MappedSuperclass (returned first by the framework, sorted by title)
         // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation
-        // and includes the import declaration and the @Entity annotation in the new text.
+        // and includes the import declaration and the inserted annotation in the new text.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, overrideOnPlainClass);
+        String classComment = "\n\n/**\n * Invalid: @AssociationOverride applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n";
         TextEdit addEntity = te(11, 47, 19, 0,
-                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;\n\n/**\n * Invalid: @AssociationOverride applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n@Entity\n");
+                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Entity\n");
         CodeAction addEntityAction = ca(uri, "Insert @Entity", overrideOnPlainClass, addEntity);
 
-        // Quickfix 2: remove @AssociationOverride
+        TextEdit addMappedSuperclass = te(12, 38, 19, 0,
+                                          "\nimport jakarta.persistence.MappedSuperclass;" + classComment + "@MappedSuperclass\n");
+        CodeAction addMappedSuperclassAction = ca(uri, "Insert @MappedSuperclass", overrideOnPlainClass, addMappedSuperclass);
+
+        TextEdit addEmbeddable = te(11, 47, 19, 0,
+                                    "\nimport jakarta.persistence.Embeddable;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Embeddable\n");
+        CodeAction addEmbeddableAction = ca(uri, "Insert @Embeddable", overrideOnPlainClass, addEmbeddable);
+
+        // Quickfix 4: remove @AssociationOverride
         TextEdit removeAssociationOverride = te(19, 0, 20, 0, "");
         CodeAction removeAssociationOverrideAction = ca(uri, "Remove @AssociationOverride", overrideOnPlainClass, removeAssociationOverride);
 
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEntityAction, removeAssociationOverrideAction);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEmbeddableAction, addEntityAction, addMappedSuperclassAction, removeAssociationOverrideAction);
     }
 
     /**
@@ -740,18 +749,27 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, containerOverrideOnPlainClass);
 
-        // Quickfix 1: add @Entity (returned first by the framework)
+        // Quickfixes 1-3: add @Embeddable, @Entity or @MappedSuperclass (returned first by the framework, sorted by title)
         // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, containerOverrideOnPlainClass);
+        String classComment = "\n\n/**\n * Invalid: @AssociationOverrides (container) applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n";
         TextEdit addEntity = te(12, 48, 20, 0,
-                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;\n\n/**\n * Invalid: @AssociationOverrides (container) applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n@Entity\n");
+                                "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Entity\n");
         CodeAction addEntityAction = ca(uri, "Insert @Entity", containerOverrideOnPlainClass, addEntity);
 
-        // Quickfix 2: remove @AssociationOverrides
+        TextEdit addMappedSuperclass = te(13, 38, 20, 0,
+                                          "\nimport jakarta.persistence.MappedSuperclass;" + classComment + "@MappedSuperclass\n");
+        CodeAction addMappedSuperclassAction = ca(uri, "Insert @MappedSuperclass", containerOverrideOnPlainClass, addMappedSuperclass);
+
+        TextEdit addEmbeddable = te(12, 48, 20, 0,
+                                    "\nimport jakarta.persistence.Embeddable;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Embeddable\n");
+        CodeAction addEmbeddableAction = ca(uri, "Insert @Embeddable", containerOverrideOnPlainClass, addEmbeddable);
+
+        // Quickfix 4: remove @AssociationOverrides
         TextEdit removeAssociationOverrides = te(20, 0, 24, 0, "");
         CodeAction removeAssociationOverridesAction = ca(uri, "Remove @AssociationOverrides", containerOverrideOnPlainClass, removeAssociationOverrides);
 
-        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEntityAction, removeAssociationOverridesAction);
+        assertJavaCodeAction(codeActionParams, IJDT_UTILS, addEmbeddableAction, addEntityAction, addMappedSuperclassAction, removeAssociationOverridesAction);
     }
 
     // -----------------------------------------------------------------------

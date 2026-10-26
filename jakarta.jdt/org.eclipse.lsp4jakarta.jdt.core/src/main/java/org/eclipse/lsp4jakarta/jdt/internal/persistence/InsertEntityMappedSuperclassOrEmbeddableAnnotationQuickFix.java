@@ -17,21 +17,21 @@ import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.InsertAnnotationMissingQuickFix;
 
 /**
- * Inserts the {@code @Entity} annotation on a class that carries
- * {@code @AssociationOverride} or {@code @AssociationOverrides} but lacks the
- * required {@code @Entity}, {@code @MappedSuperclass}, or {@code @Embeddable}
- * annotation.
+ * Offers to insert {@code @Entity}, {@code @MappedSuperclass}, or
+ * {@code @Embeddable} (one code action each) on a class that carries
+ * {@code @AssociationOverride} or {@code @AssociationOverrides} but lacks all
+ * three.
  *
  * @see <a href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a13942">
  *      Jakarta Persistence 3.0, Section 13.1.1</a>
  */
-public class AddEntityAnnotationQuickFix extends InsertAnnotationMissingQuickFix {
+public class InsertEntityMappedSuperclassOrEmbeddableAnnotationQuickFix extends InsertAnnotationMissingQuickFix {
 
     /**
      * Constructor.
      */
-    public AddEntityAnnotationQuickFix() {
-        super(Constants.ENTITY);
+    public InsertEntityMappedSuperclassOrEmbeddableAnnotationQuickFix() {
+        super(Constants.ENTITY, Constants.MAPPEDSUPERCLASS, Constants.EMBEDDABLE);
     }
 
     /**
@@ -39,7 +39,7 @@ public class AddEntityAnnotationQuickFix extends InsertAnnotationMissingQuickFix
      */
     @Override
     public String getParticipantId() {
-        return AddEntityAnnotationQuickFix.class.getName();
+        return InsertEntityMappedSuperclassOrEmbeddableAnnotationQuickFix.class.getName();
     }
 
     /**
@@ -47,6 +47,6 @@ public class AddEntityAnnotationQuickFix extends InsertAnnotationMissingQuickFix
      */
     @Override
     protected ICodeActionId getCodeActionId() {
-        return JakartaCodeActionId.PersistenceAddEntityAnnotation;
+        return JakartaCodeActionId.PersistenceInsertEntityMappedSuperclassOrEmbeddableAnnotation;
     }
 }
