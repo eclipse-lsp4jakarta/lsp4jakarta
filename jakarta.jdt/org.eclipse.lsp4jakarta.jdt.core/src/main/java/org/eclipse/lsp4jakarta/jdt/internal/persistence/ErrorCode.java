@@ -82,7 +82,12 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidEntityListenerType,
     InverseSideMissingMappedBy,
     JoinTableOnInverseSide,
-    JoinColumnOnInverseSide;
+    JoinColumnOnInverseSide,
+    MapsIdOnInvalidRelationship,
+    MapsIdRequiresCompositeKey,
+    MapsIdValueNotInEmbeddedIdClass,
+    MapsIdValueTypeMismatch,
+    MapsIdPrimaryKeyTypeMismatch;
 
     /**
      * {@inheritDoc}

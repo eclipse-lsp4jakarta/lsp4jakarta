@@ -13,6 +13,7 @@
 
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,6 +63,8 @@ public class Constants {
     public static final String SEQUENCE_GENERATORS = "jakarta.persistence.SequenceGenerators";
     public static final String SECONDARY_TABLE = "jakarta.persistence.SecondaryTable";
     public static final String SECONDARY_TABLES = "jakarta.persistence.SecondaryTables";
+
+    public static final String MAPSID = "jakarta.persistence.MapsId";
 
     public static final String[] GENERATOR_AND_TABLE_ANNOTATIONS = {
                                                                      TABLE_GENERATOR, TABLE_GENERATORS, SEQUENCE_GENERATOR, SEQUENCE_GENERATORS, SECONDARY_TABLE, SECONDARY_TABLES
@@ -122,6 +125,20 @@ public class Constants {
     public static final Set<String> BIG_NUMBER_TYPES = Set.of("java.math.BigDecimal", "java.math.BigInteger");
 
     public static final String STRING_TYPE = "java.lang.String";
+
+    /**
+     * Maps each primitive type name to its fully-qualified wrapper type name.
+     * Used for primitive ↔ wrapper compatibility checks (spec §2.4).
+     */
+    public static final Map<String, String> PRIMITIVE_TO_WRAPPER = Map.of(
+                                                                          "int", "java.lang.Integer",
+                                                                          "long", "java.lang.Long",
+                                                                          "short", "java.lang.Short",
+                                                                          "byte", "java.lang.Byte",
+                                                                          "char", "java.lang.Character",
+                                                                          "boolean", "java.lang.Boolean",
+                                                                          "float", "java.lang.Float",
+                                                                          "double", "java.lang.Double");
 
     /* Combined set of all valid @Id types */
     public static final Set<String> VALID_ID_TYPES = Stream.of(PRIMITIVES, WRAPPER_TYPES, DATE_TYPES, BIG_NUMBER_TYPES,
