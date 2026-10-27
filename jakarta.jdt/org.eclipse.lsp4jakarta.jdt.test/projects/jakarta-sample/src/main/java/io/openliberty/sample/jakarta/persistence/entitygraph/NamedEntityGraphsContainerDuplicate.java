@@ -1,4 +1,4 @@
-package io.openliberty.sample.jakarta.persistence;
+package io.openliberty.sample.jakarta.persistence.entitygraph;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
