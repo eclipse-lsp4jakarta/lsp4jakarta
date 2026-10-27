@@ -41,11 +41,6 @@ public class NamedEntityGraphDiagnosticsTest extends BaseJakartaTest {
 
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
-    @After
-    public void tearDown() throws Exception {
-        JakartaSearchSettings.setSearchEngineDiagnosticsEnabled(true);
-    }
-
     /**
      * Tests that an entity class with a {@code @NamedEntityGraph} whose name
      * duplicates a graph name declared on another entity in the same project
