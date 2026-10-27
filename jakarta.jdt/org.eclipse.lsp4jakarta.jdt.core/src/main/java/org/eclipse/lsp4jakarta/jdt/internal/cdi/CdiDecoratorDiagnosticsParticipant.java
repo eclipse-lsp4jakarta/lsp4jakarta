@@ -333,8 +333,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
 
     /**
      * Returns true when the delegate is declared as one of the decorator's directly implemented
-     * parameterized interfaces but with different type arguments (e.g. {@code Processor<Object>}
-     * delegate for a decorator implementing {@code Processor<String>}).
+     * parameterized interfaces but with different type arguments (e.g. a {@code Processor<Object>}
+     * or raw {@code Processor} delegate for a decorator implementing {@code Processor<String>}).
      *
      * The comparison is only possible when the delegate is declared as the decorated type itself;
      * for a subtype the type parameters are fixed by its own declaration.
@@ -348,9 +348,6 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     private boolean hasTypeParamMismatch(IType decoratorClass, IType delegateType,
                                          String delegateTypeSignature) throws JavaModelException {
         String[] delegateTypeArgs = Signature.getTypeArguments(delegateTypeSignature);
-        if (delegateTypeArgs.length == 0) {
-            return false;
-        }
         String delegateFQN = delegateType.getFullyQualifiedName('.');
         for (String decoratedInterfaceSignature : decoratorClass.getSuperInterfaceTypeSignatures()) {
             String[] decoratedArgs = Signature.getTypeArguments(decoratedInterfaceSignature);
@@ -408,7 +405,8 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 return sig;
             }
             String resolved = JDTTypeUtils.getResolvedTypeName(sig, decoratorClass);
-            return resolved != null ? resolved : sig;
+            // getResolvedTypeName ignores array dimensions, so add them back to tell String[] from String
+            return resolved != null ? resolved + "[]".repeat(Signature.getArrayCount(sig)) : sig;
         }).collect(Collectors.toList());
     }
 

@@ -667,4 +667,67 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingSecondDecoratedType,
                               missingFirstDecoratedType, typeParamMismatch);
     }
+
+    /**
+     * Test decorators whose decorated type has an array type argument (Processor<String[]>).
+     *
+     * Expected: no diagnostic when the array type argument matches (including primitive arrays);
+     * an error when the element type, the array-ness or the array dimensions differ.
+     */
+    @Test
+    public void testDecoratorDelegateArrayTypeParams() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithArrayTypeParams.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        String message = "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.";
+
+        // Line 37 (0-based: 36): "    private Processor<Object[]> delegate;" - Processor<String[]> vs <Object[]>
+        Diagnostic elementTypeMismatch = d(36, 32, 40, message, DiagnosticSeverity.Error,
+                                           "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 46 (0-based: 45): "    private Processor<String> delegate;" - Processor<String[]> vs <String>
+        Diagnostic arrayVersusNonArray = d(45, 30, 38, message, DiagnosticSeverity.Error,
+                                           "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 55 (0-based: 54): "    private Processor<String[][]> delegate;" - Processor<String[]> vs <String[][]>
+        Diagnostic dimensionMismatch = d(54, 34, 42, message, DiagnosticSeverity.Error,
+                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, elementTypeMismatch,
+                              arrayVersusNonArray, dimensionMismatch);
+    }
+
+    /**
+     * Test a raw delegate type. A raw Processor delegate does not have exactly the same type
+     * parameters as a decorated type of Processor<String>, but is valid when the decorated
+     * type is raw as well.
+     *
+     * Expected: an error on the raw field and raw method parameter delegates of a Processor<String>
+     * decorator; no diagnostic for the raw delegate of a raw Processor decorator.
+     */
+    @Test
+    public void testDecoratorRawDelegateType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithRawDelegate.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        String message = "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.";
+
+        // Line 21 (0-based: 20): "    private Processor delegate;" - raw Processor vs Processor<String>
+        Diagnostic rawFieldDelegate = d(20, 22, 30, message, DiagnosticSeverity.Error,
+                                        "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 30 (0-based: 29): "    public void setDelegate(@Delegate Processor delegate) {" - raw Processor vs Processor<String>
+        Diagnostic rawMethodDelegate = d(29, 48, 56, message, DiagnosticSeverity.Error,
+                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, rawFieldDelegate, rawMethodDelegate);
+    }
 }
