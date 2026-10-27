@@ -1549,7 +1549,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     public void testNamedEntityGraphOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/NamedEntityGraphUnique.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitygraph/NamedEntityGraphUnique.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -1677,7 +1677,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     public void testNamedEntityGraphsOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/NamedEntityGraphsContainerUnique.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitygraph/NamedEntityGraphsContainerUnique.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
