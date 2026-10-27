@@ -684,7 +684,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
     /**
      * Invalid: @AssociationOverride applied to a plain class that is neither
      * @Entity, @MappedSuperclass, nor @Embeddable.
-     * Expected: diagnostic AssociationOverrideOnInvalidTarget, quickfixes to
+     * Expected: diagnostic AssociationOverrideOnInvalidType, quickfixes to
      * remove the annotation or add @Entity.
      */
     @Test
@@ -699,7 +699,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
         // Line 20 (0-based 19): @AssociationOverride(name = "address", joinColumns = @JoinColumn(name = "ADDR_ID"))
         Diagnostic overrideOnPlainClass = d(19, 0, 83,
                                             "@AssociationOverride is only valid on a class annotated with @Entity, @MappedSuperclass, or @Embeddable.",
-                                            DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidTarget");
+                                            DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidType");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, overrideOnPlainClass);
 
@@ -707,7 +707,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
         // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation
         // and includes the import declaration and the inserted annotation in the new text.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, overrideOnPlainClass);
-        String classComment = "\n\n/**\n * Invalid: @AssociationOverride applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n";
+        String classComment = "\n\n/**\n * Invalid: @AssociationOverride applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidType.\n */\n";
         TextEdit addEntity = te(11, 47, 19, 0,
                                 "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Entity\n");
         CodeAction addEntityAction = ca(uri, "Insert @Entity", overrideOnPlainClass, addEntity);
@@ -730,7 +730,7 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
     /**
      * Invalid: @AssociationOverrides (container) applied to a plain class that is
      * neither @Entity, @MappedSuperclass, nor @Embeddable.
-     * Expected: diagnostic AssociationOverrideOnInvalidTarget, quickfixes to
+     * Expected: diagnostic AssociationOverrideOnInvalidType, quickfixes to
      * remove the container annotation or add @Entity.
      */
     @Test
@@ -745,14 +745,14 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
         // Lines 21-24 (0-based 20-23): @AssociationOverrides({...})
         Diagnostic containerOverrideOnPlainClass = d(20, 0, 23, 2,
                                                      "@AssociationOverrides is only valid on a class annotated with @Entity, @MappedSuperclass, or @Embeddable.",
-                                                     DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidTarget");
+                                                     DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideOnInvalidType");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, containerOverrideOnPlainClass);
 
         // Quickfixes 1-3: add @Embeddable, @Entity or @MappedSuperclass (returned first by the framework, sorted by title)
         // InsertAnnotationProposal rewrites from end-of-last-import to start-of-annotation.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, containerOverrideOnPlainClass);
-        String classComment = "\n\n/**\n * Invalid: @AssociationOverrides (container) applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidTarget.\n */\n";
+        String classComment = "\n\n/**\n * Invalid: @AssociationOverrides (container) applied to a plain class that is neither\n * @Entity, @MappedSuperclass, nor @Embeddable.\n * Expected: diagnostic AssociationOverrideOnInvalidType.\n */\n";
         TextEdit addEntity = te(12, 48, 20, 0,
                                 "\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.JoinColumn;" + classComment + "@Entity\n");
         CodeAction addEntityAction = ca(uri, "Insert @Entity", containerOverrideOnPlainClass, addEntity);
@@ -856,6 +856,28 @@ public class PersistenceMappingDiagnosticsTest extends BaseJakartaTest {
                                                              DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, embeddedFieldBothAttributesDiagnostic);
+    }
+
+    /**
+     * Invalid: @AssociationOverrides container on an @Embedded field where one
+     * nested @AssociationOverride specifies both joinColumns and joinTable.
+     * Expected: one diagnostic on the conflicting nested entry only.
+     */
+    @Test
+    public void associationOverridesContainerEmbeddedFieldBothAttributes_diagnostic() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/persistence/associationoverride/InvalidEmbeddedFieldContainerBothAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // The second nested @AssociationOverride (lines 34-38, 0-based 33-37) has both attributes.
+        Diagnostic embeddedFieldContainerBothAttributesDiagnostic = d(33, 8, 37, 9,
+                                                                      "@AssociationOverride must not specify both joinColumns and joinTable.",
+                                                                      DiagnosticSeverity.Error, "jakarta-persistence", "AssociationOverrideBothJoinColumnsAndJoinTable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, embeddedFieldContainerBothAttributesDiagnostic);
     }
 
     /**

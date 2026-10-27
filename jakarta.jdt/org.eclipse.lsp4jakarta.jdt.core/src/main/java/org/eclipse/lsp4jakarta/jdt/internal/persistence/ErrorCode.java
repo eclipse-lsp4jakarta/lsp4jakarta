@@ -50,7 +50,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidMapKeyEnumeratedOnNonEnumType,
     InvalidMapKeyTemporalOnNonTemporalType,
     MultipleEmbeddedIdAnnotations,
-    AssociationOverrideOnInvalidTarget,
+    AssociationOverrideOnInvalidType,
     AssociationOverrideBothJoinColumnsAndJoinTable,
     AssociationOverridesEmptyContainer,
     AssociationOverridesDuplicateName,

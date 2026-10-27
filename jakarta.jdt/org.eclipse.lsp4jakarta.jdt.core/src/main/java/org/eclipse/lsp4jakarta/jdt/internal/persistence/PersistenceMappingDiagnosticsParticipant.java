@@ -13,8 +13,12 @@
 package org.eclipse.lsp4jakarta.jdt.internal.persistence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -110,7 +114,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             // 1. Validate class-level override annotations
             validateOverridesOnType(type, unit, ATTRIBUTE_OVERRIDE_DESCRIPTOR, context, diagnostics);
             // Skip name-validation when the class itself is an invalid target.
-            if (!validateAssociationOverrideTargetType(type, context, diagnostics)) {
+            if (!validateAssociationOverridePersistenceType(type, unit, context, diagnostics)) {
                 validateOverridesOnType(type, unit, ASSOCIATION_OVERRIDE_DESCRIPTOR, context, diagnostics);
             }
 
@@ -139,7 +143,7 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * placed directly on a type is only used on an {@code @Entity},
      * {@code @MappedSuperclass}, or {@code @Embeddable} class.
      *
-     * <p>Emits {@link ErrorCode#AssociationOverrideOnInvalidTarget} for each
+     * <p>Emits {@link ErrorCode#AssociationOverrideOnInvalidType} for each
      * offending annotation when the class lacks all three qualifying annotations.
      *
      * @param type the type to validate
@@ -150,34 +154,36 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
      * @see <a href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a13942">
      *      Jakarta Persistence 3.0, Section 13.1.1</a>
      */
-    private boolean validateAssociationOverrideTargetType(IType type,
-                                                          JavaDiagnosticsContext context,
-                                                          List<Diagnostic> diagnostics) throws CoreException {
+    private boolean validateAssociationOverridePersistenceType(IType type, ICompilationUnit unit,
+                                                               JavaDiagnosticsContext context,
+                                                               List<Diagnostic> diagnostics) throws CoreException {
         // If the type has one of the three qualifying annotations it is a valid target.
-        for (IAnnotation ann : type.getAnnotations()) {
-            if (DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.ENTITY)
-                || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.MAPPEDSUPERCLASS)
-                || DiagnosticUtils.isMatchedJavaElement(type, ann.getElementName(), Constants.EMBEDDABLE)) {
+        for (IAnnotation typeAnnotation : type.getAnnotations()) {
+
+            if (DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotation, Constants.ENTITY)
+                || DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotation, Constants.MAPPEDSUPERCLASS)
+                || DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotation, Constants.EMBEDDABLE)) {
                 return false;
             }
         }
 
         // Type lacks qualifying annotations — emit a diagnostic for each override annotation present.
-        boolean invalidTargetFound = false;
-        for (IAnnotation annotation : type.getAnnotations()) {
-            boolean isSingle = DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ASSOCIATION_OVERRIDE);
-            boolean isContainer = DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.ASSOCIATION_OVERRIDES);
+        boolean invalidPersistenceTypeFound = false;
+        for (IAnnotation typeAnnotation : type.getAnnotations()) {
+
+            boolean isSingle = DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotation, Constants.ASSOCIATION_OVERRIDE);
+            boolean isContainer = DiagnosticUtils.isMatchedAnnotation(unit, typeAnnotation, Constants.ASSOCIATION_OVERRIDES);
             if (isSingle || isContainer) {
-                String simpleName = DiagnosticUtils.getSimpleName(annotation.getElementName());
-                Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                String simpleName = DiagnosticUtils.getSimpleName(typeAnnotation.getElementName());
+                Range range = PositionUtils.toNameRange(typeAnnotation, context.getUtils());
                 diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                         Messages.getMessage("AssociationOverrideOnInvalidTarget", simpleName),
+                                                         Messages.getMessage("AssociationOverrideOnInvalidType", simpleName),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                         ErrorCode.AssociationOverrideOnInvalidTarget, DiagnosticSeverity.Error));
-                invalidTargetFound = true;
+                                                         ErrorCode.AssociationOverrideOnInvalidType, DiagnosticSeverity.Error));
+                invalidPersistenceTypeFound = true;
             }
         }
-        return invalidTargetFound;
+        return invalidPersistenceTypeFound;
     }
 
     /**
@@ -203,16 +209,18 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
                 }
             } else if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), desc.containerFqn)) {
                 List<IAnnotation> nestedOverrides = DiagnosticUtils.getNestedAnnotations(annotation, desc.containerMember);
-                if (isAssociationOverride && nestedOverrides.isEmpty()) {
-                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("AssociationOverridesEmptyContainer"),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.AssociationOverridesEmptyContainer, DiagnosticSeverity.Error));
-                }
                 if (isAssociationOverride) {
+                    if (nestedOverrides.isEmpty()) {
+                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                                 Messages.getMessage("AssociationOverridesEmptyContainer"),
+                                                                 range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.AssociationOverridesEmptyContainer, DiagnosticSeverity.Error));
+                    }
+
                     validateAssociationOverridesDuplicateNames(nestedOverrides, context, diagnostics);
                 }
+
                 for (IAnnotation nested : nestedOverrides) {
                     if (isAssociationOverride) {
                         validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
@@ -350,23 +358,24 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
             } else if (isContainerOverride) {
                 List<IAnnotation> nestedOverrides = DiagnosticUtils.getNestedAnnotations(annotation,
                                                                                          desc.containerMember);
-                if (isAssociationOverride && nestedOverrides.isEmpty()) {
-                    Range range = PositionUtils.toNameRange(annotation, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("AssociationOverridesEmptyContainer"), range,
-                                                             Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.AssociationOverridesEmptyContainer,
-                                                             DiagnosticSeverity.Error));
-                }
                 if (isAssociationOverride) {
+                    if (nestedOverrides.isEmpty()) {
+                        Range range = PositionUtils.toNameRange(annotation, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                                 Messages.getMessage("AssociationOverridesEmptyContainer"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null, ErrorCode.AssociationOverridesEmptyContainer,
+                                                                 DiagnosticSeverity.Error));
+                    }
                     validateAssociationOverridesDuplicateNames(nestedOverrides, context, diagnostics);
                 }
                 for (IAnnotation nested : nestedOverrides) {
-                    {
-                        String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
-                        if (name != null) {
-                            validateNameOnMember(name, nested, member, declaringType, hasElementCollection, desc,
-                                                 context, diagnostics);
-                        }
+                    if (isAssociationOverride) {
+                        validateAssociationOverrideAttributeConflict(nested, context, diagnostics);
+                    }
+                    String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
+                    if (name != null) {
+                        validateNameOnMember(name, nested, member, declaringType, hasElementCollection, desc,
+                                             context, diagnostics);
                     }
                 }
             }
@@ -546,19 +555,16 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     private void validateAssociationOverridesDuplicateNames(List<IAnnotation> nestedOverrides,
                                                             JavaDiagnosticsContext context,
                                                             List<Diagnostic> diagnostics) throws JavaModelException {
-        List<String> seen = new ArrayList<>();
+        Set<String> associationOverridesNames = new HashSet<>();
         for (IAnnotation nested : nestedOverrides) {
             String name = DiagnosticUtils.getAnnotationMemberValue(nested, Constants.NAME, String.class);
-            if (name != null) {
-                if (seen.contains(name)) {
-                    Range range = PositionUtils.toNameRange(nested, context.getUtils());
-                    diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                             Messages.getMessage("AssociationOverridesDuplicateName", name),
-                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                             ErrorCode.AssociationOverridesDuplicateName, DiagnosticSeverity.Error));
-                } else {
-                    seen.add(name);
-                }
+            // Set.add returns false when the name was already present (a duplicate).
+            if (name != null && !associationOverridesNames.add(name)) {
+                Range range = PositionUtils.toNameRange(nested, context.getUtils());
+                diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                         Messages.getMessage("AssociationOverridesDuplicateName", name),
+                                                         range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.AssociationOverridesDuplicateName, DiagnosticSeverity.Error));
             }
         }
     }
@@ -574,16 +580,10 @@ public class PersistenceMappingDiagnosticsParticipant implements IJavaDiagnostic
     private void validateAssociationOverrideAttributeConflict(IAnnotation annotation,
                                                               JavaDiagnosticsContext context,
                                                               List<Diagnostic> diagnostics) throws JavaModelException {
-        boolean hasJoinColumns = false;
-        boolean hasJoinTable = false;
-        for (IMemberValuePair pair : annotation.getMemberValuePairs()) {
-            if (Constants.JOIN_COLUMNS_ATTRIBUTE.equals(pair.getMemberName())) {
-                hasJoinColumns = true;
-            } else if (Constants.JOIN_TABLE_ATTRIBUTE.equals(pair.getMemberName())) {
-                hasJoinTable = true;
-            }
-        }
-        if (hasJoinColumns && hasJoinTable) {
+        Set<String> memberNames = Arrays.stream(annotation.getMemberValuePairs()).map(IMemberValuePair::getMemberName).collect(Collectors.toSet());
+
+        if (memberNames.contains(Constants.JOIN_COLUMNS_ATTRIBUTE)
+            && memberNames.contains(Constants.JOIN_TABLE_ATTRIBUTE)) {
             Range range = PositionUtils.toNameRange(annotation, context.getUtils());
             diagnostics.add(context.createDiagnostic(context.getUri(),
                                                      Messages.getMessage("AssociationOverrideBothJoinColumnsAndJoinTable"),

@@ -15,7 +15,7 @@ import jakarta.persistence.JoinColumn;
 /**
  * Invalid: @AssociationOverride applied to a plain class that is neither
  * @Entity, @MappedSuperclass, nor @Embeddable.
- * Expected: diagnostic AssociationOverrideOnInvalidTarget.
+ * Expected: diagnostic AssociationOverrideOnInvalidType.
  */
 @AssociationOverride(name = "address", joinColumns = @JoinColumn(name = "ADDR_ID"))
 public class InvalidAssociationOverrideOnPlainClass {
