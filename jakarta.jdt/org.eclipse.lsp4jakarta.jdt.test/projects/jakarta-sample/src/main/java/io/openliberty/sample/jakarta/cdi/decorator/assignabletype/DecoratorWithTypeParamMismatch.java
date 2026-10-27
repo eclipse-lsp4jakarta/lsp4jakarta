@@ -10,7 +10,7 @@ import jakarta.inject.Inject;
  * Per CDI 3.0 spec section 8.1.3, the delegate type must implement or extend every decorated type
  * with exactly the same type parameters.
  *
- * Should trigger: InvalidDecoratorDelegateTypeParamMismatch
+ * Should trigger: InvalidDelegateDecoratedTypeParamMismatch
  */
 @Decorator
 @Dependent

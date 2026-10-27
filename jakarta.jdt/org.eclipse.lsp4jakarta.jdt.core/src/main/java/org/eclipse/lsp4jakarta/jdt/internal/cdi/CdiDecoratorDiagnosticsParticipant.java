@@ -321,9 +321,9 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                 }
             }
             if (hasTypeParamMismatch(decoratorClass, delegateType, rawTypeSignature)) {
-                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDecoratorDelegateTypeParamMismatch.name(),
+                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDelegateDecoratedTypeParamMismatch.name(),
                                           delegateType.getElementName(), delegateType.getElementName(),
-                                          ErrorCode.InvalidDecoratorDelegateTypeParamMismatch,
+                                          ErrorCode.InvalidDelegateDecoratedTypeParamMismatch,
                                           uri, context, diagnostics);
             }
         } catch (CoreException e) {
@@ -352,10 +352,10 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             return false;
         }
         String delegateFQN = delegateType.getFullyQualifiedName('.');
-        for (String decoratedSig : decoratorClass.getSuperInterfaceTypeSignatures()) {
-            String[] decoratedArgs = Signature.getTypeArguments(decoratedSig);
+        for (String decoratedInterfaceSignature : decoratorClass.getSuperInterfaceTypeSignatures()) {
+            String[] decoratedArgs = Signature.getTypeArguments(decoratedInterfaceSignature);
             if (decoratedArgs.length > 0
-                && delegateFQN.equals(JDTTypeUtils.getResolvedTypeName(decoratedSig, decoratorClass))
+                && delegateFQN.equals(JDTTypeUtils.getResolvedTypeName(decoratedInterfaceSignature, decoratorClass))
                 && !typeArgsMatch(decoratorClass, decoratedArgs, delegateTypeArgs)) {
                 return true;
             }

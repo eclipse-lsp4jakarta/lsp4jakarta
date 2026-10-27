@@ -45,7 +45,7 @@ public enum ErrorCode implements IJavaErrorCode {
     InvalidDelegateOutsideDecorator,
     InvalidDelegateOnNonInjectionPoint,
     InvalidDecoratorDelegateTypeAssignability,
-    InvalidDecoratorDelegateTypeParamMismatch,
+    InvalidDelegateDecoratedTypeParamMismatch,
     InvalidDecoratorWithNoDecoratedTypes,
     InvalidWildcardTypeInInjectField,
     InvalidWildcardTypeInInjectMethod,

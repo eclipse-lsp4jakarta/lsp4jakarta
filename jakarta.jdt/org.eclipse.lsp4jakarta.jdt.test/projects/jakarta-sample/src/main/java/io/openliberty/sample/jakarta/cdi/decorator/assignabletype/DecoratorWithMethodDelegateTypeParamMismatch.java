@@ -9,7 +9,7 @@ import jakarta.inject.Inject;
  * Invalid: method-level delegate type Processor<Object> does not match the decorated type Processor<String>.
  * Per CDI 3.0 spec section 8.1.3, the delegate type must use exactly the same type parameters.
  *
- * Should trigger: InvalidDecoratorDelegateTypeParamMismatch on the method parameter.
+ * Should trigger: InvalidDelegateDecoratedTypeParamMismatch on the method parameter.
  */
 @Decorator
 @Dependent
