@@ -147,6 +147,8 @@ public class Constants {
     /* Annotation Fields */
     public static final String NAME = "name";
     public static final String REFERENCEDCOLUMNNAME = "referencedColumnName";
+    public static final String JOIN_COLUMNS_ATTRIBUTE = "joinColumns";
+    public static final String JOIN_TABLE_ATTRIBUTE = "joinTable";
     public static final String CONVERTER_ATTRIBUTE = "converter";
     public static final String DISABLE_CONVERSION = "disableConversion";
     public static final String ATTRIBUTE_NAME = "attributeName";
