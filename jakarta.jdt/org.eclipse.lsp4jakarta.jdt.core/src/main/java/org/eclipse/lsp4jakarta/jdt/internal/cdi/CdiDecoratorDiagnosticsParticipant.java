@@ -53,6 +53,11 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  * 2. The delegate type must implement or extend all decorated types of the decorator,
  * with exactly the same type parameters
  *
+ * TODO: Type parameter checking is currently performed only when the delegate is
+ * declared as the decorated type itself. Checking for delegates declared as a
+ * subtype of a decorated type, and for decorators with multiple decorated types,
+ * is planned for a future update.
+ *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#decorator_bean
  */
