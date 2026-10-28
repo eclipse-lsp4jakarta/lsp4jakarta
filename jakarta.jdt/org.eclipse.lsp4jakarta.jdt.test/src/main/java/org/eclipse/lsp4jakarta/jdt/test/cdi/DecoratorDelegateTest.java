@@ -516,7 +516,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Line 21 (0-based: 20): "    private Processor<Object> delegate;"
         // field name "delegate" starts at column 30, ends at column 38
         Diagnostic typeParamMismatchDiagnostic = d(20, 30, 38,
-                                                   "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.",
+                                                   "Delegate type 'Processor<Object>' does not have exactly the same type parameters as the decorated type 'Processor<String>'",
                                                    DiagnosticSeverity.Error,
                                                    "jakarta-cdi",
                                                    "InvalidDelegateDecoratedTypeParamMismatch");
@@ -561,7 +561,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // Line 21 (0-based: 20): "    public void setDelegate(@Delegate Processor<Object> delegate) {"
         // parameter name "delegate" starts at column 56, ends at column 64
         Diagnostic typeParamMismatchDiagnostic = d(20, 56, 64,
-                                                   "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.",
+                                                   "Delegate type 'Processor<Object>' does not have exactly the same type parameters as the decorated type 'Processor<String>'",
                                                    DiagnosticSeverity.Error,
                                                    "jakarta-cdi",
                                                    "InvalidDelegateDecoratedTypeParamMismatch");
@@ -606,18 +606,16 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        String message = "Delegate type 'Converter' does not implement the decorated type 'Converter' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.";
-
         // Line 38 (0-based: 37): "    private Converter<String, Object> delegate;" - Converter<String, Integer> vs <String, Object>
-        Diagnostic secondTypeParamMismatch = d(37, 38, 46, message, DiagnosticSeverity.Error,
+        Diagnostic secondTypeParamMismatch = d(37, 38, 46, typeParamMismatchMessage("Converter<String,Object>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
                                                "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         // Line 47 (0-based: 46): "    private Converter<Object, Integer> delegate;" - Converter<String, Integer> vs <Object, Integer>
-        Diagnostic firstTypeParamMismatch = d(46, 39, 47, message, DiagnosticSeverity.Error,
+        Diagnostic firstTypeParamMismatch = d(46, 39, 47, typeParamMismatchMessage("Converter<Object,Integer>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
                                               "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         // Line 56 (0-based: 55): "    private Converter<Integer, String> delegate;" - Converter<String, Integer> vs <Integer, String>
-        Diagnostic swappedTypeParams = d(55, 39, 47, message, DiagnosticSeverity.Error,
+        Diagnostic swappedTypeParams = d(55, 39, 47, typeParamMismatchMessage("Converter<Integer,String>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
                                          "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, secondTypeParamMismatch,
@@ -659,7 +657,7 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
 
         // Line 56 (0-based: 55): "    private Pipeline<Object, Integer> delegate;" - Pipeline<String, Integer> vs <Object, Integer>
         Diagnostic typeParamMismatch = d(55, 38, 46,
-                                         "Delegate type 'Pipeline' does not implement the decorated type 'Pipeline' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.",
+                                         "Delegate type 'Pipeline<Object,Integer>' does not have exactly the same type parameters as the decorated type 'Pipeline<String,Integer>'",
                                          DiagnosticSeverity.Error,
                                          "jakarta-cdi",
                                          "InvalidDelegateDecoratedTypeParamMismatch");
@@ -683,18 +681,16 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        String message = "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.";
-
         // Line 37 (0-based: 36): "    private Processor<Object[]> delegate;" - Processor<String[]> vs <Object[]>
-        Diagnostic elementTypeMismatch = d(36, 32, 40, message, DiagnosticSeverity.Error,
+        Diagnostic elementTypeMismatch = d(36, 32, 40, typeParamMismatchMessage("Processor<Object[]>", "Processor<String[]>"), DiagnosticSeverity.Error,
                                            "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         // Line 46 (0-based: 45): "    private Processor<String> delegate;" - Processor<String[]> vs <String>
-        Diagnostic arrayVersusNonArray = d(45, 30, 38, message, DiagnosticSeverity.Error,
+        Diagnostic arrayVersusNonArray = d(45, 30, 38, typeParamMismatchMessage("Processor<String>", "Processor<String[]>"), DiagnosticSeverity.Error,
                                            "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         // Line 55 (0-based: 54): "    private Processor<String[][]> delegate;" - Processor<String[]> vs <String[][]>
-        Diagnostic dimensionMismatch = d(54, 34, 42, message, DiagnosticSeverity.Error,
+        Diagnostic dimensionMismatch = d(54, 34, 42, typeParamMismatchMessage("Processor<String[][]>", "Processor<String[]>"), DiagnosticSeverity.Error,
                                          "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, elementTypeMismatch,
@@ -718,16 +714,19 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        String message = "Delegate type 'Processor' does not implement the decorated type 'Processor' with exactly the same type parameters. The delegate type of a decorator must implement or extend all the decorated types of the decorator.";
-
         // Line 21 (0-based: 20): "    private Processor delegate;" - raw Processor vs Processor<String>
-        Diagnostic rawFieldDelegate = d(20, 22, 30, message, DiagnosticSeverity.Error,
+        Diagnostic rawFieldDelegate = d(20, 22, 30, typeParamMismatchMessage("Processor", "Processor<String>"), DiagnosticSeverity.Error,
                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         // Line 30 (0-based: 29): "    public void setDelegate(@Delegate Processor delegate) {" - raw Processor vs Processor<String>
-        Diagnostic rawMethodDelegate = d(29, 48, 56, message, DiagnosticSeverity.Error,
+        Diagnostic rawMethodDelegate = d(29, 48, 56, typeParamMismatchMessage("Processor", "Processor<String>"), DiagnosticSeverity.Error,
                                          "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, rawFieldDelegate, rawMethodDelegate);
+    }
+
+    private static String typeParamMismatchMessage(String delegateType, String decoratedType) {
+        return "Delegate type '" + delegateType + "' does not have exactly the same type parameters as the decorated type '"
+               + decoratedType + "'";
     }
 }

@@ -320,9 +320,10 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                     return;
                 }
             }
-            if (hasTypeParamMismatch(decoratorClass, delegateType, rawTypeSignature)) {
+            String mismatchedDecoratedType = findTypeParamMismatch(decoratorClass, delegateType, rawTypeSignature);
+            if (mismatchedDecoratedType != null) {
                 reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDelegateDecoratedTypeParamMismatch.name(),
-                                          delegateType.getElementName(), delegateType.getElementName(),
+                                          Signature.toString(rawTypeSignature), mismatchedDecoratedType,
                                           ErrorCode.InvalidDelegateDecoratedTypeParamMismatch,
                                           uri, context, diagnostics);
             }
@@ -332,9 +333,9 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
     }
 
     /**
-     * Returns true when the delegate is declared as one of the decorator's directly implemented
-     * parameterized interfaces but with different type arguments (e.g. a {@code Processor<Object>}
-     * or raw {@code Processor} delegate for a decorator implementing {@code Processor<String>}).
+     * Finds the decorator's directly implemented parameterized interface that the delegate is declared
+     * as, but with different type arguments (e.g. a {@code Processor<Object>} or raw {@code Processor}
+     * delegate for a decorator implementing {@code Processor<String>}).
      *
      * The comparison is only possible when the delegate is declared as the decorated type itself;
      * for a subtype the type parameters are fixed by its own declaration.
@@ -342,10 +343,11 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
      * @param decoratorClass the decorator class
      * @param delegateType the resolved delegate type
      * @param delegateTypeSignature the delegate's declared type signature, including type arguments
-     * @return true if the type arguments differ
+     * @return the decorated type including its type arguments (e.g. {@code Processor<String>}),
+     *         or null if there is no type argument mismatch
      * @throws JavaModelException if an error occurs accessing the Java model
      */
-    private boolean hasTypeParamMismatch(IType decoratorClass, IType delegateType,
+    private String findTypeParamMismatch(IType decoratorClass, IType delegateType,
                                          String delegateTypeSignature) throws JavaModelException {
         String[] delegateTypeArgs = Signature.getTypeArguments(delegateTypeSignature);
         String delegateFQN = delegateType.getFullyQualifiedName('.');
@@ -354,10 +356,10 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
             if (decoratedArgs.length > 0
                 && delegateFQN.equals(JDTTypeUtils.getResolvedTypeName(decoratedInterfaceSignature, decoratorClass))
                 && !typeArgsMatch(decoratorClass, decoratedArgs, delegateTypeArgs)) {
-                return true;
+                return Signature.toString(decoratedInterfaceSignature);
             }
         }
-        return false;
+        return null;
     }
 
     /**
