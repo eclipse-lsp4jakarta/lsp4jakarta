@@ -490,4 +490,243 @@ public class DecoratorDelegateTest extends BaseJakartaTest {
         // No diagnostics expected: @Delegate inside a @Decorator class is valid
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
+
+    /**
+     * Test that a decorator whose delegate type has a mismatched generic type parameter
+     * triggers an InvalidDelegateDecoratedTypeParamMismatch diagnostic.
+     *
+     * Per CDI 3.0 spec section 8.1.3:
+     * "The delegate type of a decorator must implement or extend every decorated type
+     * with exactly the same type parameters."
+     *
+     * Example: @Decorator class implements Processor<String> but the delegate field is
+     * Processor<Object>.
+     *
+     * Expected: Error on the delegate field.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    private Processor<Object> delegate;"
+        // field name "delegate" starts at column 30, ends at column 38
+        Diagnostic typeParamMismatchDiagnostic = d(20, 30, 38,
+                                                   "Delegate type 'Processor<Object>' does not have exactly the same type parameters as the decorated type 'Processor<String>'",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose delegate type has the exact same generic type parameter
+     * as the decorated type does NOT trigger a diagnostic.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> delegate matches Processor<String> decorated type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has a mismatched generic
+     * type parameter triggers an InvalidDelegateDecoratedTypeParamMismatch diagnostic.
+     *
+     * Expected: Error on the delegate method parameter.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateTypeParamMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    public void setDelegate(@Delegate Processor<Object> delegate) {"
+        // parameter name "delegate" starts at column 56, ends at column 64
+        Diagnostic typeParamMismatchDiagnostic = d(20, 56, 64,
+                                                   "Delegate type 'Processor<Object>' does not have exactly the same type parameters as the decorated type 'Processor<String>'",
+                                                   DiagnosticSeverity.Error,
+                                                   "jakarta-cdi",
+                                                   "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeParamMismatchDiagnostic);
+    }
+
+    /**
+     * Test that a decorator whose method-level @Delegate parameter has the exact same generic
+     * type parameter as the decorated type does NOT trigger a diagnostic.
+     *
+     * Expected: No diagnostics.
+     */
+    @Test
+    public void testDecoratorMethodDelegateTypeParamMatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMethodDelegateMatchingTypeParam.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: Processor<String> parameter matches Processor<String> decorated type
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    /**
+     * Test that a decorator implementing an interface with a list of type arguments
+     * (Converter<String, Integer>) reports a diagnostic when any one of the delegate's type
+     * arguments differs, including when the same arguments appear in a different order.
+     * Decorators whose delegate type arguments all match (including a fully qualified
+     * name in the implements clause) must not be reported.
+     *
+     * Expected: Error on the second-argument, first-argument and swapped-argument delegates only.
+     */
+    @Test
+    public void testDecoratorDelegateMultipleTypeParams() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMultipleTypeParams.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 38 (0-based: 37): "    private Converter<String, Object> delegate;" - Converter<String, Integer> vs <String, Object>
+        Diagnostic secondTypeParamMismatch = d(37, 38, 46, typeParamMismatchMessage("Converter<String,Object>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
+                                               "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 47 (0-based: 46): "    private Converter<Object, Integer> delegate;" - Converter<String, Integer> vs <Object, Integer>
+        Diagnostic firstTypeParamMismatch = d(46, 39, 47, typeParamMismatchMessage("Converter<Object,Integer>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
+                                              "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 56 (0-based: 55): "    private Converter<Integer, String> delegate;" - Converter<String, Integer> vs <Integer, String>
+        Diagnostic swappedTypeParams = d(55, 39, 47, typeParamMismatchMessage("Converter<Integer,String>", "Converter<String,Integer>"), DiagnosticSeverity.Error,
+                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, secondTypeParamMismatch,
+                              firstTypeParamMismatch, swappedTypeParams);
+    }
+
+    /**
+     * Test decorators with two or more decorated types. Per CDI 3.0 spec section 8.1.3, the
+     * delegate type must implement or extend every decorated type, with exactly the same
+     * type parameters.
+     *
+     * Expected:
+     * - no diagnostic when the delegate extends all decorated types (with and without matching type parameters)
+     * - an assignability error when the delegate misses the first or the second decorated type
+     * - a type parameter mismatch error when the delegate extends all decorated types but with different type arguments
+     */
+    @Test
+    public void testDecoratorWithMultipleDecoratedTypes() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithMultipleDecoratedTypes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 29 (0-based: 28): "    private Processor<String> delegate;" - Processor does not extend Converter
+        Diagnostic missingSecondDecoratedType = d(28, 30, 38,
+                                                  "Delegate type 'Processor' does not implement the decorated type 'Converter'. A delegate must implement or extend the decorated type(s).",
+                                                  DiagnosticSeverity.Error,
+                                                  "jakarta-cdi",
+                                                  "InvalidDecoratorDelegateTypeAssignability");
+
+        // Line 38 (0-based: 37): "    private Converter<String, Integer> delegate;" - Converter does not extend Processor
+        Diagnostic missingFirstDecoratedType = d(37, 39, 47,
+                                                 "Delegate type 'Converter' does not implement the decorated type 'Processor'. A delegate must implement or extend the decorated type(s).",
+                                                 DiagnosticSeverity.Error,
+                                                 "jakarta-cdi",
+                                                 "InvalidDecoratorDelegateTypeAssignability");
+
+        // Line 56 (0-based: 55): "    private Pipeline<Object, Integer> delegate;" - Pipeline<String, Integer> vs <Object, Integer>
+        Diagnostic typeParamMismatch = d(55, 38, 46,
+                                         "Delegate type 'Pipeline<Object,Integer>' does not have exactly the same type parameters as the decorated type 'Pipeline<String,Integer>'",
+                                         DiagnosticSeverity.Error,
+                                         "jakarta-cdi",
+                                         "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, missingSecondDecoratedType,
+                              missingFirstDecoratedType, typeParamMismatch);
+    }
+
+    /**
+     * Test decorators whose decorated type has an array type argument (Processor<String[]>).
+     *
+     * Expected: no diagnostic when the array type argument matches (including primitive arrays);
+     * an error when the element type, the array-ness or the array dimensions differ.
+     */
+    @Test
+    public void testDecoratorDelegateArrayTypeParams() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithArrayTypeParams.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 37 (0-based: 36): "    private Processor<Object[]> delegate;" - Processor<String[]> vs <Object[]>
+        Diagnostic elementTypeMismatch = d(36, 32, 40, typeParamMismatchMessage("Processor<Object[]>", "Processor<String[]>"), DiagnosticSeverity.Error,
+                                           "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 46 (0-based: 45): "    private Processor<String> delegate;" - Processor<String[]> vs <String>
+        Diagnostic arrayVersusNonArray = d(45, 30, 38, typeParamMismatchMessage("Processor<String>", "Processor<String[]>"), DiagnosticSeverity.Error,
+                                           "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 55 (0-based: 54): "    private Processor<String[][]> delegate;" - Processor<String[]> vs <String[][]>
+        Diagnostic dimensionMismatch = d(54, 34, 42, typeParamMismatchMessage("Processor<String[][]>", "Processor<String[]>"), DiagnosticSeverity.Error,
+                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, elementTypeMismatch,
+                              arrayVersusNonArray, dimensionMismatch);
+    }
+
+    /**
+     * Test a raw delegate type. A raw Processor delegate does not have exactly the same type
+     * parameters as a decorated type of Processor<String>, but is valid when the decorated
+     * type is raw as well.
+     *
+     * Expected: an error on the raw field and raw method parameter delegates of a Processor<String>
+     * decorator; no diagnostic for the raw delegate of a raw Processor decorator.
+     */
+    @Test
+    public void testDecoratorRawDelegateType() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(new Path("src/main/java/io/openliberty/sample/jakarta/cdi/decorator/assignabletype/DecoratorWithRawDelegate.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 21 (0-based: 20): "    private Processor delegate;" - raw Processor vs Processor<String>
+        Diagnostic rawFieldDelegate = d(20, 22, 30, typeParamMismatchMessage("Processor", "Processor<String>"), DiagnosticSeverity.Error,
+                                        "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        // Line 30 (0-based: 29): "    public void setDelegate(@Delegate Processor delegate) {" - raw Processor vs Processor<String>
+        Diagnostic rawMethodDelegate = d(29, 48, 56, typeParamMismatchMessage("Processor", "Processor<String>"), DiagnosticSeverity.Error,
+                                         "jakarta-cdi", "InvalidDelegateDecoratedTypeParamMismatch");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, rawFieldDelegate, rawMethodDelegate);
+    }
+
+    private static String typeParamMismatchMessage(String delegateType, String decoratedType) {
+        return "Delegate type '" + delegateType + "' does not have exactly the same type parameters as the decorated type '"
+               + decoratedType + "'";
+    }
 }

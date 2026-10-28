@@ -13,9 +13,11 @@
 package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -41,7 +43,6 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
-import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
@@ -49,7 +50,13 @@ import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
  *
  * Validates:
  * 1. A decorator must declare exactly one injection point annotated with @Delegate
- * 2. The delegate type must implement or extend all decorated types of the decorator
+ * 2. The delegate type must implement or extend all decorated types of the decorator,
+ * with exactly the same type parameters
+ *
+ * TODO: Type parameter checking is currently performed only when the delegate is
+ * declared as the decorated type itself. Checking for delegates declared as a
+ * subtype of a decorated type, and for decorators with multiple decorated types,
+ * is planned for a future update.
  *
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#delegate_attribute
  * @see https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#decorator_bean
@@ -295,12 +302,7 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                           uri, context, diagnostics);
                 return;
             }
-            String delegateTypeName = ManagedBean.getFullyQualifiedClassName(decoratorClass,
-                                                                             Signature.toString(rawTypeSignature));
-            if (delegateTypeName == null) {
-                return; // Cannot resolve delegate type, skip validation
-            }
-            IType delegateType = decoratorClass.getJavaProject().findType(delegateTypeName);
+            IType delegateType = DiagnosticUtils.resolveTypeFromSignature(decoratorClass, rawTypeSignature);
             if (delegateType == null) {
                 return; // Cannot resolve delegate type, skip validation
             }
@@ -323,9 +325,46 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                     return;
                 }
             }
+            String mismatchedDecoratedType = findTypeParamMismatch(decoratorClass, delegateType, rawTypeSignature);
+            if (mismatchedDecoratedType != null) {
+                reportDecoratorDiagnostic(delegateElement, ErrorCode.InvalidDelegateDecoratedTypeParamMismatch.name(),
+                                          Signature.toString(rawTypeSignature), mismatchedDecoratedType,
+                                          ErrorCode.InvalidDelegateDecoratedTypeParamMismatch,
+                                          uri, context, diagnostics);
+            }
         } catch (CoreException e) {
             LOGGER.log(Level.WARNING, "Error validating delegate type assignability", e);
         }
+    }
+
+    /**
+     * Finds the decorator's directly implemented parameterized interface that the delegate is declared
+     * as, but with different type arguments (e.g. a {@code Processor<Object>} or raw {@code Processor}
+     * delegate for a decorator implementing {@code Processor<String>}).
+     *
+     * The comparison is only possible when the delegate is declared as the decorated type itself;
+     * for a subtype the type parameters are fixed by its own declaration.
+     *
+     * @param decoratorClass the decorator class
+     * @param delegateType the resolved delegate type
+     * @param delegateTypeSignature the delegate's declared type signature, including type arguments
+     * @return the decorated type including its type arguments (e.g. {@code Processor<String>}),
+     *         or null if there is no type argument mismatch
+     * @throws JavaModelException if an error occurs accessing the Java model
+     */
+    private String findTypeParamMismatch(IType decoratorClass, IType delegateType,
+                                         String delegateTypeSignature) throws JavaModelException {
+        String[] delegateTypeArgs = Signature.getTypeArguments(delegateTypeSignature);
+        String delegateFQN = delegateType.getFullyQualifiedName('.');
+        for (String decoratedInterfaceSignature : decoratorClass.getSuperInterfaceTypeSignatures()) {
+            String[] decoratedArgs = Signature.getTypeArguments(decoratedInterfaceSignature);
+            if (decoratedArgs.length > 0
+                && delegateFQN.equals(JDTTypeUtils.getResolvedTypeName(decoratedInterfaceSignature, decoratorClass))
+                && !typeArgsMatch(decoratorClass, decoratedArgs, delegateTypeArgs)) {
+                return Signature.toString(decoratedInterfaceSignature);
+            }
+        }
+        return null;
     }
 
     /**
@@ -351,6 +390,31 @@ public class CdiDecoratorDiagnosticsParticipant implements IJavaDiagnosticsParti
                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                  errorCode,
                                                  DiagnosticSeverity.Error));
+    }
+
+    /**
+     * Returns true when both type-argument signature arrays refer to the same types, element by element.
+     * Type names are resolved against the decorator class so that simple and qualified names compare equal.
+     * Wildcards and names that cannot be resolved (e.g. type variables) are compared by signature text.
+     *
+     * @param decoratorClass the decorator class used to resolve type names
+     * @param decoratedArgs type arguments from the decorator's {@code implements} clause
+     * @param delegateArgs type arguments from the delegate injection point
+     * @return true if the type arguments are the same
+     */
+    private boolean typeArgsMatch(IType decoratorClass, String[] decoratedArgs, String[] delegateArgs) {
+        return resolveTypeArguments(decoratorClass, decoratedArgs).equals(resolveTypeArguments(decoratorClass, delegateArgs));
+    }
+
+    private List<String> resolveTypeArguments(IType decoratorClass, String[] typeArgSignatures) {
+        return Arrays.stream(typeArgSignatures).map(sig -> {
+            if (Signature.getTypeSignatureKind(sig) == Signature.WILDCARD_TYPE_SIGNATURE) {
+                return sig;
+            }
+            String resolved = JDTTypeUtils.getResolvedTypeName(sig, decoratorClass);
+            // getResolvedTypeName ignores array dimensions, so add them back to tell String[] from String
+            return resolved != null ? resolved + "[]".repeat(Signature.getArrayCount(sig)) : sig;
+        }).collect(Collectors.toList());
     }
 
     /**
