@@ -17,21 +17,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -111,6 +107,9 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     // Validate interceptor method modifiers
                     validateInterceptorMethodModifiers(context, uri, diagnostics, type, method);
 
+                    // Validate lifecycle callback method signatures
+                    validateLifecycleCallbackMethodSignature(context, uri, diagnostics, type, method);
+
                     // Collect methods by annotation type for duplicate detection
                     List<String> interceptorAnnotations = getInterceptorMethodAnnotations(type, method);
                     for (String annotationFqn : interceptorAnnotations) {
@@ -121,21 +120,48 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 // Validate that only one method per interceptor annotation type exists
                 validateUniqueInterceptorMethods(context, uri, diagnostics, methodsByAnnotation);
             }
+
+            // @AroundConstruct is only valid in classes declared with @Interceptor (and their superclasses).
+            if (!InterModuleCommonUtils.isInterceptorType(type, unit)) {
+                checkAroundConstructInTargetClass(type, unit, uri, diagnostics, context, monitor);
+                checkLifecycleCallbackMethodSignatureInTargetClass(type, unit, uri, diagnostics, context, monitor);
+            }
+
+            // When a non-interceptor type is a superclass of an @Interceptor class in a
+            // different file, its lifecycle callback methods must still satisfy the spec
+            // signature constraint (Jakarta Interceptors 2.0).
+            if (!isInterceptorType && InterModuleCommonUtils.hasInterceptorSubclass(type, monitor)) {
+                for (IMethod method : type.getMethods()) {
+                    validateLifecycleCallbackMethodSignature(context, uri, diagnostics, type, method);
+                }
+            }
+
         }
         List<MethodDeclaration> allMethodDeclarations = ASTUtils.getMethodDeclarations(unit);
-        //Used to get the list of method declarations for interceptor methods that doesn't use proceed method
-        List<MethodDeclaration> invocationContextMethodInvocations = allMethodDeclarations.stream().filter(methodDecl -> {
+        List<MethodDeclaration> invocationContextMethodInvocations = new ArrayList<>();
+        List<MethodDeclaration> proceedNotInTryCatch = new ArrayList<>();
+        for (MethodDeclaration methodDecl : allMethodDeclarations) {
             try {
-                return isMatchedInvocationContextMethods(unit, methodDecl);
+                if (isMatchedInvocationContextMethods(unit, methodDecl)) {
+                    invocationContextMethodInvocations.add(methodDecl);
+                } else if (ASTUtils.isMethodInvocationOutsideTryCatch(methodDecl, Constants.PROCEED, Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT)) {
+                    proceedNotInTryCatch.add(methodDecl);
+                }
             } catch (JavaModelException e) {
-                return false;
+                LOGGER.log(Level.WARNING, "Unable to validate interceptor method proceed usage", e);
             }
-        }).collect(Collectors.toList());
+        }
         for (MethodDeclaration m : invocationContextMethodInvocations) {
             Range range = JDTUtils.toRange(unit, m.getName().getStartPosition(), m.getName().getLength());
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidInterceptorMethodsProceedMissing"),
                                                      range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorMethodsProceedMissing,
                                                      DiagnosticSeverity.Error));
+        }
+        for (MethodDeclaration m : proceedNotInTryCatch) {
+            Range range = JDTUtils.toRange(unit, m.getName().getStartPosition(), m.getName().getLength());
+            diagnostics.add(context.createDiagnostic(uri, Messages.getMessage("InvalidInterceptorProceedNotInTryCatch"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, ErrorCode.InvalidInterceptorProceedNotInTryCatch,
+                                                     DiagnosticSeverity.Warning));
         }
         return diagnostics;
     }
@@ -155,17 +181,7 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
      * @throws JavaModelException
      */
     private boolean isMatchedInvocationContextMethods(ICompilationUnit unit, MethodDeclaration methodDecl) throws JavaModelException {
-        IType targetClass = null;
-        IMethodBinding binding = methodDecl.resolveBinding();
-        if (binding != null) {
-            ITypeBinding declaringClass = binding.getDeclaringClass();
-            if (declaringClass != null) {
-                IJavaElement javaElement = declaringClass.getJavaElement();
-                if (javaElement instanceof IType) {
-                    targetClass = (IType) javaElement;
-                }
-            }
-        }
+        IType targetClass = ASTUtils.getDeclaringType(methodDecl);
         if (InterModuleCommonUtils.isInterceptorReferencedType(targetClass, unit)) {
             for (Object modifier : methodDecl.modifiers()) {
                 if (modifier instanceof Annotation) {
@@ -337,6 +353,55 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
+     * Validates that a lifecycle callback interceptor method has the required signature.
+     * According to Jakarta Interceptors 2.0 specification, lifecycle callback interceptor
+     * methods declared in an interceptor class or superclass must have one of the signatures:
+     * <ul>
+     * <li>{@code void <METHOD>(InvocationContext)}</li>
+     * <li>{@code Object <METHOD>(InvocationContext)}</li>
+     * </ul>
+     *
+     * @param context the diagnostics context
+     * @param uri the file URI
+     * @param diagnostics the list to add diagnostics to
+     * @param type the declaring type
+     * @param method the method to validate
+     * @throws JavaModelException if there's an error accessing the Java model
+     */
+    private void validateLifecycleCallbackMethodSignature(JavaDiagnosticsContext context, String uri,
+                                                          List<Diagnostic> diagnostics, IType type,
+                                                          IMethod method) throws JavaModelException {
+        // Only validate lifecycle callback methods
+        List<String> lifecycleAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                       Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                       Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS);
+        if (lifecycleAnnotations.isEmpty()) {
+            return;
+        }
+        boolean validSignature = false;
+        ILocalVariable[] params = method.getParameters();
+        if (params.length == 1) {
+            String paramSimpleName = DiagnosticUtils.getDataTypeName(params[0].getTypeSignature());
+            String resolvedParamType = ManagedBean.getFullyQualifiedClassName(type, paramSimpleName);
+            if (Constants.JAKARTA_INTERCEPTOR_INVOCATION_CONTEXT.equals(resolvedParamType)) {
+                String returnType = method.getReturnType();
+                boolean isVoid = Constants.VOID_RETURN_TYPE.equals(returnType);
+                boolean isObject = Constants.JAVA_LANG_OBJECT.equals(
+                                                                     ManagedBean.getFullyQualifiedClassName(type, DiagnosticUtils.getDataTypeName(returnType)));
+                validSignature = isVoid || isObject;
+            }
+        }
+        if (!validSignature) {
+            Range range = PositionUtils.toNameRange(method, context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage("InvalidLifecycleCallbackInterceptorMethodSignature"),
+                                                     range, Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidLifecycleCallbackInterceptorMethodSignature,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
      * Checks if an interceptor class has a @Priority annotation with a negative value.
      * According to Jakarta Interceptors 2.0 specification, negative priority values are
      * reserved for future use and should not be used.
@@ -478,5 +543,94 @@ public class InterceptorDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 return false;
             }
         });
+    }
+
+    /**
+     * Checks if a non-interceptor class declares a method annotated with
+     * {@code @AroundConstruct}, which is forbidden by the Jakarta Interceptors 2.0
+     * specification. The diagnostic is suppressed when the class is a superclass of
+     * an {@code @Interceptor}-annotated subclass declared in a different source file
+     * (spec permits {@code @AroundConstruct} in interceptor superclasses).
+     *
+     * @param type the non-interceptor type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkAroundConstructInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                   List<Diagnostic> diagnostics,
+                                                   JavaDiagnosticsContext context,
+                                                   IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
+        for (IMethod method : type.getMethods()) {
+            for (IAnnotation annotation : method.getAnnotations()) {
+                if (DiagnosticUtils.isMatchedAnnotation(unit, annotation, Constants.AROUND_CONSTRUCT_FQ_NAME)) {
+                    Range range = PositionUtils.toNameRange(method, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage(ErrorCode.InvalidAroundConstructInTargetClass.name()),
+                                                             range,
+                                                             Constants.DIAGNOSTIC_SOURCE,
+                                                             ErrorCode.InvalidAroundConstructInTargetClass,
+                                                             DiagnosticSeverity.Error));
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if a non-interceptor class (target class) or one of its superclasses
+     * declares a lifecycle callback interceptor method (@PostConstruct, @PreDestroy,
+     * @AroundConstruct) that does not have the required signature {@code void <METHOD>()}.
+     *
+     * <p>According to the Jakarta Interceptors 2.0 specification, lifecycle callback
+     * interceptor methods declared in a target class or in a superclass of a target class
+     * must have the following signature: {@code void <METHOD>()}. That is, the method
+     * must return void and must declare no parameters.</p>
+     *
+     * @param type the type to check
+     * @param unit the compilation unit
+     * @param uri the URI of the file
+     * @param diagnostics the list to add diagnostics to
+     * @param context the diagnostics context
+     * @param monitor the progress monitor
+     * @throws CoreException if there's an error accessing the Java model
+     */
+    private void checkLifecycleCallbackMethodSignatureInTargetClass(IType type, ICompilationUnit unit, String uri,
+                                                                    List<Diagnostic> diagnostics,
+                                                                    JavaDiagnosticsContext context,
+                                                                    IProgressMonitor monitor) throws CoreException {
+        // Evaluate once for the type - suppress target class signature check if an @Interceptor subclass exists
+        boolean interceptorSubclassExists = InterModuleCommonUtils.hasInterceptorSubclass(type, monitor);
+        if (interceptorSubclassExists) {
+            return;
+        }
+        for (IMethod method : type.getMethods()) {
+            List<String> lifecycleAnnotations = DiagnosticUtils.getMatchedJavaElementNames(type,
+                                                                                           Stream.of(method.getAnnotations()).map(IAnnotation::getElementName).toArray(String[]::new),
+                                                                                           Constants.LIFECYCLE_CALLBACK_INTERCEPTOR_METHODS);
+            if (lifecycleAnnotations.isEmpty()) {
+                continue;
+            }
+            // Violation: method has parameters or non-void return type
+            boolean hasParams = method.getNumberOfParameters() > 0;
+            boolean isNonVoid = !Constants.VOID_RETURN_TYPE.equals(method.getReturnType());
+            if (hasParams || isNonVoid) {
+                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage(ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass.name()),
+                                                         range,
+                                                         Constants.DIAGNOSTIC_SOURCE,
+                                                         ErrorCode.InvalidLifecycleCallbackMethodSignatureInTargetClass,
+                                                         DiagnosticSeverity.Error));
+            }
+        }
     }
 }

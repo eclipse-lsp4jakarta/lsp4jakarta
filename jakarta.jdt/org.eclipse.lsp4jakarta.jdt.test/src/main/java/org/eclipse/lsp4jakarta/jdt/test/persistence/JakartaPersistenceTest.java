@@ -1549,7 +1549,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     public void testNamedEntityGraphOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/NamedEntityGraphOnValidEntityClass.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitygraph/NamedEntityGraphUnique.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -1600,8 +1600,11 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                           "@NamedEntityGraph must only be applied to a class annotated with @Entity.",
                                           DiagnosticSeverity.Error, "jakarta-persistence", "NamedEntityGraphOnNonEntityClass",
                                           diagnosticsData);
+        Diagnostic duplicateDiagnostic = d(4, 0, 38,
+                                           "The @NamedEntityGraph name 'Graph.User' must be unique within the persistence unit.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic, duplicateDiagnostic);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, expectedDiagnostic);
         TextEdit insertEntityTextEdit = te(2, 0, 4, 0, "import jakarta.persistence.Entity;\nimport jakarta.persistence.NamedEntityGraph;\n\n@Entity\n");
@@ -1674,7 +1677,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
     public void testNamedEntityGraphsOnValidEntityClass() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
-                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/NamedEntityGraphsOnValidEntityClass.java"));
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/entitygraph/NamedEntityGraphsContainerUnique.java"));
         String uri = javaFile.getLocation().toFile().toURI().toString();
 
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
@@ -1725,8 +1728,14 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                           "@NamedEntityGraphs must only be applied to a class annotated with @Entity.",
                                           DiagnosticSeverity.Error, "jakarta-persistence", "NamedEntityGraphsOnNonEntityClass",
                                           diagnosticsData);
+        Diagnostic duplicateUser = d(5, 21, 59,
+                                     "The @NamedEntityGraph name 'Graph.User' must be unique within the persistence unit.",
+                                     DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
+        Diagnostic duplicateOrder = d(5, 61, 100,
+                                      "The @NamedEntityGraph name 'Graph.Order' must be unique within the persistence unit.",
+                                      DiagnosticSeverity.Error, "jakarta-persistence", "DuplicateNamedEntityGraphName");
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, expectedDiagnostic, duplicateUser, duplicateOrder);
 
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, expectedDiagnostic);
         TextEdit insertEntityTextEdit = te(2, 0, 5, 0,
@@ -1797,6 +1806,373 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         TextEdit removeTextEdit = te(5, 0, 6, 0, "");
         CodeAction removeCodeAction = ca(uri, "Remove @NamedNativeQueries", expectedDiagnostic, removeTextEdit);
         assertJavaCodeAction(codeActionParams, IJDT_UTILS, insertEntityCodeAction, insertMappedSuperclassCodeAction, removeCodeAction);
+    }
+
+    @Test
+    public void testIdClassMemberAlignmentValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberAlignmentValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id fields perfectly match key class members by name and type — only the @Embeddable diagnostic is expected.
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(23, 0, 45,
+                                                      "The primary key class 'IdClassMemberAlignmentValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassMemberNameMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberNameMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id field "firstName" has no match in key class — single diagnostic on the @Id field.
+        Diagnostic firstNameMissingInKeyClassDiagnostic = d(28, 19, 28,
+                                                            "The entity @Id field or property 'firstName' does not have a corresponding member in the @IdClass key class.",
+                                                            DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberMissingInKeyClass");
+
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(24, 0, 43,
+                                                      "The primary key class 'IdClassMemberNameMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstNameMissingInKeyClassDiagnostic, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassMemberTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassMemberTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Entity @Id field "firstName" is String but key class field is int.
+        Diagnostic typeMismatchDiagnostic = d(28, 19, 28,
+                                              "The type of @Id field or property 'firstName' in the entity ('java.lang.String') does not match the type of the corresponding member in the @IdClass key class ('int').",
+                                              DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(24, 0, 43,
+                                                      "The primary key class 'IdClassMemberTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassManyToOneValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassManyToOneValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @ManyToOne @Id field "dept" resolves to Department's PK type (int),
+        // and the key class holds int — types match, only the @Embeddable diagnostic is expected.
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 39,
+                                                      "The primary key class 'IdClassManyToOneValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassManyToOneTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassManyToOneTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @ManyToOne @Id field "dept" resolves to Department's PK type (int),
+        // but the key class holds String — type mismatch expected.
+        Diagnostic deptTypeMismatchDiagnostic = d(37, 23, 27,
+                                                  "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        // Entity @Id field "active" is boolean but key class field is String.
+        Diagnostic activeTypeMismatchDiagnostic = d(40, 20, 26,
+                                                    "The type of @Id field or property 'active' in the entity ('boolean') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                    DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(29, 0, 46,
+                                                      "The primary key class 'IdClassManyToOneTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, activeTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassSingleIdManyToOneTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassSingleIdManyToOne.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Derived identity: the entity has a single @Id (@ManyToOne "dept") alongside @IdClass.
+        // Alignment must still be validated: Department's PK type is int, key class holds String.
+        Diagnostic deptTypeMismatchDiagnostic = d(31, 23, 27,
+                                                  "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 42,
+                                                      "The primary key class 'IdClassSingleIdManyToOnePK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassOneToOneValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassOneToOneValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne @Id field "dept" resolves to Department's PK type (int),
+        // and the key class holds int — types match, only the @Embeddable diagnostic is expected.
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 38,
+                                                      "The primary key class 'IdClassOneToOneValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassOneToOneTypeMismatch() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassOneToOneTypeMismatch.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @OneToOne @Id field "dept" resolves to Department's PK type (int),
+        // but the key class holds String — type mismatch expected.
+        Diagnostic deptTypeMismatchDiagnostic = d(35, 23, 27,
+                                                  "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
+
+        // The key class is not annotated with @Embeddable.
+        Diagnostic idClassNotEmbeddableDiagnostic = d(27, 0, 45,
+                                                      "The primary key class 'IdClassOneToOneTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testIdClassManyToOneEmbeddedIdValid() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/idclass/IdClassManyToOneEmbeddedIdValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // @ManyToOne @Id field "order" points to OrderWithEmbeddedId, which uses @EmbeddedId
+        // of type OrderEmbeddedId. The key class holds OrderEmbeddedId for that field — types
+        // match, so no type-mismatch diagnostic is expected (spec §2.4.1.1, third bullet).
+        // Only the @Embeddable diagnostic fires (key class is not annotated with @Embeddable).
+        Diagnostic idClassNotEmbeddableDiagnostic = d(27, 0, 49,
+                                                      "The primary key class 'IdClassManyToOneEmbeddedIdValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
+                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+    }
+
+    @Test
+    public void testInvalidIdClassStructure() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InvalidIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic idClassMustBePublic = d(20, 6, 20,
+                                           "A class referenced by @IdClass must be public.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBePublic");
+        Diagnostic idClassMustHavePublicNoArgConstructor = d(20, 6, 20,
+                                                             "A class referenced by @IdClass must have a public no-argument constructor.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustHavePublicNoArgConstructor");
+        Diagnostic idClassMustBeSerializable = d(20, 6, 20,
+                                                 "A class referenced by @IdClass must implement java.io.Serializable.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBeSerializable");
+        Diagnostic idClassMustDeclareEquals = d(20, 6, 20,
+                                                "A class referenced by @IdClass must declare an equals method.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareEquals");
+        Diagnostic idClassMustDeclareHashCode = d(20, 6, 20,
+                                                  "A class referenced by @IdClass must declare a hashCode method.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareHashCode");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              idClassMustBePublic, idClassMustHavePublicNoArgConstructor,
+                              idClassMustBeSerializable, idClassMustDeclareEquals,
+                              idClassMustDeclareHashCode);
+    }
+
+    @Test
+    public void testInvalidMappedSuperclassIdClassStructure() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/InvalidMappedSuperclassIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic idClassMustBePublic = d(17, 6, 36,
+                                           "A class referenced by @IdClass must be public.",
+                                           DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBePublic");
+        Diagnostic idClassMustHavePublicNoArgConstructor = d(17, 6, 36,
+                                                             "A class referenced by @IdClass must have a public no-argument constructor.",
+                                                             DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustHavePublicNoArgConstructor");
+        Diagnostic idClassMustBeSerializable = d(17, 6, 36,
+                                                 "A class referenced by @IdClass must implement java.io.Serializable.",
+                                                 DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustBeSerializable");
+        Diagnostic idClassMustDeclareEquals = d(17, 6, 36,
+                                                "A class referenced by @IdClass must declare an equals method.",
+                                                DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareEquals");
+        Diagnostic idClassMustDeclareHashCode = d(17, 6, 36,
+                                                  "A class referenced by @IdClass must declare a hashCode method.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMustDeclareHashCode");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              idClassMustBePublic, idClassMustHavePublicNoArgConstructor,
+                              idClassMustBeSerializable, idClassMustDeclareEquals,
+                              idClassMustDeclareHashCode);
+    }
+
+    @Test
+    public void testValidIdClassInSeparateFile() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ValidIdClassStructure.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    // -------------------------------------------------------------------------
+    // @Convert annotation diagnostics
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void convertAnnotationMissingConverterOrDisable() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationMissingAttributes.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic convertDiagnostic = d(17, 19, 23,
+                                         "@Convert must specify a converter class or set disableConversion to true.",
+                                         DiagnosticSeverity.Error, "jakarta-persistence",
+                                         "InvalidConvertAnnotationMissingConverterOrDisable");
+
+        // disableConversion = false is not equivalent to disableConversion = true
+        Diagnostic disableConversionDiagnostic = d(21, 19, 25,
+                                                   "@Convert must specify a converter class or set disableConversion to true.",
+                                                   DiagnosticSeverity.Error, "jakarta-persistence",
+                                                   "InvalidConvertAnnotationMissingConverterOrDisable");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, convertDiagnostic, disableConversionDiagnostic);
+    }
+
+    @Test
+    public void convertAnnotationOnRestrictedTarget() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationOnRestrictedTarget.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic convertOnIDDiagnostic = d(16, 17, 19,
+                                             "@Convert must not be applied to an attribute annotated with @Id.",
+                                             DiagnosticSeverity.Error, "jakarta-persistence",
+                                             "InvalidConvertAnnotationOnRestrictedTarget");
+
+        Diagnostic convertOnVersionDiagnostic = d(21, 16, 23,
+                                                  "@Convert must not be applied to an attribute annotated with @Version.",
+                                                  DiagnosticSeverity.Error, "jakarta-persistence",
+                                                  "InvalidConvertAnnotationOnRestrictedTarget");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, convertOnIDDiagnostic, convertOnVersionDiagnostic);
+    }
+
+    @Test
+    public void convertAnnotationMultipleOnSameAttribute() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationMultiple.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        Diagnostic diagnostic = d(18, 19, 25,
+                                  "Multiple @Convert annotations on the same attribute are not supported.",
+                                  DiagnosticSeverity.Error, "jakarta-persistence",
+                                  "MultipleConvertAnnotationOnSameAttribute");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, diagnostic);
+    }
+
+    @Test
+    public void convertAnnotationValidUsageNoDiagnostics() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/persistence/ConvertAnnotationValid.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Valid usage - no diagnostics expected
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
 }

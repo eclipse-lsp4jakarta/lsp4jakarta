@@ -47,13 +47,14 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.IJavaDiagnosticsParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
+import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.JDTTypeUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
-import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 import com.google.gson.JsonArray;
@@ -93,6 +94,7 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             IAnnotation namedQueriesAnnotation = null;
             IAnnotation namedNativeQueryAnnotation = null;
             IAnnotation namedNativeQueriesAnnotation = null;
+            IAnnotation idClassAnnotation = null;
 
             IAnnotation inheritanceAnnotation = null;
             for (IAnnotation annotation : allAnnotations) {
@@ -114,6 +116,9 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                 } else if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.NAMEDNATIVEQUERIES)) {
                     namedNativeQueriesAnnotation = annotation;
                 }
+                if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.IDCLASS)) {
+                    idClassAnnotation = annotation;
+                }
                 if (DiagnosticUtils.isMatchedJavaElement(type, elementName, Constants.INHERITANCE)) {
                     inheritanceAnnotation = annotation;
                 }
@@ -121,6 +126,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
 
             boolean hasEntity = entityAnnotation != null;
             boolean hasMappedSuperclass = mappedSuperclassAnnotation != null;
+
+            if (idClassAnnotation != null && (hasEntity || hasMappedSuperclass)) {
+                validateIdClass(type, idClassAnnotation, context, uri, diagnostics);
+            }
 
             // Validate named JPA annotations are on correct class types
             validateNamedAnnotationPlacement(namedEntityGraphAnnotation, Constants.NAMEDENTITYGRAPH,
@@ -142,6 +151,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                              hasEntity || hasMappedSuperclass, "NamedNativeQueriesOnInvalidClass",
                                              ErrorCode.NamedNativeQueriesOnInvalidClass, uri, context, diagnostics);
 
+            if (idClassAnnotation != null) {
+                validateIdClassType(idClassAnnotation, type, diagnostics, context);
+            }
+
             if (entityAnnotation != null) {
                 // Validate @TableGenerator/s, @SequenceGenerator/s, @SecondaryTable/s at type level
                 Arrays.stream(allAnnotations).forEach(typeAnnotation -> validateGeneratorAnnotation(typeAnnotation, type, context, uri, diagnostics));
@@ -160,16 +173,21 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(method);
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(method, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
-                    // Check @Embedded on getter methods
+                    // Check @Embedded on methods
                     if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDED)) {
-                        validateEmbeddedType(method, type, diagnostics, context);
+                        validateEmbeddableReferenceType(method, type, diagnostics, context, ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable);
+                    }
+
+                    // Check @EmbeddedId on methods
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.EMBEDDEDID)) {
+                        validateEmbeddableReferenceType(method, type, diagnostics, context, ErrorCode.EmbeddedIdTypeNotAnnotatedWithEmbeddable);
                     }
 
                     // All Methods of this class should not be final
@@ -206,16 +224,21 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     // check @version annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.VERSION)) {
                         versionMembers.add(field);
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.VERSION, false);
                     }
                     // check @Id annotation usage on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.ID)) {
-                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID);
+                        validateFieldOrPropertyType(field, type, diagnostics, context, Constants.ID, idClassAnnotation != null);
                     }
 
                     // Check @Embedded on fields
                     if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDED)) {
-                        validateEmbeddedType(field, type, diagnostics, context);
+                        validateEmbeddableReferenceType(field, type, diagnostics, context, ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable);
+                    }
+
+                    // Check @EmbeddedId on fields
+                    if (DiagnosticUtils.isMatchedAnnotation(unit, field.getAnnotations(), Constants.EMBEDDEDID)) {
+                        validateEmbeddableReferenceType(field, type, diagnostics, context, ErrorCode.EmbeddedIdTypeNotAnnotatedWithEmbeddable);
                     }
 
                     // If a field is static, we do not care about it, we care about all other field
@@ -322,6 +345,13 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                     validateVersionAnnotations(versionMembers, unit, type, diagnostics, context);
                 }
 
+                // Validate @IdClass member alignment. A single @Id (e.g. derived identity with
+                // @Id @ManyToOne) can still be paired with an @IdClass.
+                // Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a132
+                if (idClassAnnotation != null && !idMembers.isEmpty()) {
+                    validateIdClassMemberAlignment(type, idClassAnnotation, idMembers, context, uri, diagnostics);
+                }
+
                 // Check @Inheritance is only on the root of the entity hierarchy
                 if (inheritanceAnnotation != null && TypeHierarchyUtils.findSupertypeWithAnnotation(type, Constants.ENTITY) != null) {
                     Range range = PositionUtils.toNameRange(type, context.getUtils());
@@ -339,6 +369,33 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
                                                          ErrorCode.InheritanceAnnotationOnNonEntityClass,
                                                          DiagnosticSeverity.Error));
+            }
+
+            // @Converter: class must implement AttributeConverter
+            boolean isConverterAnnotated = false;
+            for (IAnnotation annotation : allAnnotations) {
+                if (DiagnosticUtils.isMatchedJavaElement(type, annotation.getElementName(), Constants.CONVERTER)) {
+                    isConverterAnnotated = true;
+                    break;
+                }
+            }
+            if (isConverterAnnotated) {
+                ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
+                boolean implementsAttributeConverter = false;
+                for (IType iface : typeHierarchy.getAllInterfaces()) {
+                    if (Constants.ATTRIBUTE_CONVERTER.equals(iface.getFullyQualifiedName())) {
+                        implementsAttributeConverter = true;
+                        break;
+                    }
+                }
+                if (!implementsAttributeConverter) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    diagnostics.add(context.createDiagnostic(uri,
+                                                             Messages.getMessage("ConverterMustImplementAttributeConverter"),
+                                                             range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                             ErrorCode.ConverterMustImplementAttributeConverter,
+                                                             DiagnosticSeverity.Error));
+                }
             }
         }
 
@@ -663,7 +720,8 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
      * @throws JavaModelException
      */
     private void validateFieldOrPropertyType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                             JavaDiagnosticsContext context, String candidate) throws JavaModelException {
+                                             JavaDiagnosticsContext context, String candidate,
+                                             boolean entityHasIdClass) throws JavaModelException {
         String typeFQ = null;
         Range range = null;
         boolean isArrayType = false;
@@ -691,7 +749,10 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
         }
 
         if (Constants.ID.equals(candidate)) {
-            if (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ)) {
+            // When @IdClass is present the entity uses composite FK-based PKs (spec §2.4.1.1);
+            // @Id fields may hold entity types — InvalidIdType is not applicable.
+            // IdClassHelper validates correctness separately.
+            if (!entityHasIdClass && (isArrayType || !Constants.VALID_ID_TYPES.contains(typeFQ))) {
                 diagnostics.add(context.createDiagnostic(context.getUri(),
                                                          Messages.getMessage("InvalidIdType"),
                                                          range, Constants.DIAGNOSTIC_SOURCE, null,
@@ -831,18 +892,18 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     /**
-     * Validates that a field or method annotated with @Embedded references a type
-     * that is annotated with @Embeddable.
-     * Specification: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0#a14672
+     * Validates that a field or method annotated with @Embedded or @EmbeddedId
+     * references a type that is annotated with @Embeddable.
      *
      * @param member the field or method to validate
      * @param type the containing entity type
      * @param diagnostics list to add diagnostics to
      * @param context the diagnostics context
+     * @param errorCode the error code to report if the type lacks @Embeddable
      * @throws JavaModelException
      */
-    private void validateEmbeddedType(IMember member, IType type, List<Diagnostic> diagnostics,
-                                      JavaDiagnosticsContext context) throws JavaModelException {
+    private void validateEmbeddableReferenceType(IMember member, IType type, List<Diagnostic> diagnostics,
+                                                 JavaDiagnosticsContext context, ErrorCode errorCode) throws JavaModelException {
         String fqName = JDTTypeUtils.getResolvedMemberTypeName(member);
 
         if (fqName == null) {
@@ -864,10 +925,178 @@ public class PersistenceEntityDiagnosticsParticipant implements IJavaDiagnostics
             Range range = PositionUtils.toNameRange(member, context.getUtils());
             String simpleName = DiagnosticUtils.getSimpleName(fqName);
             diagnostics.add(context.createDiagnostic(context.getUri(),
-                                                     Messages.getMessage(ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     Messages.getMessage(errorCode.name(), simpleName),
                                                      range, Constants.DIAGNOSTIC_SOURCE, null,
-                                                     ErrorCode.EmbeddedTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
+                                                     errorCode, DiagnosticSeverity.Error));
         }
     }
 
+    /**
+     * Validates that the primary key class referenced by @IdClass is annotated with @Embeddable.
+     * Specification: Jakarta Persistence 3.0, Section 11.1.14, #a14687
+     *
+     * @param idClassAnnotation the @IdClass annotation
+     * @param type the containing class type
+     * @param diagnostics list to add diagnostics to
+     * @param context the diagnostics context
+     * @throws JavaModelException
+     */
+    private void validateIdClassType(IAnnotation idClassAnnotation, IType type, List<Diagnostic> diagnostics,
+                                     JavaDiagnosticsContext context) throws JavaModelException {
+        String keyClassName = DiagnosticUtils.getAnnotationMemberValue(idClassAnnotation, "value", String.class);
+        if (keyClassName == null || keyClassName.isBlank()) {
+            return;
+        }
+
+        // The returned value can be a fully qualified name or a simple name (e.g., "OrderId")
+        String fqName = ManagedBean.getFullyQualifiedClassName(type, keyClassName);
+        IType keyType = JDTTypeUtils.findType(type.getJavaProject(), fqName);
+        if (keyType == null) {
+            return;
+        }
+
+        ICompilationUnit keyUnit = keyType.getCompilationUnit();
+        boolean hasEmbeddable = DiagnosticUtils.isMatchedAnnotation(keyUnit,
+                                                                    keyType.getAnnotations(),
+                                                                    Constants.EMBEDDABLE);
+
+        if (!hasEmbeddable) {
+            Range range = PositionUtils.toNameRange(idClassAnnotation, context.getUtils());
+            String simpleName = DiagnosticUtils.getSimpleName(fqName);
+            diagnostics.add(context.createDiagnostic(context.getUri(),
+                                                     Messages.getMessage(ErrorCode.IdClassTypeNotAnnotatedWithEmbeddable.name(), simpleName),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null,
+                                                     ErrorCode.IdClassTypeNotAnnotatedWithEmbeddable, DiagnosticSeverity.Error));
+        }
+    }
+
+    private void validateIdClassMemberAlignment(IType entityType, IAnnotation idClassAnnotation,
+                                                List<IMember> idMembers,
+                                                JavaDiagnosticsContext context, String uri,
+                                                List<Diagnostic> diagnostics) throws JavaModelException {
+        for (IdClassHelper.Finding f : new IdClassHelper().validate(entityType, idClassAnnotation, idMembers)) {
+            Range range = PositionUtils.toNameRange(f.member(), context.getUtils());
+            diagnostics.add(context.createDiagnostic(uri, f.message(), range,
+                                                     Constants.DIAGNOSTIC_SOURCE, null, f.code(), DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Validates the structural requirements of the class referenced by @IdClass.
+     *
+     * @param entityType the entity or mapped superclass declaring @IdClass
+     * @param idClassAnnotation the @IdClass annotation
+     * @param context the diagnostics context
+     * @param uri the URI of the compilation unit being analysed
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException if the Java model cannot be inspected
+     */
+    private void validateIdClass(IType entityType, IAnnotation idClassAnnotation,
+                                 JavaDiagnosticsContext context, String uri,
+                                 List<Diagnostic> diagnostics) throws JavaModelException {
+        IType idClass = resolveIdClass(entityType, idClassAnnotation);
+        if (idClass == null) {
+            return;
+        }
+
+        Range idClassRange = PositionUtils.toNameRange(idClass, context.getUtils());
+        if (!Flags.isPublic(idClass.getFlags())) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustBePublic", ErrorCode.IdClassMustBePublic);
+        }
+
+        ConstructorInfoDiagnosticHelper constructorInfo = ConstructorInfoDiagnosticHelper.getConstructorInfo(idClass);
+        boolean hasPublicNoArgConstructor = !constructorInfo.hasConstructor() || constructorInfo.hasValidPublicNoArgsConstructor();
+        if (!hasPublicNoArgConstructor) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustHavePublicNoArgConstructor", ErrorCode.IdClassMustHavePublicNoArgConstructor);
+        }
+
+        if (!implementsSerializable(idClass)) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustBeSerializable", ErrorCode.IdClassMustBeSerializable);
+        }
+
+        boolean hasEquals = false;
+        boolean hasHashCode = false;
+        for (IMethod method : idClass.getMethods()) {
+            if (!idClass.equals(method.getDeclaringType())) {
+                continue;
+            }
+            if ("equals".equals(method.getElementName()) && hasObjectParameter(method, idClass)) {
+                hasEquals = true;
+            } else if ("hashCode".equals(method.getElementName()) && method.getNumberOfParameters() == 0) {
+                hasHashCode = true;
+            }
+        }
+        if (!hasEquals) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustDeclareEquals", ErrorCode.IdClassMustDeclareEquals);
+        }
+        if (!hasHashCode) {
+            addIdClassDiagnostic(diagnostics, context, uri, idClassRange,
+                                 "IdClassMustDeclareHashCode", ErrorCode.IdClassMustDeclareHashCode);
+        }
+    }
+
+    /**
+     * Checks whether a method declares a single {@code java.lang.Object} parameter.
+     *
+     * @param method the method to inspect
+     * @param declaringType the type declaring the method
+     * @return {@code true} if the method has the required parameter
+     * @throws JavaModelException if the method cannot be inspected
+     */
+    private boolean hasObjectParameter(IMethod method, IType declaringType) throws JavaModelException {
+        if (method.getNumberOfParameters() != 1) {
+            return false;
+        }
+        String parameterType = JDTTypeUtils.getResolvedTypeName(method.getParameterTypes()[0], declaringType);
+        return "java.lang.Object".equals(parameterType);
+    }
+
+    /**
+     * Resolves the class value of an @IdClass annotation.
+     *
+     * @param declaringType the type containing the annotation
+     * @param annotation the @IdClass annotation
+     * @return the referenced key class, or {@code null} if it cannot be resolved
+     * @throws JavaModelException if the annotation cannot be inspected
+     */
+    private IType resolveIdClass(IType declaringType, IAnnotation annotation) throws JavaModelException {
+        String keyClassName = DiagnosticUtils.getAnnotationMemberValue(annotation, Constants.VALUE, String.class);
+        if (keyClassName == null || keyClassName.isBlank()) {
+            return null;
+        }
+
+        return ManagedBean.resolveType(declaringType, keyClassName);
+    }
+
+    /**
+     * Checks whether a type implements Serializable, directly or through an interface hierarchy.
+     *
+     * @param type the type to inspect
+     * @return {@code true} if the type is serializable
+     * @throws JavaModelException if the type hierarchy cannot be inspected
+     */
+    private boolean implementsSerializable(IType type) throws JavaModelException {
+        return Arrays.stream(type.newSupertypeHierarchy(new NullProgressMonitor()).getAllSuperInterfaces(type)).anyMatch(superInterface -> Constants.SERIALIZABLE.equals(superInterface.getFullyQualifiedName()));
+    }
+
+    /**
+     * Adds a structural @IdClass diagnostic.
+     *
+     * @param diagnostics the list to add the diagnostic to
+     * @param context the diagnostics context
+     * @param uri the URI of the compilation unit being analysed
+     * @param range the diagnostic range
+     * @param messageKey the message bundle key
+     * @param errorCode the diagnostic error code
+     */
+    private void addIdClassDiagnostic(List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                      String uri, Range range, String messageKey, ErrorCode errorCode) {
+        diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(messageKey), range,
+                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                 errorCode, DiagnosticSeverity.Error));
+    }
 }

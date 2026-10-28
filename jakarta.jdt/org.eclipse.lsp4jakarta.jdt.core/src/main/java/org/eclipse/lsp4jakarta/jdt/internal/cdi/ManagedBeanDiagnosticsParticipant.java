@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.jdt.internal.cdi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,6 +46,7 @@ import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.JavaDiagnosticsContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.diagnostics.helpers.ConstructorInfoDiagnosticHelper;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
 import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
+import org.eclipse.lsp4jakarta.jdt.core.utils.TypeHierarchyUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
@@ -152,6 +154,22 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                              Messages.getMessage("ManagedBeanProducesAndInjectField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidFieldWithProducesAndInjectAnnotations, DiagnosticSeverity.Error));
+                }
+
+                // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#additional_builtin_beans
+                // If a Jakarta EE component class has an injection point of type UserTransaction
+                // and qualifier @Default, and may not validly make use of the JTA UserTransaction,
+                // the container automatically detects the problem and treats it as a definition error.
+                // CDI-managed beans (those with a scope annotation) may not validly use UserTransaction.
+                if (isManagedBean && isInjectField && DiagnosticUtils.hasDefaultQualifier(unit, type, field.getAnnotations())) {
+                    String fieldTypeName = DiagnosticUtils.getDataTypeName(field.getTypeSignature());
+                    if (DiagnosticUtils.isMatchedJavaElement(type, fieldTypeName, Constants.USER_TRANSACTION_FQ_NAME)) {
+                        Range range = PositionUtils.toNameRange(field, context.getUtils());
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("InvalidUserTransactionInjectionInCDIBean"), range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, null,
+                                                                 ErrorCode.InvalidUserTransactionInjectionInCDIBean, DiagnosticSeverity.Error));
+                    }
                 }
 
                 // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#declaring_resource
@@ -330,6 +348,21 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                 }
                             }
                         }
+
+                        // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#additional_builtin_beans
+                        // UserTransaction injection via @Inject is also invalid when the injection
+                        // point is a constructor or initializer method parameter in a CDI-managed bean,
+                        // provided the qualifier is @Default (implicit or explicit).
+                        if (isManagedBean && DiagnosticUtils.hasDefaultQualifier(unit, type, param.getAnnotations())) {
+                            String paramTypeName = DiagnosticUtils.getDataTypeName(param.getTypeSignature());
+                            if (DiagnosticUtils.isMatchedJavaElement(type, paramTypeName, Constants.USER_TRANSACTION_FQ_NAME)) {
+                                Range range = PositionUtils.toNameRange(method, context.getUtils());
+                                diagnostics.add(context.createDiagnostic(uri,
+                                                                         Messages.getMessage("InvalidUserTransactionInjectionInCDIBean"), range,
+                                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                                         ErrorCode.InvalidUserTransactionInjectionInCDIBean, DiagnosticSeverity.Error));
+                            }
+                        }
                     }
                 }
             }
@@ -368,24 +401,47 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
 
+            // Check if the class is a stateless session bean
+            boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                             new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
+            boolean isSingleton = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
+                                                                             new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
+            boolean isClassGeneric = type.getTypeParameters().length != 0;
+
             if (isManagedBean) {
-                // Check if the class is a stateless session bean
-                boolean isStateless = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                 new String[] { Constants.STATELESS_FQ_NAME }).size() > 0;
-                boolean isClassGeneric = type.getTypeParameters().length != 0;
-                Range range = PositionUtils.toNameRange(type, context.getUtils());
-                validateSingletonSessionBean(context, uri, diagnostics, type, typeAnnotations, managedBeanAnnotations,
-                                             range);
+
+                if (isSingleton) {
+                    List<String> invalidSingletonScopes = managedBeanAnnotations.stream().filter(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
+                                                                                                               && !Constants.DEPENDENT_FQ_NAME.equals(annotation)).collect(Collectors.toList());
+                    if (!invalidSingletonScopes.isEmpty()) {
+                        Range range = PositionUtils.toNameRange(type, context.getUtils());
+                        String invalidScopeNames = toSimpleScopeNames(invalidSingletonScopes);
+                        diagnostics.add(context.createDiagnostic(uri,
+                                                                 Messages.getMessage("SingletonSessionBeanInvalidScope",
+                                                                                     invalidScopeNames,
+                                                                                     type.getElementName()),
+                                                                 range,
+                                                                 Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
+                                                                 ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
+                    }
+                }
                 // A stateless session bean must belong to the @Dependent scope only
                 // If it has multiple scopes, it's an error
                 if (isStateless && (!isDependent || hasMultipleScopes)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    List<String> invalidStatelessScopes = managedBeanAnnotations.stream().filter(a -> !Constants.DEPENDENT_FQ_NAME.equals(a)).collect(Collectors.toList());
+                    String invalidStatelessScopeNames = toSimpleScopeNames(invalidStatelessScopes);
                     diagnostics.add(context.createDiagnostic(uri,
-                                                             Messages.getMessage("StatelessSessionBeanWithIllegalScope"), range,
+                                                             Messages.getMessage("StatelessSessionBeanInvalidScope",
+                                                                                 invalidStatelessScopeNames,
+                                                                                 type.getElementName()),
+                                                             range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
                                                              ErrorCode.InvalidStatelessSessionBeanScope, DiagnosticSeverity.Error));
 
                     // The @Dependent annotation must be the only scope defined by a Managed bean class of generic type
                 } else if (isClassGeneric && (!isDependent || hasMultipleScopes)) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanGenericType"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -393,6 +449,7 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // The @Dependent annotation must be the only scope defined by a managed bean with a non-static public field.
                 } else if (nonStaticPublicFieldPresent) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ManagedBeanWithNonStaticPublicField"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, null,
@@ -400,11 +457,39 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
 
                     // Scope type annotations must be specified by a managed bean class at most once.
                 } else if (hasMultipleScopes) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
                     diagnostics.add(context.createDiagnostic(uri,
                                                              Messages.getMessage("ScopeTypeAnnotationsManagedBean"), range,
                                                              Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
                                                              ErrorCode.InvalidNumberOfScopedAnnotationsByManagedBean, DiagnosticSeverity.Error));
                 }
+            } else {
+                // A @Singleton or @Stateless class with no declared scope may still inherit an invalid
+                // scope from a superclass via @Inherited CDI scope annotations.
+                // Note: @Stateful session beans have no CDI-mandated scope restriction
+                // (CDI 3.0 §3.2.4), so no inherited-scope check is needed for them.
+                if (isSingleton) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                      new String[] { Constants.APPLICATION_SCOPED_FQ_NAME, Constants.DEPENDENT_FQ_NAME },
+                                                      "SingletonSessionBeanInvalidInheritedScope", ErrorCode.InvalidSingletonSessionBeanScope);
+                }
+                if (isStateless) {
+                    Range range = PositionUtils.toNameRange(type, context.getUtils());
+                    validateSessionBeanInheritedScope(context, uri, diagnostics, type, range,
+                                                      new String[] { Constants.DEPENDENT_FQ_NAME },
+                                                      "StatelessSessionBeanInvalidInheritedScope", ErrorCode.InvalidStatelessSessionBeanScope);
+                }
+            }
+
+            // A managed bean (or custom-scoped class) in a passivating scope must implement Serializable.
+            // CDI 3.0 §6.6.4: Passivating scopes must be declared @NormalScope(passivating=true).
+            // Built-in passivating scopes: @SessionScoped and @ConversationScoped.
+            // Custom passivating scopes: any annotation meta-annotated with @NormalScope(passivating=true).
+            // Interceptors and decorators are excluded as per CDI 3.0 §6.6.4 / §6.2.
+            // https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0#passivating_scopes
+            if (!interceptorOrDecorator && hasPassivatingScope(type, unit)) {
+                validatePassivatingScopeWithoutSerializable(context, uri, diagnostics, type);
             }
 
             // Inject and Disposes, Observes, ObservesAsync Annotations:
@@ -462,17 +547,17 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     if (numDisposes == 0)
                         continue;
                     if (numDisposes > 1) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 Messages.getMessage("ManagedBeanDisposeOneParameter"), range,
+                                                                 Messages.getMessage("ManagedBeanDisposeOneParameter"), methodRange,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidDisposesAnnotationOnMultipleMethodParams, DiagnosticSeverity.Error));
                     }
 
                     if (!invalidAnnotations.isEmpty()) {
-                        Range range = PositionUtils.toNameRange(method, context.getUtils());
+                        Range methodRange = PositionUtils.toNameRange(method, context.getUtils());
                         diagnostics.add(context.createDiagnostic(uri,
-                                                                 createInvalidDisposesLabel(invalidAnnotations), range,
+                                                                 createInvalidDisposesLabel(invalidAnnotations), methodRange,
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidDisposerMethodParamAnnotation, DiagnosticSeverity.Error));
                     }
@@ -486,6 +571,89 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
         }
 
         return diagnostics;
+    }
+
+    /**
+     * Validates that a managed bean in a passivating scope implements {@code java.io.Serializable}.
+     *
+     * <p>CDI 3.0 §6.6.4: A passivating scope requires beans with that scope to be passivation
+     * capable. A managed bean is passivation capable if and only if the bean class is serializable.
+     * Passivating scopes must be declared {@code @NormalScope(passivating=true)}. The built-in
+     * passivating scopes are {@code @SessionScoped} and {@code @ConversationScoped}. Custom
+     * passivating scopes — user-defined annotations meta-annotated with
+     * {@code @NormalScope(passivating=true)} — are also detected.
+     *
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the Java type being validated
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private void validatePassivatingScopeWithoutSerializable(JavaDiagnosticsContext context, String uri,
+                                                             List<Diagnostic> diagnostics,
+                                                             IType type) throws JavaModelException {
+        // Bean has a passivating scope — must implement java.io.Serializable.
+        try {
+            if (TypeHierarchyUtils.doesITypeHaveSuperType(type, Constants.SERIALIZABLE_FQ_NAME) != TypeHierarchyUtils.HAS_SUPERTYPE) {
+                Range range = PositionUtils.toNameRange(type, context.getUtils());
+                diagnostics.add(context.createDiagnostic(uri,
+                                                         Messages.getMessage("ManagedBeanInPassivatingScopeWithoutSerializable"),
+                                                         range,
+                                                         Constants.DIAGNOSTIC_SOURCE, null,
+                                                         ErrorCode.InvalidPassivatingScopedBeanWithoutSerializable,
+                                                         DiagnosticSeverity.Error));
+            }
+        } catch (CoreException e) {
+            LOGGER.log(Level.WARNING, "Error checking Serializable hierarchy for: " + type.getElementName(), e);
+        }
+    }
+
+    /**
+     * Returns {@code true} if the given type carries a passivating scope annotation.
+     *
+     * <p>Checks both built-in passivating scopes ({@code @SessionScoped},
+     * {@code @ConversationScoped}) and custom scopes whose annotation type is
+     * meta-annotated with {@code @NormalScope(passivating=true)}.
+     *
+     * @param type the Java type being validated
+     * @param unit the compilation unit
+     * @return {@code true} if any passivating scope annotation is present
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private boolean hasPassivatingScope(IType type, ICompilationUnit unit) throws JavaModelException {
+        for (IAnnotation annotation : type.getAnnotations()) {
+            // Check built-in passivating scopes: @SessionScoped and @ConversationScoped
+            if (DiagnosticUtils.getMatchedJavaElementName(type, annotation.getElementName(),
+                                                          Constants.BUILT_IN_PASSIVATING_SCOPE_FQ_NAMES) != null) {
+                return true;
+            }
+
+            // Check custom passivating scopes: annotations meta-annotated with @NormalScope(passivating=true)
+            if (isCustomPassivatingScope(annotation, type, unit)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if the given annotation is a custom passivating scope —
+     * i.e. its annotation type is meta-annotated with {@code @NormalScope(passivating=true)}.
+     *
+     * <p>Delegates to {@link ManagedBean#getMetaAnnotationMemberValue}, which resolves
+     * the annotation type once and reads the {@code passivating} attribute in a single pass.
+     *
+     * @param annotation the annotation present on the bean class
+     * @param type the Java type being validated (used for name resolution)
+     * @param unit the compilation unit (used for import-aware matching of binary types)
+     * @return {@code true} if the annotation represents a custom passivating scope
+     * @throws JavaModelException if there is an error accessing Java model elements
+     */
+    private boolean isCustomPassivatingScope(IAnnotation annotation, IType type,
+                                             ICompilationUnit unit) throws JavaModelException {
+        return Boolean.TRUE.equals(ManagedBean.getMetaAnnotationMemberValue(
+                                                                            annotation, type, unit, Constants.NORMAL_SCOPE_FQ_NAME, Constants.NORMAL_SCOPE_PASSIVATING_ATTR,
+                                                                            Boolean.class));
     }
 
     /**
@@ -553,32 +721,43 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
     }
 
     /**
-     * validateSingletonSessionBean
-     * Singleton session bean scope validation
-     * A singleton session bean must be annotated with either @ApplicationScoped or @Dependent.
-     * If a singleton bean declares any other scope, the container must treat it as a definition error.
+     * Checks whether a session bean class (@Singleton or @Stateless) with no directly declared scope
+     * inherits an invalid CDI scope from a superclass. The Java @Inherited meta-annotation causes CDI
+     * scope annotations to propagate through class inheritance only (not interface implementation), so
+     * this method uses {@link TypeHierarchyUtils#findSupertypeWithAnnotation} to find the nearest ancestor
+     * that declares a CDI scope. If that inherited scope is not one of the allowed scopes for the bean
+     * type, a diagnostic is raised.
      *
-     * @param context
-     * @param uri
-     * @param diagnostics
-     * @param type
-     * @param typeAnnotations
-     * @param managedBeanAnnotations
-     * @param range
+     * @param context the Java diagnostics context
+     * @param uri the URI of the compilation unit
+     * @param diagnostics the list to add diagnostic errors to
+     * @param type the session bean type with no directly declared scope
+     * @param range the range to use for the diagnostic
+     * @param validScopes the FQ scope names that are valid for this bean type
+     * @param messageKey the messages.properties key for the diagnostic message
+     * @param errorCode the error code for the diagnostic
+     * @throws JavaModelException if there is an error accessing Java model elements
      */
-    private void validateSingletonSessionBean(JavaDiagnosticsContext context, String uri, List<Diagnostic> diagnostics,
-                                              IType type, String[] typeAnnotations, List<String> managedBeanAnnotations, Range range) {
-        boolean isSingletonSessionBean = DiagnosticUtils.getMatchedJavaElementNames(type, typeAnnotations,
-                                                                                    new String[] { Constants.SINGLETON_FQ_NAME }).size() > 0;
-        if (isSingletonSessionBean) {
-            boolean hasInvalidSingletonScope = managedBeanAnnotations.stream().anyMatch(annotation -> !Constants.APPLICATION_SCOPED_FQ_NAME.equals(annotation)
-                                                                                                      && !Constants.DEPENDENT_FQ_NAME.equals(annotation));
-            if (hasInvalidSingletonScope) {
-                diagnostics.add(context.createDiagnostic(uri,
-                                                         Messages.getMessage("SingletonSessionBeanInvalidScope"), range,
-                                                         Constants.DIAGNOSTIC_SOURCE, (new Gson().toJsonTree(managedBeanAnnotations)),
-                                                         ErrorCode.InvalidSingletonSessionBeanScope, DiagnosticSeverity.Error));
-            }
+    private void validateSessionBeanInheritedScope(JavaDiagnosticsContext context, String uri,
+                                                   List<Diagnostic> diagnostics, IType type, Range range,
+                                                   String[] validScopes, String messageKey, ErrorCode errorCode) throws JavaModelException {
+        // Start with all known scopes, then remove the valid ones supplied by the caller;
+        // the remaining set contains only the scopes that are invalid for this bean type.
+        Set<String> invalidScopes = new HashSet<>(Constants.SCOPE_FQ_NAMES);
+        Arrays.stream(validScopes).forEach(invalidScopes::remove); // remove valid scopes
+
+        String[] match = TypeHierarchyUtils.findSupertypeWithAnyAnnotation(type, invalidScopes);
+        if (match != null) {
+            String annotationFQName = match[0];
+            String declaringClassName = match[1];
+            diagnostics.add(context.createDiagnostic(uri,
+                                                     Messages.getMessage(messageKey,
+                                                                         "@" + DiagnosticUtils.getSimpleName(annotationFQName),
+                                                                         declaringClassName),
+                                                     range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     (new Gson().toJsonTree(List.of(annotationFQName))),
+                                                     errorCode, DiagnosticSeverity.Error));
         }
     }
 
@@ -649,6 +828,10 @@ public class ManagedBeanDiagnosticsParticipant implements IJavaDiagnosticsPartic
                 }
             }
         }
+    }
+
+    private static String toSimpleScopeNames(Collection<String> fqNames) {
+        return fqNames.stream().map(a -> "@" + DiagnosticUtils.getSimpleName(a)).collect(Collectors.joining(", "));
     }
 
     private String createInvalidInjectLabel(Set<String> invalidAnnotations) {

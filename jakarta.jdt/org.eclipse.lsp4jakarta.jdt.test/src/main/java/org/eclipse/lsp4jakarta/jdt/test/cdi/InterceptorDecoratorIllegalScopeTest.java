@@ -121,10 +121,11 @@ public class InterceptorDecoratorIllegalScopeTest extends BaseJakartaTest {
         decoratorWithMixedScopes.setData(new Gson().toJsonTree(Arrays.asList("jakarta.enterprise.context.ApplicationScoped",
                                                                              "io.openliberty.sample.jakarta.cdi.CustomNormalScope")));
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, interceptorWithAppScoped, interceptorWithSessionScoped,
-                              interceptorMultipleScopesDecl, interceptorWithMultipleScopes, decoratorWithAppScoped, decoratorWithSessionScoped,
-                              decoratorMultipleScopesDecl, decoratorWithMultipleScopes, interceptorWithCustomScope, decoratorWithCustomScope,
-                              interceptorWithMixedScopes, decoratorWithMixedScopes);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, decoratorWithMixedScopes, interceptorWithMixedScopes,
+                              decoratorWithCustomScope, interceptorWithCustomScope, decoratorMultipleScopesDecl,
+                              decoratorWithMultipleScopes, decoratorWithSessionScoped, decoratorWithAppScoped,
+                              interceptorMultipleScopesDecl, interceptorWithMultipleScopes,
+                              interceptorWithSessionScoped, interceptorWithAppScoped);
 
         // Test quickfix for interceptor with @ApplicationScoped (line 49)
         JakartaJavaCodeActionParams codeActionParams1 = createCodeActionParams(uri, interceptorWithAppScoped);
