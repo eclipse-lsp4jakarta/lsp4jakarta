@@ -11,7 +11,7 @@
 *     IBM Corporation - initial API and implementation
 *******************************************************************************/
 
-package org.eclipse.lsp4jakarta.ls;
+package org.eclipse.lsp4jakarta.version;
 
 import java.util.List;
 
