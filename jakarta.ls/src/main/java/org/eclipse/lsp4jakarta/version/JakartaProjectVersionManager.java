@@ -319,8 +319,16 @@ public class JakartaProjectVersionManager {
                 Properties properties = new Properties();
                 properties.load(input);
                 String value = properties.getProperty(DEFAULT_VERSION_PROPERTY_KEY);
-                if (value != null && !value.trim().isEmpty()) {
-                    return JakartaVersion.fromString(value).getLabel();
+                if (value != null) {
+                    // Do not use JakartaVersion.fromString here: at runtime the JakartaVersion class from the
+                    // jakarta.jdt.core jar is loaded and it does not have that method (NoSuchMethodError).
+                    String trimmed = value.trim();
+                    for (JakartaVersion version : JakartaVersion.values()) {
+                        if (version != JakartaVersion.UNKNOWN
+                            && (String.valueOf(version.getLevel()).equals(trimmed) || version.getLabel().equalsIgnoreCase(trimmed))) {
+                            return version.getLabel();
+                        }
+                    }
                 }
             }
         } catch (IOException | RuntimeException e) {
