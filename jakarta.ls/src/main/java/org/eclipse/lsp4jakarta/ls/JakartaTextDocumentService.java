@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -85,10 +86,22 @@ public class JakartaTextDocumentService implements TextDocumentService {
         this.jakartaLanguageServer = jls;
         this.sharedSettings = sharedSettings;
         this.documents = jakartaTextDocuments;
-        this.versionManager = new JakartaProjectVersionManager(params -> jakartaLanguageServer.getLanguageClient().selectJakartaVersion(params), () -> jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector(), projectUri -> triggerValidationForAll(Set.of(projectUri)));
+        this.versionManager = new JakartaProjectVersionManager(this::requestVersionSelection, this::isVersionSelectorSupported, this::revalidateProject);
         this.validatorDelayer = new ValidatorDelayer<>((javaTextDocument) -> {
             triggerValidationFor(javaTextDocument);
         });
+    }
+
+    private CompletableFuture<String> requestVersionSelection(Map<String, Object> params) {
+        return jakartaLanguageServer.getLanguageClient().selectJakartaVersion(params);
+    }
+
+    private boolean isVersionSelectorSupported() {
+        return jakartaLanguageServer.getCapabilityManager().getClientCapabilities().getExtendedClientCapabilities().isJakartaVersionSelector();
+    }
+
+    private void revalidateProject(String projectUri) {
+        triggerValidationForAll(Set.of(projectUri));
     }
 
     @Override
