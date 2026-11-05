@@ -44,9 +44,9 @@ import java.util.stream.Collectors;
  * version), user selection.
  * </p>
  */
-public class JakartaProjectVersionManager {
+public class JakartaVersionManager {
 
-    private static final Logger LOGGER = Logger.getLogger(JakartaProjectVersionManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JakartaVersionManager.class.getName());
 
     private static final String DEFAULT_VERSION_PROPERTY_KEY = "jakarta.default.version";
     private static final String DEFAULT_VERSION_LABEL = loadDefaultVersionLabel();
@@ -67,9 +67,9 @@ public class JakartaProjectVersionManager {
      * @param versionSelectorSupported tells whether the client is able to let the user select a version
      * @param onVersionResolved called with the project URI each time a version is set asynchronously
      */
-    public JakartaProjectVersionManager(Function<Map<String, Object>, CompletableFuture<String>> versionSelector,
-                                        BooleanSupplier versionSelectorSupported,
-                                        Consumer<String> onVersionResolved) {
+    public JakartaVersionManager(Function<Map<String, Object>, CompletableFuture<String>> versionSelector,
+                                 BooleanSupplier versionSelectorSupported,
+                                 Consumer<String> onVersionResolved) {
         this.versionSelector = versionSelector;
         this.versionSelectorSupported = versionSelectorSupported;
         this.onVersionResolved = onVersionResolved;
@@ -314,7 +314,7 @@ public class JakartaProjectVersionManager {
      * Falls back to Jakarta EE 9 if the file or property is not found.
      */
     private static String loadDefaultVersionLabel() {
-        try (InputStream input = JakartaProjectVersionManager.class.getResourceAsStream("/application.properties")) {
+        try (InputStream input = JakartaVersionManager.class.getResourceAsStream("/application.properties")) {
             if (input != null) {
                 Properties properties = new Properties();
                 properties.load(input);
