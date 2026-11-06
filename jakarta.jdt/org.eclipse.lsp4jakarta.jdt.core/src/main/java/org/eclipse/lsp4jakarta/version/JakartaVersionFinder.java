@@ -2,14 +2,14 @@ package org.eclipse.lsp4jakarta.version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
-import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 
 /**
  * Main facade for Jakarta EE version detection.
@@ -139,39 +139,26 @@ public class JakartaVersionFinder {
     }
 
     /**
-     * Analyzes classpath for a given URI using the default detection strategy.
-     * This method maintains backward compatibility with existing code.
+     * Returns the Jakarta EE versions detected on the classpath of the given project.
+     * The result is also recorded in {@link JakartaVersionManager}.
      *
-     * @param uri The URI of the compilation unit
-     * @return The detected Jakarta version
+     * @param project the Eclipse project
+     * @return the detected Jakarta EE versions, or an empty list if the project is not a Java project
      */
-    public static List<JakartaVersion> analyzeClasspath(String uri) {
-        return analyzeClasspath(uri, DetectionStrategy.FILENAME);
-    }
+    public static List<JakartaVersion> getJakartaVersions(IProject project) {
+        IJavaProject javaProject = JavaCore.create(project);
 
-    /**
-     * Analyzes classpath for a given URI using the specified detection strategy.
-     *
-     * @param uri The URI of the compilation unit
-     * @param strategy The detection strategy to use
-     * @return The detected Jakarta version
-     */
-    public static List<JakartaVersion> analyzeClasspath(String uri, DetectionStrategy strategy) {
-        IJDTUtils utils = JDTUtilsLSImpl.getInstance();
-        ICompilationUnit unit = utils.resolveCompilationUnit(uri);
-        IJavaProject javaProject = unit.getJavaProject();
+        if (javaProject == null) {
+            return Collections.emptyList();
+        }
+
         IClasspathEntry[] entries = null;
-
         try {
             entries = javaProject.getResolvedClasspath(true);
         } catch (JavaModelException e) {
             e.printStackTrace();
-            List<JakartaVersion> defaultVersion = new ArrayList<>();
-            defaultVersion.add(JakartaVersion.EE_9);
-            return defaultVersion;// Fallback
         }
-
-        return analyzeClasspath(entries, javaProject, strategy);
+        return JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
     }
 
     /**
