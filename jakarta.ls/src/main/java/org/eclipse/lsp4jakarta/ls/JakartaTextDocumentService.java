@@ -64,7 +64,7 @@ import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4jakarta.snippets.SnippetContextForJava;
 import org.eclipse.lsp4jakarta.version.JakartaVersion;
 import org.eclipse.lsp4jakarta.version.JakartaVersionFileStore;
-import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
+import org.eclipse.lsp4jakarta.version.JakartaProjectVersionManager;
 import org.eclipse.lsp4jakarta.version.VersionData;
 
 public class JakartaTextDocumentService implements TextDocumentService {
@@ -80,13 +80,13 @@ public class JakartaTextDocumentService implements TextDocumentService {
     private ValidatorDelayer<JakartaTextDocument> validatorDelayer;
 
     // Jakarta EE version management
-    private final JakartaVersionManager versionManager;
+    private final JakartaProjectVersionManager versionManager;
 
     public JakartaTextDocumentService(JakartaLanguageServer jls, SharedSettings sharedSettings, JakartaTextDocuments jakartaTextDocuments) {
         this.jakartaLanguageServer = jls;
         this.sharedSettings = sharedSettings;
         this.documents = jakartaTextDocuments;
-        this.versionManager = new JakartaVersionManager(this::requestVersionSelection, this::isVersionSelectorSupported, this::revalidateProject);
+        this.versionManager = new JakartaProjectVersionManager(this::requestVersionSelection, this::isVersionSelectorSupported, this::revalidateProject);
         this.validatorDelayer = new ValidatorDelayer<>((javaTextDocument) -> {
             triggerValidationFor(javaTextDocument);
         });
