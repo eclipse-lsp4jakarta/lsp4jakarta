@@ -62,9 +62,9 @@ import org.eclipse.lsp4jakarta.settings.JakartaTraceSettings;
 import org.eclipse.lsp4jakarta.settings.SharedSettings;
 import org.eclipse.lsp4jakarta.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4jakarta.snippets.SnippetContextForJava;
-import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 import org.eclipse.lsp4jakarta.version.JakartaVersion;
 import org.eclipse.lsp4jakarta.version.JakartaVersionFileStore;
+import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 import org.eclipse.lsp4jakarta.version.VersionData;
 
 public class JakartaTextDocumentService implements TextDocumentService {
@@ -189,6 +189,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+        // Prepare the JakartaJavaCodeActionParams
         JakartaJavaCodeActionParams codeActionParams = new JakartaJavaCodeActionParams();
         codeActionParams.setTextDocument(params.getTextDocument());
         codeActionParams.setRange(params.getRange());
@@ -196,9 +197,17 @@ public class JakartaTextDocumentService implements TextDocumentService {
         codeActionParams.setResourceOperationSupported(jakartaLanguageServer.getCapabilityManager().getClientCapabilities().isResourceOperationSupported());
         codeActionParams.setResolveSupported(jakartaLanguageServer.getCapabilityManager().getClientCapabilities().isCodeActionResolveSupported());
 
-        return jakartaLanguageServer.getLanguageClient().getJavaCodeAction(codeActionParams).thenApply(codeActions -> {
-            return codeActions.stream().map(ca -> Either.<Command, CodeAction> forRight(ca)).collect(Collectors.toList());
-        });
+        // Pass the JakartaJavaCodeActionParams to IDE client, to be forwarded to the
+        // JDT LS extension.
+        return jakartaLanguageServer.getLanguageClient().getJavaCodeAction(codeActionParams) //
+                        .thenApply(codeActions -> {
+                            // Return the corresponding list of CodeActions, put in an Either and wrap as a
+                            // CompletableFuture
+                            return codeActions.stream().map(ca -> {
+                                Either<Command, CodeAction> e = Either.forRight(ca);
+                                return e;
+                            }).collect(Collectors.toList());
+                        });
     }
 
     @Override
