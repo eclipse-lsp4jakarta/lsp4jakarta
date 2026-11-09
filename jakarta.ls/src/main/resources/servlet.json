@@ -239,5 +239,50 @@
 			"type": "jakarta.annotation.sql.DataSourceDefinition",
 			"contentType": "class"
 		}
+	},
+	"Jakarta Servlet - ServletConnection": {
+		"prefix": "servlet_connection",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.servlet.ServletConnection;",
+			"import jakarta.servlet.ServletException;",
+			"import jakarta.servlet.annotation.WebServlet;",
+			"import jakarta.servlet.http.HttpServlet;",
+			"import jakarta.servlet.http.HttpServletRequest;",
+			"import jakarta.servlet.http.HttpServletResponse;",
+			"import java.io.IOException;",
+			"",
+			"/**",
+			" * Servlet that retrieves the ServletConnection from the incoming request",
+			" * and reads the connection id, protocol, protocol connection id and security.",
+			" */",
+			"@WebServlet(name = \"${2:servletName}\", urlPatterns = { \"/${3:path}\" })",
+			"public class ${TM_FILENAME_BASE} extends HttpServlet {",
+			"",
+			"\t/**",
+			"\t * Handles HTTP GET requests and reads the connection details from the ServletConnection.",
+			"\t * ",
+			"\t * @param req the request, used to obtain the ServletConnection",
+			"\t * @param res the response",
+			"\t * @throws ServletException if the request cannot be handled",
+			"\t * @throws IOException if an I/O error occurs while handling the request",
+			"\t */",
+			"\t@Override",
+			"\tprotected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {",
+			"\t\tServletConnection sConn = req.getServletConnection();",
+			"\t\tString connectionId = sConn.getConnectionId();",
+			"\t\tString protocol = sConn.getProtocol();",
+			"\t\tString protocolConnectionId = sConn.getProtocolConnectionId();",
+			"\t\tboolean secure = sConn.isSecure();",
+			"\t\t// ${4:Use the connection details here}",
+			"\t}",
+			"}"
+		],
+		"description": "HTTPServlet that gets the ServletConnection from the request",
+		"context": {
+			"type": "jakarta.servlet.http.HttpServlet",
+			"contentType": "class"
+		}
 	}
 }
