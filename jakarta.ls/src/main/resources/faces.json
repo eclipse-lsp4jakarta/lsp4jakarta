@@ -77,5 +77,44 @@
 			"type": "jakarta.faces.component.behavior.ClientBehaviorBase",
 			"contentType": "class"
 		}
+	},
+	"Jakarta Faces - @View": {
+		"prefix": "faces_view",
+		"body": [
+			"package ${1:packagename};",
+			"",
+			"import jakarta.enterprise.context.ApplicationScoped;",
+			"import jakarta.faces.annotation.View;",
+			"import jakarta.faces.component.UIComponent;",
+			"import jakarta.faces.context.FacesContext;",
+			"import jakarta.faces.view.facelets.Facelet;",
+			"import java.io.IOException;",
+			"",
+			"/**",
+			" * Facelet created programmatically in Java.",
+			" * The @View annotation binds this Facelet to the specified view id.",
+			" */",
+			"@View(\"${2:/hello.xhtml}\")",
+			"@ApplicationScoped",
+			"public class ${TM_FILENAME_BASE} extends Facelet {",
+			"",
+			"\t/**",
+			"\t * Applies this Facelet to the specified component tree.",
+			"\t * ",
+			"\t * @param facesContext the current Faces context",
+			"\t * @param root the root component to which the Facelet content should be applied",
+			"\t * @throws IOException if an I/O error occurs while processing the Facelet",
+			"\t */",
+			"\t@Override",
+			"\tpublic void apply(FacesContext facesContext, UIComponent root) throws IOException {",
+			"\t\t// ${3:Here goes your Facelet code}",
+			"\t}",
+			"}"
+		],
+		"description": "Facelet created programmatically with @View",
+		"context": {
+			"type": "jakarta.faces.view.facelets.Facelet",
+			"contentType": "class"
+		}
 	}
 }

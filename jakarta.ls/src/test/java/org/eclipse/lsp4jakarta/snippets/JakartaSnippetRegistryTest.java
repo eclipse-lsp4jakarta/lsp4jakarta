@@ -298,7 +298,7 @@ public class JakartaSnippetRegistryTest {
     }
 
     /**
-     * Jakarta Faces snippet test - faces_behavior, faces_flowscoped
+     * Jakarta Faces snippet test - faces_behavior, faces_flowscoped, faces_views
      */
     @Test
     public void FacesSnippetsTest() {
@@ -308,9 +308,14 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> facesFlowScopedSnippet = findByPrefix("faces_flowscoped", registry);
         assertTrue("faces_flowscoped Java snippet is not present in SnippetRegistry", facesFlowScopedSnippet.isPresent());
 
+        Optional<Snippet> facesViewsSnippet = findByPrefix("faces_view", registry);
+        assertTrue("faces_view Java snippet is not present in SnippetRegistry", facesViewsSnippet.isPresent());
+
         snippetsContextTest(facesBehaviorSnippet, "jakarta.faces.component.behavior.ClientBehaviorBase",
                             JavaCursorContextKind.IN_EMPTY_FILE);
         snippetsContextTest(facesFlowScopedSnippet, "jakarta.faces.flow.FlowScoped",
+                            JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(facesViewsSnippet, "jakarta.faces.view.facelets.Facelet",
                             JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
