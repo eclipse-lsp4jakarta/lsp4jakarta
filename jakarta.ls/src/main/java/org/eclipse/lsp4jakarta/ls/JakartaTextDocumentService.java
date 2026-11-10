@@ -233,7 +233,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
      * 1. Only one version request is sent per project (even if multiple files open simultaneously)
      * 2. The didOpen call returns immediately without blocking
      * 3. All callbacks execute on a separate thread pool
-     * 4. The selected version is persisted to a .jakarta-version file in the project directory
+     * 4. The selected version is persisted to a .jakartals/jakarta-version file in the project directory
      * 5. Uses in-memory cache for fast access, with file as persistent storage
      * 6. Validates all opened files in the project after version selection
      *
@@ -409,7 +409,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
             return;
         }
 
-        versionManager.clear(projectUri);
+        VersionData previousVersion = versionManager.clear(projectUri);
 
         // getJavaProjectLabels needs a file URI (not a project URI) — findProject calls
         // utils.findFile(uri) which only resolves files, not directories.
@@ -438,7 +438,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 LOGGER.warning("No versions detected for project: " + projectUri);
                 return;
             }
-            versionManager.resolveAfterReset(projectUri, projectInfo.getJakartaVersions());
+            versionManager.resolveAfterReset(projectUri, projectInfo.getJakartaVersions(), previousVersion);
         }, versionManager.getExecutor());
     }
 }

@@ -15,6 +15,7 @@ package org.eclipse.lsp4jakarta.version;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,9 @@ import java.util.stream.Collectors;
  * <p>
  * A project's version is resolved in this order: memory cache, version file,
  * single detected version, default version (when the client cannot select a
- * version), user selection.
+ * version), user selection. If the user cancels the first selection of a
+ * project, the default version is applied; if the project had a version before
+ * (selection after a reset), that version is kept.
  * </p>
  */
 public class JakartaProjectVersionManager {
@@ -49,7 +52,9 @@ public class JakartaProjectVersionManager {
     private static final Logger LOGGER = Logger.getLogger(JakartaProjectVersionManager.class.getName());
 
     private static final String DEFAULT_VERSION_PROPERTY_KEY = "jakarta.default.version";
-    private static final String DEFAULT_VERSION_LABEL = loadDefaultVersionLabel();
+    private static final String LOWEST = "lowest";
+    private static final String HIGHEST = "highest";
+    private static final String DEFAULT_VERSION_STRATEGY = loadDefaultVersionStrategy();
 
     private final Map<String, VersionData> projectVersions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<String>> versionRequestsInFlight = new ConcurrentHashMap<>();
@@ -137,12 +142,12 @@ public class JakartaProjectVersionManager {
                     if (version != null) {
                         onVersionResolved.accept(projectUri);
                     }
-                    // If null (cancelled), do nothing - will retry on next open
+                    // If null (cancelled), the request that sent the prompt applies the default and revalidates
                 }, executor);
                 return false;
             }
 
-            applyDetectedVersions(projectUri, detectedVersions, "initial selection");
+            applyDetectedVersions(projectUri, detectedVersions, "initial selection", null);
             return false;
         }
     }
@@ -152,8 +157,9 @@ public class JakartaProjectVersionManager {
      * version file and cancels any pending selection request.
      *
      * @param projectUri the project URI
+     * @return the version data the project had, or null if it had none
      */
-    public void clear(String projectUri) {
+    public VersionData clear(String projectUri) {
         synchronized (lockFor(projectUri)) {
             VersionData oldVersionData = projectVersions.remove(projectUri);
             if (oldVersionData != null) {
@@ -169,6 +175,7 @@ public class JakartaProjectVersionManager {
                 existingRequest.cancel(true);
                 LOGGER.info("Cancelled in-flight version request for project: " + projectUri);
             }
+            return oldVersionData;
         }
     }
 
@@ -179,10 +186,12 @@ public class JakartaProjectVersionManager {
      *
      * @param projectUri the project URI
      * @param detectedVersions the versions detected on the project's classpath
+     * @param previousVersion the version the project had before the reset, restored if the
+     *            user cancels the selection; null if it had none
      */
-    public void resolveAfterReset(String projectUri, List<JakartaVersion> detectedVersions) {
+    public void resolveAfterReset(String projectUri, List<JakartaVersion> detectedVersions, VersionData previousVersion) {
         synchronized (lockFor(projectUri)) {
-            applyDetectedVersions(projectUri, detectedVersions, "reset");
+            applyDetectedVersions(projectUri, detectedVersions, "reset", previousVersion);
         }
     }
 
@@ -237,17 +246,18 @@ public class JakartaProjectVersionManager {
      * @param projectUri the project URI
      * @param detectedVersions the versions detected on the project's classpath
      * @param context description of the caller, used in log messages
+     * @param previousVersion the version the project had before, or null if it never had one
      */
-    private void applyDetectedVersions(String projectUri, List<JakartaVersion> detectedVersions, String context) {
+    private void applyDetectedVersions(String projectUri, List<JakartaVersion> detectedVersions, String context, VersionData previousVersion) {
         List<String> versions = detectedVersions.stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
 
         if (versions.size() == 1) {
             store(projectUri, new VersionData(versions.get(0), SelectionMode.SINGLE_VERSION, versions));
         } else if (!versionSelectorSupported.getAsBoolean()) {
-            LOGGER.info("Client does not support version selection. Using default Jakarta EE version for project: " + projectUri);
-            store(projectUri, new VersionData(DEFAULT_VERSION_LABEL, SelectionMode.DEFAULT, versions));
+            LOGGER.info("Client does not support version selection. Using the " + DEFAULT_VERSION_STRATEGY + " detected Jakarta EE version for project: " + projectUri);
+            store(projectUri, new VersionData(selectDefaultVersion(detectedVersions, DEFAULT_VERSION_STRATEGY), SelectionMode.DEFAULT, versions));
         } else {
-            promptForVersionSelection(projectUri, context, versions);
+            promptForVersionSelection(projectUri, context, detectedVersions, versions, previousVersion);
             return;
         }
         onVersionResolved.accept(projectUri);
@@ -257,13 +267,17 @@ public class JakartaProjectVersionManager {
      * Asks the client to select one of the given versions and, once answered,
      * stores the choice and notifies {@code onVersionResolved}. The pending
      * request is tracked so it can be cancelled by {@link #clear(String)}.
-     * A null answer means the user cancelled and leaves the project without a version.
+     * A null answer means the user cancelled the selection. If the project had a
+     * version before (and it is still one of the detected versions), that version
+     * is kept; otherwise the default version is applied.
      *
      * @param projectUri the project URI
      * @param context description of the caller, used in log messages
+     * @param detectedVersions the versions detected on the project's classpath
      * @param versions the version labels the user can choose from
+     * @param previousVersion the version the project had before, or null if it never had one
      */
-    private void promptForVersionSelection(String projectUri, String context, List<String> versions) {
+    private void promptForVersionSelection(String projectUri, String context, List<JakartaVersion> detectedVersions, List<String> versions, VersionData previousVersion) {
         Object projectLock = lockFor(projectUri);
 
         Map<String, Object> params = new HashMap<>();
@@ -280,8 +294,16 @@ public class JakartaProjectVersionManager {
                 if (selectedVersion != null) {
                     store(projectUri, new VersionData(selectedVersion, SelectionMode.USER_SELECTED, versions));
                     onVersionResolved.accept(projectUri);
+                } else if (previousVersion != null && versions.contains(previousVersion.getVersion())) {
+                    LOGGER.info("Jakarta EE version selection cancelled (" + context + "). Keeping the previous version " + previousVersion.getVersion() + " for project: "
+                                + projectUri);
+                    store(projectUri, previousVersion);
+                    onVersionResolved.accept(projectUri);
                 } else {
-                    LOGGER.info("Jakarta EE version selection cancelled (" + context + ") for project: " + projectUri);
+                    LOGGER.info("Jakarta EE version selection cancelled (" + context + "). Using the " + DEFAULT_VERSION_STRATEGY + " detected Jakarta EE version for project: "
+                                + projectUri);
+                    store(projectUri, new VersionData(selectDefaultVersion(detectedVersions, DEFAULT_VERSION_STRATEGY), SelectionMode.DEFAULT, versions));
+                    onVersionResolved.accept(projectUri);
                 }
             }
         }, executor).exceptionally(ex -> {
@@ -310,30 +332,34 @@ public class JakartaProjectVersionManager {
     }
 
     /**
-     * Loads the default Jakarta EE version label from application.properties.
-     * Falls back to Jakarta EE 9 if the file or property is not found.
+     * Picks the default version among the detected ones.
+     *
+     * @param detectedVersions the versions detected on the project's classpath
+     * @param strategy {@value #LOWEST} to pick the lowest version, anything else picks the highest
+     * @return the label of the chosen version, or the label of Jakarta EE 9 if nothing was detected
      */
-    private static String loadDefaultVersionLabel() {
+    static String selectDefaultVersion(List<JakartaVersion> detectedVersions, String strategy) {
+        Comparator<JakartaVersion> byLevel = Comparator.comparingInt(JakartaVersion::getLevel);
+        return detectedVersions.stream().max(LOWEST.equals(strategy) ? byLevel.reversed() : byLevel).map(JakartaVersion::getLabel).orElse(JakartaVersion.EE_9.getLabel());
+    }
+
+    /**
+     * Loads the default version strategy ({@value #LOWEST} or {@value #HIGHEST}) from application.properties.
+     * Falls back to {@value #HIGHEST} if the file or property is missing or has another value.
+     */
+    private static String loadDefaultVersionStrategy() {
         try (InputStream input = JakartaProjectVersionManager.class.getResourceAsStream("/application.properties")) {
             if (input != null) {
                 Properties properties = new Properties();
                 properties.load(input);
                 String value = properties.getProperty(DEFAULT_VERSION_PROPERTY_KEY);
-                if (value != null) {
-                    // Do not use JakartaVersion.fromString here: at runtime the JakartaVersion class from the
-                    // jakarta.jdt.core jar is loaded and it does not have that method (NoSuchMethodError).
-                    String trimmed = value.trim();
-                    for (JakartaVersion version : JakartaVersion.values()) {
-                        if (version != JakartaVersion.UNKNOWN
-                            && (String.valueOf(version.getLevel()).equals(trimmed) || version.getLabel().equalsIgnoreCase(trimmed))) {
-                            return version.getLabel();
-                        }
-                    }
+                if (value != null && LOWEST.equalsIgnoreCase(value.trim())) {
+                    return LOWEST;
                 }
             }
         } catch (IOException | RuntimeException e) {
-            LOGGER.warning("Could not load application.properties, falling back to Jakarta EE 9: " + e.getMessage());
+            LOGGER.warning("Could not load application.properties, using the " + HIGHEST + " detected version as default: " + e.getMessage());
         }
-        return JakartaVersion.EE_9.getLabel();
+        return HIGHEST;
     }
 }
