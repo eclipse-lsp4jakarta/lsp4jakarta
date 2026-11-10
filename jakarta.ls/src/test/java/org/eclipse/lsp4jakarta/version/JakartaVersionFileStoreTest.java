@@ -52,7 +52,7 @@ public class JakartaVersionFileStoreTest {
         String projectUri = project.toString();
 
         assertTrue(JakartaVersionFileStore.writeVersion(projectUri, sample()));
-        assertTrue(Files.exists(project.resolve(".jakarta-version")));
+        assertTrue(Files.exists(project.resolve(".jakartals").resolve("jakarta-version")));
 
         VersionData read = JakartaVersionFileStore.readVersionData(projectUri);
         assertNotNull(read);
@@ -61,7 +61,7 @@ public class JakartaVersionFileStoreTest {
         assertEquals(sample().getAvailableVersions(), read.getAvailableVersions());
 
         assertTrue(JakartaVersionFileStore.deleteVersion(projectUri));
-        assertFalse(Files.exists(project.resolve(".jakarta-version")));
+        assertFalse(Files.exists(project.resolve(".jakartals").resolve("jakarta-version")));
         assertNull(JakartaVersionFileStore.readVersionData(projectUri));
     }
 
@@ -71,7 +71,7 @@ public class JakartaVersionFileStoreTest {
         String fileUri = project.toUri().toString(); // file:///.../my%20project/
 
         assertTrue(JakartaVersionFileStore.writeVersion(fileUri, sample()));
-        assertTrue(Files.exists(project.resolve(".jakarta-version")));
+        assertTrue(Files.exists(project.resolve(".jakartals").resolve("jakarta-version")));
         assertNotNull(JakartaVersionFileStore.readVersionData(project.toString()));
     }
 
@@ -79,7 +79,8 @@ public class JakartaVersionFileStoreTest {
     public void readIgnoresUtf8Bom() throws IOException {
         Path project = projectWithSpace();
         String json = "\uFEFF{\"version\":\"Jakarta EE 11\",\"selectionMode\":\"default\",\"availableVersions\":[]}";
-        Files.write(project.resolve(".jakarta-version"), json.getBytes(StandardCharsets.UTF_8));
+        Files.createDirectories(project.resolve(".jakartals"));
+        Files.write(project.resolve(".jakartals").resolve("jakarta-version"), json.getBytes(StandardCharsets.UTF_8));
 
         VersionData read = JakartaVersionFileStore.readVersionData(project.toString());
         assertNotNull(read);
@@ -92,7 +93,8 @@ public class JakartaVersionFileStoreTest {
         Path project = projectWithSpace();
         assertNull(JakartaVersionFileStore.readVersionData(project.toString()));
 
-        Files.write(project.resolve(".jakarta-version"), "not json".getBytes(StandardCharsets.UTF_8));
+        Files.createDirectories(project.resolve(".jakartals"));
+        Files.write(project.resolve(".jakartals").resolve("jakarta-version"), "not json".getBytes(StandardCharsets.UTF_8));
         assertNull(JakartaVersionFileStore.readVersionData(project.toString()));
 
         assertNull(JakartaVersionFileStore.readVersionData(null));
@@ -108,7 +110,7 @@ public class JakartaVersionFileStoreTest {
         Path javaFile = Files.createFile(project.resolve("A.java"));
 
         assertTrue(JakartaVersionFileStore.writeVersion(javaFile.toString(), sample()));
-        assertTrue(Files.exists(project.resolve(".jakarta-version")));
+        assertTrue(Files.exists(project.resolve(".jakartals").resolve("jakarta-version")));
     }
 
     @Test
