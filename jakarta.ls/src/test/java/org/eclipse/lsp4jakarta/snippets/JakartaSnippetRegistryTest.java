@@ -199,6 +199,9 @@ public class JakartaSnippetRegistryTest {
         Optional<Snippet> servletServletSecuritySnippet = findByPrefix("servlet_security", registry);
         assertTrue("servletsecurity Java snippet is not present in SnippetRegistry",
                    servletServletSecuritySnippet.isPresent());
+        Optional<Snippet> servletConnectionSnippet = findByPrefix("servlet_connection", registry);
+        assertTrue("servlet_connection Java snippet is not present in SnippetRegistry",
+                   servletConnectionSnippet.isPresent());
 
         snippetsContextTest(servletGenericSnippet, "jakarta.servlet.GenericServlet",
                             JavaCursorContextKind.IN_EMPTY_FILE);
@@ -210,6 +213,7 @@ public class JakartaSnippetRegistryTest {
         snippetsContextTest(servletMultipartConfigSnippet, "jakarta.servlet.http.HttpServlet", JavaCursorContextKind.IN_EMPTY_FILE);
         snippetsContextTest(servletWebListenerSnippet, "jakarta.servlet.ServletContextListener", JavaCursorContextKind.IN_EMPTY_FILE);
         snippetsContextTest(servletServletSecuritySnippet, "jakarta.servlet.http.HttpServlet", JavaCursorContextKind.IN_EMPTY_FILE);
+        snippetsContextTest(servletConnectionSnippet, "jakarta.servlet.http.HttpServlet", JavaCursorContextKind.IN_EMPTY_FILE);
     }
 
     /**
