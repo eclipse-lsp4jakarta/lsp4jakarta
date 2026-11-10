@@ -24,14 +24,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
 /**
- * Persists the selected Jakarta EE version of a project as JSON in a
- * {@value #VERSION_FILE_NAME} file in the project root.
+ * Persists the selected Jakarta EE version of a project as JSON in the
+ * {@value #VERSION_DIR_NAME}/{@value #VERSION_FILE_NAME} file under the project root.
  */
 public class JakartaVersionFileStore {
 
     private static final Logger LOGGER = Logger.getLogger(JakartaVersionFileStore.class.getName());
 
-    private static final String VERSION_FILE_NAME = ".jakarta-version";
+    private static final String VERSION_DIR_NAME = ".jakartals";
+    private static final String VERSION_FILE_NAME = "jakarta-version";
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -170,6 +171,6 @@ public class JakartaVersionFileStore {
         if (Files.isRegularFile(projectPath)) {
             projectPath = projectPath.getParent();
         }
-        return projectPath.resolve(VERSION_FILE_NAME);
+        return projectPath.resolve(VERSION_DIR_NAME).resolve(VERSION_FILE_NAME);
     }
 }
