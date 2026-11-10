@@ -22,6 +22,8 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4jakarta.commons.codeaction.CodeActionResolveData;
+import org.eclipse.lsp4jakarta.commons.codeaction.JakartaCodeActionId;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.IJavaCodeActionParticipant;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionContext;
 import org.eclipse.lsp4jakarta.jdt.core.java.codeaction.JavaCodeActionResolveContext;
@@ -60,6 +62,9 @@ public class ResetVersionQuickFix implements IJavaCodeActionParticipant {
         codeAction.setKind(CodeActionKind.QuickFix);
         codeAction.setDiagnostics(Arrays.asList(diagnostic));
         codeAction.setCommand(command);
+        // The server advertises resolve support, so the client resolves every code action
+        // and needs the resolve data to find this participant.
+        codeAction.setData(new CodeActionResolveData(context.getUri(), getParticipantId(), context.getParams().getRange(), null, context.getParams().isResourceOperationSupported(), context.getParams().isCommandConfigurationUpdateSupported(), JakartaCodeActionId.ResetJakartaVersion));
 
         codeActions.add(codeAction);
 

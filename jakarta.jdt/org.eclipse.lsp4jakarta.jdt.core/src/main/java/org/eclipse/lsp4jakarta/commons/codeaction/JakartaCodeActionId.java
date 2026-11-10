@@ -114,7 +114,9 @@ public enum JakartaCodeActionId implements ICodeActionId {
     EJBMessageDrivenImplementation,
     // Security
     SecurityInsertApplicationScopedAnnotation,
-    SecurityReplaceWithApplicationScopedAnnotation;
+    SecurityReplaceWithApplicationScopedAnnotation,
+    // Jakarta EE version
+    ResetJakartaVersion;
 
     @Override
     public String getId() {
