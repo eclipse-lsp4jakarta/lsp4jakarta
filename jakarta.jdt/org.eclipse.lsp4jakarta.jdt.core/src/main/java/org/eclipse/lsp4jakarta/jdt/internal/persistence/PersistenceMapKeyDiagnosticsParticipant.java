@@ -26,7 +26,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
-import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaProject;
@@ -48,9 +47,6 @@ import org.eclipse.lsp4jakarta.jdt.core.utils.PositionUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
-import org.eclipse.lsp4jakarta.version.JakartaDiagnostic;
-import org.eclipse.lsp4jakarta.version.JakartaVersion;
-import org.eclipse.lsp4jakarta.version.JakartaVersionManager;
 
 /**
  * Persistence diagnostic participant that manages the use
@@ -73,12 +69,6 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
         if (unit == null) {
             return diagnostics;
         }
-        //--------------------
-        IJavaProject javaProject = context.getJavaProject();
-        IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
-        List<JakartaVersion> jakartaVersions = JakartaVersionManager.getInstance().getVersion(javaProject.getElementName(), javaProject, entries);
-        JakartaVersion jakartaVersion = jakartaVersions.isEmpty() ? JakartaVersion.EE_9 : jakartaVersions.get(0);
-        //---------------------
 
         IType[] alltypes = unit.getAllTypes();
         IMethod[] methods;
@@ -86,9 +76,9 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         for (IType type : alltypes) {
             methods = type.getMethods();
-            collectMemberDiagnostics(methods, type, unit, diagnostics, context, jakartaVersion);
+            collectMemberDiagnostics(methods, type, unit, diagnostics, context);
             fields = type.getFields();
-            collectMemberDiagnostics(fields, type, unit, diagnostics, context, jakartaVersion);
+            collectMemberDiagnostics(fields, type, unit, diagnostics, context);
         }
 
         return diagnostics;
@@ -132,7 +122,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     private void collectMemberDiagnostics(IMember[] members, IType type, ICompilationUnit unit,
-                                          List<Diagnostic> diagnostics, JavaDiagnosticsContext context, JakartaVersion jakartaVersion) throws CoreException {
+                                          List<Diagnostic> diagnostics, JavaDiagnosticsContext context) throws CoreException {
 
         List<IAnnotation> mapKeyJoinCols = null;
         boolean hasMapKeyAnnotation = false;
@@ -182,12 +172,12 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
             }
 
             if (hasMapKeyAnnotation) {
-                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKey", context, diagnostics, jakartaVersion);
+                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKey", context, diagnostics);
                 collectAccessorDiagnostics(member, type, context, diagnostics);
             }
 
             if (hasMapKeyClassAnnotation) {
-                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics, jakartaVersion);
+                hasTypeDiagnostics = collectTypeDiagnostics(member, "@MapKeyClass", context, diagnostics);
                 collectAccessorDiagnostics(member, type, context, diagnostics);
             }
 
@@ -241,7 +231,7 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
     }
 
     private boolean collectTypeDiagnostics(IMember member, String attribute, JavaDiagnosticsContext context,
-                                           List<Diagnostic> diagnostics, JakartaVersion jakartaVersion) throws CoreException {
+                                           List<Diagnostic> diagnostics) throws CoreException {
 
         boolean hasTypeDiagnostics = false;
         Range range = null;
@@ -284,14 +274,8 @@ public class PersistenceMapKeyDiagnosticsParticipant implements IJavaDiagnostics
 
         if (messageKey != null) {
             hasTypeDiagnostics = true;
-            //---------------------------------
-            boolean isApplicable = JakartaDiagnostic.getByCodeOrNull(errorCode.getCode()) != null ? JakartaDiagnostic.getByCodeOrNull(errorCode.getCode()).isApplicableTo(jakartaVersion) : false;
-            System.out.println("isApplicable =>" + isApplicable);
-            //----------------------------------
-            if (isApplicable) {
-                diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute),
-                                                         range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
-            }
+            diagnostics.add(context.createDiagnostic(context.getUri(), Messages.getMessage(messageKey, attribute),
+                                                     range, Constants.DIAGNOSTIC_SOURCE, null, errorCode, DiagnosticSeverity.Error));
         }
         return hasTypeDiagnostics;
     }
