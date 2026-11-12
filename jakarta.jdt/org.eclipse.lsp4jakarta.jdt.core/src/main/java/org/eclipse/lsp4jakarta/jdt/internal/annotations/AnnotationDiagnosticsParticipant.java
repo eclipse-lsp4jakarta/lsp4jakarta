@@ -108,6 +108,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 IMethod[] methods = type.getMethods();
                 for (IMethod method : methods) {
                     annotations = method.getAnnotations();
+                    validateNonnullNullableConflict(unit, method, annotations, context, diagnostics);
                     for (IAnnotation annotation : annotations) {
                         if (isValidAnnotation(annotation.getElementName(), validMethodAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, method));
@@ -116,6 +117,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     ILocalVariable[] parameters = method.getParameters();
                     for (ILocalVariable parameter : parameters) {
                         annotations = parameter.getAnnotations();
+                        validateNonnullNullableConflict(unit, parameter, annotations, context, diagnostics);
                         for (IAnnotation annotation : annotations) {
                             if (isValidAnnotation(annotation.getElementName(), validMethodParamAnnotations))
                                 annotatables.add(new Tuple.Two<>(annotation, parameter));
@@ -126,6 +128,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 IField[] fields = type.getFields();
                 for (IField field : fields) {
                     annotations = field.getAnnotations();
+                    validateNonnullNullableConflict(unit, field, annotations, context, diagnostics);
                     for (IAnnotation annotation : annotations) {
                         if (isValidAnnotation(annotation.getElementName(), validFieldAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, field));
@@ -616,6 +619,34 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             }
         }
         return null;
+    }
+
+    /**
+     * Reports a diagnostic on the {@code @Nullable} annotation when the same
+     * element is also annotated with {@code @Nonnull}, since the two nullability
+     * contracts are mutually exclusive.
+     *
+     * @param unit the compilation unit
+     * @param element the field, method or parameter carrying the annotations
+     * @param annotations the annotations on the element
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException
+     */
+    private void validateNonnullNullableConflict(ICompilationUnit unit, IJavaElement element,
+                                                 IAnnotation[] annotations,
+                                                 JavaDiagnosticsContext context,
+                                                 List<Diagnostic> diagnostics) throws JavaModelException {
+        IAnnotation nonnull = DiagnosticUtils.getMatchedAnnotation(unit, annotations, Constants.NONNULL_FQ_NAME);
+        IAnnotation nullable = DiagnosticUtils.getMatchedAnnotation(unit, annotations, Constants.NULLABLE_FQ_NAME);
+        if (nonnull != null && nullable != null) {
+            Range range = PositionUtils.toNameRange(nullable, context.getUtils());
+            String message = Messages.getMessage("NonnullNullableConflict", "@Nonnull", "@Nullable", element.getElementName());
+            diagnostics.add(context.createDiagnostic(context.getUri(), message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.NonnullNullableConflict,
+                                                     DiagnosticSeverity.Error));
+        }
     }
 
     /**
