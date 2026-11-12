@@ -147,7 +147,7 @@ public class JakartaProjectVersionManager {
                 return false;
             }
 
-            applyDetectedVersions(projectUri, detectedVersions, "initial selection", null);
+            applyDetectedVersions(projectUri, detectedVersions, "initial selection");
             return false;
         }
     }
@@ -157,9 +157,8 @@ public class JakartaProjectVersionManager {
      * version file and cancels any pending selection request.
      *
      * @param projectUri the project URI
-     * @return the version data the project had, or null if it had none
      */
-    public VersionData clear(String projectUri) {
+    public void clear(String projectUri) {
         synchronized (lockFor(projectUri)) {
             VersionData oldVersionData = projectVersions.remove(projectUri);
             if (oldVersionData != null) {
@@ -175,7 +174,6 @@ public class JakartaProjectVersionManager {
                 existingRequest.cancel(true);
                 LOGGER.info("Cancelled in-flight version request for project: " + projectUri);
             }
-            return oldVersionData;
         }
     }
 
@@ -186,12 +184,10 @@ public class JakartaProjectVersionManager {
      *
      * @param projectUri the project URI
      * @param detectedVersions the versions detected on the project's classpath
-     * @param previousVersion the version the project had before the reset, restored if the
-     *            user cancels the selection; null if it had none
      */
-    public void resolveAfterReset(String projectUri, List<JakartaVersion> detectedVersions, VersionData previousVersion) {
+    public void resolveAfterReset(String projectUri, List<JakartaVersion> detectedVersions) {
         synchronized (lockFor(projectUri)) {
-            applyDetectedVersions(projectUri, detectedVersions, "reset", previousVersion);
+            applyDetectedVersions(projectUri, detectedVersions, "reset");
         }
     }
 
@@ -246,9 +242,8 @@ public class JakartaProjectVersionManager {
      * @param projectUri the project URI
      * @param detectedVersions the versions detected on the project's classpath
      * @param context description of the caller, used in log messages
-     * @param previousVersion the version the project had before, or null if it never had one
      */
-    private void applyDetectedVersions(String projectUri, List<JakartaVersion> detectedVersions, String context, VersionData previousVersion) {
+    private void applyDetectedVersions(String projectUri, List<JakartaVersion> detectedVersions, String context) {
         List<String> versions = detectedVersions.stream().map(JakartaVersion::getLabel).collect(Collectors.toList());
 
         if (versions.size() == 1) {
@@ -257,7 +252,7 @@ public class JakartaProjectVersionManager {
             LOGGER.info("Client does not support version selection. Using the " + DEFAULT_VERSION_STRATEGY + " detected Jakarta EE version for project: " + projectUri);
             store(projectUri, new VersionData(selectDefaultVersion(detectedVersions, DEFAULT_VERSION_STRATEGY), SelectionMode.DEFAULT, versions));
         } else {
-            promptForVersionSelection(projectUri, context, detectedVersions, versions, previousVersion);
+            promptForVersionSelection(projectUri, context, detectedVersions, versions);
             return;
         }
         onVersionResolved.accept(projectUri);
@@ -267,17 +262,15 @@ public class JakartaProjectVersionManager {
      * Asks the client to select one of the given versions and, once answered,
      * stores the choice and notifies {@code onVersionResolved}. The pending
      * request is tracked so it can be cancelled by {@link #clear(String)}.
-     * A null answer means the user cancelled the selection. If the project had a
-     * version before (and it is still one of the detected versions), that version
-     * is kept; otherwise the default version is applied.
+     * A null answer means the user cancelled the selection, in which case the
+     * default version is applied.
      *
      * @param projectUri the project URI
      * @param context description of the caller, used in log messages
      * @param detectedVersions the versions detected on the project's classpath
      * @param versions the version labels the user can choose from
-     * @param previousVersion the version the project had before, or null if it never had one
      */
-    private void promptForVersionSelection(String projectUri, String context, List<JakartaVersion> detectedVersions, List<String> versions, VersionData previousVersion) {
+    private void promptForVersionSelection(String projectUri, String context, List<JakartaVersion> detectedVersions, List<String> versions) {
         Object projectLock = lockFor(projectUri);
 
         Map<String, Object> params = new HashMap<>();
@@ -293,11 +286,6 @@ public class JakartaProjectVersionManager {
 
                 if (selectedVersion != null) {
                     store(projectUri, new VersionData(selectedVersion, SelectionMode.USER_SELECTED, versions));
-                    onVersionResolved.accept(projectUri);
-                } else if (previousVersion != null && versions.contains(previousVersion.getVersion())) {
-                    LOGGER.info("Jakarta EE version selection cancelled (" + context + "). Keeping the previous version " + previousVersion.getVersion() + " for project: "
-                                + projectUri);
-                    store(projectUri, previousVersion);
                     onVersionResolved.accept(projectUri);
                 } else {
                     LOGGER.info("Jakarta EE version selection cancelled (" + context + "). Using the " + DEFAULT_VERSION_STRATEGY + " detected Jakarta EE version for project: "

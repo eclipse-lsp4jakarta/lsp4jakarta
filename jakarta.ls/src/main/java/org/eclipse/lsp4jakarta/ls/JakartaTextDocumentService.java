@@ -409,7 +409,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
             return;
         }
 
-        VersionData previousVersion = versionManager.clear(projectUri);
+        versionManager.clear(projectUri);
 
         // getJavaProjectLabels needs a file URI (not a project URI) — findProject calls
         // utils.findFile(uri) which only resolves files, not directories.
@@ -438,7 +438,7 @@ public class JakartaTextDocumentService implements TextDocumentService {
                 LOGGER.warning("No versions detected for project: " + projectUri);
                 return;
             }
-            versionManager.resolveAfterReset(projectUri, projectInfo.getJakartaVersions(), previousVersion);
+            versionManager.resolveAfterReset(projectUri, projectInfo.getJakartaVersions());
         }, versionManager.getExecutor());
     }
 }

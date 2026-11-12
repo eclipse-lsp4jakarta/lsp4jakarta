@@ -90,40 +90,6 @@ public class JakartaProjectVersionManagerTest {
     }
 
     @Test
-    public void cancelledSelectionAfterResetKeepsPreviousVersion() throws Exception {
-        String project = project();
-        JakartaProjectVersionManager m = manager(CompletableFuture.completedFuture(null), true);
-        VersionData previous = new VersionData(JakartaVersion.EE_10.getLabel(), SelectionMode.USER_SELECTED, Arrays.asList(JakartaVersion.EE_10.getLabel(),
-                                                                                                                           JakartaVersion.EE_9.getLabel(),
-                                                                                                                           JakartaVersion.EE_11.getLabel()));
-
-        m.resolveAfterReset(project, DETECTED, previous);
-        assertTrue(resolvedLatch.await(5, TimeUnit.SECONDS));
-
-        VersionData data = m.getVersionData(project);
-        assertNotNull(data);
-        assertEquals(JakartaVersion.EE_10.getLabel(), data.getVersion());
-        assertEquals(SelectionMode.USER_SELECTED, data.getSelectionMode());
-        m.shutdown();
-    }
-
-    @Test
-    public void cancelledSelectionAfterResetAppliesDefaultWhenPreviousVersionIsNoLongerDetected() throws Exception {
-        String project = project();
-        JakartaProjectVersionManager m = manager(CompletableFuture.completedFuture(null), true);
-        VersionData previous = new VersionData("Jakarta EE 8", SelectionMode.USER_SELECTED, Arrays.asList("Jakarta EE 8"));
-
-        m.resolveAfterReset(project, DETECTED, previous);
-        assertTrue(resolvedLatch.await(5, TimeUnit.SECONDS));
-
-        VersionData data = m.getVersionData(project);
-        assertNotNull(data);
-        assertEquals(JakartaVersion.EE_11.getLabel(), data.getVersion());
-        assertEquals(SelectionMode.DEFAULT, data.getSelectionMode());
-        m.shutdown();
-    }
-
-    @Test
     public void clientWithoutSelectorAppliesDefaultVersion() throws Exception {
         String project = project();
         JakartaProjectVersionManager m = manager(new CompletableFuture<>(), false);
