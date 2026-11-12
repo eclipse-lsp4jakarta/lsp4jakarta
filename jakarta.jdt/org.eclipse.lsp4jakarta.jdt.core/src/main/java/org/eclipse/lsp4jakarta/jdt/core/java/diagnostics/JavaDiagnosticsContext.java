@@ -14,6 +14,8 @@
 package org.eclipse.lsp4jakarta.jdt.core.java.diagnostics;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.lsp4j.Diagnostic;
@@ -23,6 +25,8 @@ import org.eclipse.lsp4jakarta.commons.DocumentFormat;
 import org.eclipse.lsp4jakarta.commons.JakartaJavaDiagnosticsSettings;
 import org.eclipse.lsp4jakarta.jdt.core.java.AbstractJavaContext;
 import org.eclipse.lsp4jakarta.jdt.core.utils.IJDTUtils;
+import org.eclipse.lsp4jakarta.version.JakartaDiagnostic;
+import org.eclipse.lsp4jakarta.version.JakartaVersion;
 
 /**
  * Java diagnostics context for a given compilation unit.
@@ -87,6 +91,25 @@ public class JavaDiagnosticsContext extends AbstractJavaContext {
             diagnostic.setData(data);
         }
         return diagnostic;
+    }
+
+    /**
+     * Removes the diagnostics that do not apply to the Jakarta EE version selected
+     * for the project. Diagnostics are kept when no version is selected or when
+     * their code is not registered in {@link JakartaDiagnostic}.
+     *
+     * @param diagnostics the diagnostics created by the participants
+     * @return the diagnostics applicable to the selected version
+     */
+    public List<Diagnostic> filterByJakartaVersion(List<Diagnostic> diagnostics) {
+        JakartaVersion version = JakartaVersion.fromLabel(settings.getSelectedVersion());
+        if (version == JakartaVersion.UNKNOWN) {
+            return diagnostics;
+        }
+        return diagnostics.stream().filter(diagnostic -> {
+            JakartaDiagnostic jakartaDiagnostic = diagnostic.getCode() == null ? null : JakartaDiagnostic.getByCodeOrNull(diagnostic.getCode().getLeft());
+            return jakartaDiagnostic == null || jakartaDiagnostic.isApplicableTo(version);
+        }).collect(Collectors.toList());
     }
 
 }

@@ -6,8 +6,7 @@ public enum JakartaVersion {
 
     EE_11(11, "Jakarta EE 11"),
     EE_10(10, "Jakarta EE 10"),
-    EE_9(9, "Jakarta EE 9 / 9.1"),
-    EE_8(8, "Jakarta EE 8 / 8"),
+    EE_9(9, "Jakarta EE 9"),
     UNKNOWN(0, "Unknown");
 
     private final int level;
