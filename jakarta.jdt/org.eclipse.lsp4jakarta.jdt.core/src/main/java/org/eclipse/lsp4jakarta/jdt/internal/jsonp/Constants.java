@@ -12,8 +12,6 @@
  *******************************************************************************/
 package org.eclipse.lsp4jakarta.jdt.internal.jsonp;
 
-import java.util.Set;
-
 /**
  * JSON Processing (JSON-P) diagnostic constants.
  */
@@ -36,8 +34,8 @@ public class Constants {
     public static final String JAKARTA_JSON_OBJECT_FQ_NAME = "jakarta.json.JsonObject";
     public static final String JAKARTA_JSON_PACKAGE_PREFIX = "jakarta.json.";
     public static final String SETTER_PREFIX = "set";
-    /** JsonObject getters returning a plain value that is typically copied into a POJO property. */
-    public static final Set<String> JSON_OBJECT_VALUE_GETTERS = Set.of("getString", "getInt", "getBoolean");
+    /** JsonObject methods starting with this prefix read a value (getString, getInt, getJsonNumber, ...). */
+    public static final String GETTER_PREFIX = "get";
     /** Minimum number of values copied into a POJO before the pattern is reported. */
     public static final int MIN_MANUAL_MAPPINGS = 2;
 }

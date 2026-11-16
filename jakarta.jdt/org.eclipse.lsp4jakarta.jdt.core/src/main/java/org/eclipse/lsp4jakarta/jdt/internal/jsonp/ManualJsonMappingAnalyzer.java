@@ -84,8 +84,9 @@ public class ManualJsonMappingAnalyzer {
                && ASTUtils.isMatchedTargetClass(methodInvocation, Constants.JAKARTA_JSON_READER_FQ_NAME);
     }
 
+    /** Any JsonObject method that reads a value, e.g. getString, getInt, getJsonNumber. */
     private static boolean isJsonObjectValueGetter(MethodInvocation methodInvocation) {
-        return Constants.JSON_OBJECT_VALUE_GETTERS.contains(methodInvocation.getName().getIdentifier())
+        return methodInvocation.getName().getIdentifier().startsWith(Constants.GETTER_PREFIX)
                && ASTUtils.isMatchedTargetClass(methodInvocation, Constants.JAKARTA_JSON_OBJECT_FQ_NAME);
     }
 
@@ -125,6 +126,12 @@ public class ManualJsonMappingAnalyzer {
         return null;
     }
 
+    /** True when the invocation returns a jakarta.json type such as JsonNumber or JsonObject. */
+    private static boolean returnsJsonType(MethodInvocation invocation) {
+        ITypeBinding returnType = invocation.resolveTypeBinding();
+        return returnType != null && returnType.getQualifiedName().startsWith(Constants.JAKARTA_JSON_PACKAGE_PREFIX);
+    }
+
     /** A setter name is "set" followed by an upper-case letter, e.g. setName. */
     private static boolean isSetterName(String name) {
         return name.length() > Constants.SETTER_PREFIX.length() && name.startsWith(Constants.SETTER_PREFIX)
@@ -133,16 +140,25 @@ public class ManualJsonMappingAnalyzer {
 
     /**
      * Checks that the value returned by the getter is stored into a non-JSON object, which means
-     * it is passed to a setter or constructor, or assigned to a field.
+     * it is passed to a setter or constructor, or assigned to a field. One call on the returned
+     * value is allowed, e.g. {@code json.getJsonNumber("x").doubleValue()}. A getter that returns
+     * a JSON type (JsonNumber, JsonObject, ...) counts only when such a call turns it into a plain value.
      */
     private static boolean isCopiedIntoObject(MethodInvocation getter) {
-        ASTNode parent = getter.getParent();
-        if (parent instanceof MethodInvocation setter && setter.arguments().contains(getter)) {
+        Expression value = getter;
+        if (getter.getParent() instanceof MethodInvocation chained && chained.getExpression() == getter) {
+            value = chained;
+        }
+        if (value == getter && returnsJsonType(getter)) {
+            return false;
+        }
+        ASTNode parent = value.getParent();
+        if (parent instanceof MethodInvocation setter && setter.arguments().contains(value)) {
             String declaringClass = ASTUtils.getDeclaringClassName(setter);
             return isSetterName(setter.getName().getIdentifier()) && setter.arguments().size() == 1
                    && declaringClass != null && !declaringClass.startsWith(Constants.JAKARTA_JSON_PACKAGE_PREFIX);
         }
-        if (parent instanceof ClassInstanceCreation creation && creation.arguments().contains(getter)) {
+        if (parent instanceof ClassInstanceCreation creation && creation.arguments().contains(value)) {
             ITypeBinding type = creation.resolveTypeBinding();
             if (type == null) {
                 return false;
@@ -151,7 +167,7 @@ public class ManualJsonMappingAnalyzer {
             // JDK types (File, BigDecimal, ...) are value conversions, not POJO mapping
             return !typeName.startsWith(Constants.JAKARTA_JSON_PACKAGE_PREFIX) && !typeName.startsWith("java.") && !typeName.startsWith("javax.");
         }
-        if (parent instanceof Assignment assignment && assignment.getRightHandSide() == getter) {
+        if (parent instanceof Assignment assignment && assignment.getRightHandSide() == value) {
             Expression target = assignment.getLeftHandSide();
             IBinding binding = null;
             if (target instanceof FieldAccess fieldAccess) {

@@ -124,4 +124,35 @@ public class ManualJsonMappingToPojo {
         user.setAge(json.getInt("age"));
         return user;
     }
+
+    // Diagnostic expected: values are read with other JsonObject getters and converted before copying
+    public User mapThroughJsonValues(String jsonString) {
+        JsonReader reader = Json.createReader(new StringReader(jsonString));
+        JsonObject json = reader.readObject();
+
+        User user = new User();
+        user.setName(json.getJsonString("name").getString());
+        user.setAge(json.getJsonNumber("age").intValue());
+        return user;
+    }
+
+    // Valid: raw JSON values are stored as they are, nothing is converted into plain values
+    public void storeRawJson(String jsonString, java.util.List<Object> store) {
+        JsonReader reader = Json.createReader(new StringReader(jsonString));
+        JsonObject json = reader.readObject();
+
+        Holder holder = new Holder();
+        holder.setAddress(json.getJsonObject("address"));
+        holder.setScores(json.getJsonArray("scores"));
+        store.add(holder);
+    }
+
+    public static class Holder {
+        private JsonObject address;
+        private jakarta.json.JsonArray scores;
+
+        public void setAddress(JsonObject address) { this.address = address; }
+        public void setScores(jakarta.json.JsonArray scores) { this.scores = scores; }
+    }
+
 }
