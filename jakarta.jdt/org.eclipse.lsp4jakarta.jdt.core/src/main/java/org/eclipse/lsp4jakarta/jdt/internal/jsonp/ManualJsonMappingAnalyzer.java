@@ -36,10 +36,10 @@ import org.eclipse.lsp4jakarta.jdt.core.ASTUtils;
  * Java object field by field, which Jakarta JSON Binding (Jsonb.fromJson) can do
  * with less code and type safety.
  *
- * <p>Within a single method, a {@code JsonReader.readObject()} call is reported when at least
- * {@link Constants#MIN_MANUAL_MAPPINGS} values read from the resulting JsonObject are passed to a
- * setter or constructor, or assigned to a field, of a non-JSON object. Values that are only
- * inspected, or generic JSON-P processing, are not reported.
+ * <p>Within a single method, a {@code JsonReader.readObject()} call is reported when a value
+ * read from the resulting JsonObject is passed to a setter or constructor, or assigned to a
+ * field, of a non-JSON object. Values that are only inspected, or generic JSON-P processing,
+ * are not reported.
  *
  * <p>https://openliberty.io/docs/latest/json-p-b.html
  */
@@ -61,7 +61,7 @@ public class ManualJsonMappingAnalyzer {
             return result;
         }
         List<MethodInvocation> mappedGetters = allMethodInvocations.stream().filter(ManualJsonMappingAnalyzer::isJsonObjectValueGetter).filter(ManualJsonMappingAnalyzer::isCopiedIntoObject).collect(Collectors.toList());
-        if (mappedGetters.size() < Constants.MIN_MANUAL_MAPPINGS) {
+        if (mappedGetters.isEmpty()) {
             return result;
         }
         for (MethodInvocation readObject : readObjectInvocations) {
@@ -70,9 +70,9 @@ public class ManualJsonMappingAnalyzer {
                 continue;
             }
             IVariableBinding assignedVariable = getAssignedVariable(readObject);
-            long mappedCount = mappedGetters.stream().filter(getter -> ASTUtils.getEnclosingMethod(getter) == enclosingMethod
-                                                                       && isReadFrom(getter, readObject, assignedVariable)).count();
-            if (mappedCount >= Constants.MIN_MANUAL_MAPPINGS) {
+            boolean mapped = mappedGetters.stream().anyMatch(getter -> ASTUtils.getEnclosingMethod(getter) == enclosingMethod
+                                                                       && isReadFrom(getter, readObject, assignedVariable));
+            if (mapped) {
                 result.add(readObject);
             }
         }

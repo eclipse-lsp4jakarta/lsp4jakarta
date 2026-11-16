@@ -88,7 +88,7 @@ public class ManualJsonMappingToPojo {
         return jsonb.fromJson(jsonString, User.class);
     }
 
-    // Valid: only a single value is read
+    // Diagnostic expected: even a single value is copied into the object
     public User mapSingleValue(String jsonString) {
         JsonReader reader = Json.createReader(new StringReader(jsonString));
         JsonObject json = reader.readObject();

@@ -34,8 +34,5 @@ public class Constants {
     public static final String JAKARTA_JSON_OBJECT_FQ_NAME = "jakarta.json.JsonObject";
     public static final String JAKARTA_JSON_PACKAGE_PREFIX = "jakarta.json.";
     public static final String SETTER_PREFIX = "set";
-    /** JsonObject methods starting with this prefix read a value (getString, getInt, getJsonNumber, ...). */
     public static final String GETTER_PREFIX = "get";
-    /** Minimum number of values copied into a POJO before the pattern is reported. */
-    public static final int MIN_MANUAL_MAPPINGS = 2;
 }

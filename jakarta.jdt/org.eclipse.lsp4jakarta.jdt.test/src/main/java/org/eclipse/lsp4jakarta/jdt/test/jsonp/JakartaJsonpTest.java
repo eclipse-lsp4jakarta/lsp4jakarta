@@ -126,11 +126,14 @@ public class JakartaJsonpTest extends BaseJakartaTest {
         Diagnostic mappedThroughFieldAssignment = d(76, 33, 43, message,
                                                     DiagnosticSeverity.Warning, "jakarta-jsonp", "UseJsonbInsteadOfManualMapping");
 
+        Diagnostic mappedSingleValue = d(93, 33, 43, message,
+                                         DiagnosticSeverity.Warning, "jakarta-jsonp", "UseJsonbInsteadOfManualMapping");
+
         Diagnostic mappedThroughJsonValues = d(130, 33, 43, message,
                                                DiagnosticSeverity.Warning, "jakarta-jsonp", "UseJsonbInsteadOfManualMapping");
 
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, mappedThroughVariable, mappedThroughChainedCall,
-                              mappedThroughConstructor, mappedThroughFieldAssignment, mappedThroughJsonValues);
+                              mappedThroughConstructor, mappedThroughFieldAssignment, mappedSingleValue, mappedThroughJsonValues);
     }
 
 }
