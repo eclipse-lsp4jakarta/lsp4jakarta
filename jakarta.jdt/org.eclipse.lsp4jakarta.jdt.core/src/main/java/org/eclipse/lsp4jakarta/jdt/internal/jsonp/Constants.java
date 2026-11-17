@@ -27,4 +27,12 @@ public class Constants {
     public static final String JAKARTA_JSON_OBJECT_BUILDER_FQ_NAME = "jakarta.json.JsonObjectBuilder";
     public static final String JAKARTA_JSON_BUILDER_ADD_METHOD = "add";
     public static final String JAKARTA_JSON_ARRAY_BUILDER_FQ_NAME = "jakarta.json.JsonArrayBuilder";
+
+    /* Manual JSON parsing to POJO (recommend JSON-B) */
+    public static final String JSON_READER_READ_OBJECT = "readObject";
+    public static final String JAKARTA_JSON_READER_FQ_NAME = "jakarta.json.JsonReader";
+    public static final String JAKARTA_JSON_OBJECT_FQ_NAME = "jakarta.json.JsonObject";
+    public static final String JAKARTA_JSON_PACKAGE_PREFIX = "jakarta.json.";
+    public static final String SETTER_PREFIX = "set";
+    public static final String GETTER_PREFIX = "get";
 }

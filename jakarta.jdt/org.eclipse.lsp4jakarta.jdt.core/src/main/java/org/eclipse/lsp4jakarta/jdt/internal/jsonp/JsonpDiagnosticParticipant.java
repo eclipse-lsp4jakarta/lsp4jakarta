@@ -79,7 +79,8 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                 // or a sequence of '/' prefixed tokens, a diagnostic highlighting the invalid
                 // argument is created.
                 String msg = Messages.getMessage("CreatePointerErrorMessage");
-                createDiagnostic(unit, diagnostics, context, uri, msg, ErrorCode.InvalidJsonCreatePointerTarget, arg);
+                createDiagnostic(unit, diagnostics, context, uri, msg, ErrorCode.InvalidJsonCreatePointerTarget, arg,
+                                 DiagnosticSeverity.Error);
             }
         }
 
@@ -102,7 +103,22 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
         createDiagnosticsForBuilderInvocations(unit, createArrayBuilderMethodInvocations, diagnostics, context, uri,
                                                Messages.getMessage("ErrorMessageJsonPArrayValueNonNull"),
                                                ErrorCode.InvalidJsonArrayBuilderValue);
+
+        collectManualMappingDiagnostics(unit, allMethodInvocations, diagnostics, context, uri);
         return diagnostics;
+    }
+
+    /**
+     * Reports a warning on JsonReader.readObject() when its values are copied field by field into an object.
+     * See {@link ManualJsonMappingAnalyzer}.
+     */
+    private void collectManualMappingDiagnostics(ICompilationUnit unit, List<MethodInvocation> allMethodInvocations,
+                                                 List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
+                                                 String uri) {
+        for (MethodInvocation readObject : ManualJsonMappingAnalyzer.findManualMappings(allMethodInvocations)) {
+            createDiagnostic(unit, diagnostics, context, uri, Messages.getMessage("UseJsonbInsteadOfManualMapping"),
+                             ErrorCode.UseJsonbInsteadOfManualMapping, readObject.getName(), DiagnosticSeverity.Warning);
+        }
     }
 
     /**
@@ -130,7 +146,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
                 for (Object argObj : methodIn.arguments()) {
                     Expression arg = (Expression) argObj;
                     if (isInvalidNullArgument(arg)) {
-                        createDiagnostic(unit, diagnostics, context, uri, msg, errCode, arg);
+                        createDiagnostic(unit, diagnostics, context, uri, msg, errCode, arg, DiagnosticSeverity.Error);
                     }
                 }
             }
@@ -138,7 +154,7 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
     }
 
     /**
-     * Common method to create a diagnostic for an invalid argument
+     * Common method to create a diagnostic for the given expression
      *
      * @param unit
      * @param diagnostics
@@ -147,13 +163,13 @@ public class JsonpDiagnosticParticipant implements IJavaDiagnosticsParticipant {
      * @param msg
      * @param errCode
      * @param arg
+     * @param severity
      */
     private void createDiagnostic(ICompilationUnit unit, List<Diagnostic> diagnostics, JavaDiagnosticsContext context,
-                                  String uri, String msg, IJavaErrorCode errCode, Expression arg) {
+                                  String uri, String msg, IJavaErrorCode errCode, Expression arg, DiagnosticSeverity severity) {
         try {
             Range range = JDTUtils.toRange(unit, arg.getStartPosition(), arg.getLength());
-            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE, errCode,
-                                                     DiagnosticSeverity.Error));
+            diagnostics.add(context.createDiagnostic(uri, msg, range, Constants.DIAGNOSTIC_SOURCE, errCode, severity));
         } catch (JavaModelException e) {
             LOGGER.log(Level.SEVERE, "Cannot calculate diagnostics", e.getMessage());
         }
