@@ -69,7 +69,11 @@ public class DependencyInjectionTest extends BaseJakartaTest {
                           DiagnosticSeverity.Error, "jakarta-di", "InvalidInjectAnnotationOnStaticMethod");
         // d5.setData(IType.METHOD);
 
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d1, d2, d3, d4, d5);
+        Diagnostic d6 = d(54, 23, 36,
+                          "A type variable is not a legal bean type. Parameter 'arg' must not use a bare type variable (T or T[]).",
+                          DiagnosticSeverity.Error, "jakarta-cdi", "InvalidBareTypeVariableInInjectMethodParam");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, d4, d6, d5, d2, d3, d1);
 
         // Create expected quick fixes.
         JakartaJavaCodeActionParams codeActionParams = createCodeActionParams(uri, d1);

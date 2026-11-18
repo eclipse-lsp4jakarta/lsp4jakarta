@@ -52,6 +52,11 @@ public class BareTypeVariableInjectBean<T> {
     public void setBareTypeArray(T[] values) {
     }
 
+    // Invalid: multi-parameter method with bare type variables
+    @Inject
+    public void setMultipleParams(String validParam, T bareParam, int count, T[] bareArrayParam) {
+    }
+
     // Valid: parameterized type with type variable (List<T>)
     @Inject
     List<T> genericList;
