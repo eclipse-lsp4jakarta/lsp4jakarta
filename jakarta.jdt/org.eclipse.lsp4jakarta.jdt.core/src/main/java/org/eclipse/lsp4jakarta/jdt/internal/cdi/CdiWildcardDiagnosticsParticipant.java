@@ -86,7 +86,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                  Constants.DIAGNOSTIC_SOURCE, null,
                                                                  ErrorCode.InvalidWildcardTypeInInjectField,
                                                                  DiagnosticSeverity.Error));
-                    } else if (!typeParamNames.isEmpty() && isBareTypeVariable(fieldSig, typeParamNames)) {
+                    } else if (isBareTypeVariable(fieldSig, typeParamNames)) {
                         // Rule: a bare type variable (T or T[]) is not a legal bean type
                         diagnostics.add(context.createDiagnostic(uri,
                                                                  Messages.getMessage(ErrorCode.InvalidBareTypeVariableInInjectField.name()),
@@ -106,6 +106,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
             }
 
             for (IMethod method : type.getMethods()) {
+                Set<String> methodTypeParamNames = getTypeParameterNames(typeParamNames, method);
                 String[] annotationNames = DiagnosticUtils.getAnnotationNames(method);
 
                 if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.INJECT_FQ_NAME)) {
@@ -122,7 +123,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                                      Constants.DIAGNOSTIC_SOURCE, null,
                                                                      ErrorCode.InvalidWildcardTypeInInjectMethod,
                                                                      DiagnosticSeverity.Error));
-                        } else if (!typeParamNames.isEmpty() && isBareTypeVariable(paramSig, typeParamNames)) {
+                        } else if (isBareTypeVariable(paramSig, methodTypeParamNames)) {
                             // Rule: a bare type variable (T or T[]) is not a legal bean type.
                             // Diagnostic is placed on the method name so RemoveAnnotationConflictQuickFix
                             // can resolve the @Inject annotation on the method.
@@ -137,7 +138,7 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                     }
                 } else if (DiagnosticUtils.isMatchedAnnotation(unit, method.getAnnotations(), Constants.PRODUCES_FQ_NAME)) {
                     checkProducerMember(context, uri, diagnostics, type, annotationNames,
-                                        method.getReturnType(), typeParamNames, scopeFQNames,
+                                        method.getReturnType(), methodTypeParamNames, scopeFQNames,
                                         PositionUtils.toNameRange(method, context.getUtils()),
                                         new ErrorCode[] { ErrorCode.InvalidWildcardTypeInProducerMethod,
                                                           ErrorCode.InvalidProducerMethodWithBareTypeVariableReturnType,
@@ -181,10 +182,6 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
                                                      errorCodes[0], DiagnosticSeverity.Error));
         }
 
-        if (typeParamNames.isEmpty()) {
-            return;
-        }
-
         // Rule 1: bare type variable (T or T[]) — always invalid
         if (isBareTypeVariable(typeSignature, typeParamNames)) {
             diagnostics.add(context.createDiagnostic(uri, Messages.getMessage(errorCodes[1].name()),
@@ -214,6 +211,27 @@ public class CdiWildcardDiagnosticsParticipant implements IJavaDiagnosticsPartic
     private Set<String> getTypeParameterNames(IType type) throws JavaModelException {
         Set<String> names = new HashSet<>();
         for (ITypeParameter tp : type.getTypeParameters()) {
+            names.add(tp.getElementName());
+        }
+        return names;
+    }
+
+    /**
+     * Returns a set containing both the class-level type parameter names and any method-level
+     * type parameter names declared on {@code method}.
+     *
+     * @param classTypeParamNames the enclosing type's type parameter names
+     * @param method the method to inspect
+     * @return a set containing class-level and method-level type parameter names
+     * @throws JavaModelException if the JDT model cannot be accessed
+     */
+    private Set<String> getTypeParameterNames(Set<String> classTypeParamNames, IMethod method) throws JavaModelException {
+        ITypeParameter[] methodTypeParams = method.getTypeParameters();
+        if (methodTypeParams == null || methodTypeParams.length == 0) {
+            return classTypeParamNames;
+        }
+        Set<String> names = new HashSet<>(classTypeParamNames);
+        for (ITypeParameter tp : methodTypeParams) {
             names.add(tp.getElementName());
         }
         return names;

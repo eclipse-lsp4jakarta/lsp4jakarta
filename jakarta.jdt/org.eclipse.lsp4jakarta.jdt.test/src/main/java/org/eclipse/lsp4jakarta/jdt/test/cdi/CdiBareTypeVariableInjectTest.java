@@ -45,6 +45,9 @@ import org.junit.Test;
  * Tests cover:
  * - @Inject fields whose type is a bare type variable (T or T[])
  * - @Inject method parameters whose type is a bare type variable (T or T[])
+ * - Multi-parameter @Inject methods with bare type variables
+ * - Non-generic classes with method-level type variables (<U>)
+ * - Non-generic classes with valid injection points (no diagnostics)
  * - Quickfix: Remove @Inject annotation from the offending element
  */
 public class CdiBareTypeVariableInjectTest extends BaseJakartaTest {
@@ -52,7 +55,7 @@ public class CdiBareTypeVariableInjectTest extends BaseJakartaTest {
     protected static IJDTUtils IJDT_UTILS = JDTUtilsLSImpl.getInstance();
 
     @Test
-    public void bareTypeVariableAtInjectField() throws Exception {
+    public void bareTypeVariableAtInjectionPoints() throws Exception {
         IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
         IFile javaFile = javaProject.getProject().getFile(
                                                           new Path("src/main/java/io/openliberty/sample/jakarta/cdi/BareTypeVariableInjectBean.java"));
@@ -85,11 +88,25 @@ public class CdiBareTypeVariableInjectTest extends BaseJakartaTest {
                                                       DiagnosticSeverity.Error, "jakarta-cdi",
                                                       "InvalidBareTypeVariableInInjectMethodParam");
 
+        // Line 57 (0-based 56): setMultipleParams — method name col 16..33 (bareParam)
+        Diagnostic injectBareTypeMultiParam = d(56, 16, 33,
+                                                "A type variable is not a legal bean type. Parameter 'bareParam' must not use a bare type variable (T or T[]).",
+                                                DiagnosticSeverity.Error, "jakarta-cdi",
+                                                "InvalidBareTypeVariableInInjectMethodParam");
+
+        // Line 57 (0-based 56): setMultipleParams — method name col 16..33 (bareArrayParam)
+        Diagnostic injectBareTypeMultiArrayParam = d(56, 16, 33,
+                                                     "A type variable is not a legal bean type. Parameter 'bareArrayParam' must not use a bare type variable (T or T[]).",
+                                                     DiagnosticSeverity.Error, "jakarta-cdi",
+                                                     "InvalidBareTypeVariableInInjectMethodParam");
+
         assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
                               injectBareTypeField,
                               injectBareTypeArrayField,
                               injectBareTypeMethodParam,
-                              injectBareTypeArrayMethodParam);
+                              injectBareTypeArrayMethodParam,
+                              injectBareTypeMultiParam,
+                              injectBareTypeMultiArrayParam);
 
         // --- QuickFix: Remove @Inject from T bareTypeField (line 38, 0-based 37) ---
         JakartaJavaCodeActionParams codeActionBareTypeField = createCodeActionParams(uri, injectBareTypeField);
@@ -120,5 +137,79 @@ public class CdiBareTypeVariableInjectTest extends BaseJakartaTest {
         CodeAction removeBareTypeArrayMethodInjectAction = ca(uri, "Remove @Inject", injectBareTypeArrayMethodParam,
                                                               removeBareTypeArrayMethodInject);
         assertJavaCodeAction(codeActionBareTypeArrayMethodParam, IJDT_UTILS, removeBareTypeArrayMethodInjectAction);
+
+        // --- QuickFix: Remove @Inject from setMultipleParams method (@Inject on line 55, 0-based) ---
+        JakartaJavaCodeActionParams codeActionMultiParam = createCodeActionParams(uri, injectBareTypeMultiParam);
+        TextEdit removeMultiParamMethodInject = te(55, 4, 56, 4, "");
+        CodeAction removeMultiParamMethodInjectAction = ca(uri, "Remove @Inject", injectBareTypeMultiParam,
+                                                           removeMultiParamMethodInject);
+        assertJavaCodeAction(codeActionMultiParam, IJDT_UTILS, removeMultiParamMethodInjectAction);
+    }
+
+    @Test
+    public void validNonGenericInjectionPoints() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/ValidBareTypeVariableInjectBean.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // No diagnostics expected: all @Inject fields and method parameters use concrete types.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
+    }
+
+    @Test
+    public void bareTypeVariableAtNonGenericInjectMethod() throws Exception {
+        IJavaProject javaProject = loadJavaProject("jakarta-sample", "");
+        IFile javaFile = javaProject.getProject().getFile(
+                                                          new Path("src/main/java/io/openliberty/sample/jakarta/cdi/NonGenericBareTypeInjectBean.java"));
+        String uri = javaFile.getLocation().toFile().toURI().toString();
+
+        JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
+        diagnosticsParams.setUris(Arrays.asList(uri));
+
+        // Line 23 (0-based 22): setMethodLevelBareType — method name col 20..42
+        Diagnostic injectMethodLevelBareType = d(22, 20, 42,
+                                                 "A type variable is not a legal bean type. Parameter 'value' must not use a bare type variable (T or T[]).",
+                                                 DiagnosticSeverity.Error, "jakarta-cdi",
+                                                 "InvalidBareTypeVariableInInjectMethodParam");
+        Diagnostic injectMethodLevelGeneric = d(22, 20, 42,
+                                                "The @Inject annotation must not define a generic method.",
+                                                DiagnosticSeverity.Error, "jakarta-di",
+                                                "InvalidInjectAnnotationOnGenericMethod");
+
+        // Line 28 (0-based 27): setMethodLevelBareTypeArray — method name col 20..47
+        Diagnostic injectMethodLevelBareTypeArray = d(27, 20, 47,
+                                                      "A type variable is not a legal bean type. Parameter 'values' must not use a bare type variable (T or T[]).",
+                                                      DiagnosticSeverity.Error, "jakarta-cdi",
+                                                      "InvalidBareTypeVariableInInjectMethodParam");
+        Diagnostic injectMethodLevelArrayGeneric = d(27, 20, 47,
+                                                     "The @Inject annotation must not define a generic method.",
+                                                     DiagnosticSeverity.Error, "jakarta-di",
+                                                     "InvalidInjectAnnotationOnGenericMethod");
+
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS,
+                              injectMethodLevelArrayGeneric,
+                              injectMethodLevelBareTypeArray,
+                              injectMethodLevelGeneric,
+                              injectMethodLevelBareType);
+
+        // --- QuickFix: Remove @Inject from setMethodLevelBareType method (@Inject on line 21, 0-based) ---
+        JakartaJavaCodeActionParams codeActionMethodLevelBare = createCodeActionParams(uri,
+                                                                                       injectMethodLevelBareType);
+        TextEdit removeMethodLevelBareEdit = te(21, 4, 22, 4, "");
+        CodeAction removeMethodLevelBareAction = ca(uri, "Remove @Inject", injectMethodLevelBareType,
+                                                    removeMethodLevelBareEdit);
+        assertJavaCodeAction(codeActionMethodLevelBare, IJDT_UTILS, removeMethodLevelBareAction);
+
+        // --- QuickFix: Remove @Inject from setMethodLevelBareTypeArray method (@Inject on line 26, 0-based) ---
+        JakartaJavaCodeActionParams codeActionMethodLevelBareArray = createCodeActionParams(uri,
+                                                                                            injectMethodLevelBareTypeArray);
+        TextEdit removeMethodLevelBareArrayEdit = te(26, 4, 27, 4, "");
+        CodeAction removeMethodLevelBareArrayAction = ca(uri, "Remove @Inject", injectMethodLevelBareTypeArray,
+                                                         removeMethodLevelBareArrayEdit);
+        assertJavaCodeAction(codeActionMethodLevelBareArray, IJDT_UTILS, removeMethodLevelBareArrayAction);
     }
 }
