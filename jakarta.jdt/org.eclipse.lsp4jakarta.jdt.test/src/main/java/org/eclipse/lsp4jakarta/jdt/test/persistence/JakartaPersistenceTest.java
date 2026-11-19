@@ -1818,13 +1818,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         JakartaJavaDiagnosticsParams diagnosticsParams = new JakartaJavaDiagnosticsParams();
         diagnosticsParams.setUris(Arrays.asList(uri));
 
-        // Entity @Id fields perfectly match key class members by name and type — only the @Embeddable diagnostic is expected.
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(23, 0, 45,
-                                                      "The primary key class 'IdClassMemberAlignmentValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+        // Entity @Id fields perfectly match key class members by name and type — no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
     @Test
@@ -1842,12 +1837,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                             "The entity @Id field or property 'firstName' does not have a corresponding member in the @IdClass key class.",
                                                             DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberMissingInKeyClass");
 
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(24, 0, 43,
-                                                      "The primary key class 'IdClassMemberNameMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstNameMissingInKeyClassDiagnostic, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, firstNameMissingInKeyClassDiagnostic);
     }
 
     @Test
@@ -1865,12 +1855,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                               "The type of @Id field or property 'firstName' in the entity ('java.lang.String') does not match the type of the corresponding member in the @IdClass key class ('int').",
                                               DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
 
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(24, 0, 43,
-                                                      "The primary key class 'IdClassMemberTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, typeMismatchDiagnostic);
     }
 
     @Test
@@ -1884,13 +1869,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // @ManyToOne @Id field "dept" resolves to Department's PK type (int),
-        // and the key class holds int — types match, only the @Embeddable diagnostic is expected.
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 39,
-                                                      "The primary key class 'IdClassManyToOneValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+        // and the key class holds int — types match, no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
     @Test
@@ -1914,12 +1894,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                     "The type of @Id field or property 'active' in the entity ('boolean') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
                                                     DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
 
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(29, 0, 46,
-                                                      "The primary key class 'IdClassManyToOneTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, activeTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, activeTypeMismatchDiagnostic);
     }
 
     @Test
@@ -1938,12 +1913,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                   "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
                                                   DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
 
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 42,
-                                                      "The primary key class 'IdClassSingleIdManyToOnePK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic);
     }
 
     @Test
@@ -1957,13 +1927,8 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         diagnosticsParams.setUris(Arrays.asList(uri));
 
         // @OneToOne @Id field "dept" resolves to Department's PK type (int),
-        // and the key class holds int — types match, only the @Embeddable diagnostic is expected.
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(26, 0, 38,
-                                                      "The primary key class 'IdClassOneToOneValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+        // and the key class holds int — types match, no diagnostics expected.
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
     @Test
@@ -1982,12 +1947,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
                                                   "The type of @Id field or property 'dept' in the entity ('int') does not match the type of the corresponding member in the @IdClass key class ('java.lang.String').",
                                                   DiagnosticSeverity.Error, "jakarta-persistence", "IdClassMemberTypeMismatch");
 
-        // The key class is not annotated with @Embeddable.
-        Diagnostic idClassNotEmbeddableDiagnostic = d(27, 0, 45,
-                                                      "The primary key class 'IdClassOneToOneTypeMismatchPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, deptTypeMismatchDiagnostic);
     }
 
     @Test
@@ -2003,12 +1963,7 @@ public class JakartaPersistenceTest extends BaseJakartaTest {
         // @ManyToOne @Id field "order" points to OrderWithEmbeddedId, which uses @EmbeddedId
         // of type OrderEmbeddedId. The key class holds OrderEmbeddedId for that field — types
         // match, so no type-mismatch diagnostic is expected (spec §2.4.1.1, third bullet).
-        // Only the @Embeddable diagnostic fires (key class is not annotated with @Embeddable).
-        Diagnostic idClassNotEmbeddableDiagnostic = d(27, 0, 49,
-                                                      "The primary key class 'IdClassManyToOneEmbeddedIdValidPK' used in the @IdClass annotation must be annotated with @Embeddable.",
-                                                      DiagnosticSeverity.Error, "jakarta-persistence", "IdClassTypeNotAnnotatedWithEmbeddable");
-
-        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS, idClassNotEmbeddableDiagnostic);
+        assertJavaDiagnostics(diagnosticsParams, IJDT_UTILS);
     }
 
     @Test
