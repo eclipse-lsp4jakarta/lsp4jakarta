@@ -329,6 +329,8 @@ public class JakartaDelegateCommandHandlerForJava extends AbstractJakartaDelegat
         if (settingsObj != null) {
             List<String> patterns = getStringList(settingsObj, "patterns");
             settings = new JakartaJavaDiagnosticsSettings(patterns);
+            settings.setSelectedVersion(getString(settingsObj, "selectedVersion"));
+            settings.setAvailableVersions(getStringList(settingsObj, "availableVersions"));
         }
         return new JakartaJavaDiagnosticsParams(javaFileUri, settings);
     }
