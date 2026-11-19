@@ -354,7 +354,7 @@ public class PropertiesManagerForJava {
         definitions.forEach(definition -> {
             List<Diagnostic> collectedDiagnostics = definition.collectDiagnostics(context, monitor);
             if (collectedDiagnostics != null && !collectedDiagnostics.isEmpty()) {
-                diagnostics.addAll(collectedDiagnostics);
+                diagnostics.addAll(context.filterByJakartaVersion(collectedDiagnostics));
             }
         });
         definitions.forEach(definition -> definition.endDiagnostics(context, monitor));
