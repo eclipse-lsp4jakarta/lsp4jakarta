@@ -47,6 +47,7 @@ import org.eclipse.lsp4jakarta.jdt.internal.CommonErrorCode;
 import org.eclipse.lsp4jakarta.jdt.internal.DiagnosticUtils;
 import org.eclipse.lsp4jakarta.jdt.internal.Messages;
 import org.eclipse.lsp4jakarta.jdt.internal.core.java.ManagedBean;
+import org.eclipse.lsp4jakarta.jdt.internal.core.java.Primitive;
 import org.eclipse.lsp4jakarta.jdt.internal.core.ls.JDTUtilsLSImpl;
 import org.eclipse.lsp4jakarta.commons.utils.InterModuleCommonUtils;
 import com.google.gson.Gson;
@@ -109,6 +110,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 for (IMethod method : methods) {
                     annotations = method.getAnnotations();
                     validateNonnullNullableConflict(unit, method, annotations, context, diagnostics);
+                    validateNullableOnPrimitiveType(unit, method.getReturnType(), annotations, context, diagnostics);
                     for (IAnnotation annotation : annotations) {
                         if (isValidAnnotation(annotation.getElementName(), validMethodAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, method));
@@ -118,6 +120,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                     for (ILocalVariable parameter : parameters) {
                         annotations = parameter.getAnnotations();
                         validateNonnullNullableConflict(unit, parameter, annotations, context, diagnostics);
+                        validateNullableOnPrimitiveType(unit, parameter.getTypeSignature(), annotations, context, diagnostics);
                         for (IAnnotation annotation : annotations) {
                             if (isValidAnnotation(annotation.getElementName(), validMethodParamAnnotations))
                                 annotatables.add(new Tuple.Two<>(annotation, parameter));
@@ -129,6 +132,7 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
                 for (IField field : fields) {
                     annotations = field.getAnnotations();
                     validateNonnullNullableConflict(unit, field, annotations, context, diagnostics);
+                    validateNullableOnPrimitiveType(unit, field.getTypeSignature(), annotations, context, diagnostics);
                     for (IAnnotation annotation : annotations) {
                         if (isValidAnnotation(annotation.getElementName(), validFieldAnnotations))
                             annotatables.add(new Tuple.Two<>(annotation, field));
@@ -645,6 +649,32 @@ public class AnnotationDiagnosticsParticipant implements IJavaDiagnosticsPartici
             diagnostics.add(context.createDiagnostic(context.getUri(), message, range,
                                                      Constants.DIAGNOSTIC_SOURCE,
                                                      ErrorCode.NonnullNullableConflict,
+                                                     DiagnosticSeverity.Error));
+        }
+    }
+
+    /**
+     * Reports a diagnostic on the {@code @Nullable} annotation when it is applied
+     * to a primitive type (or a method returning a primitive type / void).
+     *
+     * @param unit the compilation unit
+     * @param typeSignature the type signature of the field, method return type, or parameter
+     * @param annotations the annotations on the element
+     * @param context the diagnostics context
+     * @param diagnostics the list to add diagnostics to
+     * @throws JavaModelException
+     */
+    private void validateNullableOnPrimitiveType(ICompilationUnit unit, String typeSignature,
+                                                 IAnnotation[] annotations,
+                                                 JavaDiagnosticsContext context,
+                                                 List<Diagnostic> diagnostics) throws JavaModelException {
+        IAnnotation nullable = DiagnosticUtils.getMatchedAnnotation(unit, annotations, Constants.NULLABLE_FQ_NAME);
+        if (nullable != null && Primitive.isPrimitiveType(typeSignature)) {
+            Range range = PositionUtils.toNameRange(nullable, context.getUtils());
+            String message = Messages.getMessage("InvalidNullableOnPrimitiveType", "@Nullable");
+            diagnostics.add(context.createDiagnostic(context.getUri(), message, range,
+                                                     Constants.DIAGNOSTIC_SOURCE,
+                                                     ErrorCode.InvalidNullableOnPrimitiveType,
                                                      DiagnosticSeverity.Error));
         }
     }
