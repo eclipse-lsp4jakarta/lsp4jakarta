@@ -43,6 +43,12 @@ public class Constants {
     /* @PreDesotroy */
     public static final String PRE_DESTROY_FQ_NAME = "jakarta.annotation.PreDestroy";
 
+    /* @Nonnull */
+    public static final String NONNULL_FQ_NAME = "jakarta.annotation.Nonnull";
+
+    /* @Nullable */
+    public static final String NULLABLE_FQ_NAME = "jakarta.annotation.Nullable";
+
     public static final String EXCEPTION = "Exception";
 
     public static final String RUNTIME_EXCEPTION = "RuntimeException";

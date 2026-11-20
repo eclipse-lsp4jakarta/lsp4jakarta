@@ -70,4 +70,17 @@ public class Primitive {
         return false;
     }
 
+    /**
+     * Returns true if the type signature represents a Java primitive type (or void).
+     *
+     * @param typeSignature The type signature to check.
+     * @return True if the signature is a base/primitive type signature. False, otherwise.
+     */
+    public static boolean isPrimitiveType(String typeSignature) {
+        if (typeSignature == null || typeSignature.isEmpty()) {
+            return false;
+        }
+        return Signature.getTypeSignatureKind(typeSignature) == Signature.BASE_TYPE_SIGNATURE;
+    }
+
 }

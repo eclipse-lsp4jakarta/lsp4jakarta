@@ -17,6 +17,14 @@
     </properties>
     <dependencies>
         <!-- Provided dependencies -->
+        <!-- Jakarta Annotations 2.1 (Jakarta EE 10) provides jakarta.annotation.Nonnull/Nullable.
+             Declared before jakartaee-api so it takes precedence on the classpath. -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>2.1.1</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>

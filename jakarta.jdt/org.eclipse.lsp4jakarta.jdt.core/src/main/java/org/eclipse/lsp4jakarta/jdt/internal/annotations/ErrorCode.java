@@ -34,7 +34,9 @@ public enum ErrorCode implements IJavaErrorCode {
     PostConstructException,
     PreDestroyParams,
     PreDestroyStatic,
-    PreDestroyException;
+    PreDestroyException,
+    NonnullNullableConflict,
+    InvalidNullableOnPrimitiveType;
 
     /**
      * {@inheritDoc}
