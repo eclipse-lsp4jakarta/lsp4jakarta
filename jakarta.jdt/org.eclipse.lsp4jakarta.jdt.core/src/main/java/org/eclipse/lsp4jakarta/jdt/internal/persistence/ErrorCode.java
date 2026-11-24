@@ -43,7 +43,6 @@ public enum ErrorCode implements IJavaErrorCode {
     AttributeOverrideOnNonEmbeddedField,
     EmbeddedTypeNotAnnotatedWithEmbeddable,
     EmbeddedIdTypeNotAnnotatedWithEmbeddable,
-    IdClassTypeNotAnnotatedWithEmbeddable,
     InheritanceAnnotationOnNonEntityClass,
     InheritanceAnnotationOnNonRootEntity,
     InvalidMapKeyEnumeratedNotOnMapType,
